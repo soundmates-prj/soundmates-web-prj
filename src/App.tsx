@@ -1,41 +1,88 @@
 import { useState, useEffect } from 'react'
 import './index.css'
 import { Dashboard } from './pages/Dashboard'
-import { FirstTimeSetup } from './pages/Auth'
+import { FirstTimeSetup, StationSetup } from './pages/Auth'
+
+type SetupStep = 'register' | 'station' | 'settings' | 'complete';
 
 function App() {
-  const [isFirstRun, setIsFirstRun] = useState<boolean | null>(null)
+  const [currentStep, setCurrentStep] = useState<SetupStep | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check if this is the first time running the app
-    const setupCompleted = localStorage.getItem('azuracast_setup_completed')
-    setIsFirstRun(!setupCompleted)
-    setIsLoading(false)
+    // Check setup status
+    const checkSetupStatus = () => {
+      const setupCompleted = localStorage.getItem('azuracast_setup_completed')
+      const stationCreated = localStorage.getItem('azuracast_station_created')
+
+      if (setupCompleted === 'true') {
+        setCurrentStep('complete')
+      } else if (stationCreated === 'true') {
+        // Station created, skip to settings (or complete for now)
+        setCurrentStep('complete')
+      } else {
+        // Check if user registered
+        const userRegistered = localStorage.getItem('azuracast_user_registered')
+        if (userRegistered === 'true') {
+          setCurrentStep('station')
+        } else {
+          setCurrentStep('register')
+        }
+      }
+      setIsLoading(false)
+    }
+
+    checkSetupStatus()
   }, [])
 
-  const handleSetupComplete = (email: string, _password: string) => {
-    // Store that setup has been completed
-    localStorage.setItem('azuracast_setup_completed', 'true')
+  const handleRegistrationComplete = (email: string, _password: string) => {
+    // Store that registration has been completed
+    localStorage.setItem('azuracast_user_registered', 'true')
     localStorage.setItem('azuracast_admin_email', email)
-    setIsFirstRun(false)
+    // Move to station setup
+    setCurrentStep('station')
+  }
+
+  const handleStationComplete = () => {
+    // Store that station has been created
+    localStorage.setItem('azuracast_station_created', 'true')
+    localStorage.setItem('azuracast_setup_completed', 'true')
+    // Move to dashboard
+    setCurrentStep('complete')
+  }
+
+  const handleBackToRegister = () => {
+    // Clear registration and go back
+    localStorage.removeItem('azuracast_user_registered')
+    setCurrentStep('register')
   }
 
   // Show loading while checking setup status
-  if (isLoading) {
+  if (isLoading || currentStep === null) {
     return (
       <div className="app-loading">
         <div className="loading-spinner"></div>
+        <p>Loading SoundMates...</p>
       </div>
     )
   }
 
-  // Show first-time setup if not completed
-  if (isFirstRun) {
-    return <FirstTimeSetup onComplete={handleSetupComplete} />
+  // Show first-time setup (Step 1: Register)
+  if (currentStep === 'register') {
+    return <FirstTimeSetup onComplete={handleRegistrationComplete} />
   }
 
-  // Show main dashboard
+  // Show station setup (Step 2: Create Station)
+  if (currentStep === 'station') {
+    return (
+      <StationSetup
+        onComplete={handleStationComplete}
+        onBack={handleBackToRegister}
+      />
+    )
+  }
+
+  // Show main dashboard (Setup complete)
   return <Dashboard />
 }
 

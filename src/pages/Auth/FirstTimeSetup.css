@@ -382,3 +382,125 @@
     font-size: var(--font-size-lg);
   }
 }
+
+/* ============================================
+   Password Input Wrapper
+   ============================================ */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper .setup-input {
+  padding-right: 50px;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.toggle-password-btn:hover {
+  color: var(--primary-500);
+}
+
+.toggle-password-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ============================================
+   Password Strength Indicator
+   ============================================ */
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.strength-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border-light);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.strength-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-label {
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ============================================
+   Field Validation Feedback
+   ============================================ */
+.field-error {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--error-500);
+}
+
+.field-success {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: #22c55e;
+}
+
+.input-error {
+  border-color: var(--error-400) !important;
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1) !important;
+  border-color: var(--error-500) !important;
+}
+
+/* ============================================
+   Button Icon
+   ============================================ */
+.btn-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================================
+   Success State Animation
+   ============================================ */
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.field-success {
+  animation: successPulse 0.3s ease;
+}
