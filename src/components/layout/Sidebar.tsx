@@ -28,40 +28,47 @@ interface SidebarProps {
 
 const menuGroups: MenuGroup[] = [
     {
-        title: 'Overview',
+        title: 'Dashboard',
         items: [
             { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', path: '/' },
         ],
     },
     {
-        title: 'Content Management',
+        title: 'System Maintenance',
         items: [
-            { id: 'podcasts', label: 'Podcast Letters', icon: 'podcast', path: '/podcasts', badge: 12 },
-            { id: 'posts', label: 'Posts', icon: 'message', path: '/posts' },
-            { id: 'playlists', label: 'Playlists', icon: 'playlist', path: '/playlists' },
-            { id: 'music', label: 'Music Catalog', icon: 'music', path: '/music' },
+            { id: 'system-settings', label: 'System Settings', icon: 'settings', path: '/admin/settings' },
+            { id: 'custom-branding', label: 'Custom Branding', icon: 'palette', path: '/admin/branding' },
+            { id: 'system-logs', label: 'System Logs', icon: 'document', path: '/admin/logs' },
+            { id: 'storage-locations', label: 'Storage Locations', icon: 'folder', path: '/admin/storage' },
+            { id: 'backups', label: 'Backups', icon: 'database', path: '/admin/backups' },
+            { id: 'system-debugger', label: 'System Debugger', icon: 'bug', path: '/admin/debug' },
+            { id: 'update-azuracast', label: 'Update AzuraCast', icon: 'update', path: '/admin/update' },
         ],
     },
     {
-        title: 'Live Sessions',
+        title: 'Users',
         items: [
-            { id: 'live-sessions', label: 'Session Management', icon: 'radio', path: '/live-sessions', badge: 'LIVE', badgeVariant: 'danger' },
-            { id: 'schedule', label: 'Schedule', icon: 'calendar', path: '/schedule' },
-            { id: 'requests', label: 'Song Requests', icon: 'music', path: '/requests', badge: 5, badgeVariant: 'warning' },
+            { id: 'user-accounts', label: 'User Accounts', icon: 'users', path: '/admin/users' },
+            { id: 'roles-permissions', label: 'Roles & Permissions', icon: 'shield', path: '/admin/permissions' },
+            { id: 'audit-log', label: 'Audit Log', icon: 'clipboard', path: '/admin/audit' },
+            { id: 'api-keys', label: 'API Keys', icon: 'key', path: '/admin/api-keys' },
         ],
     },
     {
-        title: 'User Management',
+        title: 'Stations',
         items: [
-            { id: 'users', label: 'Users', icon: 'users', path: '/users' },
-            { id: 'hosts', label: 'Hosts / Staff', icon: 'microphone', path: '/hosts' },
+            { id: 'stations', label: 'Stations', icon: 'station', path: '/admin/stations' },
+            { id: 'custom-fields', label: 'Custom Fields', icon: 'fields', path: '/admin/custom-fields' },
+            { id: 'connected-relays', label: 'Connected AzuraRelays', icon: 'relay', path: '/admin/relays' },
         ],
     },
     {
-        title: 'System',
+        title: 'Third-Party Software',
         items: [
-            { id: 'analytics', label: 'Analytics', icon: 'chart', path: '/analytics' },
-            { id: 'settings', label: 'Settings', icon: 'settings', path: '/settings' },
+            { id: 'shoutcast', label: 'Shoutcast 2 DNAS', icon: 'broadcast', path: '/admin/install-shoutcast' },
+            { id: 'rsas', label: 'Rocket Streaming Audio Server (RSAS)', icon: 'server', path: '/admin/install-rsas' },
+            { id: 'stereo-tool', label: 'Stereo Tool', icon: 'tool', path: '/admin/install-stereo' },
+            { id: 'geolite', label: 'MaxMind GeoLite IP Database', icon: 'globe', path: '/admin/install-geolite' },
         ],
     },
 ];

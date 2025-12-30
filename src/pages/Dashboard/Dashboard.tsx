@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Header, Sidebar, type MenuItem } from '../../components/layout';
+import { Stations } from '../Stations';
 import { UserProfileCard, StatsChart, DataTable, type Column } from '../../components/dashboard';
 import { Badge, Button, Icon } from '../../components/common';
 import './Dashboard.css';
@@ -63,7 +64,11 @@ const stationsData: Station[] = [
     },
 ];
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+    onLogout: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [activeMenuItem, setActiveMenuItem] = useState('dashboard');
@@ -133,7 +138,7 @@ const Dashboard: React.FC = () => {
                 username="AzuraCast Demo User"
                 email="demo@azuracast.com"
                 onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-                onLogout={() => console.log('Logout')}
+                onLogout={onLogout}
                 onProfileClick={() => console.log('Profile')}
             />
 
@@ -147,44 +152,48 @@ const Dashboard: React.FC = () => {
             />
 
             <main className="dashboard-main">
-                <div className="dashboard-content">
-                    {/* User Profile Card */}
-                    <UserProfileCard
-                        name="AzuraCast Demo User"
-                        email="demo@azuracast.com"
-                        role="Demo Account"
-                        onMyAccountClick={() => console.log('My Account')}
-                    />
+                {activeMenuItem === 'stations' ? (
+                    <Stations />
+                ) : (
+                    <div className="dashboard-content">
+                        {/* User Profile Card */}
+                        <UserProfileCard
+                            name="AzuraCast Demo User"
+                            email="demo@azuracast.com"
+                            role="Demo Account"
+                            onMyAccountClick={() => console.log('My Account')}
+                        />
 
-                    {/* Listeners Chart */}
-                    <StatsChart
-                        title="Listeners Per Station"
-                        datasets={[
-                            {
-                                name: 'AzuraTest Radio',
-                                data: listenerData.averageListeners,
-                                color: '#0d6efd'
-                            },
-                            {
-                                name: 'Unique Listeners',
-                                data: listenerData.uniqueListeners,
-                                color: '#0d6efd'
-                            },
-                        ]}
-                        tabs={['Average Listeners', 'Unique Listeners']}
-                        height={280}
-                    />
+                        {/* Listeners Chart */}
+                        <StatsChart
+                            title="Listeners Per Station"
+                            datasets={[
+                                {
+                                    name: 'AzuraTest Radio',
+                                    data: listenerData.averageListeners,
+                                    color: '#0d6efd'
+                                },
+                                {
+                                    name: 'Unique Listeners',
+                                    data: listenerData.uniqueListeners,
+                                    color: '#0d6efd'
+                                },
+                            ]}
+                            tabs={['Average Listeners', 'Unique Listeners']}
+                            height={280}
+                        />
 
-                    {/* Station Overview Table */}
-                    <DataTable
-                        title="Station Overview"
-                        columns={columns}
-                        data={stationsData}
-                        idKey="id"
-                        searchPlaceholder="Search"
-                        onRefresh={() => console.log('Refresh')}
-                    />
-                </div>
+                        {/* Station Overview Table */}
+                        <DataTable
+                            title="Station Overview"
+                            columns={columns}
+                            data={stationsData}
+                            idKey="id"
+                            searchPlaceholder="Search"
+                            onRefresh={() => console.log('Refresh')}
+                        />
+                    </div>
+                )}
             </main>
         </div>
     );

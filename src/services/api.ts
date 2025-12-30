@@ -58,16 +58,27 @@ export interface SystemStatusResponse {
 // API Client Class
 class ApiClient {
     private baseUrl: string;
+    private token: string | null = null;
+
+    public setToken(token: string | null) {
+        this.token = token;
+        if (token) {
+            localStorage.setItem('azuracast_api_token', token);
+        } else {
+            localStorage.removeItem('azuracast_api_token');
+        }
+    }
 
     constructor(baseUrl: string = API_BASE_URL) {
         this.baseUrl = baseUrl;
+        this.token = localStorage.getItem('azuracast_api_token');
     }
 
     private async request<T>(
         endpoint: string,
         options: RequestInit = {}
     ): Promise<T> {
-        const url = `${this.baseUrl}${endpoint}`;
+        const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
 
         const defaultHeaders: HeadersInit = {
             'Content-Type': 'application/json',
@@ -78,6 +89,7 @@ class ApiClient {
             ...options,
             headers: {
                 ...defaultHeaders,
+                ...(this.token ? { 'Authorization': `Bearer ${this.token}` } : {}),
                 ...options.headers,
             },
             credentials: 'include', // For session cookies
@@ -314,30 +326,49 @@ class ApiClient {
         genre?: string;
         url?: string;
         timezone?: string;
-        api_history_items?: number;
-        enable_requests?: boolean;
+        short_name?: string; // urlStub
+        api_history_items?: number; // visibleRecentSongs
         enable_public_page?: boolean;
+        enable_on_demand?: boolean;
+        is_enabled?: boolean; // enableBroadcasting
+        enable_streamers?: boolean;
+        enable_requests?: boolean;
+        backend_config?: {
+            enable_autodj?: boolean;
+            enable_hls?: boolean;
+        }
     }): Promise<{ id: number; name: string; short_name: string }> {
+        // Map frontend camelCase to backend snake_case expected by AzuraCast
+        // particular structure might vary by version, this is a best-effort mapping
+        // based on common AzuraCast API patterns.
         return this.request('/api/admin/stations', {
             method: 'POST',
             body: JSON.stringify({
                 name: stationData.name,
-                description: stationData.description || null,
-                genre: stationData.genre || null,
-                url: stationData.url || null,
+                description: stationData.description || '',
+                genre: stationData.genre || '',
+                url: stationData.url || '',
                 timezone: stationData.timezone || 'UTC',
+                short_name: stationData.short_name || '',
                 api_history_items: stationData.api_history_items ?? 5,
-                enable_requests: stationData.enable_requests ?? false,
                 enable_public_page: stationData.enable_public_page ?? true,
+                enable_on_demand: stationData.enable_on_demand ?? false,
+                is_enabled: stationData.is_enabled ?? true, // Main broadcasting switch
+                enable_streamers: stationData.enable_streamers ?? false,
+                enable_requests: stationData.enable_requests ?? false,
+                // Some settings might be nested or separate in actual AzuraCast API
+                // but passing them here for completeness if the backend supports flat or specific structure
+                backend_type: stationData.backend_config?.enable_autodj ? 'liquidsoap' : 'none',
+                enable_hls: stationData.backend_config?.enable_hls ?? false,
             }),
         });
     }
 
-    async getStations(): Promise<Array<{ id: number; name: string; short_name: string }>> {
+    async getStations(): Promise<Array<{ id: number; name: string; short_name: string; is_enabled: boolean }>> {
         return this.request('/api/admin/stations');
     }
 
-    async getStation(id: number): Promise<{ id: number; name: string; short_name: string }> {
+    async getStation(id: number): Promise<any> {
         return this.request(`/api/admin/station/${id}`);
     }
 
