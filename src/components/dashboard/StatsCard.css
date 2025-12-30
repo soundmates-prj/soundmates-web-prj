@@ -1,0 +1,146 @@
+/* StatsCard Component Styles */
+
+.stats-card {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: currentColor;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+}
+
+/* Icon */
+.stats-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    flex-shrink: 0;
+}
+
+/* Color Variants */
+.stats-card-primary {
+    color: var(--primary-600);
+}
+
+.stats-card-primary .stats-card-icon {
+    background: var(--primary-100);
+    color: var(--primary-600);
+}
+
+.stats-card-success {
+    color: var(--success-600);
+}
+
+.stats-card-success .stats-card-icon {
+    background: #dcfce7;
+    color: var(--success-600);
+}
+
+.stats-card-warning {
+    color: var(--warning-600);
+}
+
+.stats-card-warning .stats-card-icon {
+    background: #fef9c3;
+    color: var(--warning-600);
+}
+
+.stats-card-danger {
+    color: var(--error-600);
+}
+
+.stats-card-danger .stats-card-icon {
+    background: #fee2e2;
+    color: var(--error-600);
+}
+
+.stats-card-purple {
+    color: var(--accent-600);
+}
+
+.stats-card-purple .stats-card-icon {
+    background: var(--accent-100);
+    color: var(--accent-600);
+}
+
+/* Content */
+.stats-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.stats-card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.stats-card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.stats-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.stats-card-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.stats-card-trend-up {
+    color: var(--success-600);
+    background: #dcfce7;
+}
+
+.stats-card-trend-down {
+    color: var(--error-600);
+    background: #fee2e2;
+}
+
+.stats-card-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Grid layout helper */
+.stats-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}

@@ -1,0 +1,105 @@
+/* StatsChart Component Styles - Using Recharts */
+
+.stats-chart-card {
+    overflow: visible;
+    background: white;
+}
+
+/* Tabs */
+.stats-chart-tabs {
+    display: flex;
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.stats-chart-tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6c757d;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: -1px;
+}
+
+.stats-chart-tab:hover {
+    color: #495057;
+}
+
+.stats-chart-tab-active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+}
+
+/* Chart Container */
+.stats-chart-container {
+    padding: 16px 20px 20px;
+    background: white;
+}
+
+/* Legend */
+.stats-chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+.stats-chart-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #adb5bd;
+    transition: color 0.2s ease;
+}
+
+.stats-chart-legend-item.active {
+    color: #495057;
+}
+
+.stats-chart-legend-color {
+    width: 16px;
+    height: 2px;
+    border-radius: 1px;
+}
+
+/* Chart Wrapper */
+.stats-chart-wrapper {
+    width: 100%;
+}
+
+/* Custom Tooltip */
+.stats-chart-tooltip {
+    padding: 8px 12px;
+    background: #343a40;
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.stats-chart-tooltip-label {
+    color: #adb5bd;
+    font-size: 11px;
+    margin-bottom: 2px;
+}
+
+.stats-chart-tooltip-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+/* Recharts overrides */
+.recharts-cartesian-grid-horizontal line {
+    stroke: #f1f3f5;
+}
+
+.recharts-dot {
+    transition: r 0.15s ease;
+}
