@@ -688,10 +688,19 @@ class ApiClient {
 
     /**
      * Get now playing information for a station
-     * GET /api/nowplaying/{station_id}
+     * GET /api/nowplaying/{station_id} or /api/nowplaying/{shortcode}
+     * Supports both numeric station ID and string shortcode
      */
-    async getNowPlaying(stationId: number): Promise<NowPlayingData> {
-        return this.request(`/api/nowplaying/${stationId}`);
+    async getNowPlaying(stationIdOrShortcode: number | string): Promise<NowPlayingData> {
+        return this.request(`/api/nowplaying/${stationIdOrShortcode}`);
+    }
+
+    /**
+     * Get now playing for all stations
+     * GET /api/nowplaying
+     */
+    async getAllNowPlaying(): Promise<NowPlayingData[]> {
+        return this.request('/api/nowplaying');
     }
 
     /**
@@ -720,6 +729,54 @@ class ApiClient {
         return this.request(endpoint, {
             method: 'POST',
         });
+    }
+
+    /**
+     * Reload station configuration (soft-reload, keeps broadcast running)
+     * POST /api/station/{station_id}/reload
+     */
+    async reloadStationConfiguration(stationId: number): Promise<{ success: boolean; message: string }> {
+        return this.request(`/api/station/${stationId}/reload`, {
+            method: 'POST',
+        });
+    }
+
+    /**
+     * Restart all station broadcasting services
+     * POST /api/station/{station_id}/restart
+     */
+    async restartBroadcasting(stationId: number): Promise<{ success: boolean; message: string }> {
+        return this.request(`/api/station/${stationId}/restart`, {
+            method: 'POST',
+        });
+    }
+
+    /**
+     * Control frontend service (Icecast, Shoutcast)
+     * POST /api/station/{station_id}/frontend/{action}
+     */
+    async controlFrontend(stationId: number, action: 'start' | 'stop' | 'reload' | 'restart'): Promise<{ success: boolean; message: string }> {
+        return this.request(`/api/station/${stationId}/frontend/${action}`, {
+            method: 'POST',
+        });
+    }
+
+    /**
+     * Control backend service (Liquidsoap)
+     * POST /api/station/{station_id}/backend/{action}
+     */
+    async controlBackend(stationId: number, action: 'start' | 'stop' | 'reload' | 'restart' | 'skip' | 'disconnect'): Promise<{ success: boolean; message: string }> {
+        return this.request(`/api/station/${stationId}/backend/${action}`, {
+            method: 'POST',
+        });
+    }
+
+    /**
+     * Get station service status
+     * GET /api/station/{station_id}/status
+     */
+    async getStationServiceStatus(stationId: number): Promise<{ backendRunning: boolean; frontendRunning: boolean }> {
+        return this.request(`/api/station/${stationId}/status`);
     }
 
     // ==================== Files/Media API ====================
@@ -893,6 +950,52 @@ class ApiClient {
      */
     async getPlaylists(stationId: number): Promise<Array<{ id: number; name: string; type: string; is_enabled: boolean }>> {
         return this.request(`/api/station/${stationId}/playlists`);
+    }
+
+    /**
+     * Get single playlist details
+     * GET /api/station/{station_id}/playlist/{id}
+     */
+    async getPlaylist(stationId: number, playlistId: number): Promise<unknown> {
+        return this.request(`/api/station/${stationId}/playlist/${playlistId}`);
+    }
+
+    /**
+     * Toggle playlist enabled/disabled
+     * PUT /api/station/{station_id}/playlist/{id}/toggle
+     */
+    async togglePlaylist(stationId: number, playlistId: number): Promise<void> {
+        return this.request(`/api/station/${stationId}/playlist/${playlistId}/toggle`, {
+            method: 'PUT',
+        });
+    }
+
+    /**
+     * Delete a playlist
+     * DELETE /api/station/{station_id}/playlist/{id}
+     */
+    async deletePlaylist(stationId: number, playlistId: number): Promise<void> {
+        return this.request(`/api/station/${stationId}/playlist/${playlistId}`, {
+            method: 'DELETE',
+        });
+    }
+
+    /**
+     * Create a new playlist
+     * POST /api/station/{station_id}/playlists
+     */
+    async createPlaylist(stationId: number, data: {
+        name: string;
+        type?: string;
+        source?: string;
+        order?: string;
+        is_enabled?: boolean;
+        weight?: number;
+    }): Promise<unknown> {
+        return this.request(`/api/station/${stationId}/playlists`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
     }
 
     // ==================== End Files/Media API ====================

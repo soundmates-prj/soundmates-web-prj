@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '../../components/common';
 import { api, type StationDashboardData, type StationServiceStatus, type NowPlayingData } from '../../services/api';
 import StationSidebar from './StationSidebar';
 import StationOverview from './StationOverview';
 import MusicFiles from './MusicFiles';
+import Playlists from './Playlists';
+import UpdateStationConfig from './UpdateStationConfig';
 import './StationManagement.css';
 
 interface StationManagementProps {
     stationId: number;
     onBack: () => void;
+    initialPage?: string;
+    initialSubpage?: string;
 }
 
 type ActivePage =
@@ -42,8 +47,23 @@ type ActivePage =
 const StationManagement: React.FC<StationManagementProps> = ({
     stationId,
     onBack,
+    initialPage,
+    initialSubpage,
 }) => {
-    const [activePage, setActivePage] = useState<ActivePage>('overview');
+    const navigate = useNavigate();
+
+    // Determine initial active page from props
+    const getInitialPage = (): ActivePage => {
+        if (initialPage && initialSubpage) {
+            return `${initialPage}-${initialSubpage}` as ActivePage;
+        }
+        if (initialPage) {
+            return initialPage as ActivePage;
+        }
+        return 'overview';
+    };
+
+    const [activePage, setActivePage] = useState<ActivePage>(getInitialPage());
     const [dashboardData, setDashboardData] = useState<StationDashboardData | null>(null);
     const [serviceStatus, setServiceStatus] = useState<StationServiceStatus>({
         frontendRunning: false,
@@ -53,9 +73,40 @@ const StationManagement: React.FC<StationManagementProps> = ({
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Fetch now playing data separately for real-time updates
+    // Uses shortcode if available, otherwise falls back to stationId
+    const fetchNowPlaying = async (shortcode?: string) => {
+        try {
+            // Prefer shortcode, fallback to station ID
+            const identifier = shortcode || stationId;
+            const np = await api.getNowPlaying(identifier);
+            setNowPlaying(np);
+        } catch (npError) {
+            console.warn('Could not fetch now playing:', npError);
+        }
+    };
+
+    // Initial data fetch
     useEffect(() => {
         fetchStationData();
     }, [stationId]);
+
+    // Auto-refresh now playing every 5 seconds
+    // Wait for dashboardData to get shortcode, then start polling
+    useEffect(() => {
+        // Use shortcode if available for better compatibility
+        const shortcode = dashboardData?.shortName;
+
+        // Initial fetch
+        fetchNowPlaying(shortcode);
+
+        // Set up interval for real-time updates
+        const interval = setInterval(() => {
+            fetchNowPlaying(shortcode);
+        }, 5000); // 5 seconds
+
+        return () => clearInterval(interval);
+    }, [stationId, dashboardData?.shortName]);
 
     const fetchStationData = async () => {
         setIsLoading(true);
@@ -77,13 +128,7 @@ const StationManagement: React.FC<StationManagementProps> = ({
                 console.warn('Could not fetch service status:', profileError);
             }
 
-            // Fetch now playing data
-            try {
-                const np = await api.getNowPlaying(stationId);
-                setNowPlaying(np);
-            } catch (npError) {
-                console.warn('Could not fetch now playing:', npError);
-            }
+            // Now playing is fetched separately with auto-refresh interval
         } catch (err) {
             console.error('Failed to fetch station dashboard:', err);
             // Fallback: try to get basic station data from profile
@@ -227,7 +272,7 @@ const StationManagement: React.FC<StationManagementProps> = ({
                 return <div className="placeholder-content">Bulk Media Import/Export - Coming Soon</div>;
 
             case 'playlists':
-                return <div className="placeholder-content">Playlists - Coming Soon</div>;
+                return <Playlists stationId={stationId} timezone={dashboardData?.timezone} />;
             case 'podcasts':
                 return <div className="placeholder-content">Podcasts - Coming Soon</div>;
             case 'webhooks':
@@ -257,7 +302,13 @@ const StationManagement: React.FC<StationManagementProps> = ({
             case 'broadcasting-queue':
                 return <div className="placeholder-content">Upcoming Song Queue - Coming Soon</div>;
             case 'broadcasting-restart':
-                return <div className="placeholder-content">Restart Broadcasting - Coming Soon</div>;
+                return (
+                    <UpdateStationConfig
+                        stationId={stationId}
+                        supportsReload={dashboardData?.canReload}
+                        onConfigUpdated={fetchStationData}
+                    />
+                );
 
             case 'logs':
                 return <div className="placeholder-content">Logs - Coming Soon</div>;
@@ -296,7 +347,16 @@ const StationManagement: React.FC<StationManagementProps> = ({
                     isEnabled={dashboardData?.isEnabled ?? false}
                     hasStarted={dashboardData?.hasStarted ?? false}
                     activePage={activePage}
-                    onPageChange={setActivePage}
+                    onPageChange={(page) => {
+                        setActivePage(page);
+                        // Update URL to reflect current page
+                        const pageParts = page.split('-');
+                        if (pageParts.length > 1) {
+                            navigate(`/station/${stationId}/${pageParts[0]}/${pageParts.slice(1).join('-')}`, { replace: true });
+                        } else {
+                            navigate(`/station/${stationId}/${page}`, { replace: true });
+                        }
+                    }}
                     onStartStation={handleStartService}
                 />
 

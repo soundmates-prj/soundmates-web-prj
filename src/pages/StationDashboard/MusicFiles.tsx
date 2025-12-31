@@ -15,25 +15,29 @@ const MusicFiles: React.FC<MusicFilesProps> = ({ stationId }) => {
     const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(true);
     const [isDragging, setIsDragging] = useState(false);
-    const [_playlists, setPlaylists] = useState<Array<{ id: number; name: string }>>([]);
+    const [playlists, setPlaylists] = useState<Array<{ id: number; name: string }>>([]);
     const [showNewFolderModal, setShowNewFolderModal] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalRows, setTotalRows] = useState(0);
+    const [showPlaylistDropdown, setShowPlaylistDropdown] = useState(false);
+    const [selectedPlaylists, setSelectedPlaylists] = useState<Set<number>>(new Set());
+    const [newPlaylistName, setNewPlaylistName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const playlistDropdownRef = useRef<HTMLDivElement>(null);
 
-    // Fetch initial config (playlists, custom fields)
+    // Fetch playlists for the station
     useEffect(() => {
-        const fetchConfig = async () => {
+        const fetchPlaylists = async () => {
             try {
-                const config = await api.getVueFilesConfig(stationId);
-                setPlaylists(config.playlists || []);
+                const playlistsData = await api.getPlaylists(stationId);
+                setPlaylists(playlistsData || []);
             } catch (error) {
-                console.error('Failed to fetch vue files config:', error);
+                console.error('Failed to fetch playlists:', error);
             }
         };
-        fetchConfig();
+        fetchPlaylists();
     }, [stationId]);
 
     // Fetch files and quota
@@ -158,6 +162,66 @@ const MusicFiles: React.FC<MusicFilesProps> = ({ stationId }) => {
         }
     };
 
+    // Playlist dropdown handlers
+    const handlePlaylistToggle = (playlistId: number) => {
+        setSelectedPlaylists(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(playlistId)) {
+                newSet.delete(playlistId);
+            } else {
+                newSet.add(playlistId);
+            }
+            return newSet;
+        });
+    };
+
+    const handleSaveToPlaylists = async () => {
+        if (selectedFiles.size === 0) return;
+
+        try {
+            // Add files to selected playlists
+            await api.batchFilesOperation(
+                stationId,
+                'queue',
+                Array.from(selectedFiles),
+                { playlists: Array.from(selectedPlaylists) }
+            );
+
+            // If new playlist name provided, create it
+            if (newPlaylistName.trim()) {
+                await api.createPlaylist(stationId, { name: newPlaylistName.trim() });
+            }
+
+            setShowPlaylistDropdown(false);
+            setSelectedPlaylists(new Set());
+            setNewPlaylistName('');
+            fetchData();
+        } catch (error) {
+            console.error('Failed to add files to playlists:', error);
+        }
+    };
+
+    const handleClearPlaylistSelection = () => {
+        setSelectedPlaylists(new Set());
+        setNewPlaylistName('');
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (playlistDropdownRef.current && !playlistDropdownRef.current.contains(event.target as Node)) {
+                setShowPlaylistDropdown(false);
+            }
+        };
+
+        if (showPlaylistDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showPlaylistDropdown]);
+
     // Handle delete selected
     const handleDeleteSelected = async () => {
         if (selectedFiles.size === 0) return;
@@ -268,11 +332,51 @@ const MusicFiles: React.FC<MusicFilesProps> = ({ stationId }) => {
             <div className="action-bar">
                 <div className="batch-actions">
                     <span className="action-label">With selected:</span>
-                    <button className="btn-action btn-playlists" disabled={selectedFiles.size === 0}>
-                        <Icon name="plus" size={14} />
-                        PLAYLISTS
-                        <Icon name="chevron-down" size={12} />
-                    </button>
+                    <div className="playlist-dropdown-wrapper" ref={playlistDropdownRef}>
+                        <button
+                            className="btn-action btn-playlists"
+                            disabled={selectedFiles.size === 0}
+                            onClick={() => setShowPlaylistDropdown(!showPlaylistDropdown)}
+                        >
+                            <Icon name="plus" size={14} />
+                            PLAYLISTS
+                            <Icon name="chevron-down" size={12} />
+                        </button>
+                        {showPlaylistDropdown && (
+                            <div className="playlist-dropdown">
+                                {playlists.map(playlist => (
+                                    <label key={playlist.id} className="playlist-option">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedPlaylists.has(playlist.id)}
+                                            onChange={() => handlePlaylistToggle(playlist.id)}
+                                        />
+                                        <span>{playlist.name}</span>
+                                    </label>
+                                ))}
+                                <div className="new-playlist-row">
+                                    <input
+                                        type="checkbox"
+                                        disabled
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="New Playlist"
+                                        value={newPlaylistName}
+                                        onChange={(e) => setNewPlaylistName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="playlist-dropdown-actions">
+                                    <button className="btn-save-playlists" onClick={handleSaveToPlaylists}>
+                                        SAVE
+                                    </button>
+                                    <button className="btn-clear-playlists" onClick={handleClearPlaylistSelection}>
+                                        CLEAR
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <button className="btn-action btn-move" disabled={selectedFiles.size === 0}>
                         <Icon name="folder" size={14} />
                         MOVE

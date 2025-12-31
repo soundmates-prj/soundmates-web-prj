@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header, Sidebar, type MenuItem } from '../../components/layout';
 import { Stations } from '../Stations';
 import { StationManagement } from '../StationDashboard';
@@ -70,24 +71,52 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { stationId, page, subpage, section } = useParams<{
+        stationId?: string;
+        page?: string;
+        subpage?: string;
+        section?: string;
+    }>();
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [activeMenuItem, setActiveMenuItem] = useState('dashboard');
-    const [managingStationId, setManagingStationId] = useState<number | null>(null);
+
+    // Determine active menu item from URL
+    const getActiveMenuItem = () => {
+        if (stationId) return 'stations';
+        if (location.pathname.includes('/stations')) return 'stations';
+        if (section) return section;
+        return 'dashboard';
+    };
+
+    const [activeMenuItem, setActiveMenuItem] = useState(getActiveMenuItem());
+
+    // Update active menu item when URL changes
+    useEffect(() => {
+        setActiveMenuItem(getActiveMenuItem());
+    }, [location.pathname, stationId, section]);
 
     const handleMenuItemClick = (item: MenuItem) => {
         setActiveMenuItem(item.id);
         setSidebarOpen(false);
-        // Clear managing station when navigating away
-        setManagingStationId(null);
+        // Navigate to the appropriate route
+        if (item.id === 'stations') {
+            navigate('/stations');
+        } else if (item.id === 'dashboard') {
+            navigate('/dashboard');
+        } else {
+            navigate(`/dashboard/${item.id}`);
+        }
     };
 
     const handleManageStation = (station: { id: number }) => {
-        setManagingStationId(station.id);
+        navigate(`/station/${station.id}/overview`);
     };
 
     const handleBackToStations = () => {
-        setManagingStationId(null);
+        navigate('/stations');
     };
 
     // Station table columns - matching AzuraCast design
@@ -144,12 +173,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         },
     ];
 
-    // If managing a station, show the StationManagement view
-    if (managingStationId !== null) {
+    // If viewing a station (from URL), show the StationManagement view
+    if (stationId) {
         return (
             <StationManagement
-                stationId={managingStationId}
+                stationId={parseInt(stationId, 10)}
                 onBack={handleBackToStations}
+                initialPage={page}
+                initialSubpage={subpage}
             />
         );
     }

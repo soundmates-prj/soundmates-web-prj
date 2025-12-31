@@ -3,6 +3,13 @@ import { Icon } from '../../components/common';
 import type { StationDashboardData, StationServiceStatus, NowPlayingData } from '../../services/api';
 import './StationOverview.css';
 
+// Helper function to format seconds to mm:ss
+const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 interface StationOverviewProps {
     dashboardData: StationDashboardData;
     serviceStatus: StationServiceStatus;
@@ -20,7 +27,6 @@ const StationOverview: React.FC<StationOverviewProps> = ({
     // onStartService will be used later for start/stop buttons
     onRefresh,
 }) => {
-    const isOnline = nowPlaying?.is_online ?? false;
     const currentSong = nowPlaying?.now_playing?.song;
     const listeners = nowPlaying?.listeners;
     const isLive = nowPlaying?.live?.is_live ?? false;
@@ -40,41 +46,136 @@ const StationOverview: React.FC<StationOverviewProps> = ({
                 <div className="overview-left">
                     {/* On the Air Panel */}
                     <div className="panel panel-primary">
-                        <div className="panel-header">
-                            <h3>On the Air</h3>
-                            {isOnline && (
-                                <span className="status-badge running">Live</span>
-                            )}
+                        <div className="panel-header on-air-header">
+                            <div className="on-air-left">
+                                <button className="btn-play" title="Listen">
+                                    <Icon name="play" size={18} />
+                                </button>
+                                <h3>On the Air</h3>
+                            </div>
+                            <div className="on-air-right">
+                                <Icon name="headphones" size={16} />
+                                <span className="listeners-count">{listeners?.total ?? listeners?.current ?? 0} Listener{(listeners?.total ?? listeners?.current ?? 0) !== 1 ? 's' : ''}</span>
+                                <br />
+                                <small className="unique-count">{listeners?.unique ?? 0} Unique</small>
+                            </div>
                         </div>
                         <div className="panel-body">
-                            {isOnline && currentSong ? (
-                                <div className="now-playing-info">
-                                    <div className="now-playing-art">
-                                        {currentSong.art ? (
-                                            <img src={currentSong.art} alt="Album Art" />
-                                        ) : (
-                                            <div className="art-placeholder">
-                                                <Icon name="music" size={40} />
+                            {nowPlaying && (currentSong || nowPlaying.now_playing) ? (
+                                <div className="now-playing-section">
+                                    <div className="now-playing-row">
+                                        {/* Now Playing Column */}
+                                        <div className="now-playing-column">
+                                            <div className="column-label">
+                                                <Icon name="music" size={14} />
+                                                Now Playing
                                             </div>
-                                        )}
-                                    </div>
-                                    <div className="now-playing-details">
-                                        <div className="song-title">{currentSong.title || 'Unknown Title'}</div>
-                                        <div className="song-artist">{currentSong.artist || 'Unknown Artist'}</div>
-                                        {currentSong.album && (
-                                            <div className="song-album">{currentSong.album}</div>
-                                        )}
-                                        {isLive && nowPlaying?.live?.streamer_name && (
-                                            <div className="live-streamer">
-                                                <Icon name="microphone" size={14} />
-                                                Live: {nowPlaying.live.streamer_name}
+                                            <div className="song-info">
+                                                <div className="song-art">
+                                                    {(currentSong?.art || nowPlaying.now_playing?.song?.art) ? (
+                                                        <a href={currentSong?.art || nowPlaying.now_playing?.song?.art} target="_blank" rel="noopener noreferrer">
+                                                            <img src={currentSong?.art || nowPlaying.now_playing?.song?.art} alt="Album Art" />
+                                                        </a>
+                                                    ) : (
+                                                        <div className="art-placeholder">
+                                                            <Icon name="music" size={32} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="song-details">
+                                                    {!nowPlaying.is_online ? (
+                                                        <div className="song-title text-muted">{dashboardData.offlineText || 'Station Offline'}</div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="song-title">
+                                                                {currentSong?.title || nowPlaying.now_playing?.song?.title || nowPlaying.now_playing?.song?.text || 'Unknown'}
+                                                            </div>
+                                                            <div className="song-artist">
+                                                                {currentSong?.artist || nowPlaying.now_playing?.song?.artist || ''}
+                                                            </div>
+                                                            {nowPlaying.now_playing?.playlist && (
+                                                                <div className="song-playlist">
+                                                                    Playlist: {nowPlaying.now_playing.playlist}
+                                                                </div>
+                                                            )}
+                                                            {nowPlaying.now_playing?.elapsed !== undefined && nowPlaying.now_playing?.duration !== undefined && nowPlaying.now_playing.duration > 0 && (
+                                                                <div className="song-progress">
+                                                                    {formatTime(nowPlaying.now_playing.elapsed)} / {formatTime(nowPlaying.now_playing.duration)}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                        )}
+                                        </div>
+
+                                        {/* Playing Next or Live Streamer Column */}
+                                        <div className="now-playing-column">
+                                            {isLive ? (
+                                                <>
+                                                    <div className="column-label">
+                                                        <Icon name="microphone" size={14} />
+                                                        Live
+                                                    </div>
+                                                    <div className="live-streamer-name">
+                                                        {nowPlaying.live?.streamer_name || 'Unknown Streamer'}
+                                                    </div>
+                                                </>
+                                            ) : nowPlaying.playing_next ? (
+                                                <>
+                                                    <div className="column-label">
+                                                        <Icon name="chevron-right" size={14} />
+                                                        Playing Next
+                                                    </div>
+                                                    <div className="song-info">
+                                                        <div className="song-art small">
+                                                            {nowPlaying.playing_next?.song?.art ? (
+                                                                <img src={nowPlaying.playing_next.song.art} alt="Next Album Art" />
+                                                            ) : (
+                                                                <div className="art-placeholder small">
+                                                                    <Icon name="music" size={20} />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="song-details">
+                                                            <div className="song-title">
+                                                                {nowPlaying.playing_next?.song?.title || nowPlaying.playing_next?.song?.text || 'No upcoming song'}
+                                                            </div>
+                                                            <div className="song-artist">
+                                                                {nowPlaying.playing_next?.song?.artist || ''}
+                                                            </div>
+                                                            {nowPlaying.playing_next?.playlist && (
+                                                                <div className="song-playlist">
+                                                                    Playlist: {nowPlaying.playing_next.playlist}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="no-next-song">No upcoming songs in queue</div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="listeners-info">
-                                        <Icon name="headphones" size={20} />
-                                        <span className="listeners-count">{listeners?.current ?? 0}</span>
-                                        <span className="listeners-label">Listeners</span>
+
+                                    {/* Actions */}
+                                    <div className="on-air-actions">
+                                        {!isLive && (
+                                            <button className="btn-action-secondary">
+                                                <Icon name="chevron-right" size={14} />
+                                                Skip Song
+                                            </button>
+                                        )}
+                                        {isLive && (
+                                            <button className="btn-action-secondary">
+                                                <Icon name="headphones" size={14} />
+                                                Disconnect Streamer
+                                            </button>
+                                        )}
+                                        <button className="btn-action-secondary">
+                                            <Icon name="refresh" size={14} />
+                                            Update Metadata
+                                        </button>
                                     </div>
                                 </div>
                             ) : (
