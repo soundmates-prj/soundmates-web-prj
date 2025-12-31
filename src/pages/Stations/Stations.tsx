@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Icon, Button } from '../../components/common';
 import { api } from '../../services/api';
 import AddStationModal, { type StationFormData } from './AddStationModal';
@@ -13,26 +13,23 @@ interface Station {
 
 interface StationsProps {
     stations?: Station[];
-    onEditStation?: (station: Station) => void;
-    onDeleteStation?: (station: Station) => void;
     onManageStation?: (station: Station) => void;
-    onSaveStation?: (data: StationFormData) => void;
 }
 
 
 const Stations: React.FC<StationsProps> = ({
     stations = [],
-    onEditStation,
-    onDeleteStation,
     onManageStation,
-    onSaveStation,
 }) => {
     const [localStations, setLocalStations] = useState<Station[]>(stations);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingStation, setEditingStation] = useState<Station | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Filter stations based on search term
     const filteredStations = localStations.filter(station =>
@@ -45,6 +42,10 @@ const Stations: React.FC<StationsProps> = ({
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     );
+
+    useEffect(() => {
+        handleRefresh();
+    }, []);
 
     const handleRefresh = async () => {
         setIsLoading(true);
@@ -65,15 +66,17 @@ const Stations: React.FC<StationsProps> = ({
         }
     };
 
-    // Load initial data if provided from props, otherwise could fetch
-    // useEffect(() => { if (stations.length === 0) handleRefresh(); }, []);
-
     const handleAddStation = () => {
         setIsAddModalOpen(true);
     };
 
-    const handleCloseModal = () => {
+    const handleCloseAddModal = () => {
         setIsAddModalOpen(false);
+    };
+
+    const handleCloseEditModal = () => {
+        setIsEditModalOpen(false);
+        setEditingStation(null);
     };
 
     const handleSaveStation = async (data: StationFormData) => {
@@ -109,7 +112,6 @@ const Stations: React.FC<StationsProps> = ({
                 }
             });
 
-            onSaveStation?.(data);
             setIsAddModalOpen(false);
 
             // Refresh list to show new station
@@ -119,6 +121,95 @@ const Stations: React.FC<StationsProps> = ({
             alert('Failed to create station. Please check console for details.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    /**
+     * Handle Edit Station - Opens edit modal with station data
+     * Uses PUT /api/admin/station/{id}
+     */
+    const handleEditStation = (station: Station) => {
+        setEditingStation(station);
+        setIsEditModalOpen(true);
+    };
+
+    /**
+     * Save edited station data
+     * Calls PUT /api/admin/station/{id}
+     */
+    const handleUpdateStation = async (data: StationFormData) => {
+        if (!editingStation) return;
+
+        setIsLoading(true);
+        try {
+            // Calculate api_history_items
+            let apiHistoryItems = 5;
+            if (typeof data.visibleRecentSongs === 'number') {
+                apiHistoryItems = data.visibleRecentSongs;
+            } else if (data.visibleRecentSongs === 'disabled') {
+                apiHistoryItems = 0;
+            } else if (data.visibleRecentSongs === 'custom') {
+                apiHistoryItems = data.customRecentSongs;
+            }
+
+            // Call API to update station
+            await api.updateStation(editingStation.id, {
+                name: data.name,
+                description: data.description,
+                genre: data.genre,
+                url: data.websiteUrl,
+                timezone: data.timezone,
+                short_name: data.urlStub,
+                api_history_items: apiHistoryItems,
+                enable_public_page: data.enablePublicPages,
+                enable_on_demand: data.enableOnDemandStreaming,
+                is_enabled: data.enableBroadcasting,
+                enable_streamers: data.enableStreamers,
+                enable_requests: data.enableSongRequests,
+                backend_config: {
+                    enable_autodj: data.enableAutoDJ,
+                    enable_hls: data.enableHLS
+                }
+            });
+
+            setIsEditModalOpen(false);
+            setEditingStation(null);
+
+            // Refresh list to show updated station
+            await handleRefresh();
+        } catch (error) {
+            console.error('Failed to update station:', error);
+            alert('Failed to update station. Please check console for details.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    /**
+     * Handle Delete Station - Shows confirmation and deletes
+     * Uses DELETE /api/admin/station/{id}
+     */
+    const handleDeleteStation = async (station: Station) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to delete station "${station.name}"?\n\nThis action cannot be undone!`
+        );
+
+        if (!confirmed) return;
+
+        setIsDeleting(true);
+        try {
+            // Call API to delete station
+            await api.deleteStation(station.id);
+
+            // Refresh list to remove deleted station
+            await handleRefresh();
+
+            alert(`Station "${station.name}" has been deleted successfully.`);
+        } catch (error) {
+            console.error('Failed to delete station:', error);
+            alert('Failed to delete station. Please check console for details.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -174,6 +265,7 @@ const Stations: React.FC<StationsProps> = ({
                                 className="refresh-btn"
                                 onClick={handleRefresh}
                                 title="Refresh"
+                                disabled={isLoading}
                             >
                                 <Icon name="refresh" size={14} />
                             </button>
@@ -190,6 +282,13 @@ const Stations: React.FC<StationsProps> = ({
                         </div>
                     </div>
                 </div>
+
+                {/* Loading Indicator */}
+                {(isLoading || isDeleting) && (
+                    <div className="loading-indicator">
+                        {isDeleting ? 'Deleting station...' : 'Loading...'}
+                    </div>
+                )}
 
                 {/* Table */}
                 <div className="stations-table-container">
@@ -230,15 +329,17 @@ const Stations: React.FC<StationsProps> = ({
                                                 </button>
                                                 <button
                                                     className="action-btn action-edit"
-                                                    onClick={() => onEditStation?.(station)}
+                                                    onClick={() => handleEditStation(station)}
                                                     title="Edit Station"
+                                                    disabled={isDeleting}
                                                 >
                                                     <Icon name="edit" size={14} />
                                                 </button>
                                                 <button
                                                     className="action-btn action-delete"
-                                                    onClick={() => onDeleteStation?.(station)}
+                                                    onClick={() => handleDeleteStation(station)}
                                                     title="Delete Station"
+                                                    disabled={isDeleting}
                                                 >
                                                     <Icon name="trash" size={14} />
                                                 </button>
@@ -276,9 +377,22 @@ const Stations: React.FC<StationsProps> = ({
             {/* Add Station Modal */}
             <AddStationModal
                 isOpen={isAddModalOpen}
-                onClose={handleCloseModal}
+                onClose={handleCloseAddModal}
                 onSave={handleSaveStation}
                 isLoading={isLoading}
+            />
+
+            {/* Edit Station Modal - Reuse AddStationModal with initial data */}
+            <AddStationModal
+                isOpen={isEditModalOpen}
+                onClose={handleCloseEditModal}
+                onSave={handleUpdateStation}
+                isLoading={isLoading}
+                initialData={editingStation ? {
+                    name: editingStation.name,
+                    enableBroadcasting: editingStation.broadcasting,
+                } : undefined}
+                title="Edit Station"
             />
         </div>
     );

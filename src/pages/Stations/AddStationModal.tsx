@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '../../components/common';
 import './AddStationModal.css';
@@ -27,11 +27,34 @@ interface StationFormData {
     enableStreamers: boolean;
 }
 
+// Default values for form data
+const defaultFormData: StationFormData = {
+    name: '',
+    description: '',
+    genre: '',
+    websiteUrl: '',
+    timezone: 'UTC',
+    urlStub: '',
+    visibleRecentSongs: 5,
+    customRecentSongs: 5,
+    enablePublicPages: true,
+    enableOnDemandStreaming: false,
+    enableBroadcasting: true,
+    enableAutoDJ: true,
+    enableHLS: false,
+    enableSongRequests: true,
+    enableStreamers: true,
+};
+
 interface AddStationModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (data: StationFormData) => void;
     isLoading?: boolean;
+    /** Initial data for editing a station */
+    initialData?: Partial<StationFormData>;
+    /** Custom title for the modal (default: 'Add Station') */
+    title?: string;
 }
 
 type TabId = 'profile' | 'broadcasting' | 'autodj' | 'hls' | 'song-requests' | 'streamers' | 'administration';
@@ -62,25 +85,22 @@ const AddStationModal: React.FC<AddStationModalProps> = ({
     onClose,
     onSave,
     isLoading = false,
+    initialData,
+    title = 'Add Station',
 }) => {
     const [activeTab, setActiveTab] = useState<TabId>('profile');
-    const [formData, setFormData] = useState<StationFormData>({
-        name: '',
-        description: '',
-        genre: '',
-        websiteUrl: '',
-        timezone: 'UTC',
-        urlStub: '',
-        visibleRecentSongs: 5,
-        customRecentSongs: 5,
-        enablePublicPages: true,
-        enableOnDemandStreaming: false,
-        enableBroadcasting: true,
-        enableAutoDJ: true,
-        enableHLS: false,
-        enableSongRequests: true,
-        enableStreamers: true,
-    });
+    const [formData, setFormData] = useState<StationFormData>({ ...defaultFormData });
+
+    // Reset form when modal opens/closes or initial data changes
+    useEffect(() => {
+        if (isOpen) {
+            setFormData({
+                ...defaultFormData,
+                ...initialData,
+            });
+            setActiveTab('profile');
+        }
+    }, [isOpen, initialData]);
 
     if (!isOpen) return null;
 
@@ -463,7 +483,7 @@ const AddStationModal: React.FC<AddStationModalProps> = ({
             <div className="modal-container" onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
                 <div className="modal-header">
-                    <h2 className="modal-title">Add Station</h2>
+                    <h2 className="modal-title">{title}</h2>
                     <button className="modal-close-btn" onClick={onClose} disabled={isLoading}>
                         <Icon name="close" size={20} />
                     </button>

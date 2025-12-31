@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Header, Sidebar, type MenuItem } from '../../components/layout';
 import { Stations } from '../Stations';
+import { StationManagement } from '../StationDashboard';
 import { UserProfileCard, StatsChart, DataTable, type Column } from '../../components/dashboard';
 import { Badge, Button, Icon } from '../../components/common';
 import './Dashboard.css';
@@ -72,10 +73,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [activeMenuItem, setActiveMenuItem] = useState('dashboard');
+    const [managingStationId, setManagingStationId] = useState<number | null>(null);
 
     const handleMenuItemClick = (item: MenuItem) => {
         setActiveMenuItem(item.id);
         setSidebarOpen(false);
+        // Clear managing station when navigating away
+        setManagingStationId(null);
+    };
+
+    const handleManageStation = (station: { id: number }) => {
+        setManagingStationId(station.id);
+    };
+
+    const handleBackToStations = () => {
+        setManagingStationId(null);
     };
 
     // Station table columns - matching AzuraCast design
@@ -132,6 +144,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         },
     ];
 
+    // If managing a station, show the StationManagement view
+    if (managingStationId !== null) {
+        return (
+            <StationManagement
+                stationId={managingStationId}
+                onBack={handleBackToStations}
+            />
+        );
+    }
+
     return (
         <div className={`dashboard-layout ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
             <Header
@@ -153,7 +175,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
             <main className="dashboard-main">
                 {activeMenuItem === 'stations' ? (
-                    <Stations />
+                    <Stations onManageStation={handleManageStation} />
                 ) : (
                     <div className="dashboard-content">
                         {/* User Profile Card */}
@@ -200,3 +222,4 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 };
 
 export default Dashboard;
+

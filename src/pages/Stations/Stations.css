@@ -343,6 +343,36 @@
     gap: 8px;
 }
 
+/* Loading Indicator */
+.loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background-color: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    color: #1565c0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Disabled Action Buttons */
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-btn:disabled:hover {
+    background-color: inherit;
+}
+
+.refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .stations-toolbar {

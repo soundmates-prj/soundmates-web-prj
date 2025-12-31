@@ -68,7 +68,16 @@ export type IconName =
     | 'broadcast'
     | 'server'
     | 'tool'
-    | 'globe';
+    | 'globe'
+    | 'warning'
+    | 'code'
+    | 'file-text'
+    | 'upload'
+    | 'folder'
+    | 'filter'
+    | 'trash'
+    | 'headphones'
+    | 'playlist';
 
 interface IconProps {
     name: IconName;
@@ -146,6 +155,9 @@ const iconPaths: Record<IconName, string> = {
     server: 'M2 6a2 2 0 012-2h16a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm0 12a2 2 0 012-2h16a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z',
     tool: 'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z',
     globe: 'M12 2a10 10 0 1010 10A10 10 0 0012 2zm0 2a8 8 0 017.49 5H4.51A8.003 8.003 0 0112 4zm0 16a8 8 0 01-7.49-5h14.98A8 8 0 0112 20zm8-7H4v-2h16v2z',
+    warning: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+    code: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
+    'file-text': 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 3l5 5h-5V3zM8 13h8m-8 4h8m-8-8h4',
 };
 
 const Icon: React.FC<IconProps> = ({ name, size = 24, color = 'currentColor', className = '' }) => {
