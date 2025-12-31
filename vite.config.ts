@@ -9,7 +9,7 @@ export default defineConfig({
     proxy: {
       // Proxy API requests to AzuraCast backend
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         cookieDomainRewrite: 'localhost',
@@ -29,7 +29,7 @@ export default defineConfig({
       },
       // Proxy setup endpoints
       '/setup': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         cookieDomainRewrite: 'localhost',
@@ -47,7 +47,7 @@ export default defineConfig({
       },
       // Proxy authentication endpoints
       '/login': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         cookieDomainRewrite: 'localhost',
@@ -64,7 +64,7 @@ export default defineConfig({
         },
       },
       '/logout': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },
