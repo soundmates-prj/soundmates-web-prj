@@ -274,7 +274,7 @@ const StationOverview: React.FC<StationOverviewProps> = ({
                     )}
 
                     {/* Streamers/DJs Panel */}
-                    {dashboardData.features.streamers && (
+                    {/* {dashboardData.features.streamers && (
                         <div className="panel panel-feature">
                             <div className="panel-header">
                                 <h3>Streamers/DJs</h3>
@@ -298,10 +298,10 @@ const StationOverview: React.FC<StationOverviewProps> = ({
                                 )}
                             </div>
                         </div>
-                    )}
+                    )} */}
 
                     {/* On-Demand Panel */}
-                    {dashboardData.features.media && (
+                    {/* {dashboardData.features.media && (
                         <div className="panel panel-feature">
                             <div className="panel-header">
                                 <h3>On-Demand Media</h3>
@@ -325,10 +325,10 @@ const StationOverview: React.FC<StationOverviewProps> = ({
                                 )}
                             </div>
                         </div>
-                    )}
+                    )} */}
 
                     {/* Broadcasting Service Panel */}
-                    <div className="panel panel-service">
+                    {/* <div className="panel panel-service">
                         <div className="panel-header service-header">
                             <div>
                                 <h3>Broadcasting Service</h3>
@@ -340,10 +340,10 @@ const StationOverview: React.FC<StationOverviewProps> = ({
                                 {serviceStatus.frontendRunning ? 'Running' : 'Not Running'}
                             </span>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* AutoDJ Service Panel */}
-                    <div className="panel panel-service">
+                    {/* <div className="panel panel-service">
                         <div className="panel-header service-header">
                             <div>
                                 <h3>AutoDJ Service</h3>
@@ -355,7 +355,7 @@ const StationOverview: React.FC<StationOverviewProps> = ({
                                 {serviceStatus.backendRunning ? 'Running' : 'Not Running'}
                             </span>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </div>

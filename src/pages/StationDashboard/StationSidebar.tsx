@@ -55,49 +55,49 @@ interface StationSidebarProps {
 
 const menuItems: MenuItem[] = [
     { id: 'overview', label: 'Overview', icon: 'dashboard' },
-    { id: 'settings', label: 'Edit Station Settings', icon: 'settings' },
-    { id: 'public-pages', label: 'Public Pages', icon: 'globe' },
+    // { id: 'settings', label: 'Edit Station Settings', icon: 'settings' },
+    // { id: 'public-pages', label: 'Public Pages', icon: 'globe' },
     {
         id: 'media',
         label: 'Media',
         icon: 'music',
         children: [
             { id: 'media-files', label: 'Music Files' },
-            { id: 'media-duplicates', label: 'Duplicate Songs' },
-            { id: 'media-unprocessable', label: 'Unprocessable Files' },
-            { id: 'media-unassigned', label: 'Unassigned Files' },
-            { id: 'media-sftp', label: 'SFTP Users' },
-            { id: 'media-bulk', label: 'Bulk Media Import/Export' },
+            // { id: 'media-duplicates', label: 'Duplicate Songs' },
+            // { id: 'media-unprocessable', label: 'Unprocessable Files' },
+            // { id: 'media-unassigned', label: 'Unassigned Files' },
+            // { id: 'media-sftp', label: 'SFTP Users' },
+            // { id: 'media-bulk', label: 'Bulk Media Import/Export' },
         ]
     },
     { id: 'playlists', label: 'Playlists', icon: 'playlist' },
-    { id: 'podcasts', label: 'Podcasts', icon: 'microphone' },
-    { id: 'webhooks', label: 'Web Hooks', icon: 'code' },
-    {
-        id: 'reports',
-        label: 'Reports',
-        icon: 'chart',
-        children: [
-            { id: 'reports-overview', label: 'Station Statistics' },
-            { id: 'reports-listeners', label: 'Listeners' },
-            { id: 'reports-requests', label: 'Song Requests' },
-            { id: 'reports-timeline', label: 'Song Playback Timeline' },
-        ]
-    },
+    // { id: 'podcasts', label: 'Podcasts', icon: 'microphone' },
+    // { id: 'webhooks', label: 'Web Hooks', icon: 'code' },
+    // {
+    //     id: 'reports',
+    //     label: 'Reports',
+    //     icon: 'chart',
+    //     children: [
+    //         { id: 'reports-overview', label: 'Station Statistics' },
+    //         { id: 'reports-listeners', label: 'Listeners' },
+    //         { id: 'reports-requests', label: 'Song Requests' },
+    //         { id: 'reports-timeline', label: 'Song Playback Timeline' },
+    //     ]
+    // },
     {
         id: 'broadcasting',
         label: 'Broadcasting',
         icon: 'radio',
         children: [
-            { id: 'broadcasting-mounts', label: 'Mount Points' },
-            { id: 'broadcasting-hls', label: 'HLS Streams' },
-            { id: 'broadcasting-remotes', label: 'Remote Relays' },
-            { id: 'broadcasting-fallback', label: 'Custom Fallback File' },
-            { id: 'broadcasting-queue', label: 'Upcoming Song Queue' },
+            // { id: 'broadcasting-mounts', label: 'Mount Points' },
+            // { id: 'broadcasting-hls', label: 'HLS Streams' },
+            // { id: 'broadcasting-remotes', label: 'Remote Relays' },
+            // { id: 'broadcasting-fallback', label: 'Custom Fallback File' },
+            // { id: 'broadcasting-queue', label: 'Upcoming Song Queue' },
             { id: 'broadcasting-restart', label: 'Restart Broadcasting' },
         ]
     },
-    { id: 'logs', label: 'Logs', icon: 'file-text' as IconName },
+    // { id: 'logs', label: 'Logs', icon: 'file-text' as IconName },
 ];
 
 const StationSidebar: React.FC<StationSidebarProps> = ({
