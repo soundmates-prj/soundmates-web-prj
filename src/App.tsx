@@ -94,7 +94,8 @@ function AppContent() {
     localStorage.setItem('azuracast_user_registered', 'true')
     localStorage.setItem('azuracast_admin_email', email)
     localStorage.setItem('azuracast_is_logged_in', 'true')
-    navigate('/setup/station')
+    localStorage.setItem('azuracast_setup_completed', 'true')
+    navigate('/setup/token')
   }
 
   const handleStationComplete = () => {
@@ -135,7 +136,7 @@ function AppContent() {
     }
     localStorage.removeItem('azuracast_is_logged_in')
     api.setToken(null);
-    navigate('/login')
+    navigate('/setup/token')
   }
 
   if (isLoading) {
@@ -151,9 +152,9 @@ function AppContent() {
     <Routes>
       {/* Setup Routes */}
       <Route path="/setup" element={<FirstTimeSetup onComplete={handleRegistrationComplete} />} />
-      <Route path="/setup/station" element={
+      {/* <Route path="/setup/station" element={
         <StationSetup onComplete={handleStationComplete} onBack={handleBackToRegister} />
-      } />
+      } /> */}
       <Route path="/setup/token" element={
         <TokenSetup onComplete={handleTokenComplete} onSkip={handleTokenSkip} />
       } />
@@ -163,38 +164,38 @@ function AppContent() {
 
       {/* Dashboard Routes */}
       <Route path="/dashboard" element={
-        <AuthGuard>
+        // <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        </AuthGuard>
+        // </AuthGuard>
       } />
       <Route path="/dashboard/:section" element={
-        <AuthGuard>
+        // <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        </AuthGuard>
+        // </AuthGuard>
       } />
 
       {/* Station Management Routes */}
       <Route path="/station/:stationId" element={
-        <AuthGuard>
+        // <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        </AuthGuard>
+        // </AuthGuard>
       } />
       <Route path="/station/:stationId/:page" element={
-        <AuthGuard>
+        // <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        </AuthGuard>
+        // </AuthGuard>
       } />
       <Route path="/station/:stationId/:page/:subpage" element={
-        <AuthGuard>
+        // <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        </AuthGuard>
+        // </AuthGuard>
       } />
 
       {/* Stations List */}
       <Route path="/stations" element={
-        <AuthGuard>
+        // <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        </AuthGuard>
+        // </AuthGuard>
       } />
 
       {/* Default redirect */}

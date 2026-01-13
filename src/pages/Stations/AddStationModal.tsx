@@ -140,7 +140,7 @@ const AddStationModal: React.FC<AddStationModalProps> = ({
             </div>
 
             {/* Genre & Website URL */}
-            <div className="form-row">
+            {/* <div className="form-row">
                 <div className="form-group">
                     <label className="form-label">Genre</label>
                     <input
@@ -165,10 +165,10 @@ const AddStationModal: React.FC<AddStationModalProps> = ({
                         Note: This should be the public-facing homepage of the radio station, not the AzuraCast URL. It will be included in broadcast details.
                     </span>
                 </div>
-            </div>
+            </div> */}
 
             {/* Time Zone & Visible Recent Songs */}
-            <div className="form-row">
+            {/* <div className="form-row">
                 <div className="form-group">
                     <label className="form-label">Time Zone</label>
                     <select
@@ -258,10 +258,10 @@ const AddStationModal: React.FC<AddStationModalProps> = ({
                         Customize the number of songs that will appear in the "Song History" section for this station and in all public APIs.
                     </span>
                 </div>
-            </div>
+            </div> */}
 
             {/* URL Stub */}
-            <div className="form-group">
+            {/* <div className="form-group">
                 <label className="form-label">
                     URL Stub
                     <span className="badge-advanced">Advanced</span>
@@ -275,7 +275,7 @@ const AddStationModal: React.FC<AddStationModalProps> = ({
                 <span className="form-hint">
                     Optionally specify a short URL-friendly name, such as "my_station_name", that will be used in this station's URLs. Leave this field blank to automatically create one based on the station name.
                 </span>
-            </div>
+            </div> */}
 
             {/* Public Pages */}
             <div className="form-section">
@@ -490,7 +490,7 @@ const AddStationModal: React.FC<AddStationModalProps> = ({
                 </div>
 
                 {/* Tabs */}
-                <div className="modal-tabs">
+                {/* <div className="modal-tabs">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
@@ -501,7 +501,7 @@ const AddStationModal: React.FC<AddStationModalProps> = ({
                             {tab.label}
                         </button>
                     ))}
-                </div>
+                </div> */}
 
                 {/* Content */}
                 <div className="modal-body">
