@@ -325,7 +325,7 @@ const Stations: React.FC<StationsProps> = ({
                                                     onClick={() => onManageStation?.(station)}
                                                     title="Manage Station"
                                                 >
-                                                    <Icon name="settings" size={14} />
+                                                    Manage
                                                 </button>
                                                 <button
                                                     className="action-btn action-edit"
@@ -333,7 +333,7 @@ const Stations: React.FC<StationsProps> = ({
                                                     title="Edit Station"
                                                     disabled={isDeleting}
                                                 >
-                                                    <Icon name="edit" size={14} />
+                                                    Edit
                                                 </button>
                                                 <button
                                                     className="action-btn action-delete"
@@ -341,7 +341,7 @@ const Stations: React.FC<StationsProps> = ({
                                                     title="Delete Station"
                                                     disabled={isDeleting}
                                                 >
-                                                    <Icon name="trash" size={14} />
+                                                    Delete
                                                 </button>
                                             </div>
                                         </td>
