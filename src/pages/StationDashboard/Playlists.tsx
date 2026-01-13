@@ -154,7 +154,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ stationId, timezone = 'UTC' }) =>
             </div>
 
             {/* Tabs */}
-            <div className="playlists-tabs">
+            {/* <div className="playlists-tabs">
                 <button
                     className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
                     onClick={() => setActiveTab('all')}
@@ -167,7 +167,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ stationId, timezone = 'UTC' }) =>
                 >
                     Schedule View
                 </button>
-            </div>
+            </div> */}
 
             {activeTab === 'all' ? (
                 <>

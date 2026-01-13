@@ -112,7 +112,7 @@ const AddPlaylistModal: React.FC<AddPlaylistModalProps> = ({ stationId, onClose,
                 </div>
 
                 {/* Tabs */}
-                <div className="modal-tabs">
+                {/* <div className="modal-tabs">
                     <button
                         className={`modal-tab ${activeTab === 'basic' ? 'active' : ''}`}
                         onClick={() => setActiveTab('basic')}
@@ -131,7 +131,7 @@ const AddPlaylistModal: React.FC<AddPlaylistModalProps> = ({ stationId, onClose,
                     >
                         Advanced
                     </button>
-                </div>
+                </div> */}
 
                 {/* Content */}
                 <form onSubmit={handleSubmit}>
@@ -183,7 +183,7 @@ const AddPlaylistModal: React.FC<AddPlaylistModalProps> = ({ stationId, onClose,
                                 </div>
 
                                 {/* Source */}
-                                <div className="form-group">
+                                {/* <div className="form-group">
                                     <label>Source</label>
                                     <div className="radio-group">
                                         <label className="radio-option">
@@ -213,10 +213,10 @@ const AddPlaylistModal: React.FC<AddPlaylistModalProps> = ({ stationId, onClose,
                                             </div>
                                         </label>
                                     </div>
-                                </div>
+                                </div> */}
 
                                 {/* Song-Based Playlist Options */}
-                                {formData.source === 'songs' && (
+                                {/* {formData.source === 'songs' && (
                                     <div className="section-box">
                                         <div className="section-header">Song-Based Playlist</div>
                                         <div className="section-content">
@@ -280,10 +280,10 @@ const AddPlaylistModal: React.FC<AddPlaylistModalProps> = ({ stationId, onClose,
                                             </div>
                                         </div>
                                     </div>
-                                )}
+                                )} */}
 
                                 {/* Playlist Type */}
-                                <div className="form-row two-columns">
+                                {/* <div className="form-row two-columns">
                                     <div className="form-group">
                                         <label>Playlist Type</label>
                                         <div className="radio-group vertical">
@@ -400,10 +400,10 @@ const AddPlaylistModal: React.FC<AddPlaylistModalProps> = ({ stationId, onClose,
                                             </label>
                                         </div>
                                     </div>
-                                </div>
+                                </div> */}
 
                                 {/* General Rotation Weight */}
-                                {formData.type === 'default' && (
+                                {/* {formData.type === 'default' && (
                                     <div className="section-box light">
                                         <div className="section-header-light">General Rotation</div>
                                         <div className="form-group">
@@ -423,7 +423,7 @@ const AddPlaylistModal: React.FC<AddPlaylistModalProps> = ({ stationId, onClose,
                                             </p>
                                         </div>
                                     </div>
-                                )}
+                                )} */}
                             </div>
                         )}
 
