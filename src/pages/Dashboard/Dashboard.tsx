@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header, Sidebar, type MenuItem } from '../../components/layout';
+import { Stations } from '../Stations';
+import { StationManagement } from '../StationDashboard';
 import { UserProfileCard, StatsChart, DataTable, type Column } from '../../components/dashboard';
 import { Badge, Button, Icon } from '../../components/common';
 import './Dashboard.css';
@@ -63,14 +66,57 @@ const stationsData: Station[] = [
     },
 ];
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+    onLogout: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { stationId, page, subpage, section } = useParams<{
+        stationId?: string;
+        page?: string;
+        subpage?: string;
+        section?: string;
+    }>();
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [activeMenuItem, setActiveMenuItem] = useState('dashboard');
+
+    // Determine active menu item from URL
+    const getActiveMenuItem = () => {
+        if (stationId) return 'stations';
+        if (location.pathname.includes('/stations')) return 'stations';
+        if (section) return section;
+        return 'dashboard';
+    };
+
+    const [activeMenuItem, setActiveMenuItem] = useState(getActiveMenuItem());
+
+    // Update active menu item when URL changes
+    useEffect(() => {
+        setActiveMenuItem(getActiveMenuItem());
+    }, [location.pathname, stationId, section]);
 
     const handleMenuItemClick = (item: MenuItem) => {
         setActiveMenuItem(item.id);
         setSidebarOpen(false);
+        // Navigate to the appropriate route
+        if (item.id === 'stations') {
+            navigate('/stations');
+        } else if (item.id === 'dashboard') {
+            navigate('/dashboard');
+        } else {
+            navigate(`/dashboard/${item.id}`);
+        }
+    };
+
+    const handleManageStation = (station: { id: number }) => {
+        navigate(`/station/${station.id}/overview`);
+    };
+
+    const handleBackToStations = () => {
+        navigate('/stations');
     };
 
     // Station table columns - matching AzuraCast design
@@ -127,13 +173,25 @@ const Dashboard: React.FC = () => {
         },
     ];
 
+    // If viewing a station (from URL), show the StationManagement view
+    if (stationId) {
+        return (
+            <StationManagement
+                stationId={parseInt(stationId, 10)}
+                onBack={handleBackToStations}
+                initialPage={page}
+                initialSubpage={subpage}
+            />
+        );
+    }
+
     return (
         <div className={`dashboard-layout ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
             <Header
                 username="AzuraCast Demo User"
                 email="demo@azuracast.com"
                 onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-                onLogout={() => console.log('Logout')}
+                onLogout={onLogout}
                 onProfileClick={() => console.log('Profile')}
             />
 
@@ -147,47 +205,52 @@ const Dashboard: React.FC = () => {
             />
 
             <main className="dashboard-main">
-                <div className="dashboard-content">
-                    {/* User Profile Card */}
-                    <UserProfileCard
-                        name="AzuraCast Demo User"
-                        email="demo@azuracast.com"
-                        role="Demo Account"
-                        onMyAccountClick={() => console.log('My Account')}
-                    />
+                {activeMenuItem === 'stations' ? (
+                    <Stations onManageStation={handleManageStation} />
+                ) : (
+                    <div className="dashboard-content">
+                        {/* User Profile Card */}
+                        <UserProfileCard
+                            name="AzuraCast Demo User"
+                            email="demo@azuracast.com"
+                            role="Demo Account"
+                            onMyAccountClick={() => console.log('My Account')}
+                        />
 
-                    {/* Listeners Chart */}
-                    <StatsChart
-                        title="Listeners Per Station"
-                        datasets={[
-                            {
-                                name: 'AzuraTest Radio',
-                                data: listenerData.averageListeners,
-                                color: '#0d6efd'
-                            },
-                            {
-                                name: 'Unique Listeners',
-                                data: listenerData.uniqueListeners,
-                                color: '#0d6efd'
-                            },
-                        ]}
-                        tabs={['Average Listeners', 'Unique Listeners']}
-                        height={280}
-                    />
+                        {/* Listeners Chart */}
+                        <StatsChart
+                            title="Listeners Per Station"
+                            datasets={[
+                                {
+                                    name: 'AzuraTest Radio',
+                                    data: listenerData.averageListeners,
+                                    color: '#0d6efd'
+                                },
+                                {
+                                    name: 'Unique Listeners',
+                                    data: listenerData.uniqueListeners,
+                                    color: '#0d6efd'
+                                },
+                            ]}
+                            tabs={['Average Listeners', 'Unique Listeners']}
+                            height={280}
+                        />
 
-                    {/* Station Overview Table */}
-                    <DataTable
-                        title="Station Overview"
-                        columns={columns}
-                        data={stationsData}
-                        idKey="id"
-                        searchPlaceholder="Search"
-                        onRefresh={() => console.log('Refresh')}
-                    />
-                </div>
+                        {/* Station Overview Table */}
+                        <DataTable
+                            title="Station Overview"
+                            columns={columns}
+                            data={stationsData}
+                            idKey="id"
+                            searchPlaceholder="Search"
+                            onRefresh={() => console.log('Refresh')}
+                        />
+                    </div>
+                )}
             </main>
         </div>
     );
 };
 
 export default Dashboard;
+
