@@ -1,204 +1,398 @@
-/* Login Page Layout */
+/* Login Container - Web App Design */
 .login-container {
     position: relative;
     min-height: 100vh;
-    width: 100%;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    overflow: hidden;
+    max-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding: 2rem;
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    background: #FAFAFA;
 }
 
-/* Background Mascot */
-.mascot-container {
+/* Back Button */
+.btn-back {
     position: absolute;
-    left: 5%;
-    bottom: 0;
-    width: 50%;
-    height: 90%;
-    z-index: 0;
-    pointer-events: none;
+    top: 2rem;
+    left: 2rem;
+    z-index: 100;
+    background: #004395;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(0, 67, 149, 0.3);
 }
 
-.mascot-image {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+.btn-back:hover {
+    background: #003577;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 67, 149, 0.4);
 }
 
-/* Login Form Container */
-.login-form-container {
+.login-box {
     position: relative;
     z-index: 10;
+    display: flex;
     width: 100%;
-    max-width: 400px;
-    padding: 20px;
+    max-width: 950px;
+    max-height: 90vh;
+    background: #FAFAFA;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
-/* Login Card */
-.login-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05);
-    padding: 30px;
-    border-top: 4px solid #fff;
-    /* Optional colored top border like styling */
+/* Left Side - Branding */
+.login-left {
+    flex: 1;
+    background: #004395;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    color: white;
 }
 
-.login-title {
-    font-size: 20px;
-    font-weight: 400;
-    color: #444;
+.logo-section {
     text-align: center;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
 }
 
-/* Alert Styling */
-.login-alert {
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 12px 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
+.logo-image {
+    width: 150px;
+    height: auto;
+    margin-bottom: 1.5rem;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+}
+
+.brand-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0 0 0.8rem 0;
+    color: white;
+}
+
+.brand-tagline {
+    font-size: 1rem;
+    opacity: 0.95;
+    margin: 0;
+    color: white;
+}
+
+/* Right Side - Form */
+.login-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    background: #FAFAFA;
+    overflow-y: auto;
+    max-height: 90vh;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 380px;
+}
+
+.form-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #004395;
+    margin: 0 0 0.4rem 0;
+}
+
+.form-subtitle {
+    font-size: 0.95rem;
+    color: #2270ce;
+    margin: 0 0 1.8rem 0;
+}
+
+.error-message {
+    position: relative;
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 8px;
+    padding: 12px 40px 12px 16px;
+    color: #1976d2;
     font-size: 14px;
-    border: 1px solid #f5c6cb;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.success-message {
+    position: relative;
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 8px;
+    padding: 12px 40px 12px 16px;
+    color: #1976d2;
+    font-size: 14px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    animation: slideDown 0.3s ease;
+}
+
+.close-message-btn {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #1976d2;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.close-message-btn:hover {
+    background: rgba(25, 118, 210, 0.1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Form Groups */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 1.2rem;
 }
 
 .form-label {
     display: block;
-    margin-bottom: 8px;
     font-size: 13px;
     font-weight: 600;
     color: #333;
+    margin-bottom: 0.4rem;
+}
+
+.input-wrapper {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 6px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    background: white;
+    transition: all 0.3s;
+    cursor: text;
 }
 
-.form-label i {
-    font-size: 16px;
-    color: #555;
-    /* Requires material icons or fallback */
-    font-style: normal;
+.input-wrapper:focus-within {
+    border-color: #004395;
+    box-shadow: 0 0 0 3px rgba(0, 67, 149, 0.1);
 }
 
-.form-input {
+.input-icon {
+    position: absolute;
+    left: 14px;
+    color: #999;
+    pointer-events: none;
+}
+
+.input-field {
+    flex: 1;
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
+    border: none;
+    outline: none;
+    padding: 12px 12px 12px 40px;
     font-size: 14px;
-    color: #495057;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    color: #333;
+    background: transparent;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    cursor: text;
 }
 
-.form-input:focus {
-    border-color: #2196F3;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
+.input-field::placeholder {
+    color: #aaa;
 }
 
-/* Checkbox */
-.form-check {
-    margin-bottom: 20px;
-}
-
-.checkbox-label {
+/* Form Actions */
+.form-actions {
     display: flex;
-    align-items: center;
-    font-size: 14px;
-    color: #555;
-    cursor: pointer;
+    justify-content: flex-end;
+    margin-bottom: 1.2rem;
 }
 
-.checkbox-label input {
-    margin-right: 8px;
-}
-
-/* Buttons */
-.btn-submit {
-    display: block;
-    width: 100%;
-    padding: 10px;
+.forgot-link {
+    color: #004395;
     font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #fff;
-    background-color: #2196F3;
-    /* AzuraCast Blue */
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-    margin-bottom: 10px;
-}
-
-.btn-submit:hover:not(:disabled) {
-    background-color: #0b7dda;
-}
-
-.btn-submit:disabled {
-    background-color: #8dcafc;
-    cursor: not-allowed;
-}
-
-.btn-passkey {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #fff;
-    background-color: #6c757d;
-    /* Grey */
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-}
-
-.btn-passkey:hover {
-    background-color: #5a6268;
-}
-
-/* Footer */
-.login-footer {
-    margin-top: 25px;
-    text-align: center;
-    font-size: 13px;
-    color: #666;
-}
-
-.login-footer a {
-    color: #2196F3;
     text-decoration: none;
+    font-weight: 500;
 }
 
-.login-footer a:hover {
+.forgot-link:hover {
     text-decoration: underline;
 }
 
-/* Responsive adjustments */
+/* Login Button */
+.btn-login {
+    width: 100%;
+    background: #004395;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 1.2rem;
+}
+
+.btn-login:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: #003577;
+    box-shadow: 0 10px 25px rgba(0, 67, 149, 0.4);
+}
+
+.btn-login:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.2rem 0;
+}
+
+.divider-line {
+    flex: 1;
+    height: 1px;
+    background: #ddd;
+}
+
+.divider-text {
+    color: #999;
+    font-size: 13px;
+}
+
+/* Social Login */
+.social-login {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.social-btn {
+    width: 50px;
+    height: 50px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    background: #FAFAFA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.social-btn:hover {
+    border-color: #004395;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Register Section */
+.register-section {
+    text-align: center;
+    padding-top: 1.2rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.register-text {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+.register-link {
+    color: #004395;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.register-link:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-    .mascot-container {
-        opacity: 0.1;
-        /* Fade out mascot on small screens or move it */
-        width: 100%;
-        left: 0;
-        justify-content: center;
+    .login-box {
+        flex-direction: column;
+        max-width: 500px;
+    }
+    
+    .login-left {
+        padding: 2rem;
+        min-height: 250px;
+    }
+    
+    .logo-image {
+        width: 120px;
+    }
+    
+    .brand-title {
+        font-size: 2rem;
+    }
+    
+    .login-right {
+        padding: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 1rem;
+    }
+    
+    .login-left {
+        padding: 1.5rem;
+        min-height: 200px;
+    }
+    
+    .logo-image {
+        width: 100px;
+    }
+    
+    .brand-title {
+        font-size: 1.5rem;
+    }
+    
+    .brand-tagline {
+        font-size: 0.95rem;
+    }
+    
+    .login-right {
+        padding: 1.5rem;
+    }
+    
+    .form-title {
+        font-size: 1.5rem;
     }
 }
