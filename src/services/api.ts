@@ -49,6 +49,47 @@ export interface LoginResponse {
     requires2FA?: boolean;
 }
 
+// New Auth API Types
+export interface NewLoginRequest {
+    emailOrUsername: string;
+    password: string;
+}
+
+export interface NewLoginResponse {
+    success: boolean;
+    message: string;
+    data: {
+        id: string;
+        username: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        roleId: string;
+        roleName: string;
+        password: null;
+        token: string;
+        refreshToken: string;
+        isActive: boolean;
+        createdAt: string;
+        updatedAt: string | null;
+    } | null;
+    errorCode: number | null;
+}
+
+export interface RefreshTokenRequest {
+    refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+    success: boolean;
+    message: string;
+    data: {
+        token: string;
+        refreshToken: string;
+    } | null;
+    errorCode: number | null;
+}
+
 export interface SystemStatusResponse {
     setupComplete: boolean;
     numUsers: number;
@@ -526,6 +567,66 @@ class ApiClient {
         return {
             success: true,
         };
+    }
+
+    // New Authentication API
+    async newLogin(data: NewLoginRequest): Promise<NewLoginResponse> {
+        try {
+            const response = await fetch(`${this.baseUrl}/api/v1/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(data),
+                credentials: 'include',
+            });
+
+            const result: NewLoginResponse = await response.json();
+
+            if (result.success && result.data) {
+                // Store token and refresh token
+                this.setToken(result.data.token);
+                localStorage.setItem('azuracast_refresh_token', result.data.refreshToken);
+                localStorage.setItem('azuracast_user_data', JSON.stringify(result.data));
+            }
+
+            return result;
+        } catch (error) {
+            throw {
+                message: 'Network error. Please check your connection.',
+                type: 'network',
+            } as ApiError;
+        }
+    }
+
+    async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
+        try {
+            const response = await fetch(`${this.baseUrl}/api/v1/auth/refresh-token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ refreshToken }),
+                credentials: 'include',
+            });
+
+            const result: RefreshTokenResponse = await response.json();
+
+            if (result.success && result.data) {
+                // Update tokens
+                this.setToken(result.data.token);
+                localStorage.setItem('azuracast_refresh_token', result.data.refreshToken);
+            }
+
+            return result;
+        } catch (error) {
+            throw {
+                message: 'Network error. Please check your connection.',
+                type: 'network',
+            } as ApiError;
+        }
     }
 
     async logout(): Promise<void> {

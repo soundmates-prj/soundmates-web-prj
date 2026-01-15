@@ -2,29 +2,16 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import './index.css'
 import { Dashboard } from './pages/Dashboard'
-import { FirstTimeSetup, StationSetup, Login, TokenSetup } from './pages/Auth'
+import { Login } from './pages/Auth'
+import { Home } from './pages/Home'
 import { api } from './services/api'
 
 // Auth Guard Component
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const setupCompleted = localStorage.getItem('azuracast_setup_completed')
   const isLoggedIn = localStorage.getItem('azuracast_is_logged_in')
-  const hasToken = localStorage.getItem('azuracast_api_token')
-
-  if (setupCompleted !== 'true') {
-    const userRegistered = localStorage.getItem('azuracast_user_registered')
-    if (userRegistered === 'true') {
-      return <Navigate to="/setup/station" replace />
-    }
-    return <Navigate to="/setup" replace />
-  }
 
   if (isLoggedIn !== 'true') {
     return <Navigate to="/login" replace />
-  }
-
-  if (!hasToken) {
-    return <Navigate to="/setup/token" replace />
   }
 
   return <>{children}</>
@@ -42,13 +29,11 @@ function AppContent() {
     if (initialCheckDone) return;
 
     const checkSetupStatus = () => {
-      const setupCompleted = localStorage.getItem('azuracast_setup_completed')
       const isLoggedIn = localStorage.getItem('azuracast_is_logged_in')
-      const hasToken = localStorage.getItem('azuracast_api_token')
 
       // If on a valid route, don't redirect
       const currentPath = location.pathname
-      const validPaths = ['/setup', '/setup/station', '/setup/token', '/login', '/dashboard', '/stations']
+      const validPaths = ['/login', '/home', '/dashboard', '/stations', '/register', '/forgot-password']
 
       // Check if current path matches any valid path or starts with /station/
       const isValidPath = validPaths.some(p => currentPath.startsWith(p)) || currentPath.startsWith('/station/')
@@ -59,30 +44,8 @@ function AppContent() {
         return
       }
 
-      // Redirect based on status
-      if (setupCompleted === 'true') {
-        if (isLoggedIn === 'true') {
-          if (hasToken) {
-            navigate('/dashboard', { replace: true })
-          } else {
-            navigate('/setup/token', { replace: true })
-          }
-        } else {
-          navigate('/login', { replace: true })
-        }
-      } else {
-        const stationCreated = localStorage.getItem('azuracast_station_created')
-        if (stationCreated === 'true') {
-          navigate('/dashboard', { replace: true })
-        } else {
-          const userRegistered = localStorage.getItem('azuracast_user_registered')
-          if (userRegistered === 'true') {
-            navigate('/setup/station', { replace: true })
-          } else {
-            navigate('/setup', { replace: true })
-          }
-        }
-      }
+      // Redirect default to home (public)
+      navigate('/home', { replace: true })
       setIsLoading(false)
       setInitialCheckDone(true)
     }
@@ -90,117 +53,68 @@ function AppContent() {
     checkSetupStatus()
   }, [navigate, location.pathname, initialCheckDone])
 
-  const handleRegistrationComplete = (email: string, _password: string) => {
-    localStorage.setItem('azuracast_user_registered', 'true')
-    localStorage.setItem('azuracast_admin_email', email)
-    localStorage.setItem('azuracast_is_logged_in', 'true')
-    localStorage.setItem('azuracast_setup_completed', 'true')
-    navigate('/setup/token')
-  }
-
-  const handleStationComplete = () => {
-    localStorage.setItem('azuracast_station_created', 'true')
-    localStorage.setItem('azuracast_setup_completed', 'true')
-    navigate('/setup/token')
-  }
-
-  const handleBackToRegister = () => {
-    localStorage.removeItem('azuracast_user_registered')
-    navigate('/setup')
-  }
-
-  const handleLoginSuccess = () => {
-    localStorage.setItem('azuracast_is_logged_in', 'true');
-    const hasToken = localStorage.getItem('azuracast_api_token');
-    if (hasToken) {
-      navigate('/dashboard');
-    } else {
-      navigate('/setup/token');
-    }
-  }
-
-  const handleTokenComplete = (token: string) => {
-    api.setToken(token);
-    navigate('/dashboard');
-  }
-
-  const handleTokenSkip = () => {
-    navigate('/dashboard');
-  }
-
   const handleLogout = async () => {
     try {
       await api.logout()
     } catch (e) {
       console.error('Logout error:', e)
     }
-    localStorage.removeItem('azuracast_is_logged_in')
-    api.setToken(null);
-    navigate('/setup/token')
+    localStorage.clear()
+    api.setToken(null)
+    navigate('/login')
   }
 
   if (isLoading) {
-    return (
-      <div className="app-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading SoundMates...</p>
-      </div>
-    )
+    return null
   }
 
   return (
     <Routes>
-      {/* Setup Routes */}
-      <Route path="/setup" element={<FirstTimeSetup onComplete={handleRegistrationComplete} />} />
-      {/* <Route path="/setup/station" element={
-        <StationSetup onComplete={handleStationComplete} onBack={handleBackToRegister} />
-      } /> */}
-      <Route path="/setup/token" element={
-        <TokenSetup onComplete={handleTokenComplete} onSkip={handleTokenSkip} />
-      } />
-
       {/* Auth Routes */}
-      <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+      <Route path="/login" element={<Login />} />
+
+      {/* Home Route (public) */}
+      <Route path="/home" element={<Home />} />
 
       {/* Dashboard Routes */}
       <Route path="/dashboard" element={
-        // <AuthGuard>
+        <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        // </AuthGuard>
+        </AuthGuard>
       } />
       <Route path="/dashboard/:section" element={
-        // <AuthGuard>
+        <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        // </AuthGuard>
+        </AuthGuard>
       } />
 
       {/* Station Management Routes */}
       <Route path="/station/:stationId" element={
-        // <AuthGuard>
+        <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        // </AuthGuard>
+        </AuthGuard>
       } />
       <Route path="/station/:stationId/:page" element={
-        // <AuthGuard>
+        <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        // </AuthGuard>
+        </AuthGuard>
       } />
       <Route path="/station/:stationId/:page/:subpage" element={
-        // <AuthGuard>
+        <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        // </AuthGuard>
+        </AuthGuard>
       } />
 
       {/* Stations List */}
       <Route path="/stations" element={
-        // <AuthGuard>
+        <AuthGuard>
           <Dashboard onLogout={handleLogout} />
-        // </AuthGuard>
+        </AuthGuard>
       } />
 
       {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/home" replace />} />
+      <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   )
 }
