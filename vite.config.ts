@@ -7,9 +7,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Proxy API requests to AzuraCast backend
+      // Proxy API requests to new backend
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
         cookieDomainRewrite: 'localhost',
