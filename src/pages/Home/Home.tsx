@@ -1,358 +1,382 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bell, Search, Home as HomeIcon, Radio, Play, Mic, ChevronLeft, ChevronRight, User, LogOut, FileText, Folder, X, Heart, MessageCircle, Send, Sparkles, Crown, Music, Mail } from 'lucide-react';
-import logo from '../../assets/light_logo.png';
+import React, { useState, useRef, useEffect } from 'react';
 import './Home.css';
+import Icon from '../../components/common/Icon';
 
-type PlaylistItem = { id: number; title: string; count: string; mood: string; color: string };
-type LiveSession = { id: number; title: string; host: string; listeners: number; isLive: boolean };
-type PodcastLetter = { id: number; title: string; author: string; mood: string; reactions: number };
+// Import images
+import heroIllustration from '../../assets/images/hero_illustration.png';
+import playlistCover1 from '../../assets/images/playlist_cover_1.png';
+import playlistCover2 from '../../assets/images/playlist_cover_2.png';
+import playlistCover3 from '../../assets/images/playlist_cover_3.png';
+import playlistCover4 from '../../assets/images/playlist_cover_4.png';
+import playlistCover5 from '../../assets/images/playlist_cover_5.png';
+import logoText from '../../assets/logo_text.png';
 
-export const Home: React.FC = () => {
-  const navigate = useNavigate();
-  const [userPlaylistIndex, setUserPlaylistIndex] = useState(0);
-  const [recommendedIndex, setRecommendedIndex] = useState(0);
-  const [showToast, setShowToast] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState('');
+// Mock data
+const playlists = [
+  { id: 1, title: 'Aethereal Flow', subtitle: 'Celestial Waves', image: playlistCover1 },
+  { id: 2, title: 'Skyward Serenade', subtitle: 'Celeste', image: playlistCover2 },
+  { id: 3, title: 'Purr-fect Beats', subtitle: 'Luna Paws', image: playlistCover3 },
+  { id: 4, title: 'Radio Waves', subtitle: 'The Vintage Sound', image: playlistCover4 },
+  { id: 5, title: 'Rainy Day Coffee', subtitle: 'Warmth & Wood', image: playlistCover5 },
+  { id: 6, title: 'Lofi Chill', subtitle: 'Relaxing Vibes', image: playlistCover2 },
+  { id: 7, title: 'Jazz Night', subtitle: 'Smooth Sessions', image: playlistCover1 },
+];
+
+const scheduleItems = [
+  { id: 1, time: '23:00', period: 'Đang phát', title: 'Đêm nhạc bolero học', host: '❤ Emily_vui', isLive: true },
+  { id: 2, time: '23:00', period: 'Sắp tới', title: 'KPOP Party Mix', host: '🎧 Minh', isLive: false },
+  { id: 3, time: '00:00', period: 'Sắp tới', title: 'Bùa biêng và em hát', host: '🎵 Luna_DJ', isLive: false },
+  { id: 4, time: '3:00', period: 'Sắp tới', title: 'Dawn Coffee', host: '☕ Lan_vy_ơi', isLive: false },
+  { id: 5, time: '21:00', period: 'Sắp tới', title: 'Late night Afterunon', host: '💫 Jacky_oi', isLive: false },
+];
+
+const forumPosts = [
+  {
+    id: 1,
+    author: 'Phan Minh',
+    badge: 'Premium',
+    avatar: 'https://i.pravatar.cc/100?img=1',
+    title: 'Playlist tổng hợp các bài nhạc chill cùng team music',
+    likes: 32,
+    comments: 24,
+    time: '10 phút'
+  },
+  {
+    id: 2,
+    author: 'Anh Tuấn Music',
+    badge: 'Artist',
+    avatar: 'https://i.pravatar.cc/100?img=2',
+    title: 'Các anh chị ơi mình cần chọn loại Tai nghe gì?',
+    likes: 56,
+    comments: 200,
+    time: '24 giờ'
+  },
+  {
+    id: 3,
+    author: 'Nhạc Việt DJ',
+    badge: 'VIP',
+    avatar: 'https://i.pravatar.cc/100?img=3',
+    title: 'lài số lùi của bản bọ không hiện lên loai ho, mọi người...',
+    likes: 128,
+    comments: 89,
+    time: '2 ngày'
+  },
+];
+
+const playlistTabs = ['Mới', 'Thịnh Hành', 'EDM', 'Acoustic', 'Nhạc', 'Bolê', 'Phim'];
+
+export default function Home() {
+  const [activeTab, setActiveTab] = useState('Mới');
+  const [isScrolled, setIsScrolled] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Check role and redirect if not MEMBER
-    const role = localStorage.getItem('azuracast_user_role');
-    const loggedIn = localStorage.getItem('azuracast_is_logged_in') === 'true';
-    const name = localStorage.getItem('azuracast_user_name') || 'User';
-    
-    setIsLoggedIn(loggedIn);
-    setUserName(name);
-    
-    if (loggedIn && role && role !== 'MEMBER') {
-      // Redirect STAFF, HOST, ADMIN to dashboard
-      if (role === 'STAFF' || role === 'HOST' || role === 'ADMIN') {
-        navigate('/dashboard');
-        return;
-      }
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollCarousel = (direction: 'prev' | 'next') => {
+    if (carouselRef.current) {
+      const scrollAmount = 400;
+      carouselRef.current.scrollBy({
+        left: direction === 'next' ? scrollAmount : -scrollAmount,
+        behavior: 'smooth'
+      });
     }
-
-    // Check for login success flag
-    const loginSuccess = localStorage.getItem('azuracast_login_success');
-    if (loginSuccess === 'true') {
-      setShowToast(true);
-      localStorage.removeItem('azuracast_login_success');
-      
-      // Hide toast after 3 seconds
-      setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
-    }
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.clear();
-    setIsLoggedIn(false);
-    setShowUserMenu(false);
-    navigate('/login');
-  };
-
-  const userPlaylists: PlaylistItem[] = [
-    { id: 1, title: 'Chill Vibes', count: '12 bài', mood: 'Thư giãn', color: '#B4A7D6' },
-    { id: 2, title: 'Lo-fi Night', count: '18 bài', mood: 'Tĩnh lặng', color: '#A8D5BA' },
-    { id: 3, title: 'Focus Beats', count: '9 bài', mood: 'Tập trung', color: '#FFD4A3' },
-    { id: 4, title: 'Acoustic Mood', count: '14 bài', mood: 'Nhẹ nhàng', color: '#FFB6C1' },
-  ];
-
-  const recommendedPlaylists: PlaylistItem[] = [
-    { id: 5, title: 'Healing Sounds', count: '20 bài', mood: 'Chữa lành', color: '#C5E1F5' },
-    { id: 6, title: 'Morning Energy', count: '15 bài', mood: 'Năng lượng', color: '#FFE4B5' },
-    { id: 7, title: 'Dreamy Synth', count: '11 bài', mood: 'Mơ mộng', color: '#E0BBE4' },
-    { id: 8, title: 'Late Night', count: '17 bài', mood: 'Đêm khuya', color: '#B4D7ED' },
-  ];
-
-  const liveSessions: LiveSession[] = [
-    { id: 1, title: 'Đêm nhạc chữa lành tâm hồn', host: 'DJ Mộng Mơ', listeners: 234, isLive: true },
-  ];
-
-  const podcastLetters: PodcastLetter[] = [
-    { id: 1, title: 'Gửi người tôi chưa gặp', author: 'Người ẩn danh', mood: 'Trầm lắng', reactions: 89 },
-    { id: 2, title: 'Những ngày không dám khóc', author: 'Tâm Tâm', mood: 'Buồn', reactions: 142 },
-    { id: 3, title: 'Yêu thương bản thân', author: 'Linh', mood: 'Tích cực', reactions: 203 },
-  ];
-
-  const userPlaylistMax = useMemo(() => Math.max(0, userPlaylists.length - 1), [userPlaylists.length]);
-  const recommendedMax = useMemo(() => Math.max(0, recommendedPlaylists.length - 1), [recommendedPlaylists.length]);
-
-  const goUserPlaylist = (dir: number) => {
-    setUserPlaylistIndex((prev) => {
-      const next = prev + dir;
-      if (next < 0) return userPlaylistMax;
-      if (next > userPlaylistMax) return 0;
-      return next;
-    });
-  };
-
-  const goRecommended = (dir: number) => {
-    setRecommendedIndex((prev) => {
-      const next = prev + dir;
-      if (next < 0) return recommendedMax;
-      if (next > recommendedMax) return 0;
-      return next;
-    });
   };
 
   return (
-    <div className="home-container">
-      {showToast && (
-        <div className="toast-notification">
-          Đăng nhập thành công!
-          <button 
-            className="toast-close-btn" 
-            onClick={() => setShowToast(false)}
-            aria-label="Close"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
-      <header className="home-topbar">
-        <div className="topbar-left">
-          <div className="app-logo">
-            <img src={logo} alt="Soundmate" className="logo-img" />
-            <span>SoundMates</span>
+    <div className="home-page">
+      {/* Header */}
+      <header className={`home-header ${isScrolled ? 'scrolled' : ''}`}>
+        <div className="header-container">
+          <div className="header-logo">
+            <img src={logoText} alt="SoundMates" />
           </div>
-          <div className="home-tab">
-            <HomeIcon size={18} />
-            <span>Trang Chủ</span>
-          </div>
-          <div className="home-tab">
-            <Radio size={18} />
-            <span>Phiên Trực Tiếp</span>
-          </div>
-        </div>
-        <nav className="topbar-right" aria-label="Top actions">
-          <button className="icon-btn" type="button" aria-label="Search">
-            <Search size={18} />
-          </button>
-          <button className="icon-btn" type="button" aria-label="Notifications">
-            <Bell size={18} />
-          </button>
-          {isLoggedIn ? (
-            <div className="user-menu-wrapper">
-              <button 
-                className="user-avatar-btn" 
-                type="button" 
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                aria-label="User menu"
-              >
-                <User size={18} />
-              </button>
-              {showUserMenu && (
-                <div className="user-dropdown">
-                  <div className="user-dropdown-header">
-                    <div className="user-avatar-circle">
-                      <User size={20} />
-                    </div>
-                    <div className="user-info">
-                      <div className="user-name">{userName}</div>
-                    </div>
-                  </div>
-                  <div className="user-dropdown-divider" />
-                  <button className="user-dropdown-item" onClick={() => navigate('/profile')}>
-                    <FileText size={16} />
-                    <span>Hồ sơ của tôi</span>
-                  </button>
-                  <button className="user-dropdown-item" onClick={() => navigate('/my-page')}>
-                    <Folder size={16} />
-                    <span>Trang của tôi</span>
-                  </button>
-                  <div className="user-dropdown-divider" />
-                  <button className="user-dropdown-item logout" onClick={handleLogout}>
-                    <LogOut size={16} />
-                    <span>Đăng xuất</span>
-                  </button>
-                </div>
-              )}
+
+          <nav className="header-nav">
+            <a href="#" className="nav-item active">
+              <Icon name="home" size={18} />
+              Trang Chủ
+            </a>
+            <a href="#" className="nav-item">
+              <Icon name="radio" size={18} />
+              Phòng Trực Tiếp
+            </a>
+            <a href="#" className="nav-item">
+              <Icon name="calendar" size={18} />
+              Lịch Phát Sóng
+            </a>
+            <a href="#" className="nav-item">
+              <Icon name="music" size={18} />
+              Nhạc của bạn
+            </a>
+            <a href="#" className="nav-item">
+              <Icon name="message" size={18} />
+              Diễn đàn
+              <span className="nav-item-badge">12</span>
+            </a>
+          </nav>
+
+          <div className="header-actions">
+            <div className="header-search">
+              <Icon name="search" size={18} color="#94a3b8" />
+              <input type="text" placeholder="Tìm kiếm..." />
             </div>
-          ) : (
-            <button className="btn-login-nav" type="button" onClick={() => navigate('/login')}>
-              Đăng Nhập Ngay!
+            <button className="header-icon-btn">
+              <Icon name="bell" size={20} />
+              <span className="notification-dot"></span>
             </button>
-          )}
-        </nav>
+            <div className="header-avatar">
+              <img src="https://i.pravatar.cc/100?img=5" alt="Avatar" />
+            </div>
+          </div>
+        </div>
       </header>
 
-      <main className="home-content">
-        {/* Currently Live Sessions - MOVED TO TOP */}
-        {liveSessions.length > 0 && (
-          <section className="section-live">
-            <div className="section-header">
-              <h2 className="section-title">
-                <span className="live-pulse" />
-                Đang phát trực tiếp
-              </h2>
-            </div>
-            <div className="live-grid">
-              {liveSessions.map((session) => (
-                <article key={session.id} className="live-session-card">
-                  <div className="live-session-thumb">
-                    <span className="live-badge">LIVE</span>
-                    <div className="live-bg-gradient" />
-                    <div className="live-hover-overlay">
-                      <button className="live-join-overlay-btn">
-                        <Play size={24} />
-                        Join Live
-                      </button>
-                    </div>
-                  </div>
-                  <div className="live-session-info">
-                    <h3>{session.title}</h3>
-                    <div className="live-meta">
-                      <span className="host-name">
-                        <Mic size={14} />
-                        {session.host}
-                      </span>
-                      <span className="listener-count">
-                        <User size={14} />
-                        {session.listeners} người
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-container">
+          <div className="hero-content">
+            <h1 className="hero-title">
+              Listen <span>Together.</span>
+            </h1>
+            <p className="hero-subtitle">Chia sẻ âm nhạc của bạn</p>
+            <a href="#" className="hero-cta">
+              <Icon name="play" size={20} />
+              Bắt Đầu
+            </a>
+          </div>
+          <div className="hero-illustration">
+            <img src={heroIllustration} alt="Listen Together" />
+          </div>
+        </div>
+      </section>
 
-        {/* VIP Subscription Banner */}
-        <section className="vip-banner">
-          <div className="vip-gradient" />
-          <div className="vip-content">
-            <div className="vip-icon">
-              <Crown size={32} />
-            </div>
-            <div className="vip-text">
-              <h2>Nâng cấp trải nghiệm với Soundmate VIP</h2>
-              <p>Không quảng cáo • Tải nhạc offline • Ưu tiên request nhạc</p>
-            </div>
-            <button className="vip-btn">
-              Chỉ 99k/tháng
-            </button>
-          </div>
-        </section>
-
-        {/* Playlist của bạn - Carousel Style */}
-        <section className="section-playlists">
-          <div className="section-header">
-            <h2 className="section-title">Playlist của bạn</h2>
-            <div className="carousel-nav-btns">
-              <button className="carousel-nav-btn" onClick={() => goUserPlaylist(-1)}>
-                <ChevronLeft size={20} />
+      {/* Playlist Section */}
+      <section className="section">
+        <div className="section-header">
+          <h2 className="section-title">Playlist đề cử</h2>
+          <div className="section-tabs">
+            {playlistTabs.map(tab => (
+              <button
+                key={tab}
+                className={`section-tab ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
               </button>
-              <button className="carousel-nav-btn" onClick={() => goUserPlaylist(1)}>
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          </div>
-          <div className="playlist-carousel">
-            <div 
-              className="playlist-carousel-track"
-              style={{ transform: `translateX(-${userPlaylistIndex * 200}px)` }}
-            >
-              {userPlaylists.map((item) => (
-                <article key={item.id} className="playlist-card-carousel">
-                  <div className="playlist-thumb-carousel" style={{ background: `linear-gradient(135deg, ${item.color} 0%, ${item.color}99 100%)` }}>
-                    <Music size={40} className="playlist-icon" />
-                  </div>
-                  <div className="playlist-info-carousel">
-                    <h3>{item.title}</h3>
-                    <p className="playlist-count">{item.count}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Playlist đề cử - Carousel Style */}
-        <section className="section-playlists">
-          <div className="section-header">
-            <h2 className="section-title">Playlist đề cử</h2>
-            <div className="carousel-nav-btns">
-              <button className="carousel-nav-btn" onClick={() => goRecommended(-1)}>
-                <ChevronLeft size={20} />
-              </button>
-              <button className="carousel-nav-btn" onClick={() => goRecommended(1)}>
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          </div>
-          <div className="playlist-carousel">
-            <div 
-              className="playlist-carousel-track"
-              style={{ transform: `translateX(-${recommendedIndex * 200}px)` }}
-            >
-              {recommendedPlaylists.map((item) => (
-                <article key={item.id} className="playlist-card-carousel">
-                  <div className="playlist-thumb-carousel" style={{ background: `linear-gradient(135deg, ${item.color} 0%, ${item.color}99 100%)` }}>
-                    <Music size={40} className="playlist-icon" />
-                  </div>
-                  <div className="playlist-info-carousel">
-                    <h3>{item.title}</h3>
-                    <p className="playlist-count">{item.count}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Podcast Letters */}
-        <section className="section-letters">
-          <div className="section-header">
-            <h2 className="section-title">
-              <Mail size={20} />
-              Thư tâm tình
-            </h2>
-            <button className="see-all-btn">Xem tất cả</button>
-          </div>
-          <div className="letters-grid">
-            {podcastLetters.map((letter) => (
-              <article key={letter.id} className="letter-card">
-                <div className="letter-header">
-                  <span className="letter-mood">{letter.mood}</span>
-                  <button className="letter-favorite">
-                    <Heart size={18} />
-                  </button>
-                </div>
-                <h3 className="letter-title">{letter.title}</h3>
-                <p className="letter-author">Từ {letter.author}</p>
-                <div className="letter-footer">
-                  <span className="letter-reactions">
-                    <Heart size={14} />
-                    {letter.reactions}
-                  </span>
-                  <button className="letter-comment-btn">
-                    <MessageCircle size={14} />
-                    Phản hồi
-                  </button>
-                </div>
-              </article>
             ))}
           </div>
-        </section>
+        </div>
 
-        {/* Healing Moment Section */}
-        <section className="healing-section">
-          <div className="healing-content">
-            <Sparkles size={40} className="healing-icon" />
-            <h2>Chia sẻ cảm xúc của bạn</h2>
-            <p>Kết nối với mọi người qua âm nhạc và câu chuyện của bạn</p>
-            <button className="share-feeling-btn">
-              <Send size={18} />
-              Viết thư tâm tình
+        <div className="playlist-carousel">
+          <button className="carousel-nav prev" onClick={() => scrollCarousel('prev')}>
+            <Icon name="chevron-left" size={24} />
+          </button>
+
+          <div className="playlist-carousel-inner" ref={carouselRef}>
+            {playlists.map(playlist => (
+              <div key={playlist.id} className="playlist-card hover-lift">
+                <img src={playlist.image} alt={playlist.title} className="playlist-card-image" />
+                <div className="playlist-card-content">
+                  <h4 className="playlist-card-title">{playlist.title}</h4>
+                  <p className="playlist-card-subtitle">{playlist.subtitle}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button className="carousel-nav next" onClick={() => scrollCarousel('next')}>
+            <Icon name="chevron-right" size={24} />
+          </button>
+        </div>
+      </section>
+
+      {/* Live Room Section */}
+      <section className="section">
+        <div className="section-header">
+          <h2 className="section-title">Phòng Đang Phát</h2>
+          <a href="#" className="section-link">
+            Xem thêm
+            <Icon name="chevron-right" size={16} />
+          </a>
+        </div>
+
+        <div className="live-room-card">
+          <div className="live-room-badge">LIVE</div>
+          <div className="live-room-content">
+            <div className="live-room-info">
+              <h3 className="live-room-title">Đêm nhạc cổ điển êm dịu</h3>
+              <div className="live-room-meta">
+                <span>
+                  <Icon name="users" size={16} />
+                  33 Kết nối
+                </span>
+                <span>
+                  <Icon name="heart" size={16} />
+                  156 lượt thích
+                </span>
+              </div>
+              <a href="#" className="live-room-link">
+                Xem danh sách phát
+                <Icon name="chevron-right" size={14} />
+              </a>
+            </div>
+            <button className="live-room-cta">
+              <Icon name="headphones" size={18} />
+              Tham Gia
             </button>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
+
+      {/* Schedule Section */}
+      <section className="section">
+        <div className="section-header">
+          <h2 className="section-title">Lịch phát sóng</h2>
+          <a href="#" className="section-link">
+            Xem tất cả
+            <Icon name="chevron-right" size={16} />
+          </a>
+        </div>
+
+        <div className="schedule-list">
+          {scheduleItems.map(item => (
+            <div key={item.id} className="schedule-item hover-lift">
+              <div className="schedule-item-time">
+                <span className="schedule-item-time-value">{item.time}</span>
+                <span className="schedule-item-time-period">{item.period}</span>
+              </div>
+              <div className="music-wave">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div className="schedule-item-content">
+                <h4 className="schedule-item-title">{item.title}</h4>
+                <p className="schedule-item-subtitle">{item.host}</p>
+              </div>
+              <button className={`schedule-item-action ${item.isLive ? 'live' : 'upcoming'}`}>
+                {item.isLive ? 'Đang Phát' : 'Thông báo'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Forum Section */}
+      <section className="section">
+        <div className="section-header">
+          <h2 className="section-title">Diễn đàn SoundMates</h2>
+          <a href="#" className="section-link">
+            Xem tất cả
+            <Icon name="chevron-right" size={16} />
+          </a>
+        </div>
+
+        <div className="forum-list">
+          {forumPosts.map(post => (
+            <div key={post.id} className="forum-item hover-lift">
+              <img src={post.avatar} alt={post.author} className="forum-item-avatar" />
+              <div className="forum-item-content">
+                <div className="forum-item-header">
+                  <span className="forum-item-author">{post.author}</span>
+                  <span className="forum-item-badge">{post.badge}</span>
+                </div>
+                <p className="forum-item-title">{post.title}</p>
+                <div className="forum-item-meta">
+                  <span>
+                    <Icon name="heart" size={14} />
+                    {post.likes} Lượt thích
+                  </span>
+                  <span>
+                    <Icon name="message" size={14} />
+                    {post.comments} Bình luận
+                  </span>
+                  <span>
+                    <Icon name="clock" size={14} />
+                    {post.time}
+                  </span>
+                </div>
+              </div>
+              <button className="forum-item-action">Xem Ngay</button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="home-footer">
+        <div className="footer-container">
+          <div className="footer-grid">
+            <div className="footer-brand">
+              <div className="footer-logo">
+                <img src={logoText} alt="SoundMates" />
+              </div>
+              <p className="footer-description">
+                Nền tảng chia sẻ âm nhạc và kết nối cộng đồng yêu nhạc hàng đầu Việt Nam
+              </p>
+              <div className="footer-social">
+                <a href="#" className="footer-social-link">
+                  <Icon name="globe" size={18} />
+                </a>
+                <a href="#" className="footer-social-link">
+                  <Icon name="message" size={18} />
+                </a>
+                <a href="#" className="footer-social-link">
+                  <Icon name="mail" size={18} />
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="footer-section-title">Về chúng tôi</h4>
+              <ul className="footer-links">
+                <li><a href="#">Giới thiệu</a></li>
+                <li><a href="#">Đội ngũ</a></li>
+                <li><a href="#">Tuyển dụng</a></li>
+                <li><a href="#">Liên hệ</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="footer-section-title">Liên hệ</h4>
+              <ul className="footer-links">
+                <li><a href="#">FAQ/Hỗ trợ</a></li>
+                <li><a href="#">Đổi trả/Hoàn tiền</a></li>
+                <li><a href="#">Hướng dẫn sử dụng</a></li>
+                <li><a href="#">Affiliate / Quảng cáo</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="footer-section-title">Tất cả</h4>
+              <ul className="footer-links">
+                <li><a href="#">Giới thiệu</a></li>
+                <li><a href="#">Podcast</a></li>
+                <li><a href="#">Playlist</a></li>
+                <li><a href="#">Âm Nhạc</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <p className="footer-copyright">
+              © 2024 SoundMates. Bản quyền thuộc về SoundMates
+            </p>
+            <div className="footer-bottom-links">
+              <a href="#">Điều khoản sử dụng</a>
+              <a href="#">Chính sách bảo mật</a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
