@@ -36,8 +36,7 @@
 .home-page {
     min-height: 100vh;
     background: var(--home-bg-section);
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: auto;
 }
 
 /* ============================================
@@ -219,7 +218,7 @@
     background: var(--home-bg-hero);
     padding: 60px 24px 80px;
     position: relative;
-    overflow: hidden;
+    overflow: auto;
 }
 
 .hero-section::before {
@@ -392,7 +391,7 @@
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
-    -ms-overflow-style: none;
+    /* -ms-overflow-style: none; */
     padding: 10px 0;
 }
 
@@ -405,7 +404,7 @@
     scroll-snap-align: start;
     background: white;
     border-radius: 16px;
-    overflow: hidden;
+    overflow: auto;
     box-shadow: var(--home-card-shadow);
     transition: all 0.3s ease;
     cursor: pointer;
@@ -432,7 +431,7 @@
     font-weight: 600;
     color: var(--home-text-dark);
     white-space: nowrap;
-    overflow: hidden;
+    overflow: auto;
     text-overflow: ellipsis;
     margin-bottom: 4px;
 }
