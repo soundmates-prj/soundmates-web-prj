@@ -274,8 +274,8 @@ a:hover {
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--primary-700);
-  border-color: var(--primary-700);
+  background: var(--primary-400);
+  border-color: var(--primary-400);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
