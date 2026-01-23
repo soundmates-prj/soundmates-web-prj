@@ -1,0 +1,130 @@
+/* ============================================
+   Footer Component Styles
+   ============================================ */
+.home-footer {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 60px 24px 24px;
+}
+
+.footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.footer-brand {
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.footer-logo img {
+    height: 180px;
+}
+
+.footer-logo-text {
+    font-family: 'Pacifico', cursive;
+    font-size: 1.3rem;
+    color: var(--home-primary);
+}
+
+.footer-description {
+    font-size: 0.9rem;
+    color: var(--home-text-secondary);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.footer-social {
+    display: flex;
+    gap: 12px;
+}
+
+.footer-social-link {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--home-text-secondary);
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+}
+
+.footer-social-link:hover {
+    background: var(--home-primary);
+    color: white;
+    border-color: var(--home-primary);
+}
+
+.footer-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--home-text-dark);
+    margin-bottom: 20px;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 12px;
+}
+
+.footer-links a {
+    font-size: 0.9rem;
+    color: var(--home-text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: var(--home-primary);
+}
+
+.footer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.footer-copyright {
+    font-size: 0.85rem;
+    color: var(--home-text-light);
+}
+
+.footer-bottom-links {
+    display: flex;
+    gap: 24px;
+}
+
+.footer-bottom-links a {
+    font-size: 0.85rem;
+    color: var(--home-text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-bottom-links a:hover {
+    color: var(--home-primary);
+}

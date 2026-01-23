@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./Home.css";
 import Icon from "../../components/common/Icon";
 
@@ -9,7 +9,6 @@ import playlistCover2 from "../../assets/images/playlist_cover_2.png";
 import playlistCover3 from "../../assets/images/playlist_cover_3.png";
 import playlistCover4 from "../../assets/images/playlist_cover_4.png";
 import playlistCover5 from "../../assets/images/playlist_cover_5.png";
-import logoText from "../../assets/logo_text.png";
 
 // Mock data
 const playlists = [
@@ -168,53 +167,6 @@ export default function Home() {
 
   return (
     <div className="home-page">
-      {/* Header */}
-      <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
-        <div className="header-container">
-          <div className="header-logo">
-            <img src={logoText} alt="SoundMates" />
-          </div>
-
-          <nav className="header-nav">
-            <a href="#" className="nav-item active">
-              <Icon name="home" size={18} />
-              Trang Chủ
-            </a>
-            <a href="#" className="nav-item">
-              <Icon name="radio" size={18} />
-              Phòng Trực Tiếp
-            </a>
-            <a href="#" className="nav-item">
-              <Icon name="calendar" size={18} />
-              Lịch Phát Sóng
-            </a>
-            <a href="#" className="nav-item">
-              <Icon name="music" size={18} />
-              Nhạc của bạn
-            </a>
-            <a href="#" className="nav-item">
-              <Icon name="message" size={18} />
-              Diễn đàn
-              <span className="nav-item-badge">12</span>
-            </a>
-          </nav>
-
-          <div className="header-actions">
-            <div className="header-search">
-              <Icon name="search" size={18} color="#94a3b8" />
-              <input type="text" placeholder="Tìm kiếm..." />
-            </div>
-            <button className="header-icon-btn">
-              <Icon name="bell" size={20} />
-              <span className="notification-dot"></span>
-            </button>
-            <div className="header-avatar">
-              <img src="https://i.pravatar.cc/100?img=5" alt="Avatar" />
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-container">
@@ -404,98 +356,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="home-footer">
-        <div className="footer-container">
-          <div className="footer-grid">
-            <div className="footer-brand">
-              <div className="footer-logo">
-                <img src={logoText} alt="SoundMates" />
-              </div>
-              <p className="footer-description">
-                Nền tảng chia sẻ âm nhạc và kết nối cộng đồng yêu nhạc hàng đầu
-                Việt Nam
-              </p>
-              <div className="footer-social">
-                <a href="#" className="footer-social-link">
-                  <Icon name="globe" size={18} />
-                </a>
-                <a href="#" className="footer-social-link">
-                  <Icon name="message" size={18} />
-                </a>
-                <a href="#" className="footer-social-link">
-                  <Icon name="mail" size={18} />
-                </a>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="footer-section-title">Về chúng tôi</h4>
-              <ul className="footer-links">
-                <li>
-                  <a href="#">Giới thiệu</a>
-                </li>
-                <li>
-                  <a href="#">Đội ngũ</a>
-                </li>
-                <li>
-                  <a href="#">Tuyển dụng</a>
-                </li>
-                <li>
-                  <a href="#">Liên hệ</a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="footer-section-title">Liên hệ</h4>
-              <ul className="footer-links">
-                <li>
-                  <a href="#">FAQ/Hỗ trợ</a>
-                </li>
-                <li>
-                  <a href="#">Đổi trả/Hoàn tiền</a>
-                </li>
-                <li>
-                  <a href="#">Hướng dẫn sử dụng</a>
-                </li>
-                <li>
-                  <a href="#">Affiliate / Quảng cáo</a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="footer-section-title">Tất cả</h4>
-              <ul className="footer-links">
-                <li>
-                  <a href="#">Giới thiệu</a>
-                </li>
-                <li>
-                  <a href="#">Podcast</a>
-                </li>
-                <li>
-                  <a href="#">Playlist</a>
-                </li>
-                <li>
-                  <a href="#">Âm Nhạc</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="footer-bottom">
-            <p className="footer-copyright">
-              © 2024 SoundMates. Bản quyền thuộc về SoundMates
-            </p>
-            <div className="footer-bottom-links">
-              <a href="#">Điều khoản sử dụng</a>
-              <a href="#">Chính sách bảo mật</a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
