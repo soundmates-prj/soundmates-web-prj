@@ -1,19 +1,19 @@
-import { Route, Routes } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home/Home";
-import { Header } from "./components/layout";
-import Footer from "./components/layout/Footer";
+import Login from "./pages/Auth/Login";
+import Register from "./pages/Auth/Register";
+import MainLayout from "./components/layout/MainLayout";
 
 function App() {
   return (
-    <>
-      <Header />
-      <Routes>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-      </Routes>
-      <Footer />
-    </>
+      </Route>
+    </Routes>
   );
 }
 
