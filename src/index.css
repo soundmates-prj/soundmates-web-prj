@@ -14,7 +14,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   overflow: auto;
 }
@@ -394,7 +395,6 @@ a:hover {
 }
 
 .card-header {
-  background: var(--bg-card-header);
   color: var(--text-inverse);
   padding: var(--space-3) var(--space-4);
   font-weight: 600;

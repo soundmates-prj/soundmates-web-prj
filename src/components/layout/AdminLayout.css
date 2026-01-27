@@ -1,0 +1,32 @@
+/* ============================================
+   Admin Layout Styles - Matching Figma Design
+   ============================================ */
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #FFFFFF;
+}
+
+.admin-main {
+    flex: 1;
+    margin-left: 280px;
+    overflow-y: auto;
+    min-height: 100vh;
+    background: #FFFFFF;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 1024px) {
+    .admin-main {
+        margin-left: 70px;
+    }
+}
+
+@media (max-width: 640px) {
+    .admin-main {
+        margin-left: 0;
+    }
+}
