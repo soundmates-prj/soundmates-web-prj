@@ -1,67 +1,77 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Icon, Avatar, Badge } from '../common';
-import logoText from '../../assets/logo_text.png';
-import logoNoText from '../../assets/logo_notext.png';
-import './Header.css';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Icon } from "../common";
+import logoNoText from "../../assets/light_logo.png";
+import "./Header.css";
+import { useNavigate } from "react-router-dom";
 
 const Header: React.FC = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 10);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        const onScroll = () => setIsScrolled(window.scrollY > 10);
+        window.addEventListener("scroll", onScroll);
+        return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
     return (
-        <header className={`home-header ${isScrolled ? 'scrolled' : ''}`}>
+        <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
             <div className="header-container">
-                <div className="header-logo" onClick={() => navigate('/')}>
+
+                {/* LEFT */}
+                <div className="header-left" onClick={() => navigate("/")}>
                     <img src={logoNoText} alt="SoundMates" />
-                    <img src={logoText} alt="SoundMates" className='logo-text'/>
+                    <span className="header-brand">SoundMates</span>
                 </div>
 
-                <nav className="header-nav">
-                    <a href="#" className="nav-item active">
+                {/* CENTER */}
+                <nav className="header-center">
+                    <a className="nav-item active" href="#home">
                         <Icon name="home" size={18} />
                         Trang Chủ
                     </a>
-                    <a href="#" className="nav-item">
+
+                    <a className="nav-item" href="#">
                         <Icon name="radio" size={18} />
-                        Phòng Trực Tiếp
+                        Phiên Live Trực Tiếp
                     </a>
-                    <a href="#" className="nav-item">
+
+                    <a className="nav-item" href="#">
                         <Icon name="calendar" size={18} />
                         Lịch Phát Sóng
                     </a>
-                    <a href="#" className="nav-item">
+
+                    <a className="nav-item" href="#">
                         <Icon name="music" size={18} />
-                        Nhạc của bạn
+                        Nhạc của tôi
                     </a>
-                    <a href="#" className="nav-item">
+
+                    <a className="nav-item" href="#">
                         <Icon name="message" size={18} />
                         Diễn đàn
-                        <span className="nav-item-badge">12</span>
+                        <span className="nav-badge">12</span>
                     </a>
                 </nav>
 
-                <div className="header-actions">
+                {/* RIGHT */}
+                <div className="header-right">
+
                     <div className="header-search">
-                        <Icon name="search" size={18} color="#94a3b8" />
-                        <input type="text" placeholder="Tìm kiếm..." />
+                        <Icon name="search" size={20} color='#004395' />
+                        <input placeholder="Podcast mới nhất..." />
                     </div>
-                    <button className="header-icon-btn">
-                        <Icon name="bell" size={20} />
-                        <span className="notification-dot"></span>
+
+                    <button className="icon-btn">
+                        <Icon name="bell" size={20} color='#004395' />
+                        <span className="dot" />
                     </button>
-                    <div className="header-avatar">
-                        <img src="https://i.pravatar.cc/100?img=5" alt="Avatar" />
+
+                    <div className="avatar">
+                        <img onClick={() => navigate("/login")} src="https://i.pravatar.cc/100?img=5" />
                     </div>
+
                 </div>
+
             </div>
         </header>
     );

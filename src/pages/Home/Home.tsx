@@ -2,15 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import "./Home.css";
 import Icon from "../../components/common/Icon";
 
-// Import images
-import heroIllustration from "../../assets/images/hero_illustration.png";
+import heroIllustration from "../../assets/images/hero_background.png";
 import playlistCover1 from "../../assets/images/playlist_cover_1.png";
 import playlistCover2 from "../../assets/images/playlist_cover_2.png";
 import playlistCover3 from "../../assets/images/playlist_cover_3.png";
 import playlistCover4 from "../../assets/images/playlist_cover_4.png";
 import playlistCover5 from "../../assets/images/playlist_cover_5.png";
 
-// Mock data
 const playlists = [
   {
     id: 1,
@@ -172,7 +170,7 @@ export default function Home() {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              Listen <span>Together.</span>
+              Listen Together
             </h1>
             <p className="hero-subtitle">Chia sẻ âm nhạc của bạn</p>
             <a href="#" className="hero-cta">
