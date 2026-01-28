@@ -2,13 +2,69 @@ import React, { useState } from "react";
 import "./Register.css";
 import logo from "../../assets/light_logo.png";
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Button } from "../../components/common";
+import { useNavigate } from "react-router-dom";
+import api from "../../services/axios";
+import { toast } from "react-toastify";
 
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    password: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleRegister = async () => {
+    const { firstName, lastName, username, email, password } = form;
+
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !username.trim() ||
+      !email.trim() ||
+      !password.trim()
+    ) {
+      toast.error("Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await api.post("/auth/register", {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        username: username.trim(),
+        email: email.trim(),
+        password: password,
+      });
+
+      toast.success(
+        "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP",
+      );
+
+      navigate("/verify-otp", { state: { email } });
+    } catch (error: any) {
+      const msg = "Đăng ký thất bại";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="register-container">
-      {/* LEFT */}
       <div className="register-left">
         <div className="brand">
           <img src={logo} alt="SoundMate" />
@@ -17,43 +73,65 @@ const Register: React.FC = () => {
         </div>
       </div>
 
-      {/* RIGHT */}
       <div className="register-right">
         <div className="register-box">
           <h2>Tạo tài khoản</h2>
           <p className="subtitle">Bắt đầu hành trình cùng SoundMate</p>
 
-          {/* First & Last name */}
           <div className="name-row">
             <div className="input-wrapper">
               <User size={18} />
-              <input type="text" placeholder="First name" />
+              <input
+                type="text"
+                name="firstName"
+                placeholder="Họ"
+                value={form.firstName}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="input-wrapper">
               <User size={18} />
-              <input type="text" placeholder="Last name" />
+              <input
+                type="text"
+                name="lastName"
+                placeholder="Tên"
+                value={form.lastName}
+                onChange={handleChange}
+              />
             </div>
           </div>
 
-          {/* Username */}
           <div className="input-wrapper">
             <User size={18} />
-            <input type="text" placeholder="Username" />
+            <input
+              type="text"
+              name="username"
+              placeholder="Tên người dùng"
+              value={form.username}
+              onChange={handleChange}
+            />
           </div>
 
-          {/* Email */}
           <div className="input-wrapper">
             <Mail size={18} />
-            <input type="email" placeholder="Email" />
+            <input
+              name="email"
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+            />
           </div>
 
-          {/* Password */}
           <div className="input-wrapper">
             <Lock size={18} />
             <input
+              name="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Password"
+              placeholder="Mật khẩu"
+              value={form.password}
+              onChange={handleChange}
             />
             <span
               className="toggle-password"
@@ -63,10 +141,17 @@ const Register: React.FC = () => {
             </span>
           </div>
 
-          <button className="btn-primary">Đăng ký</button>
+          <Button
+            className="btn-primary"
+            isLoading={loading}
+            onClick={handleRegister}
+          >
+            Đăng ký
+          </Button>
 
           <p className="login">
-            Đã có tài khoản? <span>Đăng nhập</span>
+            Đã có tài khoản?{" "}
+            <span onClick={() => navigate("/login")}>Đăng nhập</span>
           </p>
         </div>
       </div>

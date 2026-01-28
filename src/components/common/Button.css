@@ -44,15 +44,22 @@
 
 /* Variants */
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
-    color: var(--text-inverse);
-    border-color: var(--primary-600);
+  font-family: poppins, sans-serif;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #5bc0eb;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
 }
 
-.btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .btn-secondary {

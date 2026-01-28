@@ -21,7 +21,7 @@
 /* LEFT */
 .register-left {
   flex: 1;
-  background: linear-gradient(135deg, #ffffff, #5bc0eb);
+  background: #3C5F99;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -230,7 +230,7 @@
   font-family: poppins, sans-serif;
   text-align: center;
   margin-top: 20px;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .login span {

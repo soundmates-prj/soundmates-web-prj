@@ -268,14 +268,14 @@ a:hover {
 }
 
 .btn-primary {
-  background: var(--primary-600);
+  background: var(--primary-300);
   color: var(--text-inverse);
-  border-color: var(--primary-600);
+  border-color: var(--primary-300);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--primary-400);
-  border-color: var(--primary-400);
+  background: var(--primary-300);
+  border-color: var(--primary-300);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
