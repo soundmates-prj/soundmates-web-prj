@@ -6,12 +6,18 @@ import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import { AdminDashboard } from "./pages/Admin/Dashboard/Dashboard";
 import { AnalyticsScreen } from "./pages/Admin/Analytics/AnalyticsScreen";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import VerifyOtp from "./pages/Auth/VerifyOtp";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+    <>
+      <ToastContainer position="top-right" />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify-otp" element={<VerifyOtp />} />
 
       {/* Admin Routes with Sidebar Layout */}
       <Route path="/admin" element={<AdminLayout />}>
@@ -32,6 +38,7 @@ function App() {
         <Route path="/" element={<Home />} />
       </Route>
     </Routes>
+    </>
   );
 }
 

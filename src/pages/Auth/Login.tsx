@@ -2,9 +2,54 @@ import React, { useState } from "react";
 import "./Login.css";
 import logo from "../../assets/light_logo.png";
 import { Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { Button } from "../../components/common";
+import api from "../../services/axios";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      toast.error("Vui lòng nhập email và mật khẩu");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await api.post("/auth/login", {
+        emailOrUsername: email,
+        password,
+      });
+
+      console.log("LOGIN RESPONSE:", res.data);
+
+      const token = res.data?.data?.token;
+
+      if (!token) {
+        toast.error("Server không trả token");
+        return;
+      }
+
+      localStorage.setItem("token", token);
+
+      toast.success("Đăng nhập thành công");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Email hoặc mật khẩu không đúng",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="login-container">
       {/* LEFT */}
@@ -25,7 +70,12 @@ const Login: React.FC = () => {
           {/* Email */}
           <div className="input-wrapper">
             <Mail size={18} />
-            <input type="email" placeholder="Email" />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
 
           {/* Password */}
@@ -34,6 +84,8 @@ const Login: React.FC = () => {
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Mật khẩu"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
             <span
               className="toggle-password"
@@ -47,7 +99,13 @@ const Login: React.FC = () => {
             <span className="forgot">Quên mật khẩu?</span>
           </div>
 
-          <button className="btn-primary">Đăng nhập</button>
+          <Button
+            className="btn-primary"
+            isLoading={loading}
+            onClick={handleLogin}
+          >
+            Đăng nhập
+          </Button>
 
           <div className="divider">
             <span></span>
@@ -64,7 +122,13 @@ const Login: React.FC = () => {
           </button>
 
           <p className="register">
-            Bạn chưa có tài khoản? <span>Tạo tài khoản</span>
+            Bạn chưa có tài khoản?{" "}
+            <span
+              onClick={() => navigate("/register")}
+              style={{ cursor: "pointer" }}
+            >
+              Tạo tài khoản
+            </span>
           </p>
         </div>
       </div>

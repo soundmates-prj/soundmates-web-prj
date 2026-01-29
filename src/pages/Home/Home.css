@@ -22,7 +22,7 @@
     --home-bg-hero: linear-gradient(180deg, #D6F2FC 0%, #FFFFFF 100%);
     --home-bg-section: #FAFAFA;
 
-    --home-text-dark: #1e293b;
+    --home-text-dark: #1E293B;
     --home-text-secondary: #64748b;
     --home-text-light: #94a3b8;
 
@@ -75,16 +75,17 @@
 .hero-content {
     flex: 1;
     text-align: center;
-    margin-bottom: 150px;
+    margin-bottom: 80px;
 }
 
 .hero-title {
     font-family: 'Pacifico', cursive;
-    font-size: 7rem;
+    font-size: 10rem;
     color: var(--home-text-dark);
-    margin-bottom: 30px;
+    margin-bottom: 60px;
     line-height: 1.2;
     animation: fadeInUp 0.8s ease-out;
+    font-weight: 400;
 }
 
 .hero-title span {
