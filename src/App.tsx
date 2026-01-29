@@ -22,15 +22,7 @@ function App() {
       {/* Admin Routes with Sidebar Layout */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<AdminDashboard />} />
-        {/* Thêm các routes admin khác ở đây */}
         <Route path="analytics" element={<AnalyticsScreen />} />
-        {/* <Route path="ai-content" element={<AIContent />} /> */}
-        {/* <Route path="users" element={<Users />} /> */}
-        {/* <Route path="broadcasts" element={<Broadcasts />} /> */}
-        {/* <Route path="posts" element={<Posts />} /> */}
-        {/* <Route path="music" element={<MusicCatalog />} /> */}
-        {/* <Route path="mentors" element={<Mentors />} /> */}
-        {/* <Route path="settings" element={<Settings />} /> */}
       </Route>
 
       {/* Public Routes with Main Layout */}

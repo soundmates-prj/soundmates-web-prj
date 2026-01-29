@@ -3,7 +3,7 @@
    Primary Color: #55C5F1
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Ephesis&family=Pacifico&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ============================================
    CSS Variables - Home Page Theme
@@ -79,13 +79,25 @@
 }
 
 .hero-title {
-    font-family: 'Pacifico', cursive;
+    font-family: 'Ephesis', cursive;
     font-size: 10rem;
     color: var(--home-text-dark);
     margin-bottom: 60px;
     line-height: 1.2;
     animation: fadeInUp 0.8s ease-out;
     font-weight: 400;
+}
+
+.hero-title .gradient-text {
+    font-size: 10rem;
+    font-family: 'Ephesis', cursive;
+}
+
+.hero-title .gradient-text {
+    background: linear-gradient(90deg, #55C5F1 41%, #A78BFA 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .hero-title span {
@@ -177,13 +189,13 @@
 }
 
 .section-title {
-    font-family: 'Pacifico', cursive;
+    font-family: 'ephesis', cursive;
     font-size: 2rem;
     color: var(--home-primary);
     position: relative;
 }
 
-.section-title::after {
+/* .section-title::after {
     content: '';
     position: absolute;
     bottom: -8px;
@@ -192,7 +204,7 @@
     height: 3px;
     background: linear-gradient(90deg, var(--home-primary), var(--home-gradient-end));
     border-radius: 3px;
-}
+} */
 
 .section-tabs {
     display: flex;
@@ -718,15 +730,6 @@
         flex-direction: column;
     }
 
-    .footer-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .footer-bottom {
-        flex-direction: column;
-        gap: 16px;
-        text-align: center;
-    }
 }
 
 /* ============================================
