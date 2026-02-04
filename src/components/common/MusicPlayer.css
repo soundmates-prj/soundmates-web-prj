@@ -1,0 +1,313 @@
+.music-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55px;
+  background-color: #FAFAFA;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+
+.music-player-container {
+  width: 100%;
+  /* max-width: 1440px; */
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Progress Bar Section */
+.progress-section {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 10px 0 2px;
+  height: 3px;
+  margin-top: 0;
+}
+
+.progress-bar-active {
+  background-color: #d8f51a;
+  border-radius: 30px;
+  height: 3px;
+  flex: 1;
+  max-width: 68%;
+}
+
+.progress-bar-inactive {
+  background-color: #d9d9d9;
+  border-radius: 30px;
+  height: 3px;
+  flex: 1;
+}
+
+.progress-dot {
+  width: 13px;
+  height: 13px;
+  margin-left: -6px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.small-progress-dot {
+  background-color: #55c5f1;
+  border-radius: 30px;
+  width: 8px;
+  height: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: 15px;
+}
+
+/* Main Content Section */
+.player-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  padding: 0 15px;
+  gap: 20px;
+}
+
+/* Left Section - Album Art and Track Info */
+.left-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 250px;
+  flex-shrink: 0;
+}
+
+.album-art-container {
+  width: 43px;
+  height: 43px;
+  flex-shrink: 0;
+}
+
+.album-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.track-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.track-title {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 10px;
+  line-height: normal;
+  color: #1e293b;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.track-artist {
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  line-height: normal;
+  color: rgba(30, 41, 59, 0.4);
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Center Section - Play Controls */
+.center-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+  flex: 1;
+}
+
+.time-display {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 12px;
+  line-height: normal;
+  color: black;
+  flex-shrink: 0;
+}
+
+.play-button-wrapper {
+  width: 39px;
+  height: 39px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.play-button {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  display: block;
+}
+
+.play-button:hover {
+  opacity: 0.9;
+}
+
+.play-button-bg {
+  width: 100%;
+  height: 100%;
+}
+
+.play-button-circle {
+  width: 100%;
+  height: 100%;
+}
+
+/* Right Section - Controls */
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 200px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.heart-icon-container {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.download-list-icon-container {
+  width: 23px;
+  height: 23px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.download-list-icon-container:hover {
+  opacity: 0.8;
+}
+
+.menu-icon-container {
+  width: 24px;
+  height: 19px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.menu-icon-container:hover {
+  opacity: 0.8;
+}
+
+.volume-icon-container {
+  width: 27px;
+  height: 25px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.volume-icon-container:hover {
+  opacity: 0.8;
+}
+
+.volume-slider-container {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100px;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.volume-slider:hover {
+  opacity: 0.9;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #003580 0%, #5F6EE0 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #003580 0%, #5F6EE0 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.volume-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .left-section {
+    min-width: 200px;
+  }
+  
+  .center-section {
+    gap: 20px;
+  }
+  
+  .right-section {
+    min-width: 150px;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .music-player {
+    height: auto;
+    min-height: 55px;
+  }
+  
+  .player-content {
+    flex-wrap: wrap;
+    padding: 8px 15px;
+  }
+  
+  .left-section {
+    min-width: auto;
+    flex: 1;
+  }
+  
+  .center-section {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  
+  .right-section {
+    min-width: auto;
+  }
+}
