@@ -6,15 +6,33 @@ import {
   MoreVertical,
   Play,
   Heart,
+  Download,
+  Share2,
+  Edit,
+  Trash2,
   Upload,
   List,
   Grid,
   TrendingUp,
   Clock,
-  Eye
+  Eye,
+  MoreHorizontal,
+  FolderPlus,
+  ArrowUpDown,
+  Check
 } from 'lucide-react';
 import { useState } from 'react';
 import './MusicCatalog.css';
+import {
+  AddTrackModal,
+  EditTrackModal,
+  DeleteConfirmModal,
+  CreatePlaylistModal,
+  AddToPlaylistModal,
+  AdvancedFilterModal,
+  ImportCSVModal,
+  ShareModal
+} from './MusicCatalogModals';
 
 interface MusicTrack {
   id: number;
@@ -57,25 +75,45 @@ interface StatCardProps {
   color: string;
 }
 
-function StatCard({ icon, label, value, color }: StatCardProps) {
+function StatCard({ icon, label, value }: StatCardProps) {
   return (
-    <div className="music-stat-card">
-      <div className={`music-stat-icon ${color}`}>
+    <div className="stat-card">
+      <div className="stat-icon">
         {icon}
       </div>
-      <div className="music-stat-content">
-        <p className="music-stat-label">{label}</p>
-        <p className="music-stat-value">{value}</p>
+      <div>
+        <p className="stat-label">{label}</p>
+        <p className="stat-value">{value}</p>
       </div>
     </div>
   );
 }
 
-export default function MusicCatalog() {
+export function MusicCatalogScreen() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [selectedGenre, setSelectedGenre] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTracks, setSelectedTracks] = useState<number[]>([]);
+  
+  // Modal states
+  const [showAddTrackModal, setShowAddTrackModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [showAddToPlaylistModal, setShowAddToPlaylistModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  
+  // Action menu state
+  const [activeActionMenu, setActiveActionMenu] = useState<number | null>(null);
+  
+  // Edit track data
+  const [editingTrack, setEditingTrack] = useState<MusicTrack | null>(null);
+  
+  // Sort state
+  const [sortBy, setSortBy] = useState<'title' | 'plays' | 'likes' | 'uploadDate'>('uploadDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const filteredTracks = mockTracks.filter(track => {
     const matchesGenre = selectedGenre === 'Tất cả' || track.genre === selectedGenre;
@@ -83,6 +121,21 @@ export default function MusicCatalog() {
                          track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          track.album.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesGenre && matchesSearch;
+  }).sort((a, b) => {
+    const order = sortOrder === 'asc' ? 1 : -1;
+    switch (sortBy) {
+      case 'title':
+        return order * a.title.localeCompare(b.title);
+      case 'plays':
+        return order * (a.plays - b.plays);
+      case 'likes':
+        return order * (a.likes - b.likes);
+      case 'uploadDate':
+        return order * (new Date(a.uploadDate.split('/').reverse().join('-')).getTime() - 
+                       new Date(b.uploadDate.split('/').reverse().join('-')).getTime());
+      default:
+        return 0;
+    }
   });
 
   const toggleTrackSelection = (id: number) => {
@@ -91,25 +144,69 @@ export default function MusicCatalog() {
     );
   };
 
+  const handleEdit = (track: MusicTrack) => {
+    setEditingTrack(track);
+    setShowEditModal(true);
+    setActiveActionMenu(null);
+  };
+
+  const handleDelete = (trackId: number) => {
+    setSelectedTracks([trackId]);
+    setShowDeleteModal(true);
+    setActiveActionMenu(null);
+  };
+
+  const handleBulkDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleAddToPlaylist = () => {
+    setShowAddToPlaylistModal(true);
+  };
+
+  const handleExport = () => {
+    const csvContent = filteredTracks
+      .filter(t => selectedTracks.length === 0 || selectedTracks.includes(t.id))
+      .map(t => `${t.title},${t.artist},${t.album},${t.genre},${t.duration},${t.plays},${t.likes}`)
+      .join('\n');
+    
+    const blob = new Blob([`Title,Artist,Album,Genre,Duration,Plays,Likes\n${csvContent}`], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'music-catalog.csv';
+    a.click();
+  };
+
+  const handleShare = (track: MusicTrack) => {
+    setEditingTrack(track);
+    setShowShareModal(true);
+    setActiveActionMenu(null);
+  };
+
   return (
     <div className="music-catalog">
       {/* Header */}
-      <div className="music-header">
-        <div className="music-header-content">
+      <div className="music-catalog-header">
+        <div className="music-catalog-header-content">
           <div>
-            <h2 className="music-title">
-              Music Catalog
-            </h2>
-            <p className="music-subtitle">
+            <h2 className="music-catalog-title">Music Catalog</h2>
+            <p className="music-catalog-subtitle">
               Quản lý thư viện nhạc, playlists và bài hát đề xuất
             </p>
           </div>
-          <div className="music-header-actions">
-            <button className="btn-secondary">
+          <div className="music-catalog-header-actions">
+            <button 
+              onClick={() => setShowImportModal(true)}
+              className="btn btn-secondary"
+            >
               <Upload size={16} />
               Import CSV
             </button>
-            <button className="btn-primary">
+            <button 
+              onClick={() => setShowAddTrackModal(true)}
+              className="btn btn-primary"
+            >
               <Plus size={16} />
               Thêm Bài Hát
             </button>
@@ -118,46 +215,52 @@ export default function MusicCatalog() {
       </div>
 
       {/* Stats */}
-      <div className="music-stats-grid">
+      <div className="stats-grid">
         <StatCard
-          icon={<Music size={20} />}
+          icon={<Music size={20} style={{ color: '#55c5f1' }} />}
           label="Tổng Bài Hát"
           value="8,921"
-          color="stat-blue"
+          color=""
         />
         <StatCard
-          icon={<List size={20} />}
+          icon={<List size={20} style={{ color: '#8CC5FA' }} />}
           label="Playlists"
           value="156"
-          color="stat-blue"
+          color=""
         />
         <StatCard
-          icon={<TrendingUp size={20} />}
+          icon={<TrendingUp size={20} style={{ color: '#D8F51A' }} />}
           label="Lượt Nghe Hôm Nay"
           value="45.8K"
-          color="stat-yellow"
+          color=""
         />
         <StatCard
-          icon={<Heart size={20} />}
+          icon={<Heart size={20} style={{ color: '#FB2C36' }} />}
           label="Lượt Thích"
           value="124K"
-          color="stat-red"
+          color=""
         />
       </div>
 
       {/* Playlists Section */}
-      <div className="playlists-section">
-        <div className="section-header">
-          <h3 className="section-title">Playlists Nổi Bật</h3>
-          <button className="link-button">Quản lý tất cả</button>
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">Playlists Nổi Bật</h3>
+          <button 
+            onClick={() => setShowPlaylistModal(true)}
+            className="card-link"
+          >
+            <Plus size={16} />
+            Tạo Playlist Mới
+          </button>
         </div>
         <div className="playlists-grid">
           {playlists.map((playlist) => (
             <div key={playlist.id} className="playlist-card">
               <div className={`playlist-cover ${playlist.cover}`}>
                 <Music size={32} className="playlist-cover-icon" />
-                <div className="playlist-overlay">
-                  <Play size={24} className="play-icon" />
+                <div className="playlist-cover-overlay">
+                  <Play size={24} className="playlist-cover-play" />
                 </div>
               </div>
               <h4 className="playlist-name">{playlist.name}</h4>
@@ -168,19 +271,19 @@ export default function MusicCatalog() {
       </div>
 
       {/* Music Library */}
-      <div className="music-library">
-        <div className="library-header">
-          <h3 className="section-title">Thư Viện Nhạc</h3>
-          <div className="view-mode-buttons">
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">Thư Viện Nhạc</h3>
+          <div className="view-toggle">
             <button 
               onClick={() => setViewMode('list')}
-              className={`view-mode-btn ${viewMode === 'list' ? 'active' : ''}`}
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
             >
               <List size={16} />
             </button>
             <button 
               onClick={() => setViewMode('grid')}
-              className={`view-mode-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
             >
               <Grid size={16} />
             </button>
@@ -188,7 +291,7 @@ export default function MusicCatalog() {
         </div>
 
         {/* Search and Filters */}
-        <div className="search-filter-bar">
+        <div className="search-filters-bar">
           <div className="search-input-wrapper">
             <Search size={18} className="search-icon" />
             <input
@@ -199,9 +302,19 @@ export default function MusicCatalog() {
               className="search-input"
             />
           </div>
-          <button className="filter-button">
+          <button 
+            onClick={() => setShowFilterModal(true)}
+            className="btn btn-secondary"
+          >
             <Filter size={16} />
-            Lọc
+            Lọc Nâng Cao
+          </button>
+          <button 
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="btn btn-secondary"
+          >
+            <ArrowUpDown size={16} />
+            Sắp Xếp
           </button>
         </div>
 
@@ -211,7 +324,7 @@ export default function MusicCatalog() {
             <button
               key={genre}
               onClick={() => setSelectedGenre(genre)}
-              className={`genre-btn ${selectedGenre === genre ? 'active' : ''}`}
+              className={`genre-filter-btn ${selectedGenre === genre ? 'active' : ''}`}
             >
               {genre}
             </button>
@@ -220,28 +333,43 @@ export default function MusicCatalog() {
 
         {/* Selected Actions */}
         {selectedTracks.length > 0 && (
-          <div className="selected-actions">
+          <div className="selected-actions-bar">
             <span className="selected-count">
               Đã chọn {selectedTracks.length} bài hát
             </span>
-            <div className="selected-action-buttons">
-              <button className="action-btn">Thêm vào Playlist</button>
-              <button className="action-btn">Xuất</button>
-              <button className="action-btn delete">Xóa</button>
+            <div className="selected-actions">
+              <button 
+                onClick={handleAddToPlaylist}
+                className="selected-action-btn light"
+              >
+                Thêm vào Playlist
+              </button>
+              <button 
+                onClick={handleExport}
+                className="selected-action-btn light"
+              >
+                Xuất
+              </button>
+              <button 
+                onClick={handleBulkDelete}
+                className="selected-action-btn danger"
+              >
+                Xóa
+              </button>
             </div>
           </div>
         )}
 
-        {/* Music List */}
+        {/* Music List/Grid */}
         {viewMode === 'list' ? (
           <div className="music-table-wrapper">
             <table className="music-table">
               <thead>
                 <tr>
-                  <th className="col-checkbox">
+                  <th style={{ width: '48px' }}>
                     <input 
                       type="checkbox" 
-                      className="checkbox"
+                      className="form-checkbox"
                       onChange={(e) => {
                         if (e.target.checked) {
                           setSelectedTracks(filteredTracks.map(t => t.id));
@@ -249,75 +377,115 @@ export default function MusicCatalog() {
                           setSelectedTracks([]);
                         }
                       }}
+                      checked={selectedTracks.length === filteredTracks.length && filteredTracks.length > 0}
                     />
                   </th>
-                  <th className="col-track">Bài Hát</th>
-                  <th className="col-artist">Nghệ Sĩ</th>
-                  <th className="col-album">Album</th>
-                  <th className="col-genre">Thể Loại</th>
-                  <th className="col-duration">Thời Lượng</th>
-                  <th className="col-plays">Lượt Nghe</th>
-                  <th className="col-likes">Likes</th>
-                  <th className="col-date">Ngày Tải Lên</th>
-                  <th className="col-actions"></th>
+                  <th>Bài Hát</th>
+                  <th>Nghệ Sĩ</th>
+                  <th>Album</th>
+                  <th className="center">Thể Loại</th>
+                  <th className="center">Thời Lượng</th>
+                  <th className="center">Lượt Nghe</th>
+                  <th className="center">Likes</th>
+                  <th className="center">Ngày Tải Lên</th>
+                  <th style={{ width: '48px' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTracks.map((track) => (
-                  <tr key={track.id} className="track-row">
-                    <td className="col-checkbox">
+                  <tr key={track.id}>
+                    <td>
                       <input 
                         type="checkbox" 
                         checked={selectedTracks.includes(track.id)}
                         onChange={() => toggleTrackSelection(track.id)}
-                        className="checkbox"
+                        className="form-checkbox"
                       />
                     </td>
-                    <td className="col-track">
+                    <td>
                       <div className="track-info">
                         <div className="track-cover">
                           <Music size={16} className="track-cover-icon" />
-                          <Play size={16} className="track-play-icon" />
+                          <Play size={16} className="track-cover-play" />
                         </div>
                         <div>
                           <p className="track-title">{track.title}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="col-artist">
-                      <p className="track-artist">{track.artist}</p>
-                    </td>
-                    <td className="col-album">
-                      <p className="track-album">{track.album}</p>
-                    </td>
-                    <td className="col-genre">
+                    <td><p className="track-text">{track.artist}</p></td>
+                    <td><p className="track-text">{track.album}</p></td>
+                    <td className="center">
                       <span className="genre-badge">{track.genre}</span>
                     </td>
-                    <td className="col-duration">
-                      <div className="duration-cell">
-                        <Clock size={14} className="icon" />
-                        <span>{track.duration}</span>
+                    <td className="center">
+                      <div className="stat-cell">
+                        <Clock size={14} className="stat-cell-icon" />
+                        <span className="stat-cell-value">{track.duration}</span>
                       </div>
                     </td>
-                    <td className="col-plays">
-                      <div className="plays-cell">
-                        <Eye size={14} className="icon" />
-                        <span>{track.plays.toLocaleString()}</span>
+                    <td className="center">
+                      <div className="stat-cell">
+                        <Eye size={14} className="stat-cell-icon" />
+                        <span className="stat-cell-value">{track.plays.toLocaleString()}</span>
                       </div>
                     </td>
-                    <td className="col-likes">
-                      <div className="likes-cell">
-                        <Heart size={14} className="icon" />
-                        <span>{track.likes.toLocaleString()}</span>
+                    <td className="center">
+                      <div className="stat-cell">
+                        <Heart size={14} className="stat-cell-icon" />
+                        <span className="stat-cell-value">{track.likes.toLocaleString()}</span>
                       </div>
                     </td>
-                    <td className="col-date">
-                      <span className="track-date">{track.uploadDate}</span>
+                    <td className="center">
+                      <span className="track-text-small">{track.uploadDate}</span>
                     </td>
-                    <td className="col-actions">
-                      <button className="more-button">
-                        <MoreVertical size={16} />
-                      </button>
+                    <td>
+                      <div className="action-menu-wrapper">
+                        <button 
+                          onClick={() => setActiveActionMenu(activeActionMenu === track.id ? null : track.id)}
+                          className="btn-icon btn-secondary"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        
+                        {activeActionMenu === track.id && (
+                          <div className="action-menu-dropdown">
+                            <button onClick={() => handleEdit(track)} className="action-menu-item">
+                              <Edit size={16} className="action-menu-item-icon" />
+                              <span className="action-menu-item-text">Chỉnh sửa</span>
+                            </button>
+                            <button onClick={() => handleShare(track)} className="action-menu-item">
+                              <Share2 size={16} className="action-menu-item-icon" />
+                              <span className="action-menu-item-text">Chia sẻ</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedTracks([track.id]);
+                                handleAddToPlaylist();
+                              }}
+                              className="action-menu-item"
+                            >
+                              <FolderPlus size={16} className="action-menu-item-icon" />
+                              <span className="action-menu-item-text">Thêm vào Playlist</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedTracks([track.id]);
+                                handleExport();
+                              }}
+                              className="action-menu-item"
+                            >
+                              <Download size={16} className="action-menu-item-icon" />
+                              <span className="action-menu-item-text">Tải xuống</span>
+                            </button>
+                            <div className="action-menu-divider"></div>
+                            <button onClick={() => handleDelete(track.id)} className="action-menu-item danger">
+                              <Trash2 size={16} className="action-menu-item-icon" />
+                              <span className="action-menu-item-text">Xóa</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -325,16 +493,15 @@ export default function MusicCatalog() {
             </table>
           </div>
         ) : (
-          /* Grid View */
           <div className="music-grid">
             {filteredTracks.map((track) => (
               <div key={track.id} className="track-card">
                 <div className="track-card-cover-wrapper">
                   <div className="track-card-cover">
-                    <Music size={32} className="cover-icon" />
+                    <Music size={32} className="track-card-cover-icon" />
                   </div>
-                  <button className="track-card-play">
-                    <Play size={32} className="play-icon" />
+                  <button className="track-card-play-overlay">
+                    <Play size={32} className="track-card-play-icon" />
                   </button>
                   <input 
                     type="checkbox" 
@@ -342,41 +509,142 @@ export default function MusicCatalog() {
                     onChange={() => toggleTrackSelection(track.id)}
                     className="track-card-checkbox"
                   />
+                  <button
+                    onClick={() => setActiveActionMenu(activeActionMenu === track.id ? null : track.id)}
+                    className="track-card-menu-btn"
+                  >
+                    <MoreHorizontal size={14} />
+                  </button>
                 </div>
                 <h4 className="track-card-title">{track.title}</h4>
                 <p className="track-card-artist">{track.artist}</p>
                 <div className="track-card-stats">
                   <span className="track-card-duration">{track.duration}</span>
                   <div className="track-card-metrics">
-                    <div className="metric">
-                      <Eye size={12} />
-                      <span>{(track.plays / 1000).toFixed(1)}K</span>
+                    <div className="track-card-metric">
+                      <Eye size={12} className="track-card-metric-icon" />
+                      <span className="track-card-metric-value">
+                        {(track.plays / 1000).toFixed(1)}K
+                      </span>
                     </div>
-                    <div className="metric">
-                      <Heart size={12} />
-                      <span>{(track.likes / 1000).toFixed(1)}K</span>
+                    <div className="track-card-metric">
+                      <Heart size={12} className="track-card-metric-icon" />
+                      <span className="track-card-metric-value">
+                        {(track.likes / 1000).toFixed(1)}K
+                      </span>
                     </div>
                   </div>
                 </div>
+                
+                {activeActionMenu === track.id && (
+                  <div className="action-menu-dropdown">
+                    <button onClick={() => handleEdit(track)} className="action-menu-item">
+                      <Edit size={16} className="action-menu-item-icon" />
+                      <span className="action-menu-item-text">Chỉnh sửa</span>
+                    </button>
+                    <button onClick={() => handleShare(track)} className="action-menu-item">
+                      <Share2 size={16} className="action-menu-item-icon" />
+                      <span className="action-menu-item-text">Chia sẻ</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedTracks([track.id]);
+                        handleAddToPlaylist();
+                      }}
+                      className="action-menu-item"
+                    >
+                      <FolderPlus size={16} className="action-menu-item-icon" />
+                      <span className="action-menu-item-text">Thêm vào Playlist</span>
+                    </button>
+                    <div className="action-menu-divider"></div>
+                    <button onClick={() => handleDelete(track.id)} className="action-menu-item danger">
+                      <Trash2 size={16} className="action-menu-item-icon" />
+                      <span className="action-menu-item-text">Xóa</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
 
         {/* Pagination */}
-        <div className="pagination">
+        <div className="pagination-wrapper">
           <p className="pagination-info">
             Hiển thị {filteredTracks.length} trên tổng 8,921 bài hát
           </p>
           <div className="pagination-buttons">
-            <button className="page-btn">Trước</button>
-            <button className="page-btn active">1</button>
-            <button className="page-btn">2</button>
-            <button className="page-btn">3</button>
-            <button className="page-btn">Sau</button>
+            <button className="pagination-btn">Trước</button>
+            <button className="pagination-btn active">1</button>
+            <button className="pagination-btn">2</button>
+            <button className="pagination-btn">3</button>
+            <button className="pagination-btn">Sau</button>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <AddTrackModal 
+        isOpen={showAddTrackModal} 
+        onClose={() => setShowAddTrackModal(false)} 
+      />
+      
+      <EditTrackModal 
+        isOpen={showEditModal} 
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingTrack(null);
+        }}
+        track={editingTrack}
+      />
+      
+      <DeleteConfirmModal 
+        isOpen={showDeleteModal} 
+        onClose={() => {
+          setShowDeleteModal(false);
+          if (selectedTracks.length === 1) setSelectedTracks([]);
+        }}
+        count={selectedTracks.length}
+        onConfirm={() => {
+          setShowDeleteModal(false);
+          setSelectedTracks([]);
+        }}
+      />
+      
+      <CreatePlaylistModal 
+        isOpen={showPlaylistModal} 
+        onClose={() => setShowPlaylistModal(false)} 
+      />
+      
+      <AddToPlaylistModal 
+        isOpen={showAddToPlaylistModal} 
+        onClose={() => {
+          setShowAddToPlaylistModal(false);
+        }}
+        trackCount={selectedTracks.length}
+      />
+      
+      <AdvancedFilterModal 
+        isOpen={showFilterModal} 
+        onClose={() => setShowFilterModal(false)}
+        onApply={(filters) => {
+          setShowFilterModal(false);
+        }}
+      />
+      
+      <ImportCSVModal 
+        isOpen={showImportModal} 
+        onClose={() => setShowImportModal(false)} 
+      />
+      
+      <ShareModal 
+        isOpen={showShareModal} 
+        onClose={() => {
+          setShowShareModal(false);
+          setEditingTrack(null);
+        }}
+        track={editingTrack}
+      />
     </div>
   );
 }
