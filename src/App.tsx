@@ -10,6 +10,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
 import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
+import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="analytics" element={<AnalyticsScreen />} />
         <Route path="music" element={<MusicCatalogScreen />} />
+        <Route path="users" element={<UserManagementScreen />} />
       </Route>
 
       {/* Public Routes with Main Layout */}
