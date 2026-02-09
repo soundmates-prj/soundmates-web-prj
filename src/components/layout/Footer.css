@@ -2,9 +2,9 @@
    Footer Component Styles
    ============================================ */
 .home-footer {
-    background: #f8fafc;
-    border-top: 1px solid #e2e8f0;
-    padding: 60px 24px 24px;
+    background: #F9FAFB;
+    border-top: 3px solid #55C5F1;
+    padding: 40px 24px 20px;
 }
 
 .footer-container {
@@ -14,9 +14,10 @@
 
 .footer-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 40px;
-    margin-bottom: 40px;
+    grid-template-columns: 1.3fr 0.8fr 0.8fr 0.8fr 1.2fr;
+    gap: 60px;
+    margin-bottom: 30px;
+    align-items: center;
 }
 
 .footer-brand {
@@ -24,59 +25,75 @@
     flex-direction: column;
 }
 
+.footer-grid > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 .footer-logo {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 0;
 }
 
 .footer-logo img {
-    height: 180px;
+    height: 100px;
+    width: auto;
+}
+
+.footer-logo-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .footer-logo-text {
-    font-family: 'Pacifico', cursive;
-    font-size: 1.3rem;
-    color: var(--home-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #55C5F1;
+    margin: 0;
 }
 
-.footer-description {
-    font-size: 0.9rem;
-    color: var(--home-text-secondary);
-    line-height: 1.6;
-    margin-bottom: 20px;
+.footer-tagline {
+    font-size: 0.85rem;
+    color: #6B7280;
+    margin: 0;
+    font-family: 'Be Vietnam Pro', sans-serif;
 }
 
 .footer-social {
     display: flex;
-    gap: 12px;
+    gap: 16px;
+    margin-bottom: 20px;
 }
 
 .footer-social-link {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background: white;
+    background: #F3F4F6;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--home-text-secondary);
+    color: #000000;
     transition: all 0.3s ease;
-    border: 1px solid #e2e8f0;
+    border: none;
 }
 
 .footer-social-link:hover {
-    background: var(--home-primary);
+    background: #55C5F1;
     color: white;
-    border-color: var(--home-primary);
 }
 
 .footer-section-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--home-text-dark);
-    margin-bottom: 20px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 16px;
+    font-family: 'Be Vietnam Pro', sans-serif;
 }
 
 .footer-links {
@@ -86,45 +103,71 @@
 }
 
 .footer-links li {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .footer-links a {
-    font-size: 0.9rem;
-    color: var(--home-text-secondary);
+    font-size: 0.95rem;
+    color: #6B7280;
     text-decoration: none;
     transition: color 0.3s ease;
+    font-family: 'Be Vietnam Pro', sans-serif;
 }
 
 .footer-links a:hover {
-    color: var(--home-primary);
+    color: #55C5F1;
+}
+
+/* App Section */
+
+.footer-app-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-app-title {
+    font-size: 1rem;
+    color: #6B7280;
+    margin-bottom: 20px;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    text-align: center;
+}
+
+.footer-app-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    justify-content: center;
+}
+
+.app-store-link {
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.app-store-link img {
+    height: 50px;
+    width: auto;
+    display: block;
+    border-radius: 17px;
+}
+
+.app-store-link:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
 }
 
 .footer-bottom {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding-top: 24px;
-    border-top: 1px solid #e2e8f0;
+    justify-content: center;
+    padding-top: 20px;
+    /* border-top: 1px solid #E5E7EB; */
 }
 
 .footer-copyright {
     font-size: 0.85rem;
-    color: var(--home-text-light);
-}
-
-.footer-bottom-links {
-    display: flex;
-    gap: 24px;
-}
-
-.footer-bottom-links a {
-    font-size: 0.85rem;
-    color: var(--home-text-secondary);
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.footer-bottom-links a:hover {
-    color: var(--home-primary);
+    color: #9CA3AF;
+    margin: 0;
+    font-family: 'Be Vietnam Pro', sans-serif;
 }

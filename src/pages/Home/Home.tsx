@@ -170,7 +170,7 @@ export default function Home() {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              Listen Together
+              Listen <span className="gradient-text">Together</span>
             </h1>
             <p className="hero-subtitle">Chia sẻ âm nhạc của bạn</p>
             <a href="#" className="hero-cta">

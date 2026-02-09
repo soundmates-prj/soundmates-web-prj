@@ -77,7 +77,8 @@ export type IconName =
     | 'filter'
     | 'trash'
     | 'headphones'
-    | 'playlist';
+    | 'playlist'
+    | 'logout';
 
 interface IconProps {
     name: IconName;
