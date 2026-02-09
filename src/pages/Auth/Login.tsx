@@ -30,14 +30,14 @@ const Login: React.FC = () => {
 
       console.log("LOGIN RESPONSE:", res.data);
 
-      const token = res.data?.data?.token;
+      const accessToken = res.data?.data?.accessToken;
 
-      if (!token) {
+      if (!accessToken) {
         toast.error("Server không trả token");
         return;
       }
 
-      localStorage.setItem("token", token);
+      localStorage.setItem("accessToken", accessToken);
 
       toast.success("Đăng nhập thành công");
       navigate("/");

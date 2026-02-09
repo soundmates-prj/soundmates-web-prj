@@ -20,9 +20,28 @@ const Register: React.FC = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
+  const PASSWORD_REGEX =
+    /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    setForm({ ...form, [name]: value });
+
+    // Validate password realtime
+    if (name === "password") {
+      if (!value) {
+        setPasswordError("");
+      } else if (!PASSWORD_REGEX.test(value)) {
+        setPasswordError(
+          "Mật khẩu phải có ít nhất 8 ký tự, 1 chữ in hoa, 1 số và 1 ký tự đặc biệt",
+        );
+      } else {
+        setPasswordError("");
+      }
+    }
   };
 
   const handleRegister = async () => {
@@ -36,6 +55,10 @@ const Register: React.FC = () => {
       !password.trim()
     ) {
       toast.error("Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+    if (passwordError) {
+      toast.error("Mật khẩu chưa đúng định dạng");
       return;
     }
 
@@ -87,6 +110,7 @@ const Register: React.FC = () => {
                 placeholder="Họ"
                 value={form.firstName}
                 onChange={handleChange}
+                required
               />
             </div>
 
@@ -98,6 +122,7 @@ const Register: React.FC = () => {
                 placeholder="Tên"
                 value={form.lastName}
                 onChange={handleChange}
+                required
               />
             </div>
           </div>
@@ -110,6 +135,7 @@ const Register: React.FC = () => {
               placeholder="Tên người dùng"
               value={form.username}
               onChange={handleChange}
+              required
             />
           </div>
 
@@ -121,6 +147,7 @@ const Register: React.FC = () => {
               placeholder="Email"
               value={form.email}
               onChange={handleChange}
+              required
             />
           </div>
 
@@ -140,6 +167,8 @@ const Register: React.FC = () => {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </span>
           </div>
+
+          {passwordError && <p className="error-text">{passwordError}</p>}
 
           <Button
             className="btn-primary"

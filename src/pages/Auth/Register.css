@@ -237,4 +237,12 @@
   color: #5bc0eb;
   cursor: pointer;
   font-weight: 600;
+} 
+
+.error-text {
+  color: #e53935;
+  font-size: 13px;
+  margin-top: 6px;
+  margin-left: 6px;
 }
+
