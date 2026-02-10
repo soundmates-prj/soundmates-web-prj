@@ -6,6 +6,7 @@ import { Button } from "../../components/common";
 import api from "../../services/axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { GoogleLogin } from "@react-oauth/google";
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -113,13 +114,51 @@ const Login: React.FC = () => {
             <span></span>
           </div>
 
-          <button className="btn-google">
-            <img
-              src="https://www.citypng.com/public/uploads/preview/google-logo-icon-gsuite-hd-701751694791470gzbayltphh.png"
-              alt="Google"
+          <div className="btn-google-wrapper">
+            <GoogleLogin
+              theme="outline"
+              size="large"
+              width="100%"
+              text="signin_with"
+              onSuccess={async (credentialResponse) => {
+                console.log("Google credentialResponse:", credentialResponse);
+                console.log("Google ID Token:", credentialResponse.credential);
+                try {
+                  const idToken = credentialResponse.credential;
+
+                  if (!idToken) {
+                    toast.error("Không lấy được Google token");
+                    return;
+                  }
+
+                  const res = await api.post("/auth/google-login", {
+                    idToken,
+                  });
+
+                  console.log("GOOGLE LOGIN RESPONSE:", res.data);
+
+                  const accessToken = res.data?.data?.accessToken;
+
+                  if (!accessToken) {
+                    toast.error("Server không trả token");
+                    return;
+                  }
+
+                  localStorage.setItem("accessToken", accessToken);
+
+                  toast.success("Đăng nhập Google thành công");
+                  navigate("/");
+                } catch (err: any) {
+                  toast.error(
+                    err.response?.data?.message || "Đăng nhập Google thất bại",
+                  );
+                }
+              }}
+              onError={() => {
+                toast.error("Google Login thất bại");
+              }}
             />
-            Đăng nhập với Google
-          </button>
+          </div>
 
           <p className="register">
             Bạn chưa có tài khoản?{" "}
