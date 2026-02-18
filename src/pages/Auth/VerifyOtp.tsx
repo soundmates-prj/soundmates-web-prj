@@ -29,14 +29,7 @@ const VerifyOtp: React.FC = () => {
   };
 
   const handleVerifyOtp = async () => {
-    const otpCode = otp.join("");
-
-    if (!email) {
-      toast.error("Không tìm thấy email");
-      return;
-    }
-
-    if (otpCode.length !== 6) {
+    if (!otp || otp.length !== 6) {
       toast.error("Vui lòng nhập đủ 6 số OTP");
       return;
     }
@@ -44,15 +37,27 @@ const VerifyOtp: React.FC = () => {
     try {
       setLoading(true);
 
-      await api.post("/auth/verify-email", {
+      const res = await api.post("/auth/verify-email", {
         email,
-        otpCode,
+        otpCode: otp.join(""),
       });
 
+      const { accessToken, refreshToken, user } = res.data.data;
+
+      localStorage.setItem("accessToken", accessToken);
+
+      if (refreshToken) {
+        localStorage.setItem("refreshToken", refreshToken);
+      }
+
+      if (user) {
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+
       toast.success("Xác thực thành công!");
-      navigate("/login");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "OTP không hợp lệ");
+      navigate("/", { replace: true });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "OTP không hợp lệ");
     } finally {
       setLoading(false);
     }
