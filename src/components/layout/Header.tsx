@@ -1,17 +1,61 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Icon, Button } from "../common";
 import logoNoText from "../../assets/light_logo.png";
 import "./Header.css";
 import { useNavigate } from "react-router-dom";
+import { UserCircle2, BellRing, Search, X, Clock, TrendingUp, ChevronDown, Radio, Mic2, Calendar, Zap } from "lucide-react";
+
+interface UserInfo {
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    email?: string;
+    avatarUrl?: string | null;
+}
+
+const SEARCH_CATEGORIES = [
+    { key: "all", label: "Tất cả" },
+    { key: "podcast", label: "Podcast" },
+    { key: "music", label: "Nhạc" },
+    { key: "artist", label: "Nghệ sĩ" },
+    { key: "playlist", label: "Playlist" },
+    { key: "live", label: "Live Stream" },
+    { key: "forum", label: "Diễn đàn" },
+];
+
+const TRENDING_TOPICS = ["Sơn Tùng M-TP", "SpaceSpeakers", "Podcast Tâm Lý", "Rhymastic Live", "Hoàng Thùy Linh"];
 
 const Header: React.FC = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const [showDropdown, setShowDropdown] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [showSearch, setShowSearch] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchCategory, setSearchCategory] = useState("all");
+    const [showLiveDropdown, setShowLiveDropdown] = useState(false);
     const navigate = useNavigate();
-    const dropdownRef = React.useRef<HTMLDivElement>(null);
-    const notificationRef = React.useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const notificationRef = useRef<HTMLDivElement>(null);
+    const searchPanelRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const liveDropdownRef = useRef<HTMLDivElement>(null);
+
+    const syncAuthState = () => {
+        const token = localStorage.getItem('accessToken');
+        setIsLoggedIn(!!token);
+        if (token) {
+            try {
+                const stored = localStorage.getItem('userInfo');
+                setUserInfo(stored ? JSON.parse(stored) : null);
+            } catch {
+                setUserInfo(null);
+            }
+        } else {
+            setUserInfo(null);
+        }
+    };
 
     useEffect(() => {
         const onScroll = () => setIsScrolled(window.scrollY > 10);
@@ -20,9 +64,13 @@ const Header: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        // Kiểm tra xem user đã đăng nhập chưa (thông qua localStorage hoặc token)
-        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-        setIsLoggedIn(!!token);
+        syncAuthState();
+        window.addEventListener('authChange', syncAuthState);
+        window.addEventListener('storage', syncAuthState);
+        return () => {
+            window.removeEventListener('authChange', syncAuthState);
+            window.removeEventListener('storage', syncAuthState);
+        };
     }, []);
 
     useEffect(() => {
@@ -33,17 +81,31 @@ const Header: React.FC = () => {
             if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
                 setShowNotifications(false);
             }
+            if (searchPanelRef.current && !searchPanelRef.current.contains(event.target as Node)) {
+                setShowSearch(false);
+            }
+            if (liveDropdownRef.current && !liveDropdownRef.current.contains(event.target as Node)) {
+                setShowLiveDropdown(false);
+            }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Auto-focus search input when panel opens
+    useEffect(() => {
+        if (showSearch) {
+            setTimeout(() => searchInputRef.current?.focus(), 50);
+        }
+    }, [showSearch]);
+
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('userInfo');
         setIsLoggedIn(false);
+        setUserInfo(null);
         setShowDropdown(false);
+        window.dispatchEvent(new Event('authChange'));
         navigate('/');
     };
 
@@ -53,7 +115,7 @@ const Header: React.FC = () => {
     };
 
     return (
-        <div className='header' >
+        <div className='header'>
             <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
                 <div className="header-container">
 
@@ -65,77 +127,227 @@ const Header: React.FC = () => {
 
                     {/* CENTER */}
                     <nav className="header-center">
-                        <a className="nav-item active" href="#home">
-                            <Icon name="home" size={18} />
-                            Trang Chủ
-                        </a>
+                        <a className="nav-item active" href="#home">Trang Chủ</a>
 
-                        <a className="nav-item" href="#">
-                            <Icon name="radio" size={18} />
-                            Phiên Live Trực Tiếp
-                        </a>
+                        {/* Phiên Trực Tiếp — with dropdown */}
+                        <div className="nav-item-dropdown-wrap" ref={liveDropdownRef}>
+                            <button
+                                className="nav-item nav-item-btn"
+                                onClick={() => setShowLiveDropdown(prev => !prev)}
+                            >
+                                Phiên Trực Tiếp
+                                <ChevronDown size={14} className={`nav-chevron ${showLiveDropdown ? "open" : ""}`} />
+                            </button>
 
-                        <a className="nav-item" href="#">
-                            <Icon name="calendar" size={18} />
-                            Lịch Phát Sóng
-                        </a>
+                            {showLiveDropdown && (
+                                <div className="nav-live-dropdown">
+                                    <div className="nav-live-dropdown-header">Khám phá Live</div>
+                                    <a className="nav-live-item" href="#">
+                                        <span className="nav-live-icon"><Radio size={16} /></span>
+                                        <div>
+                                            <p>Live Stream âm nhạc</p>
+                                            <span>Nghe nhạc trực tiếp từ nghệ sĩ</span>
+                                        </div>
+                                    </a>
+                                    <a className="nav-live-item" href="#">
+                                        <span className="nav-live-icon"><Mic2 size={16} /></span>
+                                        <div>
+                                            <p>Podcast Live</p>
+                                            <span>Chương trình phát thanh trực tiếp</span>
+                                        </div>
+                                    </a>
+                                    <a className="nav-live-item" href="#">
+                                        <span className="nav-live-icon"><Zap size={16} /></span>
+                                        <div>
+                                            <p>Sự kiện nổi bật</p>
+                                            <span>Concert, showcase đang diễn ra</span>
+                                        </div>
+                                    </a>
+                                    <a className="nav-live-item" href="#">
+                                        <span className="nav-live-icon"><Calendar size={16} /></span>
+                                        <div>
+                                            <p>Lịch phát sóng</p>
+                                            <span>Xem lịch live sắp tới</span>
+                                        </div>
+                                    </a>
+                                </div>
+                            )}
+                        </div>
 
-                        <a className="nav-item" href="#">
-                            <Icon name="music" size={18} />
-                            Nhạc của tôi
-                        </a>
-
-                        <a className="nav-item" href="#">
-                            <Icon name="message" size={18} />
-                            Diễn đàn
-                            <span className="nav-badge">12</span>
-                        </a>
+                        <a className="nav-item" href="#">Podcast</a>
+                        <a className="nav-item" href="#">Diễn Đàn</a>
+                        <a className="nav-item" href="#">Gói Dịch Vụ</a>
                     </nav>
 
                     {/* RIGHT */}
                     <div className="header-right">
 
-                        <div className="header-search">
-                            <input placeholder="Podcast mới nhất..." />
-                        </div>
+                        {/* Search trigger */}
+                        <div className="search-trigger" ref={searchPanelRef}>
+                            <div
+                                className={`header-search ${showSearch ? "active" : ""}`}
+                                onClick={() => { setShowSearch(true); setShowNotifications(false); setShowDropdown(false); setShowLiveDropdown(false); }}
+                            >
+                                <Search size={16} color="#9CA3AF" />
+                                <input
+                                    ref={searchInputRef}
+                                    placeholder="Tìm kiếm..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onFocus={() => setShowSearch(true)}
+                                />
+                                {searchQuery && (
+                                    <button className="search-clear" onClick={(e) => { e.stopPropagation(); setSearchQuery(""); }}>
+                                        <X size={14} color="#9CA3AF" />
+                                    </button>
+                                )}
+                            </div>
 
-                        <button className="search-btn">
-                            <Icon name="search" size={24} color='#004395' />
-                        </button>
+                            {showSearch && (
+                                <div className="search-panel">
+                                    {/* Category chips */}
+                                    <div className="search-categories">
+                                        {SEARCH_CATEGORIES.map(cat => (
+                                            <button
+                                                key={cat.key}
+                                                className={`search-cat-chip ${searchCategory === cat.key ? "active" : ""}`}
+                                                onClick={() => setSearchCategory(cat.key)}
+                                            >
+                                                {cat.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="search-divider" />
+
+                                    {/* Trending */}
+                                    <div className="search-section">
+                                        <div className="search-section-title">
+                                            <TrendingUp size={14} />
+                                            <span>Xu hướng</span>
+                                        </div>
+                                        <div className="search-suggestions">
+                                            {TRENDING_TOPICS.map(topic => (
+                                                <button key={topic} className="search-suggestion-item">
+                                                    <Search size={13} color="#9CA3AF" />
+                                                    <span>{topic}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="search-divider" />
+
+                                    {/* Recent */}
+                                    <div className="search-section">
+                                        <div className="search-section-title">
+                                            <Clock size={14} />
+                                            <span>Tìm kiếm gần đây</span>
+                                        </div>
+                                        <p className="search-empty">Chưa có lịch sử tìm kiếm</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         {isLoggedIn ? (
                             <>
+                                {/* Notification */}
                                 <div className="notification-container" ref={notificationRef}>
-                                    <Button className="icon-btn" onClick={() => setShowNotifications(!showNotifications)}>
-                                        <Icon name="bell" size={24} color='#004395' />
-                                        <span className="dot" />
-                                    </Button>
+                                    <button
+                                        className="icon-btn notif-btn"
+                                        onClick={() => {
+                                            setShowNotifications(prev => !prev);
+                                            setShowSearch(false);
+                                            setShowDropdown(false);
+                                            setShowLiveDropdown(false);
+                                        }}
+                                    >
+                                        <BellRing size={20} color="#55C5F1" strokeWidth={1.8} />
+                                        <span className="notif-badge">3</span>
+                                    </button>
 
                                     {showNotifications && (
                                         <div className="notification-dropdown">
                                             <div className="notification-header">
-                                                <h3>Thông báo SoundMates</h3>
-                                                <Icon name="bell" size={20} color='#55C5F1' />
+                                                <h3>Thông báo</h3>
+                                                <button className="notif-mark-read">Đánh dấu đã đọc</button>
                                             </div>
-                                            <div className="notification-body">
-                                                <p>Bạn đã đăng ký tài khoản thành công!</p>
+                                            <div className="notification-list">
+                                                <div className="notif-item unread">
+                                                    <div className="notif-dot" />
+                                                    <div className="notif-content">
+                                                        <p className="notif-text">Bạn đã đăng ký tài khoản thành công!</p>
+                                                        <span className="notif-time">Vừa xong</span>
+                                                    </div>
+                                                </div>
+                                                <div className="notif-item unread">
+                                                    <div className="notif-dot" />
+                                                    <div className="notif-content">
+                                                        <p className="notif-text">Có phiên Live mới từ <strong>SpaceSpeakers</strong></p>
+                                                        <span className="notif-time">5 phút trước</span>
+                                                    </div>
+                                                </div>
+                                                <div className="notif-item unread">
+                                                    <div className="notif-dot" />
+                                                    <div className="notif-content">
+                                                        <p className="notif-text">Podcast mới: <strong>"Tâm lý học ứng dụng"</strong> đã phát hành</p>
+                                                        <span className="notif-time">1 giờ trước</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="notification-footer">
+                                                <button>Xem tất cả thông báo</button>
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
+                                {/* Avatar */}
                                 <div className="avatar-container" ref={dropdownRef}>
-                                    <div className="avatar" onClick={() => setShowDropdown(!showDropdown)}>
-                                        <img src="https://i.pravatar.cc/100?img=5" alt="User avatar" />
+                                    <div className="avatar" onClick={() => { setShowDropdown(prev => !prev); setShowNotifications(false); setShowSearch(false); setShowLiveDropdown(false); }}>
+                                        {userInfo?.avatarUrl ? (
+                                            <img src={userInfo.avatarUrl} alt="User avatar" />
+                                        ) : (
+                                            <div className="avatar-default">
+                                                <UserCircle2 size={36} color="#55C5F1" strokeWidth={1.5} />
+                                            </div>
+                                        )}
                                     </div>
-                                    
+
                                     {showDropdown && (
                                         <div className="avatar-dropdown">
+                                            <div className="avatar-dropdown-user">
+                                                <div className="avatar-dropdown-avatar">
+                                                    {userInfo?.avatarUrl
+                                                        ? <img src={userInfo.avatarUrl} alt="avatar" />
+                                                        : <UserCircle2 size={32} color="#55C5F1" strokeWidth={1.5} />
+                                                    }
+                                                </div>
+                                                <div>
+                                                    <p className="avatar-dropdown-name">
+                                                        {userInfo?.firstName && userInfo?.lastName
+                                                            ? `${userInfo.firstName} ${userInfo.lastName}`
+                                                            : userInfo?.username || "Người dùng"}
+                                                    </p>
+                                                    <p className="avatar-dropdown-email">{userInfo?.email || ""}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="avatar-dropdown-divider" />
+
                                             <button className="dropdown-item" onClick={handleProfile}>
                                                 <Icon name="user" size={18} />
-                                                <span>Thông tin</span>
+                                                <span>Trang cá nhân</span>
                                             </button>
-                                            <button className="dropdown-item" onClick={handleLogout}>
+                                            <button className="dropdown-item" onClick={() => { setShowDropdown(false); navigate('/settings'); }}>
+                                                <Icon name="settings" size={18} />
+                                                <span>Cài đặt</span>
+                                            </button>
+
+                                            <div className="avatar-dropdown-divider" />
+
+                                            <button className="dropdown-item logout" onClick={handleLogout}>
                                                 <Icon name="logout" size={18} />
                                                 <span>Đăng xuất</span>
                                             </button>
@@ -144,15 +356,14 @@ const Header: React.FC = () => {
                                 </div>
                             </>
                         ) : (
-                            <Button className="login-btn"
-                                onClick={() => navigate("/login")}>
+                            <Button className="login-btn" onClick={() => navigate("/login")}>
                                 Đăng nhập
                             </Button>
                         )}
-
                     </div>
-
                 </div>
+
+
             </header>
         </div>
     );

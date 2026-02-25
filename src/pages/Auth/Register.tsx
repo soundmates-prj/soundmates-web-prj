@@ -108,7 +108,7 @@ const Register: React.FC = () => {
       <div className="register-left">
         <div className="brand">
           <img src={logo} alt="SoundMates" />
-          <h1>SoundMate</h1>
+          <h1>SoundMates</h1>
           <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
         </div>
       </div>

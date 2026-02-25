@@ -46,6 +46,17 @@ const Login: React.FC = () => {
       }
 
       localStorage.setItem("accessToken", accessToken);
+      const userData = res.data?.data;
+      if (userData) {
+        localStorage.setItem("userInfo", JSON.stringify({
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          username: userData.username,
+          email: userData.email,
+          avatarUrl: userData.avatarUrl || null,
+        }));
+      }
+      window.dispatchEvent(new Event("authChange"));
 
       showSuccess("Đăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
       navigate("/");
@@ -64,7 +75,7 @@ const Login: React.FC = () => {
       {/* LEFT */}
       <div className="login-left">
         <div className="brand">
-          <img src={logo} alt="SoundMate" />
+          <img src={logo} alt="SoundMates" />
           <h1>SoundMates</h1>
           <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
         </div>
@@ -153,6 +164,17 @@ const Login: React.FC = () => {
                   }
 
                   localStorage.setItem("accessToken", accessToken);
+                  const googleUserData = res.data?.data;
+                  if (googleUserData) {
+                    localStorage.setItem("userInfo", JSON.stringify({
+                      firstName: googleUserData.firstName,
+                      lastName: googleUserData.lastName,
+                      username: googleUserData.username,
+                      email: googleUserData.email,
+                      avatarUrl: googleUserData.avatarUrl || null,
+                    }));
+                  }
+                  window.dispatchEvent(new Event("authChange"));
 
                   showSuccess("Đăng nhập Google thành công!", "Chào mừng bạn quay trở lại SoundMates");
                   navigate("/");
