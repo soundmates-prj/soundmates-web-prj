@@ -763,3 +763,75 @@ a:hover {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
+/* ============================================
+   Custom Toast Notifications (react-toastify)
+   ============================================ */
+.Toastify__toast {
+  font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  min-height: unset !important;
+}
+
+.Toastify__toast--error {
+  background: #fff !important;
+  border-left: 4px solid #ef4444 !important;
+  color: #1f2937 !important;
+}
+
+.Toastify__toast--success {
+  background: #fff !important;
+  border-left: 4px solid #22c55e !important;
+  color: #1f2937 !important;
+}
+
+.Toastify__toast--warning {
+  background: #fff !important;
+  border-left: 4px solid #f59e0b !important;
+  color: #1f2937 !important;
+}
+
+.Toastify__toast--info {
+  background: #fff !important;
+  border-left: 4px solid #55C5F1 !important;
+  color: #1f2937 !important;
+}
+
+.Toastify__toast-body {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  color: #1f2937 !important;
+  line-height: 1.5 !important;
+  padding: 0 !important;
+}
+
+.Toastify__progress-bar--error {
+  background: #ef4444 !important;
+}
+
+.Toastify__progress-bar--success {
+  background: #22c55e !important;
+}
+
+.Toastify__progress-bar--warning {
+  background: #f59e0b !important;
+}
+
+.Toastify__progress-bar--info {
+  background: #55C5F1 !important;
+}
+
+.Toastify__close-button {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+.Toastify__close-button:hover {
+  color: #374151 !important;
+}
+
+.Toastify__toast-icon svg {
+  fill: currentColor !important;
+}

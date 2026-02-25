@@ -14,24 +14,33 @@ import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
 function App() {
   return (
     <>
-      <ToastContainer position="top-right" />
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="light"
+      />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-otp" element={<VerifyOtp />} />
 
-      {/* Admin Routes with Sidebar Layout */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="analytics" element={<AnalyticsScreen />} />
-        <Route path="music" element={<MusicCatalogScreen />} />
-      </Route>
+        {/* Admin Routes with Sidebar Layout */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="analytics" element={<AnalyticsScreen />} />
+          <Route path="music" element={<MusicCatalogScreen />} />
+        </Route>
 
-      {/* Public Routes with Main Layout */}
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<Home />} />
-      </Route>
-    </Routes>
+        {/* Public Routes with Main Layout */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Home />} />
+        </Route>
+      </Routes>
     </>
   );
 }

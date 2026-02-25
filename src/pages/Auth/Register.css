@@ -13,6 +13,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -39,6 +40,7 @@
     opacity: 0;
     transform: translateX(-40px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -88,6 +90,7 @@
     opacity: 0;
     transform: translateY(40px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -112,6 +115,16 @@
 }
 
 /* INPUT */
+.name-row {
+  display: flex;
+  gap: 12px;
+}
+
+.name-row .input-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
 .input-wrapper {
   display: flex;
   align-items: center;
@@ -122,8 +135,14 @@
   margin-bottom: 16px;
 }
 
+.input-wrapper.input-error {
+  border-color: #e53935;
+  margin-bottom: 4px;
+}
+
 .input-wrapper svg {
   color: #5bc0eb;
+  flex-shrink: 0;
 }
 
 .input-wrapper input {
@@ -131,6 +150,20 @@
   outline: none;
   flex: 1;
   font-size: 14px;
+  background: transparent;
+}
+
+/* Ẩn icon mặc định của trình duyệt */
+.input-wrapper input::-ms-reveal,
+.input-wrapper input::-ms-clear {
+  display: none;
+}
+
+.input-wrapper input::-webkit-contacts-auto-fill-button,
+.input-wrapper input::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
 }
 
 .toggle-password {
@@ -237,12 +270,12 @@
   color: #5bc0eb;
   cursor: pointer;
   font-weight: 600;
-} 
+}
 
 .error-text {
   color: #e53935;
   font-size: 13px;
-  margin-top: 6px;
+  margin-top: 2px;
+  margin-bottom: 12px;
   margin-left: 6px;
 }
-

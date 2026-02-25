@@ -5,7 +5,7 @@ import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/common";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/axios";
-import { toast } from "react-toastify";
+import { showError, showSuccess } from "../../components/common/toastUtils";
 
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,9 +21,11 @@ const Register: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const PASSWORD_REGEX =
     /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -42,6 +44,17 @@ const Register: React.FC = () => {
         setPasswordError("");
       }
     }
+
+    // Validate email realtime
+    if (name === "email") {
+      if (!value) {
+        setEmailError("");
+      } else if (!EMAIL_REGEX.test(value)) {
+        setEmailError("Email không đúng định dạng");
+      } else {
+        setEmailError("");
+      }
+    }
   };
 
   const handleRegister = async () => {
@@ -54,11 +67,15 @@ const Register: React.FC = () => {
       !email.trim() ||
       !password.trim()
     ) {
-      toast.error("Vui lòng nhập đầy đủ thông tin");
+      showError("Thiếu thông tin", "Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+    if (!EMAIL_REGEX.test(email.trim())) {
+      showError("Email không hợp lệ", "Vui lòng nhập đúng định dạng email");
       return;
     }
     if (passwordError) {
-      toast.error("Mật khẩu chưa đúng định dạng");
+      showError("Mật khẩu không hợp lệ", "Mật khẩu chưa đúng định dạng");
       return;
     }
 
@@ -73,14 +90,14 @@ const Register: React.FC = () => {
         password: password,
       });
 
-      toast.success(
-        "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP",
+      showSuccess(
+        "Đăng ký thành công!",
+        "Vui lòng kiểm tra email để lấy mã OTP",
       );
 
       navigate("/verify-otp", { state: { email } });
     } catch (error: any) {
-      const msg = "Đăng ký thất bại";
-      toast.error(msg);
+      showError("Đăng ký thất bại", "Địa chỉ email hoặc tên người dùng đã tồn tại");
     } finally {
       setLoading(false);
     }
@@ -90,9 +107,9 @@ const Register: React.FC = () => {
     <div className="register-container">
       <div className="register-left">
         <div className="brand">
-          <img src={logo} alt="SoundMate" />
+          <img src={logo} alt="SoundMates" />
           <h1>SoundMate</h1>
-          <p>Share feelings. Connect hearts.</p>
+          <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
         </div>
       </div>
 
@@ -139,17 +156,18 @@ const Register: React.FC = () => {
             />
           </div>
 
-          <div className="input-wrapper">
+          <div className={`input-wrapper${emailError ? " input-error" : ""}`}>
             <Mail size={18} />
             <input
               name="email"
-              type="email"
+              type="text"
               placeholder="Email"
               value={form.email}
               onChange={handleChange}
               required
             />
           </div>
+          {emailError && <p className="error-text">{emailError}</p>}
 
           <div className="input-wrapper">
             <Lock size={18} />
