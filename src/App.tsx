@@ -6,15 +6,15 @@ import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import { AdminDashboard } from "./pages/Admin/Dashboard/Dashboard";
 import { AnalyticsScreen } from "./pages/Admin/Analytics/AnalyticsScreen";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { ToastProvider } from "./components/common/Toast";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
 import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
+import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
 
 function App() {
   return (
     <>
-      <ToastContainer position="top-right" />
+      <ToastProvider />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -25,6 +25,7 @@ function App() {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="analytics" element={<AnalyticsScreen />} />
         <Route path="music" element={<MusicCatalogScreen />} />
+        <Route path="users" element={<UserManagementScreen />} />
       </Route>
 
       {/* Public Routes with Main Layout */}

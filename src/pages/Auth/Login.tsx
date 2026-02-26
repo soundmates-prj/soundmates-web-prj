@@ -5,7 +5,7 @@ import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/common";
 import api from "../../services/axios";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { showToast } from "../../utils/toast";
 import { GoogleLogin } from "@react-oauth/google";
 
 const Login: React.FC = () => {
@@ -17,7 +17,10 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      toast.error("Vui lòng nhập email và mật khẩu");
+      showToast.warning(
+        "Thông báo",
+        "Vui lòng nhập email và mật khẩu"
+      );
       return;
     }
 
@@ -34,16 +37,23 @@ const Login: React.FC = () => {
       const accessToken = res.data?.data?.accessToken;
 
       if (!accessToken) {
-        toast.error("Server không trả token");
+        showToast.error(
+          "Server không trả token",
+          "Vui lòng thử lại sau"
+        );
         return;
       }
 
       localStorage.setItem("accessToken", accessToken);
 
-      toast.success("Đăng nhập thành công");
+      showToast.success(
+        "Đăng nhập thành công",
+        "Chào mừng bạn đã quay trở lại SoundMate!"
+      );
       navigate("/");
     } catch (error: any) {
-      toast.error(
+      showToast.error(
+        "Đăng nhập thất bại",
         error.response?.data?.message || "Email hoặc mật khẩu không đúng",
       );
     } finally {
@@ -127,7 +137,7 @@ const Login: React.FC = () => {
                   const idToken = credentialResponse.credential;
 
                   if (!idToken) {
-                    toast.error("Không lấy được Google token");
+                    showToast.error("Không lấy được Google token");
                     return;
                   }
 
@@ -140,22 +150,22 @@ const Login: React.FC = () => {
                   const accessToken = res.data?.data?.accessToken;
 
                   if (!accessToken) {
-                    toast.error("Server không trả token");
+                    showToast.error("Server không trả token");
                     return;
                   }
 
                   localStorage.setItem("accessToken", accessToken);
 
-                  toast.success("Đăng nhập Google thành công");
+                  showToast.success("Đăng nhập Google thành công");
                   navigate("/");
                 } catch (err: any) {
-                  toast.error(
+                  showToast.error(
                     err.response?.data?.message || "Đăng nhập Google thất bại",
                   );
                 }
               }}
               onError={() => {
-                toast.error("Google Login thất bại");
+                showToast.error("Google Login thất bại");
               }}
             />
           </div>

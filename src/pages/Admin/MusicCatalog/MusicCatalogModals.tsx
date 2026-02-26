@@ -8,10 +8,13 @@ import {
   Copy,
   ExternalLink,
   Music,
-  Plus
+  Plus,
+  Trash2,
+  ChevronDown
 } from 'lucide-react';
 import { useState } from 'react';
 import './MusicCatalog.css';
+import type { MusicTrack } from '../../../services/musicCatalogService';
 
 // Modal Base Component
 interface ModalProps {
@@ -42,147 +45,290 @@ function Modal({ isOpen, onClose, title, children, size = 'medium' }: ModalProps
   );
 }
 
-// Add Track Modal
-export function AddTrackModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [formData, setFormData] = useState({
-    title: '',
-    artist: '',
-    album: '',
-    genre: 'Cổ Điển',
-    duration: '',
-    audioFile: null as File | null,
-    coverImage: null as File | null,
-  });
+// Add Track Modal - New Multiple Upload Version
+export function AddTrackModal({ 
+  isOpen, 
+  onClose,
+  onSubmit,
+  uploading
+}: { 
+  isOpen: boolean; 
+  onClose: () => void;
+  onSubmit?: (files: File[]) => Promise<MusicTrack[]>;
+  uploading?: boolean;
+}) {
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{[fileName: string]: number}>({});
+  const [uploadedTracks, setUploadedTracks] = useState<MusicTrack[]>([]);
+  const [expandedTracks, setExpandedTracks] = useState<Set<number>>(new Set());
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Adding track:', formData);
-    onClose();
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const audioFiles = files.filter(file => {
+      const validTypes = ['audio/mpeg', 'audio/mp4', 'audio/flac', 'audio/ogg', 'audio/wav', 'audio/x-wav', 'audio/wave'];
+      const validExtensions = ['.mp3', '.mp4', '.m4a', '.flac', '.ogg', '.wav'];
+      return validTypes.includes(file.type) || validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    });
+    
+    console.log('Selected files:', audioFiles.map(f => f.name));
+    setSelectedFiles(audioFiles);
+    setUploadProgress({});
+    setUploadedTracks([]);
+  };
+
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) {
+      alert('Vui lòng chọn ít nhất một file nhạc!');
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      if (onSubmit) {
+        const uploadedTracks = await onSubmit(selectedFiles);
+        console.log('Upload completed, got tracks:', uploadedTracks);
+        
+        // Show the uploaded tracks with real metadata
+        setUploadedTracks(uploadedTracks);
+        setSelectedFiles([]); // Clear selected files
+        setUploadProgress({});
+        
+        // Don't close modal immediately, let user review uploaded tracks
+        alert('Upload thành công! Xem thông tin bài hát bên dưới.');
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert(`Upload thất bại: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeFile = (fileToRemove: File) => {
+    setSelectedFiles(prev => prev.filter(file => file !== fileToRemove));
+  };
+
+  const toggleTrackExpansion = (trackId: number) => {
+    setExpandedTracks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(trackId)) {
+        newSet.delete(trackId);
+      } else {
+        newSet.add(trackId);
+      }
+      return newSet;
+    });
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const extractMetadataFromFilename = (filename: string) => {
+    const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+    const match = nameWithoutExt.match(/^(.+?)\s*[-]\s*(.+)$/);
+    
+    if (match) {
+      return { artist: match[1].trim(), title: match[2].trim() };
+    }
+    
+    return { artist: 'Unknown Artist', title: nameWithoutExt };
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Thêm Bài Hát Mới">
-      <form onSubmit={handleSubmit}>
+      <div className="add-track-modal">
+        {/* File Upload Area */}
         <div className="form-group">
-          <label className="form-label">Ảnh Bìa</label>
-          <div className="upload-area">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFormData({ ...formData, coverImage: e.target.files?.[0] || null })}
-              className="upload-input"
-              id="coverImage"
-            />
-            <label htmlFor="coverImage" style={{ cursor: 'pointer' }}>
-              <ImageIcon size={40} className="upload-area-icon" />
-              <p className="upload-area-title">
-                Kéo thả hoặc click để tải ảnh lên
-              </p>
-              <p className="upload-area-subtitle">
-                PNG, JPG (tối đa 5MB)
-              </p>
-            </label>
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">File Nhạc *</label>
-          <div className="upload-area">
+          <label className="form-label">Chọn File Nhạc *</label>
+          <div className="upload-area" style={{ minHeight: '120px', position: 'relative' }}>
             <input
               type="file"
               accept="audio/*"
-              onChange={(e) => setFormData({ ...formData, audioFile: e.target.files?.[0] || null })}
+              multiple
+              onChange={handleFileSelect}
               className="upload-input"
-              id="audioFile"
-              required
+              id="audioFiles"
+              disabled={isUploading || uploading}
             />
-            <label htmlFor="audioFile" style={{ cursor: 'pointer' }}>
+            <label htmlFor="audioFiles" style={{ cursor: isUploading ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
               <Music size={40} className="upload-area-icon" />
-              <p className="upload-area-title">
-                Kéo thả hoặc click để tải file nhạc lên
+              <p className="upload-area-title" style={{ margin: '8px 0' }}>
+                {selectedFiles.length === 0 
+                  ? 'Kéo thả hoặc click để chọn nhiều file nhạc'
+                  : `Đã chọn ${selectedFiles.length} file(s)`
+                }
               </p>
-              <p className="upload-area-subtitle">
-                MP3, WAV, FLAC (tối đa 50MB)
+              <p className="upload-area-subtitle" style={{ margin: 0 }}>
+                MP3, WAV, FLAC, OGG (có thể chọn nhiều file)
               </p>
             </label>
           </div>
         </div>
 
-        <div className="form-group">
-          <label className="form-label">Tên Bài Hát *</label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="form-input"
-            placeholder="Nhập tên bài hát"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Nghệ Sĩ *</label>
-          <input
-            type="text"
-            value={formData.artist}
-            onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-            className="form-input"
-            placeholder="Nhập tên nghệ sĩ"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Album</label>
-          <input
-            type="text"
-            value={formData.album}
-            onChange={(e) => setFormData({ ...formData, album: e.target.value })}
-            className="form-input"
-            placeholder="Nhập tên album"
-          />
-        </div>
-
-        <div className="grid-2">
-          <div className="form-group">
-            <label className="form-label">Thể Loại *</label>
-            <select
-              value={formData.genre}
-              onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-              className="form-select"
-              required
-            >
-              <option>Cổ Điển</option>
-              <option>Jazz</option>
-              <option>Acoustic</option>
-              <option>EDM</option>
-              <option>Nhạc Việt</option>
-              <option>Rock</option>
-              <option>Podcast</option>
-            </select>
+        {/* Selected Files List */}
+        {selectedFiles.length > 0 && (
+          <div className="selected-files-list" style={{ marginTop: '20px' }}>
+            <h4 style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>
+              Danh sách file đã chọn:
+            </h4>
+            <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
+              {selectedFiles.map((file, index) => {
+                const metadata = extractMetadataFromFilename(file.name);
+                return (
+                  <div key={index} style={{ 
+                    padding: '12px', 
+                    borderBottom: index < selectedFiles.length - 1 ? '1px solid #f3f4f6' : 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: '#fafafa'
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '500', fontSize: '14px', marginBottom: '2px' }}>
+                        {metadata.title}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '2px' }}>
+                        {metadata.artist} • {formatFileSize(file.size)}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                        {file.name}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(file)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      disabled={isUploading}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="form-group">
-            <label className="form-label">Thời Lượng</label>
-            <input
-              type="text"
-              value={formData.duration}
-              onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-              className="form-input"
-              placeholder="VD: 4:25"
-            />
-          </div>
-        </div>
+        )}
 
-        <div className="modal-footer">
+        {/* Upload Progress */}
+        {Object.keys(uploadProgress).length > 0 && (
+          <div className="upload-progress" style={{ marginTop: '20px' }}>
+            <h4 style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>
+              Tiến trình upload:
+            </h4>
+            {Object.entries(uploadProgress).map(([fileName, progress]) => (
+              <div key={fileName} style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '12px', color: '#374151' }}>{fileName}</span>
+                  <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                    {progress === -1 ? 'Lỗi' : `${Math.round(progress)}%`}
+                  </span>
+                </div>
+                <div style={{ 
+                  width: '100%', 
+                  height: '6px', 
+                  backgroundColor: '#e5e7eb', 
+                  borderRadius: '3px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ 
+                    width: `${progress === -1 ? 100 : progress}%`, 
+                    height: '100%', 
+                    backgroundColor: progress === -1 ? '#ef4444' : progress === 100 ? '#10b981' : '#3b82f6',
+                    transition: 'width 0.3s ease'
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Uploaded Tracks */}
+        {uploadedTracks.length > 0 && (
+          <div className="uploaded-tracks" style={{ marginTop: '20px' }}>
+            <h4 style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600', color: '#10b981' }}>
+              ✅ Đã upload thành công:
+            </h4>
+            {uploadedTracks.map((track) => (
+              <div key={track.id} style={{ marginBottom: '8px' }}>
+                <div
+                  onClick={() => toggleTrackExpansion(track.id)}
+                  style={{
+                    padding: '12px',
+                    backgroundColor: '#f0f9ff',
+                    border: '1px solid #e0f2fe',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: '500', fontSize: '14px' }}>{track.title}</div>
+                    <div style={{ fontSize: '12px', color: '#0369a1' }}>{track.artist}</div>
+                  </div>
+                  <ChevronDown 
+                    size={16} 
+                    style={{ 
+                      transform: expandedTracks.has(track.id) ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s ease'
+                    }} 
+                  />
+                </div>
+                
+                {expandedTracks.has(track.id) && (
+                  <div style={{
+                    marginTop: '4px',
+                    padding: '16px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e0f2fe',
+                    borderRadius: '6px',
+                    fontSize: '13px'
+                  }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div><strong>Tiêu đề:</strong> {track.title}</div>
+                      <div><strong>Nghệ sĩ:</strong> {track.artist}</div>
+                      <div><strong>Album:</strong> {track.album}</div>
+                      <div><strong>Thể loại:</strong> {track.genre}</div>
+                      <div><strong>Thời lượng:</strong> {track.duration}</div>
+                      <div><strong>Ngày tải:</strong> {track.uploadDate}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="modal-footer" style={{ marginTop: '24px' }}>
           <button type="button" onClick={onClose} className="btn btn-secondary">
-            Hủy
+            {uploadedTracks.length > 0 ? 'Đóng' : 'Hủy'}
           </button>
-          <button type="submit" className="btn btn-primary">
+          <button 
+            type="button" 
+            onClick={handleUpload}
+            className="btn btn-primary" 
+            disabled={selectedFiles.length === 0 || isUploading || uploading}
+          >
             <Save size={16} />
-            Thêm Bài Hát
+            {isUploading || uploading ? 'Đang tải lên...' : `Upload ${selectedFiles.length} file(s)`}
           </button>
         </div>
-      </form>
+      </div>
     </Modal>
   );
 }
@@ -191,11 +337,13 @@ export function AddTrackModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 export function EditTrackModal({ 
   isOpen, 
   onClose, 
-  track 
+  track,
+  onSubmit
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  track: any 
+  track: any;
+  onSubmit?: (trackId: number, updates: any) => Promise<void>;
 }) {
   if (!track) return null;
 
@@ -207,10 +355,25 @@ export function EditTrackModal({
     duration: track.duration || '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Updating track:', formData);
-    onClose();
+    if (onSubmit && track?.id) {
+      try {
+        await onSubmit(track.id, {
+          title: formData.title,
+          artist: formData.artist,
+          album: formData.album,
+          genre: formData.genre,
+          duration: formData.duration,
+        });
+        onClose();
+      } catch (error) {
+        console.error('Failed to update track:', error);
+      }
+    } else {
+      console.log('Updating track:', formData);
+      onClose();
+    }
   };
 
   return (
@@ -332,17 +495,39 @@ export function DeleteConfirmModal({
 }
 
 // Create Playlist Modal
-export function CreatePlaylistModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function CreatePlaylistModal({ 
+  isOpen, 
+  onClose,
+  onSubmit
+}: { 
+  isOpen: boolean; 
+  onClose: () => void;
+  onSubmit?: (data: { name: string; description?: string; isPublic?: boolean; }) => Promise<void>;
+}) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     isPublic: true,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Creating playlist:', formData);
-    onClose();
+    if (onSubmit) {
+      try {
+        await onSubmit({
+          name: formData.name,
+          description: formData.description || undefined,
+          isPublic: formData.isPublic,
+        });
+        setFormData({ name: '', description: '', isPublic: true });
+        onClose();
+      } catch (error) {
+        console.error('Failed to create playlist:', error);
+      }
+    } else {
+      console.log('Creating playlist:', formData);
+      onClose();
+    }
   };
 
   return (
@@ -402,11 +587,15 @@ export function CreatePlaylistModal({ isOpen, onClose }: { isOpen: boolean; onCl
 export function AddToPlaylistModal({ 
   isOpen, 
   onClose, 
-  trackCount 
+  trackCount,
+  playlists,
+  onSubmit
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   trackCount: number;
+  playlists?: Array<{ id: number; name: string; tracks: number; gradient?: string; }>;
+  onSubmit?: (playlistId: number) => Promise<void>;
 }) {
   const mockPlaylists = [
     { id: 1, name: 'Aethereal Flow', tracks: 24, gradient: 'gradient-1' },
@@ -416,10 +605,19 @@ export function AddToPlaylistModal({
     { id: 5, name: 'Acoustic Vibes', tracks: 27, gradient: 'gradient-5' },
   ];
 
+  const playlistsToShow = playlists || mockPlaylists;
   const [selectedPlaylist, setSelectedPlaylist] = useState<number | null>(null);
 
-  const handleAdd = () => {
-    if (selectedPlaylist) {
+  const handleAdd = async () => {
+    if (selectedPlaylist && onSubmit) {
+      try {
+        await onSubmit(selectedPlaylist);
+        setSelectedPlaylist(null);
+        onClose();
+      } catch (error) {
+        console.error('Failed to add tracks to playlist:', error);
+      }
+    } else if (selectedPlaylist) {
       console.log('Adding tracks to playlist:', selectedPlaylist);
       onClose();
     }
@@ -428,14 +626,14 @@ export function AddToPlaylistModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Thêm ${trackCount} bài hát vào Playlist`} size="medium">
       <div className="playlist-selection-list">
-        {mockPlaylists.map((playlist) => (
+        {playlistsToShow.map((playlist) => (
           <button
             key={playlist.id}
             onClick={() => setSelectedPlaylist(playlist.id)}
             className={`playlist-selection-item ${selectedPlaylist === playlist.id ? 'selected' : ''}`}
           >
             <div className="playlist-selection-content">
-              <div className={`playlist-selection-cover ${playlist.gradient}`}>
+              <div className={`playlist-selection-cover ${playlist.gradient || `gradient-${((playlist.id % 5) + 1)}`}`}>
                 <Music size={20} style={{ color: 'white' }} />
               </div>
               <div>
