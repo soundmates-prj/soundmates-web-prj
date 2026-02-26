@@ -23,13 +23,13 @@ interface MenuItem {
 }
 
 const sidebarMenuItems: MenuItem[] = [
-    { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/admin/dashboard' },
-    { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Analytics', path: '/admin/analytics' },
-    { id: 'ai-content', icon: <Sparkles size={20} />, label: 'AI Content', path: '/admin/ai-content' },
+    { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Tổng Quan', path: '/admin/dashboard' },
+    { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Thống Kê', path: '/admin/analytics' },
+    { id: 'ai-content', icon: <Sparkles size={20} />, label: 'Nội Dung AI', path: '/admin/ai-content' },
     { id: 'users', icon: <Users size={20} />, label: 'Quản Lý Users', path: '/admin/users' },
-    { id: 'broadcasts', icon: <Radio size={20} />, label: 'Live Broadcasts', path: '/admin/broadcasts' },
-    { id: 'content', icon: <FileText size={20} />, label: 'Posts & Podcasts', path: '/admin/posts' },
-    { id: 'music', icon: <Music size={20} />, label: 'Music Catalog', path: '/admin/music' },
+    { id: 'broadcasts', icon: <Radio size={20} />, label: 'Phát Sóng Live', path: '/admin/broadcasts' },
+    { id: 'content', icon: <FileText size={20} />, label: 'Bài Viết & Podcast', path: '/admin/posts' },
+    { id: 'music', icon: <Music size={20} />, label: 'Kho Nhạc', path: '/admin/music' },
     { id: 'mentors', icon: <Star size={20} />, label: 'Đánh Giá Mentors', path: '/admin/mentors' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Cài Đặt Hệ Thống', path: '/admin/settings' },
 ];

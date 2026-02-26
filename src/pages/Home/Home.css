@@ -46,7 +46,7 @@
    ============================================ */
 .hero-section {
     background: var(--home-bg-section);
-    padding: 60px 24px 0px;
+    padding: 60px 32px 0px;
     position: relative;
     overflow: hidden;
 }
@@ -63,8 +63,8 @@
 }
 
 .hero-container {
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     display: grid;
     align-items: center;
     gap: 60px;
@@ -75,14 +75,16 @@
 .hero-content {
     flex: 1;
     text-align: center;
-    margin-bottom: 80px;
+    margin-bottom: 100px;
+    position: relative;
+    z-index: 3;
 }
 
 .hero-title {
     font-family: 'Ephesis', cursive;
     font-size: 10rem;
     color: var(--home-text-dark);
-    margin-bottom: 60px;
+    margin-bottom: 20px;
     line-height: 1.2;
     animation: fadeInUp 0.8s ease-out;
     font-weight: 400;
@@ -109,7 +111,7 @@
 
 .hero-subtitle {
     font-size: 1.8rem;
-    background: linear-gradient(180deg, #003580, var(--home-primary));
+    background: linear-gradient(180deg, #55C5F1, var(--home-primary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -146,6 +148,8 @@
     animation: fadeInRight 1s ease-out;
     position: relative;
     height: 310px;
+    z-index: 1;
+    margin-top: 60px;
     /* overflow: hidden; */
 }
 
@@ -176,9 +180,9 @@
    Section Styles
    ============================================ */
 .section {
-    padding: 60px 24px;
-    max-width: 1400px;
-    margin: 0 auto;
+    padding: 60px 32px;
+    max-width: 100%;
+    margin: 0;
 }
 
 .section-header {

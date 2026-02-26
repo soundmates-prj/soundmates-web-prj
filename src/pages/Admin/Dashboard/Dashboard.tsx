@@ -111,7 +111,7 @@ export function AdminDashboard() {
           icon={<Users size={24} />}
         />
         <StatsCard
-          title="Live Sessions"
+          title="Phiên Phát Sóng"
           value="145"
           change="+8.2%"
           isPositive={true}
@@ -139,10 +139,10 @@ export function AdminDashboard() {
         <div className="quick-actions-card">
           <h3 className="card-title">Thao Tác Nhanh</h3>
           <div className="quick-actions-grid">
-            <QuickAction icon={<Sparkles size={20} />} label="AI Content" />
-            <QuickAction icon={<Radio size={20} />} label="New Broadcast" />
-            <QuickAction icon={<FileText size={20} />} label="Create Post" />
-            <QuickAction icon={<Bell size={20} />} label="Send Alert" />
+            <QuickAction icon={<Sparkles size={20} />} label="Nội Dung AI" />
+            <QuickAction icon={<Radio size={20} />} label="Phát Sóng Mới" />
+            <QuickAction icon={<FileText size={20} />} label="Tạo Bài Viết" />
+            <QuickAction icon={<Bell size={20} />} label="Gửi Thông Báo" />
           </div>
         </div>
 

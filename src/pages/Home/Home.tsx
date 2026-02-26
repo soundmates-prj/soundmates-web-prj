@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import "./Home.css";
 import Icon from "../../components/common/Icon";
 
@@ -142,16 +142,7 @@ const playlistTabs = [
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("Mới");
-  const [isScrolled, setIsScrolled] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const scrollCarousel = (direction: "prev" | "next") => {
     if (carouselRef.current) {

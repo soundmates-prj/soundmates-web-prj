@@ -6,8 +6,6 @@ import {
     Heart,
     Clock,
     Download,
-    Share2,
-    Calendar
 } from 'lucide-react';
 import {
     LineChart,
@@ -147,7 +145,7 @@ export function AnalyticsScreen() {
                     subtext="82% tổng users"
                 />
                 <MetricCard
-                    title="Live Sessions"
+                    title="Phiên Phát Sóng"
                     value="145"
                     change="+8.7%"
                     isPositive={true}

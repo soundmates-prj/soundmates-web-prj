@@ -4,7 +4,7 @@ import logo from "../../assets/light_logo.png";
 import { Button } from "../../components/common";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/axios";
-import { showToast } from "../../utils/toast";
+import { showError, showSuccess } from "../../components/common/toastUtils";
 import { ShieldCheck } from "lucide-react";
 
 const VerifyOtp: React.FC = () => {
@@ -12,28 +12,18 @@ const VerifyOtp: React.FC = () => {
   const location = useLocation();
   const email = location.state?.email;
 
-  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
-  const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleChange = (value: string, index: number) => {
-    if (!/^\d?$/.test(value)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    if (value && index < 5) {
-      inputsRef.current[index + 1]?.focus();
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setOtp(value);
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp || otp.length !== 6) {
-      showToast.warning(
-        "Thông báo", 
-        "Vui lòng nhập đủ 6 số OTP"
-      );
+    if (otp.length !== 6) {
+      showError("Mã OTP không hợp lệ", "Vui lòng nhập đủ 6 số OTP");
       return;
     }
 
@@ -42,7 +32,7 @@ const VerifyOtp: React.FC = () => {
 
       const res = await api.post("/auth/verify-email", {
         email,
-        otpCode: otp.join(""),
+        otpCode: otp,
       });
 
       const { accessToken, refreshToken, user } = res.data.data;
@@ -57,16 +47,10 @@ const VerifyOtp: React.FC = () => {
         localStorage.setItem("user", JSON.stringify(user));
       }
 
-      showToast.success(
-        "Xác thực thành công!",
-        "Bạn đã xác thực tài khoản thành công!"
-      );
+      showSuccess("Xác thực thành công!", "Chào mừng bạn đến với SoundMates");
       navigate("/", { replace: true });
     } catch (err: any) {
-      showToast.error(
-        "Xác thực thất bại", 
-        err.response?.data?.message || "OTP không hợp lệ"
-      );
+      showError("Xác thực thất bại", err.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn");
     } finally {
       setLoading(false);
     }
@@ -78,7 +62,7 @@ const VerifyOtp: React.FC = () => {
       <div className="verify-left">
         <img src={logo} alt="SoundMates" />
         <h1>SoundMates</h1>
-        <p>Share feelings. Connect hearts.</p>
+        <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
       </div>
 
       {/* RIGHT */}
@@ -95,18 +79,31 @@ const VerifyOtp: React.FC = () => {
           </p>
 
           <div className="otp-wrapper">
-            <div className="otp-group">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => (inputsRef.current[index] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(e.target.value, index)}
-                />
+            {/* Visual 6 boxes */}
+            <div className="otp-group" onClick={() => inputRef.current?.focus()}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`otp-box${otp.length === i ? " otp-box-active" : ""
+                    }${otp[i] ? " otp-box-filled" : ""}`}
+                >
+                  {otp[i] || ""}
+                </div>
               ))}
+              {/* Hidden input */}
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={otp}
+                onChange={handleChange}
+                className="otp-hidden-input"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleVerifyOtp();
+                }}
+              />
             </div>
             <Button
               className="btn-primary"

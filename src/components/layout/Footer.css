@@ -4,12 +4,12 @@
 .home-footer {
     background: #F9FAFB;
     border-top: 3px solid #55C5F1;
-    padding: 40px 24px 20px;
+    padding: 40px 32px 20px;
 }
 
 .footer-container {
-    max-width: 1400px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
 }
 
 .footer-grid {
@@ -25,7 +25,7 @@
     flex-direction: column;
 }
 
-.footer-grid > div {
+.footer-grid>div {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -67,7 +67,8 @@
 .footer-social {
     display: flex;
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    align-items: center;
 }
 
 .footer-social-link {
@@ -126,18 +127,17 @@
 }
 
 .footer-app-title {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #6B7280;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    margin-top: 0;
     font-family: 'Be Vietnam Pro', sans-serif;
-    text-align: center;
 }
 
 .footer-app-buttons {
     display: flex;
     flex-direction: row;
     gap: 16px;
-    justify-content: center;
 }
 
 .app-store-link {

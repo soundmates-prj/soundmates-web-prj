@@ -14,7 +14,16 @@ import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagemen
 function App() {
   return (
     <>
-      <ToastProvider />
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="light"
+      />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -28,11 +37,11 @@ function App() {
         <Route path="users" element={<UserManagementScreen />} />
       </Route>
 
-      {/* Public Routes with Main Layout */}
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<Home />} />
-      </Route>
-    </Routes>
+        {/* Public Routes with Main Layout */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Home />} />
+        </Route>
+      </Routes>
     </>
   );
 }

@@ -13,6 +13,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -39,6 +40,7 @@
     opacity: 0;
     transform: translateX(-40px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -88,6 +90,7 @@
     opacity: 0;
     transform: translateY(40px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -124,6 +127,7 @@
 
 .input-wrapper svg {
   color: #5bc0eb;
+  flex-shrink: 0;
 }
 
 .input-wrapper input {
@@ -131,6 +135,20 @@
   outline: none;
   flex: 1;
   font-size: 14px;
+  background: transparent;
+}
+
+/* Ẩn icon mặc định của trình duyệt */
+.input-wrapper input::-ms-reveal,
+.input-wrapper input::-ms-clear {
+  display: none;
+}
+
+.input-wrapper input::-webkit-contacts-auto-fill-button,
+.input-wrapper input::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
 }
 
 .toggle-password {

@@ -1,8 +1,8 @@
 import React from 'react';
-import Icon from '../common/Icon';
 import lighLogo from '../../assets/light_logo.png';
 import appStoreImg from '../../assets/AppStore.png';
 import chPlayImg from '../../assets/CHPlay.png';
+import { Facebook, Instagram, Twitter } from 'lucide-react';
 import './Footer.css';
 
 const Footer: React.FC = () => {
@@ -15,7 +15,7 @@ const Footer: React.FC = () => {
               <img src={lighLogo} alt="SoundMates" />
               <div className="footer-logo-info">
                 <h3 className="footer-logo-text">SoundMates</h3>
-                <p className="footer-tagline">Đọc thú phát sóng mỗi ngày</p>
+                <p className="footer-tagline">Đọc thư phát sóng mỗi ngày</p>
               </div>
             </div>
           </div>
@@ -50,22 +50,22 @@ const Footer: React.FC = () => {
           <div className="footer-app-section">
             <div className="footer-social">
               <a href="#" className="footer-social-link">
-                <Icon name="facebook" size={20} />
+                <Facebook size={20} />
               </a>
               <a href="#" className="footer-social-link">
-                <Icon name="instagram" size={20} />
+                <Instagram size={20} />
               </a>
               <a href="#" className="footer-social-link">
-                <Icon name="twitter" size={20} />
+                <Twitter size={20} />
               </a>
             </div>
             <p className="footer-app-title">Tải ứng dụng SoundMates</p>
             <div className="footer-app-buttons">
               <a href="#" className="app-store-link">
-                <img src={chPlayImg} alt="Get it on Google Play" />
+                <img src={chPlayImg} alt="Tải trên Google Play" />
               </a>
               <a href="#" className="app-store-link">
-                <img src={appStoreImg} alt="Download on the App Store" />
+                <img src={appStoreImg} alt="Tải trên App Store" />
               </a>
             </div>
           </div>
