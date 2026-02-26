@@ -6,24 +6,15 @@ import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import { AdminDashboard } from "./pages/Admin/Dashboard/Dashboard";
 import { AnalyticsScreen } from "./pages/Admin/Analytics/AnalyticsScreen";
-import { ToastProvider } from "./components/common/Toast";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
 import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
 import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
+import { ToastProvider } from "./components/common";
 
 function App() {
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme="light"
-      />
+      <ToastProvider />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
