@@ -19,9 +19,9 @@ import {
   MoreHorizontal,
   FolderPlus,
   ArrowUpDown,
-  Check
+  Save
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './MusicCatalog.css';
 import {
   AddTrackModal,
@@ -33,40 +33,8 @@ import {
   ImportCSVModal,
   ShareModal
 } from './MusicCatalogModals';
-
-interface MusicTrack {
-  id: number;
-  title: string;
-  artist: string;
-  album: string;
-  duration: string;
-  genre: string;
-  plays: number;
-  likes: number;
-  uploadDate: string;
-  coverUrl?: string;
-}
-
-const mockTracks: MusicTrack[] = [
-  { id: 1, title: 'Moonlight Sonata', artist: 'Ludwig van Beethoven', album: 'Classical Essentials', duration: '5:23', genre: 'Cổ Điển', plays: 12847, likes: 3421, uploadDate: '15/01/2026' },
-  { id: 2, title: 'Autumn Leaves', artist: 'Bill Evans', album: 'Portrait in Jazz', duration: '4:47', genre: 'Jazz', plays: 9876, likes: 2678, uploadDate: '14/01/2026' },
-  { id: 3, title: 'Wonderwall', artist: 'Oasis', album: 'Acoustic Sessions', duration: '4:18', genre: 'Acoustic', plays: 8934, likes: 2234, uploadDate: '13/01/2026' },
-  { id: 4, title: 'Neon Lights', artist: 'DJ Shadow', album: 'Electronic Dreams', duration: '6:12', genre: 'EDM', plays: 7621, likes: 1876, uploadDate: '12/01/2026' },
-  { id: 5, title: 'Em Của Ngày Hôm Qua', artist: 'Sơn Tùng MTP', album: 'Vietnamese Hits', duration: '3:55', genre: 'Nhạc Việt', plays: 15234, likes: 4567, uploadDate: '11/01/2026' },
-  { id: 6, title: 'Blue in Green', artist: 'Miles Davis', album: 'Kind of Blue', duration: '5:37', genre: 'Jazz', plays: 6543, likes: 1654, uploadDate: '10/01/2026' },
-  { id: 7, title: 'Clair de Lune', artist: 'Claude Debussy', album: 'Suite Bergamasque', duration: '4:52', genre: 'Cổ Điển', plays: 11234, likes: 3012, uploadDate: '09/01/2026' },
-  { id: 8, title: 'The Scientist', artist: 'Coldplay', album: 'A Rush of Blood', duration: '5:09', genre: 'Acoustic', plays: 9421, likes: 2456, uploadDate: '08/01/2026' },
-];
-
-const genres = ['Tất cả', 'Cổ Điển', 'Jazz', 'Acoustic', 'EDM', 'Nhạc Việt', 'Rock', 'Podcast'];
-
-const playlists = [
-  { id: 1, name: 'Aethereal Flow', tracks: 24, cover: 'gradient-1' },
-  { id: 2, name: 'Celestial Waves', tracks: 18, cover: 'gradient-2' },
-  { id: 3, name: 'Đêm Cổ Điển', tracks: 32, cover: 'gradient-3' },
-  { id: 4, name: 'Jazz Collection', tracks: 45, cover: 'gradient-4' },
-  { id: 5, name: 'Acoustic Vibes', tracks: 27, cover: 'gradient-5' },
-];
+import { useMusicCatalog } from '../../../hooks/useMusicCatalog';
+import type { MusicTrack } from '../../../services/musicCatalogService';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -95,6 +63,29 @@ export function MusicCatalogScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTracks, setSelectedTracks] = useState<number[]>([]);
   
+  // Use music catalog hook
+  const {
+    tracks,
+    playlists,
+    genres,
+    totalTracks,
+    loading: _loading,
+    tracksLoading,
+    uploading,
+    deleting: _deleting,
+    error: _error,
+    loadTracks,
+    uploadTrack: _uploadTrack,
+    uploadMultipleTracks,
+    updateTrack,
+    deleteTrack,
+    deleteTracks,
+    createPlaylist,
+    addTracksToPlaylist,
+    searchTracks: _searchTracks,
+    setFilters,
+  } = useMusicCatalog();
+  
   // Modal states
   const [showAddTrackModal, setShowAddTrackModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -112,31 +103,27 @@ export function MusicCatalogScreen() {
   const [editingTrack, setEditingTrack] = useState<MusicTrack | null>(null);
   
   // Sort state
-  const [sortBy, setSortBy] = useState<'title' | 'plays' | 'likes' | 'uploadDate'>('uploadDate');
+  const [sortBy, _setSortBy] = useState<'title' | 'plays' | 'likes' | 'uploadDate'>('uploadDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const filteredTracks = mockTracks.filter(track => {
-    const matchesGenre = selectedGenre === 'Tất cả' || track.genre === selectedGenre;
-    const matchesSearch = track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         track.album.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesGenre && matchesSearch;
-  }).sort((a, b) => {
-    const order = sortOrder === 'asc' ? 1 : -1;
-    switch (sortBy) {
-      case 'title':
-        return order * a.title.localeCompare(b.title);
-      case 'plays':
-        return order * (a.plays - b.plays);
-      case 'likes':
-        return order * (a.likes - b.likes);
-      case 'uploadDate':
-        return order * (new Date(a.uploadDate.split('/').reverse().join('-')).getTime() - 
-                       new Date(b.uploadDate.split('/').reverse().join('-')).getTime());
-      default:
-        return 0;
-    }
-  });
+  // Apply filters when state changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const filters = {
+        genre: selectedGenre !== 'Tất cả' ? selectedGenre : undefined,
+        searchQuery: searchQuery || undefined,
+        sortBy,
+        sortOrder,
+        limit: 50,
+      };
+      setFilters(filters);
+      loadTracks(filters);
+    }, searchQuery ? 500 : 0); // Debounce search by 500ms, immediate for other filters
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedGenre, searchQuery, sortBy, sortOrder]); // Remove setFilters and loadTracks from deps
+
+  const filteredTracks = tracks;
 
   const toggleTrackSelection = (id: number) => {
     setSelectedTracks(prev => 
@@ -150,23 +137,93 @@ export function MusicCatalogScreen() {
     setActiveActionMenu(null);
   };
 
+  const handleSaveEdit = async (trackId: number, updates: Partial<MusicTrack>) => {
+    try {
+      await updateTrack(trackId, updates);
+      setShowEditModal(false);
+      setEditingTrack(null);
+    } catch (error) {
+      console.error('Failed to update track:', error);
+      // Error is handled by the hook
+    }
+  };
+
   const handleDelete = (trackId: number) => {
     setSelectedTracks([trackId]);
     setShowDeleteModal(true);
     setActiveActionMenu(null);
   };
 
+  const handleConfirmDelete = async () => {
+    try {
+      if (selectedTracks.length === 1) {
+        await deleteTrack(selectedTracks[0]);
+      } else {
+        await deleteTracks(selectedTracks);
+      }
+      setShowDeleteModal(false);
+      setSelectedTracks([]);
+    } catch (error) {
+      console.error('Failed to delete track(s):', error);
+      // Error is handled by the hook
+    }
+  };
+
   const handleBulkDelete = () => {
-    setShowDeleteModal(true);
+    if (selectedTracks.length > 0) {
+      setShowDeleteModal(true);
+    }
   };
 
   const handleAddToPlaylist = () => {
-    setShowAddToPlaylistModal(true);
+    if (selectedTracks.length > 0) {
+      setShowAddToPlaylistModal(true);
+    }
   };
 
+  const handleConfirmAddToPlaylist = async (playlistId: number) => {
+    try {
+      await addTracksToPlaylist(playlistId, selectedTracks);
+      setShowAddToPlaylistModal(false);
+      setSelectedTracks([]);
+    } catch (error) {
+      console.error('Failed to add tracks to playlist:', error);
+      // Error is handled by the hook
+    }
+  };
+
+  const handleUpload = async (files: File[]): Promise<MusicTrack[]> => {
+    try {
+      console.log('MusicCatalog handleUpload called with:', files.map(f => f.name));
+      const results = await uploadMultipleTracks(files);
+      console.log('Multiple upload successful:', results);
+      // Don't close modal here, let modal handle it
+      return results;
+    } catch (error) {
+      console.error('Failed to upload tracks in MusicCatalog:', error);
+      // Error is handled by the hook and modal
+      throw error;
+    }
+  };
+
+  const handleCreatePlaylist = async (data: {
+    name: string;
+    description?: string;
+    isPublic?: boolean;
+  }) => {
+    try {
+      await createPlaylist(data);
+      setShowPlaylistModal(false);
+    } catch (error) {
+      console.error('Failed to create playlist:', error);
+      // Error is handled by the hook
+    }
+  };
   const handleExport = () => {
-    const csvContent = filteredTracks
-      .filter(t => selectedTracks.length === 0 || selectedTracks.includes(t.id))
+    const exportTracks = selectedTracks.length === 0 ? filteredTracks : 
+      filteredTracks.filter(t => selectedTracks.includes(t.id));
+    
+    const csvContent = exportTracks
       .map(t => `${t.title},${t.artist},${t.album},${t.genre},${t.duration},${t.plays},${t.likes}`)
       .join('\n');
     
@@ -176,6 +233,7 @@ export function MusicCatalogScreen() {
     a.href = url;
     a.download = 'music-catalog.csv';
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleShare = (track: MusicTrack) => {
@@ -219,25 +277,25 @@ export function MusicCatalogScreen() {
         <StatCard
           icon={<Music size={20} style={{ color: '#55c5f1' }} />}
           label="Tổng Bài Hát"
-          value="8,921"
+          value={totalTracks.toString()}
           color=""
         />
         <StatCard
           icon={<List size={20} style={{ color: '#8CC5FA' }} />}
           label="Playlists"
-          value="156"
+          value={playlists.length.toString()}
           color=""
         />
         <StatCard
           icon={<TrendingUp size={20} style={{ color: '#D8F51A' }} />}
-          label="Lượt Nghe Hôm Nay"
-          value="45.8K"
+          label="Thể Loại"
+          value={(genres.length - 1).toString()}
           color=""
         />
         <StatCard
           icon={<Heart size={20} style={{ color: '#FB2C36' }} />}
-          label="Lượt Thích"
-          value="124K"
+          label="Đang Tải"
+          value={tracksLoading ? '⏳' : '✅'}
           color=""
         />
       </div>
@@ -586,7 +644,9 @@ export function MusicCatalogScreen() {
       {/* Modals */}
       <AddTrackModal 
         isOpen={showAddTrackModal} 
-        onClose={() => setShowAddTrackModal(false)} 
+        onClose={() => setShowAddTrackModal(false)}
+        onSubmit={handleUpload}
+        uploading={uploading}
       />
       
       <EditTrackModal 
@@ -596,6 +656,7 @@ export function MusicCatalogScreen() {
           setEditingTrack(null);
         }}
         track={editingTrack}
+        onSubmit={handleSaveEdit}
       />
       
       <DeleteConfirmModal 
@@ -605,15 +666,13 @@ export function MusicCatalogScreen() {
           if (selectedTracks.length === 1) setSelectedTracks([]);
         }}
         count={selectedTracks.length}
-        onConfirm={() => {
-          setShowDeleteModal(false);
-          setSelectedTracks([]);
-        }}
+        onConfirm={handleConfirmDelete}
       />
       
       <CreatePlaylistModal 
         isOpen={showPlaylistModal} 
-        onClose={() => setShowPlaylistModal(false)} 
+        onClose={() => setShowPlaylistModal(false)}
+        onSubmit={handleCreatePlaylist}
       />
       
       <AddToPlaylistModal 
@@ -622,12 +681,14 @@ export function MusicCatalogScreen() {
           setShowAddToPlaylistModal(false);
         }}
         trackCount={selectedTracks.length}
+        playlists={playlists}
+        onSubmit={handleConfirmAddToPlaylist}
       />
       
       <AdvancedFilterModal 
         isOpen={showFilterModal} 
         onClose={() => setShowFilterModal(false)}
-        onApply={(filters) => {
+        onApply={(_filters) => {
           setShowFilterModal(false);
         }}
       />
