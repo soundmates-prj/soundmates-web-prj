@@ -446,6 +446,7 @@ class MusicCatalogService {
         // You may need to adjust this based on the actual API endpoints available
         await musicCatalogApi.updatePlaylist(this.defaultStationId, playlistId, {
           // Add track to playlist - this might need adjustment based on actual API
+          trackId,
         });
       }
     } catch (error) {
