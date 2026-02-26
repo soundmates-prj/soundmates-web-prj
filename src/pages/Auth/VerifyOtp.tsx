@@ -4,7 +4,7 @@ import logo from "../../assets/light_logo.png";
 import { Button } from "../../components/common";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/axios";
-import { toast } from "react-toastify";
+import { showToast } from "../../utils/toast";
 import { ShieldCheck } from "lucide-react";
 
 const VerifyOtp: React.FC = () => {
@@ -30,7 +30,7 @@ const VerifyOtp: React.FC = () => {
 
   const handleVerifyOtp = async () => {
     if (!otp || otp.length !== 6) {
-      toast.error("Vui lòng nhập đủ 6 số OTP");
+      showToast.error("Vui lòng nhập đủ 6 số OTP");
       return;
     }
 
@@ -54,10 +54,10 @@ const VerifyOtp: React.FC = () => {
         localStorage.setItem("user", JSON.stringify(user));
       }
 
-      toast.success("Xác thực thành công!");
+      showToast.success("Xác thực thành công!");
       navigate("/", { replace: true });
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "OTP không hợp lệ");
+      showToast.error(err.response?.data?.message || "OTP không hợp lệ");
     } finally {
       setLoading(false);
     }

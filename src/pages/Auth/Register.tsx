@@ -5,7 +5,7 @@ import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/common";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/axios";
-import { toast } from "react-toastify";
+import { showToast } from "../../utils/toast";
 
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -54,11 +54,11 @@ const Register: React.FC = () => {
       !email.trim() ||
       !password.trim()
     ) {
-      toast.error("Vui lòng nhập đầy đủ thông tin");
+      showToast.error("Vui lòng nhập đầy đủ thông tin");
       return;
     }
     if (passwordError) {
-      toast.error("Mật khẩu chưa đúng định dạng");
+      showToast.error("Mật khẩu chưa đúng định dạng");
       return;
     }
 
@@ -73,14 +73,14 @@ const Register: React.FC = () => {
         password: password,
       });
 
-      toast.success(
+      showToast.success(
         "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP",
       );
 
       navigate("/verify-otp", { state: { email } });
     } catch (error: any) {
       const msg = "Đăng ký thất bại";
-      toast.error(msg);
+      showToast.error(msg);
     } finally {
       setLoading(false);
     }
