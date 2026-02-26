@@ -5,8 +5,8 @@ import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/common";
 import api from "../../services/axios";
 import { useNavigate } from "react-router-dom";
-import { showError, showSuccess } from "../../components/common/toastUtils";
 import { GoogleLogin } from "@react-oauth/google";
+import showToast from "../../utils/toast";
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -19,12 +19,12 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     if (!emailOrUsername.trim() || !password) {
-      showError("Thiếu thông tin", "Vui lòng nhập Email/Tên người dùng và mật khẩu");
+      showToast.warning("Thiếu thông tin", "Vui lòng nhập Email/Tên người dùng và mật khẩu");
       return;
     }
     // Nếu người dùng nhập có dấu @ thì kiểm tra định dạng email
     if (emailOrUsername.includes("@") && !EMAIL_REGEX.test(emailOrUsername.trim())) {
-      showError("Email không hợp lệ", "Vui lòng kiểm tra lại địa chỉ email");
+      showToast.warning("Email không hợp lệ", "Vui lòng kiểm tra lại địa chỉ email");
       return;
     }
 
@@ -41,7 +41,7 @@ const Login: React.FC = () => {
       const accessToken = res.data?.data?.accessToken;
 
       if (!accessToken) {
-        showError("Lỗi hệ thống", "Server không trả về token");
+        showToast.error("Lỗi hệ thống", "Server không trả về token");
         return;
       }
 
@@ -58,10 +58,10 @@ const Login: React.FC = () => {
       }
       window.dispatchEvent(new Event("authChange"));
 
-      showSuccess("Đăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
+      showToast.success("Đăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
       navigate("/");
     } catch (error: any) {
-      showError(
+      showToast.error(
         "Đăng nhập không thành công!",
         error.response?.data?.message || "Mật khẩu hoặc Email/Username không khớp.",
       );
@@ -146,7 +146,7 @@ const Login: React.FC = () => {
                   const idToken = credentialResponse.credential;
 
                   if (!idToken) {
-                    showError("Lỗi Google", "Không lấy được Google token");
+                    showToast.error("Lỗi Google", "Không lấy được Google token");
                     return;
                   }
 
@@ -159,7 +159,7 @@ const Login: React.FC = () => {
                   const accessToken = res.data?.data?.accessToken;
 
                   if (!accessToken) {
-                    showError("Lỗi hệ thống", "Server không trả về token");
+                    showToast.error("Lỗi hệ thống", "Server không trả về token");
                     return;
                   }
 
@@ -176,17 +176,17 @@ const Login: React.FC = () => {
                   }
                   window.dispatchEvent(new Event("authChange"));
 
-                  showSuccess("Đăng nhập Google thành công!", "Chào mừng bạn quay trở lại SoundMates");
+                  showToast.success("Đăng nhập Google thành công!", "Chào mừng bạn quay trở lại SoundMates");
                   navigate("/");
                 } catch (err: any) {
-                  showError(
+                  showToast.error(
                     "Đăng nhập Google thất bại",
                     err.response?.data?.message || "Vui lòng thử lại sau",
                   );
                 }
               }}
               onError={() => {
-                showError("Đăng nhập Google thất bại", "Vui lòng thử lại sau");
+                showToast.error("Đăng nhập Google thất bại", "Vui lòng thử lại sau");
               }}
             />
           </div>

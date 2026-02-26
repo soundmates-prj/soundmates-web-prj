@@ -4,8 +4,8 @@ import logo from "../../assets/light_logo.png";
 import { Button } from "../../components/common";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/axios";
-import { showError, showSuccess } from "../../components/common/toastUtils";
 import { ShieldCheck } from "lucide-react";
+import showToast from "../../utils/toast";
 
 const VerifyOtp: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ const VerifyOtp: React.FC = () => {
 
   const handleVerifyOtp = async () => {
     if (otp.length !== 6) {
-      showError("Mã OTP không hợp lệ", "Vui lòng nhập đủ 6 số OTP");
+      showToast.warning("Mã OTP không hợp lệ", "Vui lòng nhập đủ 6 số OTP");
       return;
     }
 
@@ -47,10 +47,10 @@ const VerifyOtp: React.FC = () => {
         localStorage.setItem("user", JSON.stringify(user));
       }
 
-      showSuccess("Xác thực thành công!", "Chào mừng bạn đến với SoundMates");
+      showToast.success("Xác thực thành công!", "Chào mừng bạn đến với SoundMates");
       navigate("/", { replace: true });
     } catch (err: any) {
-      showError("Xác thực thất bại", err.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn");
+      showToast.error("Xác thực thất bại", err.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn");
     } finally {
       setLoading(false);
     }

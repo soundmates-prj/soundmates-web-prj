@@ -5,7 +5,7 @@ import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/common";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/axios";
-import { showError, showSuccess } from "../../components/common/toastUtils";
+import showToast from "../../utils/toast";
 
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -67,15 +67,15 @@ const Register: React.FC = () => {
       !email.trim() ||
       !password.trim()
     ) {
-      showError("Thiếu thông tin", "Vui lòng nhập đầy đủ thông tin");
+      showToast.warning("Thiếu thông tin", "Vui lòng nhập đầy đủ thông tin");
       return;
     }
     if (!EMAIL_REGEX.test(email.trim())) {
-      showError("Email không hợp lệ", "Vui lòng nhập đúng định dạng email");
+      showToast.warning("Email không hợp lệ", "Vui lòng nhập đúng định dạng email");
       return;
     }
     if (passwordError) {
-      showError("Mật khẩu không hợp lệ", "Mật khẩu chưa đúng định dạng");
+      showToast.warning("Mật khẩu không hợp lệ", "Mật khẩu chưa đúng định dạng");
       return;
     }
 
@@ -90,14 +90,14 @@ const Register: React.FC = () => {
         password: password,
       });
 
-      showSuccess(
+      showToast.success(
         "Đăng ký thành công!",
         "Vui lòng kiểm tra email để lấy mã OTP",
       );
 
       navigate("/verify-otp", { state: { email } });
     } catch (error: any) {
-      showError("Đăng ký thất bại", "Địa chỉ email hoặc tên người dùng đã tồn tại");
+      showToast.error("Đăng ký thất bại", "Địa chỉ email hoặc tên người dùng đã tồn tại");
     } finally {
       setLoading(false);
     }
