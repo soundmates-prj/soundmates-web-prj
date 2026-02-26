@@ -17,7 +17,10 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      showToast.warning("Vui lòng nhập email và mật khẩu");
+      showToast.warning(
+        "Thông báo",
+        "Vui lòng nhập email và mật khẩu"
+      );
       return;
     }
 
@@ -34,16 +37,23 @@ const Login: React.FC = () => {
       const accessToken = res.data?.data?.accessToken;
 
       if (!accessToken) {
-        showToast.error("Server không trả token");
+        showToast.error(
+          "Server không trả token",
+          "Vui lòng thử lại sau"
+        );
         return;
       }
 
       localStorage.setItem("accessToken", accessToken);
 
-      showToast.success("Đăng nhập thành công");
+      showToast.success(
+        "Đăng nhập thành công",
+        "Chào mừng bạn đã quay trở lại SoundMate!"
+      );
       navigate("/");
     } catch (error: any) {
       showToast.error(
+        "Đăng nhập thất bại",
         error.response?.data?.message || "Email hoặc mật khẩu không đúng",
       );
     } finally {

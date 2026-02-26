@@ -30,7 +30,10 @@ const VerifyOtp: React.FC = () => {
 
   const handleVerifyOtp = async () => {
     if (!otp || otp.length !== 6) {
-      showToast.error("Vui lòng nhập đủ 6 số OTP");
+      showToast.warning(
+        "Thông báo", 
+        "Vui lòng nhập đủ 6 số OTP"
+      );
       return;
     }
 
@@ -54,10 +57,16 @@ const VerifyOtp: React.FC = () => {
         localStorage.setItem("user", JSON.stringify(user));
       }
 
-      showToast.success("Xác thực thành công!");
+      showToast.success(
+        "Xác thực thành công!",
+        "Bạn đã xác thực tài khoản thành công!"
+      );
       navigate("/", { replace: true });
     } catch (err: any) {
-      showToast.error(err.response?.data?.message || "OTP không hợp lệ");
+      showToast.error(
+        "Xác thực thất bại", 
+        err.response?.data?.message || "OTP không hợp lệ"
+      );
     } finally {
       setLoading(false);
     }

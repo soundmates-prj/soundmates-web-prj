@@ -54,11 +54,11 @@ const Register: React.FC = () => {
       !email.trim() ||
       !password.trim()
     ) {
-      showToast.error("Vui lòng nhập đầy đủ thông tin");
+      showToast.warning("Thông báo", "Vui lòng nhập đầy đủ thông tin");
       return;
     }
     if (passwordError) {
-      showToast.error("Mật khẩu chưa đúng định dạng");
+      showToast.warning("Thông báo", "Mật khẩu chưa đúng định dạng");
       return;
     }
 
@@ -74,13 +74,16 @@ const Register: React.FC = () => {
       });
 
       showToast.success(
-        "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP",
+        "Đăng ký thành công!",
+        "Vui lòng kiểm tra email để lấy mã OTP"
       );
 
       navigate("/verify-otp", { state: { email } });
     } catch (error: any) {
-      const msg = "Đăng ký thất bại";
-      showToast.error(msg);
+      showToast.error(
+        "Đăng ký thất bại", 
+        error.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại"
+      );
     } finally {
       setLoading(false);
     }
