@@ -6,10 +6,10 @@ import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import { AdminDashboard } from "./pages/Admin/Dashboard/Dashboard";
 import { AnalyticsScreen } from "./pages/Admin/Analytics/AnalyticsScreen";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { ToastProvider } from "./components/common/Toast";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
 import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
+import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
 
 function App() {
   return (
@@ -29,12 +29,13 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/verify-otp" element={<VerifyOtp />} />
 
-        {/* Admin Routes with Sidebar Layout */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="analytics" element={<AnalyticsScreen />} />
-          <Route path="music" element={<MusicCatalogScreen />} />
-        </Route>
+      {/* Admin Routes with Sidebar Layout */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="analytics" element={<AnalyticsScreen />} />
+        <Route path="music" element={<MusicCatalogScreen />} />
+        <Route path="users" element={<UserManagementScreen />} />
+      </Route>
 
         {/* Public Routes with Main Layout */}
         <Route element={<MainLayout />}>
