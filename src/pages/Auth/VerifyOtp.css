@@ -136,3 +136,29 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Resend */
+.otp-resend-row {
+  text-align: right;
+  margin-bottom: 8px;
+}
+
+.otp-resend-btn {
+  background: none;
+  border: none;
+  color: #5cc3f0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.otp-resend-btn:disabled {
+  color: #aaa;
+  cursor: default;
+}
+
+.otp-resend-btn:not(:disabled):hover {
+  text-decoration: underline;
+}

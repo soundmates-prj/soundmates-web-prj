@@ -116,7 +116,7 @@ const Login: React.FC = () => {
           </div>
 
           <div className="actions">
-            <span className="forgot">Quên mật khẩu?</span>
+            <span className="forgot" onClick={() => navigate("/forget-password")}>Quên mật khẩu?</span>
           </div>
 
           <Button

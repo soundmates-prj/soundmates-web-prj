@@ -95,7 +95,7 @@ const Register: React.FC = () => {
         "Vui lòng kiểm tra email để lấy mã OTP",
       );
 
-      navigate("/verify-otp", { state: { email } });
+      navigate("/verify-otp", { state: { email, firstName: firstName.trim(), lastName: lastName.trim(), username: username.trim() } });
     } catch (error: any) {
       showError("Đăng ký thất bại", "Địa chỉ email hoặc tên người dùng đã tồn tại");
     } finally {

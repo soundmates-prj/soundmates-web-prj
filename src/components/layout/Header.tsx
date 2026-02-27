@@ -3,7 +3,7 @@ import { Icon, Button } from "../common";
 import logoNoText from "../../assets/light_logo.png";
 import "./Header.css";
 import { useNavigate } from "react-router-dom";
-import { UserCircle2, BellRing, Search, X, Clock, TrendingUp, ChevronDown, Radio, Mic2, Calendar, Zap } from "lucide-react";
+import { UserCircle2, Bell, Search, X, Clock, TrendingUp, ChevronDown, Radio, Mic2, Calendar, Zap } from "lucide-react";
 
 interface UserInfo {
     firstName?: string;
@@ -263,7 +263,7 @@ const Header: React.FC = () => {
                                             setShowLiveDropdown(false);
                                         }}
                                     >
-                                        <BellRing size={20} color="#55C5F1" strokeWidth={1.8} />
+                                        <Bell size={20} color="#55C5F1" strokeWidth={1.8} />
                                         <span className="notif-badge">3</span>
                                     </button>
 
@@ -310,7 +310,7 @@ const Header: React.FC = () => {
                                             <img src={userInfo.avatarUrl} alt="User avatar" />
                                         ) : (
                                             <div className="avatar-default">
-                                                <UserCircle2 size={36} color="#55C5F1" strokeWidth={1.5} />
+                                                <UserCircle2 size={44} color="#55C5F1" strokeWidth={1.5} />
                                             </div>
                                         )}
                                     </div>

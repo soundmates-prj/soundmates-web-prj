@@ -1,4 +1,4 @@
-import { toast } from 'sonner';
+import { toast, Id } from 'react-toastify';
 
 /**
  * Toast Utility Functions
@@ -9,45 +9,33 @@ export const showToast = {
   /**
    * Toast thành công
    * @param message - Tiêu đề thông báo
-   * @param description - Mô tả chi tiết (optional)
    */
-  success: (message: string, description?: string) => {
-    toast.success(message, {
-      description,
-    });
+  success: (message: string) => {
+    toast.success(message);
   },
 
   /**
    * Toast lỗi
    * @param message - Tiêu đề thông báo
-   * @param description - Mô tả chi tiết (optional)
    */
-  error: (message: string, description?: string) => {
-    toast.error(message, {
-      description,
-    });
+  error: (message: string) => {
+    toast.error(message);
   },
 
   /**
    * Toast cảnh báo
    * @param message - Tiêu đề thông báo
-   * @param description - Mô tả chi tiết (optional)
    */
-  warning: (message: string, description?: string) => {
-    toast.warning(message, {
-      description,
-    });
+  warning: (message: string) => {
+    toast.warning(message);
   },
 
   /**
    * Toast thông tin
    * @param message - Tiêu đề thông báo
-   * @param description - Mô tả chi tiết (optional)
    */
-  info: (message: string, description?: string) => {
-    toast.info(message, {
-      description,
-    });
+  info: (message: string) => {
+    toast.info(message);
   },
 
   /**
@@ -55,38 +43,8 @@ export const showToast = {
    * @param message - Tiêu đề thông báo
    * @returns ID của toast để có thể dismiss sau
    */
-  loading: (message: string) => {
+  loading: (message: string): Id => {
     return toast.loading(message);
-  },
-
-  /**
-   * Toast với action button
-   * @param message - Tiêu đề thông báo
-   * @param options - Các tùy chọn
-   */
-  action: (
-    message: string,
-    options: {
-      description?: string;
-      actionLabel: string;
-      onAction: () => void;
-      cancelLabel?: string;
-      onCancel?: () => void;
-    }
-  ) => {
-    toast(message, {
-      description: options.description,
-      action: {
-        label: options.actionLabel,
-        onClick: options.onAction,
-      },
-      cancel: options.cancelLabel && options.onCancel
-        ? {
-            label: options.cancelLabel,
-            onClick: options.onCancel,
-          }
-        : undefined,
-    });
   },
 
   /**
@@ -97,9 +55,9 @@ export const showToast = {
   promise: <T,>(
     promise: Promise<T>,
     messages: {
-      loading: string;
-      success: string | ((data: T) => string);
-      error: string | ((error: any) => string);
+      pending: string;
+      success: string;
+      error: string;
     }
   ) => {
     return toast.promise(promise, messages);
@@ -109,19 +67,8 @@ export const showToast = {
    * Dismiss toast
    * @param toastId - ID của toast cần dismiss (optional, không truyền sẽ dismiss tất cả)
    */
-  dismiss: (toastId?: string | number) => {
-    toast.dismiss(toastId);
-  },
+  dismiss: (toastId?: Id) => {
+  };
 
-  /**
-   * Custom toast
-   * @param message - Tiêu đề thông báo
-   * @param options - Các tùy chọn custom
-   */
-  custom: (message: string, options?: any) => {
-    toast(message, options);
-  },
-};
-
-// Export default cho các trường hợp đơn giản
-export default showToast;
+  // Export default cho các trường hợp đơn giản
+  export default showToast;

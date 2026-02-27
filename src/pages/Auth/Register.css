@@ -149,6 +149,8 @@
   border: none;
   outline: none;
   flex: 1;
+  min-width: 0;
+  width: 0;
   font-size: 14px;
   background: transparent;
 }
