@@ -142,7 +142,7 @@ const Header: React.FC = () => {
                             {showLiveDropdown && (
                                 <div className="nav-live-dropdown">
                                     <div className="nav-live-dropdown-header">Khám phá Live</div>
-                                    <a className="nav-live-item" href="#">
+                                    <a className="nav-live-item" href="/livestream" onClick={(e) => { e.preventDefault(); setShowLiveDropdown(false); navigate('/livestream'); }}>
                                         <span className="nav-live-icon"><Radio size={16} /></span>
                                         <div>
                                             <p>Live Stream âm nhạc</p>

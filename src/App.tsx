@@ -11,6 +11,7 @@ import VerifyOtp from "./pages/Auth/VerifyOtp";
 import ForgetPassword from "./pages/Auth/ForgetPassword";
 import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
 import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
+import LivestreamPage from "./pages/Livestream/Livestream";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
         {/* Public Routes with Main Layout */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/livestream" element={<LivestreamPage />} />
         </Route>
       </Routes>
     </>
