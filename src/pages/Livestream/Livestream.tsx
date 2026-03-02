@@ -12,8 +12,18 @@ import {
   Mic2,
   Heart,
   Search,
+  Share2,
+  Settings2,
+  Volume2,
+  VolumeX,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { livestreamService, type NowPlayingData, type TrackInfo } from '../../services/livestreamService';
+import { usePlayer } from '../../context/PlayerContext';
+import html2canvas from 'html2canvas';
+import { showInfo, showSuccess, showError } from '../../components/common/toastUtils';
+import brandLogo from '../../assets/logo_notext.png';
 import './Livestream.css';
 
 // ===== TYPES =====
@@ -100,7 +110,7 @@ const DEMO_CHAT: ChatMessage[] = [
   {
     id: '4',
     type: 'request',
-    name: 'Marcus',
+    name: 'C.Thanh',
     text: 'Tôi rất thích bài này!',
     time: '10:44 PM',
     avatarColor: '#e74c3c',
@@ -131,6 +141,8 @@ function proxyArtUrl(url: string): string {
 
 // ===== MAIN COMPONENT =====
 const LivestreamPage: React.FC = () => {
+  const player = usePlayer();
+
   // State
   const [nowPlaying, setNowPlaying] = useState<NowPlayingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,19 +156,41 @@ const LivestreamPage: React.FC = () => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showPodcastModal, setShowPodcastModal] = useState(false);
   const [requestSearch, setRequestSearch] = useState('');
-  const [isStreamPlaying, setIsStreamPlaying] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Refs
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const reactionIdRef = useRef(0);
- 
+
+  // Theme persistence
+  useEffect(() => {
+    const stored = window.localStorage.getItem('livestreamTheme');
+    if (stored === 'light' || stored === 'dark') {
+      setTheme(stored);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('livestreamTheme', theme);
+  }, [theme]);
+
   // ===== DATA FETCHING =====
   const fetchNowPlaying = useCallback(async () => {
     try {
       const data = await livestreamService.getNowPlaying();
       setNowPlaying(data);
       setElapsed(data.currentTrack.elapsed);
+      // Push track info to global player context
+      player.setTrack({
+        title: data.currentTrack.title,
+        artist: data.currentTrack.artist,
+        album: data.currentTrack.album,
+        artUrl: data.currentTrack.artUrl.replace('host.docker.internal', 'localhost'),
+        duration: data.currentTrack.duration,
+        elapsed: data.currentTrack.elapsed,
+        listenUrl: data.listenUrl,
+      });
       setLoading(false);
     } catch (err) {
       console.error('Failed to fetch now playing:', err);
@@ -186,31 +220,6 @@ const LivestreamPage: React.FC = () => {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
-
-  // ===== AUDIO STREAM =====
-  const toggleStream = useCallback(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio(livestreamService.getListenUrl());
-      audioRef.current.crossOrigin = 'anonymous';
-    }
-    if (isStreamPlaying) {
-      audioRef.current.pause();
-      setIsStreamPlaying(false);
-    } else {
-      audioRef.current.play().catch(console.error);
-      setIsStreamPlaying(true);
-    }
-  }, [isStreamPlaying]);
-
-  // Cleanup audio on unmount
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
 
   // ===== CHAT =====
   const sendChat = () => {
@@ -289,23 +298,19 @@ const LivestreamPage: React.FC = () => {
   const { currentTrack, playingNext, songHistory, stationName, totalListeners, isLive, isOnline } = nowPlaying;
 
   return (
-    <div className="livestream-page">
+    <div className={`livestream-page livestream-theme-${theme}`}>
       <div className="livestream-container">
         {/* ===== LEFT: Main Content ===== */}
         <div className="livestream-main">
           {/* Now Playing Hero */}
           <div className="now-playing-hero">
-            <div className="now-playing-cover" onClick={toggleStream} style={{ cursor: 'pointer' }}>
+            <div className="now-playing-cover" onClick={player.toggle} style={{ cursor: 'pointer' }}>
               <img src={proxyArtUrl(currentTrack.artUrl)} alt={currentTrack.title} />
               <div className="now-playing-cover-overlay">
-                <div className="now-playing-badge">
-                  <span className="now-playing-badge-dot" />
-                  ĐANG PHÁT
-                </div>
                 <div className="now-playing-cover-title">{currentTrack.title}</div>
                 <div className="now-playing-cover-artist">{currentTrack.artist}</div>
               </div>
-              {isStreamPlaying && (
+              {player.isPlaying && (
                 <div
                   style={{
                     position: 'absolute',
@@ -327,7 +332,7 @@ const LivestreamPage: React.FC = () => {
                 {(isLive || isOnline) && (
                   <span className="station-live-badge">
                     <span className="dot" />
-                    {isLive ? 'LIVE' : 'ON AIR'}
+                    {isLive ? 'Trực tiếp' : 'Đang phát sóng'}
                   </span>
                 )}
                 <span className="station-name">{stationName}</span>
@@ -350,6 +355,102 @@ const LivestreamPage: React.FC = () => {
               </div>
 
               {renderProgressBar()}
+            </div>
+          </div>
+
+          {/* Live Action Bar – đặt gần hero để nằm trong 1 màn hình */}
+          <div className="livestream-action-bar">
+            <div className="action-bar-left">
+              <button className="action-bar-icon-btn" title="Cài đặt">
+                <Settings2 size={17} />
+              </button>
+              <button
+                className="action-bar-icon-btn"
+                title="Chia sẻ phiên nghe"
+                onClick={() => {
+                  setShowShareModal(true);
+                  setShowEmotionPicker(false);
+                  setShowRequestModal(false);
+                  setShowPodcastModal(false);
+                }}
+              >
+                <Share2 size={17} />
+              </button>
+              <button
+                className="action-bar-icon-btn"
+                title={theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}
+                onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+              >
+                {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+              </button>
+              <button
+                className="action-bar-icon-btn"
+                title={player.isMuted ? 'Bật tiếng' : 'Tắt tiếng'}
+                onClick={player.toggleMute}
+              >
+                {player.isMuted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={player.isMuted ? 0 : player.volume}
+                onChange={(e) => player.setVolume(Number(e.target.value))}
+                className="action-volume-slider"
+                style={{
+                  background: `linear-gradient(to right, #55C5F1 0%, #55C5F1 ${player.isMuted ? 0 : player.volume}%, rgba(255,255,255,0.15) ${player.isMuted ? 0 : player.volume}%, rgba(255,255,255,0.15) 100%)`,
+                }}
+              />
+            </div>
+
+            <div className="action-bar-center" style={{ position: 'relative' }}>
+              <button
+                className="action-btn emotion"
+                onClick={() => {
+                  setShowEmotionPicker((p) => !p);
+                  setShowRequestModal(false);
+                  setShowPodcastModal(false);
+                }}
+              >
+                <Smile size={15} /> Cảm xúc
+              </button>
+              <button
+                className="action-btn request"
+                onClick={() => {
+                  setShowRequestModal(true);
+                  setShowEmotionPicker(false);
+                  setShowPodcastModal(false);
+                }}
+              >
+                <Music size={15} /> Request Nhạc
+              </button>
+              <button
+                className="action-btn podcast-submit"
+                onClick={() => {
+                  setShowPodcastModal(true);
+                  setShowEmotionPicker(false);
+                  setShowRequestModal(false);
+                }}
+              >
+                <Mic2 size={15} /> Gửi Podcast
+              </button>
+
+              {showEmotionPicker && (
+                <div className="emotion-popup">
+                  {EMOTIONS.map((em) => (
+                    <button key={em} className="emotion-btn" onClick={() => sendEmotion(em)}>
+                      {em}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="action-bar-right">
+              <div className="listener-count">
+                <Users size={14} />
+                {totalListeners || 128}
+              </div>
             </div>
           </div>
 
@@ -380,70 +481,6 @@ const LivestreamPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Action Bar */}
-          <div className="livestream-action-bar">
-            <div className="action-bar-left">
-              <button className="action-bar-btn" title="Cài đặt">⚙️</button>
-              <button className="action-bar-btn" title="Chia sẻ">🔗</button>
-              <button className="action-bar-btn" title="Âm thanh" onClick={toggleStream}>
-                {isStreamPlaying ? '🔊' : '🔇'}
-              </button>
-            </div>
-
-            <div className="action-bar-center" style={{ position: 'relative' }}>
-              <button
-                className="action-btn emotion"
-                onClick={() => {
-                  setShowEmotionPicker((p) => !p);
-                  setShowRequestModal(false);
-                  setShowPodcastModal(false);
-                }}
-              >
-                😊 Cảm xúc
-              </button>
-              <button
-                className="action-btn request"
-                onClick={() => {
-                  setShowRequestModal(true);
-                  setShowEmotionPicker(false);
-                  setShowPodcastModal(false);
-                }}
-              >
-                🎵 Request Nhạc
-              </button>
-              <button
-                className="action-btn podcast-submit"
-                onClick={() => {
-                  setShowPodcastModal(true);
-                  setShowEmotionPicker(false);
-                  setShowRequestModal(false);
-                }}
-              >
-                🎙️ Gửi Podcast
-              </button>
-
-              {showEmotionPicker && (
-                <div className="emotion-popup">
-                  {EMOTIONS.map((em) => (
-                    <button
-                      key={em}
-                      className="emotion-btn"
-                      onClick={() => sendEmotion(em)}
-                    >
-                      {em}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="action-bar-right">
-              <div className="listener-count">
-                <Users size={14} />
-                {totalListeners || 128}
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* ===== RIGHT: Sidebar ===== */}
@@ -620,10 +657,10 @@ const LivestreamPage: React.FC = () => {
                         pc.categoryColor === 'purple'
                           ? '#9b59ff'
                           : pc.categoryColor === 'blue'
-                          ? '#55C5F1'
-                          : pc.categoryColor === 'green'
-                          ? '#2ecc71'
-                          : '#ff3b3f',
+                            ? '#55C5F1'
+                            : pc.categoryColor === 'green'
+                              ? '#2ecc71'
+                              : '#ff3b3f',
                     }}
                   >
                     {pc.category}
@@ -668,6 +705,14 @@ const LivestreamPage: React.FC = () => {
 
       {showPodcastModal && (
         <PodcastSubmitModal onClose={() => setShowPodcastModal(false)} />
+      )}
+
+      {showShareModal && (
+        <ShareNowPlayingModal
+          track={currentTrack}
+          stationName={stationName}
+          onClose={() => setShowShareModal(false)}
+        />
       )}
 
       {/* Floating Reactions */}
@@ -881,6 +926,178 @@ const PodcastSubmitModal: React.FC<PodcastSubmitModalProps> = ({ onClose }) => {
             }}
           >
             Gửi Podcast
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===== SHARE NOW-PLAYING MODAL =====
+interface ShareNowPlayingModalProps {
+  track: TrackInfo;
+  stationName: string;
+  onClose: () => void;
+}
+
+const ShareNowPlayingModal: React.FC<ShareNowPlayingModalProps> = ({ track, stationName, onClose }) => {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [cachedDataUrl, setCachedDataUrl] = useState<string | null>(null);
+
+  const safeTitle = track.title || 'Bài hát đang phát';
+  const safeArtist = track.artist || 'Không rõ nghệ sĩ';
+  const safeAlbum = track.album || 'Live Radio';
+
+  const buildImage = async (): Promise<string | null> => {
+    if (cachedDataUrl) return cachedDataUrl;
+    if (!cardRef.current) return null;
+    try {
+      setGenerating(true);
+      const rect = cardRef.current.getBoundingClientRect();
+      const scaleBase = window.devicePixelRatio || 2;
+      const scale = Math.min(scaleBase * 1.5, 3);
+
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
+        scale,
+        useCORS: true,
+        allowTaint: false,
+        width: rect.width,
+        height: rect.height,
+        windowWidth: document.documentElement.clientWidth,
+      });
+
+      const dataUrl = canvas.toDataURL('image/png', 0.95);
+      setCachedDataUrl(dataUrl);
+      return dataUrl;
+    } catch (e) {
+      console.error('Failed to generate share image', e);
+      if (e instanceof DOMException && e.name === 'SecurityError') {
+        showError(
+          'Không xuất được ảnh đầy đủ',
+          'Server ảnh album chưa bật CORS nên trình duyệt không cho phép kèm cover trong file. Hãy cấu hình CORS cho domain cover hoặc dùng ảnh trong hệ thống SoundMates.'
+        );
+      } else {
+        showError('Không tạo được ảnh chia sẻ', 'Vui lòng thử lại sau vài giây.');
+      }
+      return null;
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    const dataUrl = await buildImage();
+    if (!dataUrl) return;
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `soundmates-now-playing-${track.title || 'track'}.png`;
+    link.click();
+    showSuccess('Đã tải ảnh card', 'Bạn có thể dùng ảnh này để chia sẻ lên mạng xã hội.');
+  };
+
+  const handleCopyLink = async () => {
+    const dataUrl = await buildImage();
+    if (!dataUrl) return;
+    try {
+      await navigator.clipboard.writeText(dataUrl);
+      showSuccess('Đã copy link ảnh', 'Dán link này vào nơi bạn muốn chia sẻ.');
+    } catch (e) {
+      console.error('Clipboard error', e);
+      showError('Không copy được link ảnh', 'Trình duyệt không cho phép copy, thử lại thủ công.');
+    }
+  };
+
+  const handleShareToWall = async () => {
+    // Demo: trong tương lai có thể gọi API tạo bài viết / status trong hệ thống
+    await buildImage();
+    showInfo('Đã chia sẻ lên tường (demo)', 'Khi có backend tường bài viết, card này sẽ được đẩy lên đó.');
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="share-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="share-modal-header">
+          <span className="share-modal-title">Chia sẻ phiên đang nghe</span>
+          <button className="request-modal-close" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Card preview dùng để export thành ảnh */}
+        <div className="share-card-preview-wrap">
+          <div className="share-card-preview" ref={cardRef}>
+            <div className="share-card-inner">
+              <div className="share-card-header">
+                <div className="share-card-logo">
+                  <div className="share-card-logo-mark">
+                    <img src={brandLogo} alt="SoundMates logo" />
+                  </div>
+                  <span className="share-card-logo-text">SoundMates</span>
+                </div>
+                <span className="share-card-pill">Live Session</span>
+              </div>
+
+              <div className="share-card-main">
+                <div className="share-card-art-wrap">
+                  <div className="share-card-art-shadow" />
+                  {track.artUrl ? (
+                    <img
+                      src={proxyArtUrl(track.artUrl)}
+                      alt={safeTitle}
+                      className="share-card-art"
+                    />
+                  ) : (
+                    <div className="share-card-art share-card-art-placeholder">
+                      <span>SM</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="share-card-text">
+                  <p className="share-card-track-title">{safeTitle}</p>
+                  <p className="share-card-track-artist">{safeArtist}</p>
+                  <p className="share-card-track-meta">
+                    {stationName} • {safeAlbum}
+                  </p>
+                </div>
+              </div>
+
+              <div className="share-card-footer">
+                <div className="share-card-footer-left">
+                  <div className="share-card-progress-shell">
+                    <div className="share-card-progress-fill" />
+                  </div>
+                  <span className="share-card-caption">Đang nghe cùng SoundMates</span>
+                </div>
+                <span className="share-card-tagline">soundmates.fm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="share-modal-actions">
+          <button
+            className="share-modal-btn primary"
+            onClick={handleShareToWall}
+            disabled={generating}
+          >
+            Chia sẻ lên tường (demo)
+          </button>
+          <button
+            className="share-modal-btn outline"
+            onClick={handleCopyLink}
+            disabled={generating}
+          >
+            Copy link ảnh
+          </button>
+          <button
+            className="share-modal-btn subtle"
+            onClick={handleDownload}
+            disabled={generating}
+          >
+            Tải ảnh về máy
           </button>
         </div>
       </div>

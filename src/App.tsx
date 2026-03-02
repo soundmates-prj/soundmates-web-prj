@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { PlayerProvider } from "./context/PlayerContext";
 import Home from "./pages/Home/Home";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
@@ -15,7 +16,7 @@ import LivestreamPage from "./pages/Livestream/Livestream";
 
 function App() {
   return (
-    <>
+    <PlayerProvider>
       <ToastProvider />
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -37,7 +38,7 @@ function App() {
           <Route path="/livestream" element={<LivestreamPage />} />
         </Route>
       </Routes>
-    </>
+    </PlayerProvider>
   );
 }
 

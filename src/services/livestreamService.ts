@@ -49,7 +49,7 @@ export interface SongRequestItem {
 }
 
 // The station UUID from the backend
-const STATION_UUID = '161e5ad5-2fd7-434f-b8bd-90350263fb72';
+const STATION_UUID = '0ce08925-9216-4aa3-8c0b-e8d4e19ef2a3';
 
 // AzuraCast direct API for requests
 const AZURACAST_BASE = 'http://localhost:5000/api';
@@ -94,10 +94,16 @@ export const livestreamService = {
   },
 
   /**
-   * Get the listen URL for the stream
+   * Get the listen URL for the stream.
+   * If a nowPlaying listenUrl is provided it is preferred;
+   * otherwise falls back to the default station shortcode.
+   * Returns a root-relative path so the Vite dev-server proxy
+   * can forward the request to AzuraCast without CORS issues.
    */
-  getListenUrl(): string {
-    return `http://localhost:5000/listen/mainstream_live/radio.mp3`;
+  getListenUrl(listenUrl?: string): string {
+    const raw = listenUrl || 'http://localhost/listen/my_fav_station/radio.mp3';
+    // Strip the host part so the URL is root-relative (proxied by Vite)
+    return raw.replace(/^https?:\/\/[^\/]+/, '');
   },
 };
 
