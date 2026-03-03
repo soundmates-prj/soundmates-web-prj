@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { PlayerProvider } from "./context/PlayerContext";
 import Home from "./pages/Home/Home";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
@@ -8,41 +9,36 @@ import { AdminDashboard } from "./pages/Admin/Dashboard/Dashboard";
 import { AnalyticsScreen } from "./pages/Admin/Analytics/AnalyticsScreen";
 import { ToastProvider } from "./components/common/Toast";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
+import ForgetPassword from "./pages/Auth/ForgetPassword";
 import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
 import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
+import LivestreamPage from "./pages/Livestream/Livestream";
 
 function App() {
   return (
-    <>
-      <ToastContainer
-        position="top-right"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme="light"
-      />
+    <PlayerProvider>
+      <ToastProvider />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-otp" element={<VerifyOtp />} />
+        <Route path="/forget-password" element={<ForgetPassword />} />
 
-      {/* Admin Routes with Sidebar Layout */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="analytics" element={<AnalyticsScreen />} />
-        <Route path="music" element={<MusicCatalogScreen />} />
-        <Route path="users" element={<UserManagementScreen />} />
-      </Route>
+        {/* Admin Routes with Sidebar Layout */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="analytics" element={<AnalyticsScreen />} />
+          <Route path="music" element={<MusicCatalogScreen />} />
+          <Route path="users" element={<UserManagementScreen />} />
+        </Route>
 
         {/* Public Routes with Main Layout */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/livestream" element={<LivestreamPage />} />
         </Route>
       </Routes>
-    </>
+    </PlayerProvider>
   );
 }
 

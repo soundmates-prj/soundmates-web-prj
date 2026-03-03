@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Icon, Button } from "../common";
 import logoNoText from "../../assets/light_logo.png";
 import "./Header.css";
-import { useNavigate } from "react-router-dom";
-import { UserCircle2, BellRing, Search, X, Clock, TrendingUp, ChevronDown, Radio, Mic2, Calendar, Zap } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { UserCircle2, Bell, Search, X, Clock, TrendingUp, ChevronDown, Radio, Mic2, Calendar, Zap } from "lucide-react";
+import { usePlayer } from "../../context/PlayerContext";
+import { showInfo } from "../common/toastUtils";
 
 interface UserInfo {
     firstName?: string;
@@ -29,6 +31,7 @@ const Header: React.FC = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+    const player = usePlayer();
     const [showDropdown, setShowDropdown] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
@@ -100,6 +103,10 @@ const Header: React.FC = () => {
     }, [showSearch]);
 
     const handleLogout = () => {
+        if (player.isPlaying) {
+            player.toggle();
+            showInfo('Nhạc đã dừng', 'Bạn đã đăng xuất khỏi SoundMates');
+        }
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userInfo');
         setIsLoggedIn(false);
@@ -110,6 +117,10 @@ const Header: React.FC = () => {
     };
 
     const handleProfile = () => {
+        if (player.isPlaying) {
+            player.toggle();
+            showInfo('Nhạc đã dừng', 'Chuyển sang trang cá nhân — bạn có thể phát lại bất cứ lúc nào');
+        }
         setShowDropdown(false);
         navigate('/profile');
     };
@@ -127,7 +138,7 @@ const Header: React.FC = () => {
 
                     {/* CENTER */}
                     <nav className="header-center">
-                        <a className="nav-item active" href="#home">Trang Chủ</a>
+                        <Link className="nav-item active" to="/">Trang Chủ</Link>
 
                         {/* Phiên Trực Tiếp — with dropdown */}
                         <div className="nav-item-dropdown-wrap" ref={liveDropdownRef}>
@@ -142,7 +153,7 @@ const Header: React.FC = () => {
                             {showLiveDropdown && (
                                 <div className="nav-live-dropdown">
                                     <div className="nav-live-dropdown-header">Khám phá Live</div>
-                                    <a className="nav-live-item" href="#">
+                                    <a className="nav-live-item" href="/livestream" onClick={(e) => { e.preventDefault(); setShowLiveDropdown(false); navigate('/livestream'); }}>
                                         <span className="nav-live-icon"><Radio size={16} /></span>
                                         <div>
                                             <p>Live Stream âm nhạc</p>
@@ -263,7 +274,7 @@ const Header: React.FC = () => {
                                             setShowLiveDropdown(false);
                                         }}
                                     >
-                                        <BellRing size={20} color="#55C5F1" strokeWidth={1.8} />
+                                        <Bell size={20} color="#55C5F1" strokeWidth={1.8} />
                                         <span className="notif-badge">3</span>
                                     </button>
 
@@ -310,7 +321,7 @@ const Header: React.FC = () => {
                                             <img src={userInfo.avatarUrl} alt="User avatar" />
                                         ) : (
                                             <div className="avatar-default">
-                                                <UserCircle2 size={36} color="#55C5F1" strokeWidth={1.5} />
+                                                <UserCircle2 size={44} color="#55C5F1" strokeWidth={1.5} />
                                             </div>
                                         )}
                                     </div>

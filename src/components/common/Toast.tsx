@@ -1,28 +1,20 @@
-import { Toaster } from 'sonner';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './toast.css';
 
 export function ToastProvider() {
   return (
-    <Toaster
+    <ToastContainer
       position="top-right"
-      expand={false}
-      richColors
-      closeButton
-      duration={4000}
-      toastOptions={{
-        classNames: {
-          toast: 'custom-toast',
-          title: 'custom-toast-title',
-          description: 'custom-toast-description',
-          actionButton: 'custom-toast-action',
-          cancelButton: 'custom-toast-cancel',
-          closeButton: 'custom-toast-close',
-          success: 'custom-toast-success',
-          error: 'custom-toast-error',
-          warning: 'custom-toast-warning',
-          info: 'custom-toast-info',
-        },
-      }}
+      autoClose={4000}
+      hideProgressBar={false}
+      newestOnTop
+      closeOnClick
+      pauseOnHover
+      draggable
+      theme="light"
+      toastClassName="custom-toast"
+      bodyClassName="custom-toast-body"
     />
   );
 }
