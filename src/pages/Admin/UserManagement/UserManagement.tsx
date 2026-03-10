@@ -17,15 +17,12 @@ import {
   Edit,
   Trash2,
   Ban,
-  Key,
   Eye,
   MoreHorizontal,
-  CheckCircle,
-  XCircle,
   Clock,
   ArrowUpDown
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './UserManagement.css';
 import {
   AddUserModal,
@@ -37,31 +34,50 @@ import {
   ImportUsersModal,
   SendMessageModal
 } from './UserManagementModals';
+import userService, { type UserDto } from '../../../services/userService';
+import Loading from '../../../components/common/Loading';
 
 interface User {
-  id: number;
+  id: string; // Changed from number to string (Guid)
   name: string;
   email: string;
+  username: string;
   avatar?: string;
   role: 'admin' | 'moderator' | 'mentor' | 'user';
+  roleName?: string;
   status: 'active' | 'inactive' | 'banned' | 'pending';
+  isActive: boolean;
   joinDate: string;
   lastActive: string;
   totalListens: number;
   totalBroadcasts: number;
   followers: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-const mockUsers: User[] = [
-  { id: 1, name: 'Nguyễn Văn A', email: 'nguyenvana@example.com', role: 'admin', status: 'active', joinDate: '15/01/2025', lastActive: '2 giờ trước', totalListens: 1245, totalBroadcasts: 42, followers: 856 },
-  { id: 2, name: 'Trần Thị B', email: 'tranthib@example.com', role: 'moderator', status: 'active', joinDate: '20/01/2025', lastActive: '5 phút trước', totalListens: 987, totalBroadcasts: 28, followers: 642 },
-  { id: 3, name: 'Lê Văn C', email: 'levanc@example.com', role: 'mentor', status: 'active', joinDate: '22/01/2025', lastActive: '1 ngày trước', totalListens: 2341, totalBroadcasts: 67, followers: 1234 },
-  { id: 4, name: 'Phạm Thị D', email: 'phamthid@example.com', role: 'user', status: 'inactive', joinDate: '25/01/2025', lastActive: '3 ngày trước', totalListens: 456, totalBroadcasts: 12, followers: 234 },
-  { id: 5, name: 'Hoàng Văn E', email: 'hoangvane@example.com', role: 'user', status: 'banned', joinDate: '28/01/2025', lastActive: '1 tuần trước', totalListens: 123, totalBroadcasts: 5, followers: 89 },
-  { id: 6, name: 'Đỗ Thị F', email: 'dothif@example.com', role: 'user', status: 'pending', joinDate: '01/02/2026', lastActive: 'Chưa từng', totalListens: 0, totalBroadcasts: 0, followers: 0 },
-  { id: 7, name: 'Vũ Văn G', email: 'vuvang@example.com', role: 'mentor', status: 'active', joinDate: '03/02/2026', lastActive: '30 phút trước', totalListens: 1876, totalBroadcasts: 45, followers: 923 },
-  { id: 8, name: 'Bùi Thị H', email: 'buithih@example.com', role: 'user', status: 'active', joinDate: '04/02/2026', lastActive: '1 giờ trước', totalListens: 678, totalBroadcasts: 19, followers: 412 },
-];
+// Helper function to convert UserDto from API to User for display
+function mapUserDtoToUser(dto: UserDto): User {
+  const fullName = [dto.firstName, dto.lastName].filter(Boolean).join(' ') || dto.username;
+  
+  return {
+    id: dto.id,
+    name: fullName,
+    email: dto.email,
+    username: dto.username,
+    role: (dto.roleName?.toLowerCase() as User['role']) || 'user',
+    roleName: dto.roleName,
+    status: dto.isActive ? 'active' : 'inactive',
+    isActive: dto.isActive,
+    joinDate: dto.createdAt ? new Date(dto.createdAt).toLocaleDateString('vi-VN') : '',
+    lastActive: dto.updatedAt ? new Date(dto.updatedAt).toLocaleDateString('vi-VN') : 'Chưa cập nhật',
+    totalListens: 0, // Not available from API
+    totalBroadcasts: 0, // Not available from API
+    followers: 0, // Not available from API
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  };
+}
 
 const roles = ['Tất cả', 'Admin', 'Moderator', 'Mentor', 'User'];
 const statuses = ['Tất cả', 'Active', 'Inactive', 'Banned', 'Pending'];
@@ -104,11 +120,21 @@ function getInitials(name: string): string {
 }
 
 export function UserManagementScreen() {
+  // UI State
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [selectedRole, setSelectedRole] = useState('Tất cả');
   const [selectedStatus, setSelectedStatus] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  
+  // API State
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true); // Set true initially to show loading on first mount
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   
   // Modal states
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -121,7 +147,7 @@ export function UserManagementScreen() {
   const [showMessageModal, setShowMessageModal] = useState(false);
   
   // Action menu state
-  const [activeActionMenu, setActiveActionMenu] = useState<number | null>(null);
+  const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null);
   
   // Edit user data
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -130,12 +156,50 @@ export function UserManagementScreen() {
   const [sortBy, setSortBy] = useState<'name' | 'joinDate' | 'lastActive'>('joinDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const filteredUsers = mockUsers.filter(user => {
+  // Fetch users from API
+  useEffect(() => {
+    // Debounce search query to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      const fetchUsers = async () => {
+        setLoading(true);
+        setError(null);
+        
+        try {
+          const response = await userService.getUsers({
+            q: searchQuery || undefined,
+            page: currentPage,
+            pageSize: pageSize,
+          });
+
+          if (response.success && response.data) {
+            const mappedUsers = response.data.items.map(mapUserDtoToUser);
+            setUsers(mappedUsers);
+            setTotalItems(response.data.totalItems);
+            setTotalPages(response.data.totalPages);
+          } else {
+            setError(response.message || 'Không thể tải danh sách người dùng');
+            setUsers([]);
+          }
+        } catch (err) {
+          setError('Đã xảy ra lỗi khi tải danh sách người dùng');
+          setUsers([]);
+          console.error('Error fetching users:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchUsers();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [currentPage, pageSize, searchQuery]);
+
+  // Filter users based on role and status (client-side filtering on already fetched data)
+  const filteredUsers = users.filter(user => {
     const matchesRole = selectedRole === 'Tất cả' || user.role.toLowerCase() === selectedRole.toLowerCase();
     const matchesStatus = selectedStatus === 'Tất cả' || user.status.toLowerCase() === selectedStatus.toLowerCase();
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesRole && matchesStatus && matchesSearch;
+    return matchesRole && matchesStatus;
   }).sort((a, b) => {
     const order = sortOrder === 'asc' ? 1 : -1;
     switch (sortBy) {
@@ -149,7 +213,7 @@ export function UserManagementScreen() {
     }
   });
 
-  const toggleUserSelection = (id: number) => {
+  const toggleUserSelection = (id: string) => {
     setSelectedUsers(prev => 
       prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]
     );
@@ -173,7 +237,7 @@ export function UserManagementScreen() {
     setActiveActionMenu(null);
   };
 
-  const handleDelete = (userId: number) => {
+  const handleDelete = (userId: string) => {
     setSelectedUsers([userId]);
     setShowDeleteModal(true);
     setActiveActionMenu(null);
@@ -378,8 +442,39 @@ export function UserManagementScreen() {
           </div>
         )}
 
+        {/* Loading State */}
+        {loading && (
+          <div style={{ padding: '80px 40px', textAlign: 'center' }}>
+            <Loading size="large" text="Đang tải danh sách người dùng..." />
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div style={{ padding: '40px', textAlign: 'center' }}>
+            <p style={{ color: 'var(--color-danger)' }}>{error}</p>
+            <button 
+              onClick={() => {
+                setError(null);
+                setCurrentPage(1);
+              }}
+              className="btn btn-primary"
+              style={{ marginTop: '16px' }}
+            >
+              Thử Lại
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && filteredUsers.length === 0 && (
+          <div style={{ padding: '40px', textAlign: 'center' }}>
+            <p style={{ color: 'var(--text-secondary)' }}>Không tìm thấy người dùng nào</p>
+          </div>
+        )}
+
         {/* Users List/Grid */}
-        {viewMode === 'list' ? (
+        {!loading && !error && filteredUsers.length > 0 && (viewMode === 'list' ? (
           <div className="music-table-wrapper">
             <table className="music-table">
               <thead>
@@ -594,21 +689,56 @@ export function UserManagementScreen() {
               </div>
             ))}
           </div>
-        )}
+        ))}
 
         {/* Pagination */}
+        {!loading && !error && filteredUsers.length > 0 && (
         <div className="pagination-wrapper">
           <p className="pagination-info">
-            Hiển thị {filteredUsers.length} trên tổng 12,847 users
+            Hiển thị {filteredUsers.length} trên tổng {totalItems.toLocaleString()} users
           </p>
           <div className="pagination-buttons">
-            <button className="pagination-btn">Trước</button>
-            <button className="pagination-btn active">1</button>
-            <button className="pagination-btn">2</button>
-            <button className="pagination-btn">3</button>
-            <button className="pagination-btn">Sau</button>
+            <button 
+              className="pagination-btn"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1 || loading}
+            >
+              Trước
+            </button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              // Show current page and 2 pages before and after
+              let pageNum: number;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <button 
+                  key={pageNum}
+                  className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(pageNum)}
+                  disabled={loading}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            <button 
+              className="pagination-btn"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages || loading}
+            >
+              Sau
+            </button>
           </div>
         </div>
+        )}
       </div>
 
       {/* Modals */}
