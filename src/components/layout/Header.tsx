@@ -187,7 +187,7 @@ const Header: React.FC = () => {
 
                         <a className="nav-item" href="#">Podcast</a>
                         <a className="nav-item" href="#">Diễn Đàn</a>
-                        <a className="nav-item" href="#">Gói Dịch Vụ</a>
+                        <Link className="nav-item" to="/subscription">Gói Dịch Vụ</Link>
                     </nav>
 
                     {/* RIGHT */}

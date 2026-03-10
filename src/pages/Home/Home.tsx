@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import "./Home.css";
 import Icon from "../../components/common/Icon";
 
@@ -127,6 +128,45 @@ const forumPosts = [
     likes: 128,
     comments: 89,
     time: "2 ngày",
+  },
+];
+
+const podcasts = [
+  {
+    id: 1,
+    title: "Podcast 1",
+    subtitle: "mật thư",
+    image: playlistCover1,
+  },
+  {
+    id: 2,
+    title: "Podcast 2",
+    subtitle: "câu chuyện chúng ta",
+    image: playlistCover2,
+  },
+  {
+    id: 3,
+    title: "Podcast 3",
+    subtitle: "tâm trạng",
+    image: playlistCover3,
+  },
+  {
+    id: 4,
+    title: "Podcast 4",
+    subtitle: "tự sự",
+    image: playlistCover4,
+  },
+  {
+    id: 5,
+    title: "Podcast 5",
+    subtitle: "yêu lành",
+    image: playlistCover5,
+  },
+  {
+    id: 6,
+    title: "Podcast 6",
+    subtitle: "kể chuyện",
+    image: playlistCover1,
   },
 ];
 
@@ -343,6 +383,56 @@ export default function Home() {
               <button className="forum-item-action">Xem Ngay</button>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Letter Podcast Section */}
+      <section className="section podcast-section">
+        <div className="section-header">
+          <h2 className="section-title">Các thư Podcast yêu thích</h2>
+          <a href="#" className="section-link">
+            Xem tất cả
+            <Icon name="chevron-right" size={16} />
+          </a>
+        </div>
+
+        <div className="podcast-grid">
+          {podcasts.map((podcast) => (
+            <div key={podcast.id} className="podcast-card hover-lift">
+              <div className="podcast-card-image-wrapper">
+                <img
+                  src={podcast.image}
+                  alt={podcast.title}
+                  className="podcast-card-image"
+                />
+              </div>
+              <div className="podcast-card-content">
+                <h4 className="podcast-card-title">{podcast.title}</h4>
+                <p className="podcast-card-subtitle">{podcast.subtitle}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Subscription Section - Group 30 */}
+      <section className="subscription-section">
+        <div className="subscription-container">
+          <div className="subscription-content">
+            <span className="subscription-tag">Subscription</span>
+            <h2 className="subscription-title">
+              Trở thành Hội Viên SoundMates
+            </h2>
+            <p className="subscription-description">
+              Chỉ với <span className="price">159.000đ / tháng</span>, bạn mở
+              khóa toàn bộ đặc quyền dành riêng cho những người thật sự sống
+              ngông cuồng cùng âm nhạc.
+            </p>
+            <Link to="/subscription" className="subscription-cta">
+              Đăng Ký Ngay
+              <Icon name="arrow-right" size={18} />
+            </Link>
+          </div>
         </div>
       </section>
     </div>
