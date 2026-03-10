@@ -6,7 +6,7 @@
     display: flex;
     min-height: 100vh;
     background: #FFFFFF;
-}
+
 
 .admin-main {
     flex: 1;
@@ -29,4 +29,5 @@
     .admin-main {
         margin-left: 0;
     }
+}
 }

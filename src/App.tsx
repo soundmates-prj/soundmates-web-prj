@@ -14,6 +14,7 @@ import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
 import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
 import LivestreamPage from "./pages/Livestream/Livestream";
 import Subscription from "./pages/Subscription/Subscription";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 
 function App() {
   return (
@@ -25,8 +26,15 @@ function App() {
         <Route path="/verify-otp" element={<VerifyOtp />} />
         <Route path="/forget-password" element={<ForgetPassword />} />
 
-        {/* Admin Routes with Sidebar Layout */}
-        <Route path="/admin" element={<AdminLayout />}>
+        {/* Admin Routes with Sidebar Layout - Protected for ADMIN role only */}
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="analytics" element={<AnalyticsScreen />} />
           <Route path="music" element={<MusicCatalogScreen />} />
