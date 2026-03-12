@@ -15,6 +15,8 @@ import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagemen
 import LivestreamPage from "./pages/Livestream/Livestream";
 import Subscription from "./pages/Subscription/Subscription";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import Profile from "./pages/Profile/profile";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
@@ -27,8 +29,8 @@ function App() {
         <Route path="/forget-password" element={<ForgetPassword />} />
 
         {/* Admin Routes with Sidebar Layout - Protected for ADMIN role only */}
-        <Route 
-          path="/admin" 
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute requiredRole="ADMIN">
               <AdminLayout />
@@ -46,6 +48,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/livestream" element={<LivestreamPage />} />
           <Route path="/subscription" element={<Subscription />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </PlayerProvider>
