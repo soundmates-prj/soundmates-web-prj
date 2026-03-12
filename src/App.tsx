@@ -13,6 +13,8 @@ import ForgetPassword from "./pages/Auth/ForgetPassword";
 import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
 import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
 import LivestreamPage from "./pages/Livestream/Livestream";
+import Subscription from "./pages/Subscription/Subscription";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 import Profile from "./pages/Profile/profile";
 import Settings from "./pages/Settings";
 
@@ -26,8 +28,15 @@ function App() {
         <Route path="/verify-otp" element={<VerifyOtp />} />
         <Route path="/forget-password" element={<ForgetPassword />} />
 
-        {/* Admin Routes with Sidebar Layout */}
-        <Route path="/admin" element={<AdminLayout />}>
+        {/* Admin Routes with Sidebar Layout - Protected for ADMIN role only */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="analytics" element={<AnalyticsScreen />} />
           <Route path="music" element={<MusicCatalogScreen />} />
@@ -38,6 +47,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/livestream" element={<LivestreamPage />} />
+          <Route path="/subscription" element={<Subscription />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
         </Route>

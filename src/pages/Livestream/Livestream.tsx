@@ -23,6 +23,7 @@ import { livestreamService, type NowPlayingData, type TrackInfo } from '../../se
 import { usePlayer } from '../../context/PlayerContext';
 import html2canvas from 'html2canvas';
 import { showInfo, showSuccess, showError } from '../../components/common/toastUtils';
+import { Loading } from '../../components/common';
 import brandLogo from '../../assets/logo_notext.png';
 import './Livestream.css';
 
@@ -279,9 +280,8 @@ const LivestreamPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="livestream-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Disc3 size={48} color="#55C5F1" style={{ animation: 'spin 2s linear infinite' }} />
-        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <div className="livestream-page">
+        <Loading fullscreen size="large" text="Đang kết nối đến phiên phát sóng..." />
       </div>
     );
   }
