@@ -13,6 +13,8 @@ import ForgetPassword from "./pages/Auth/ForgetPassword";
 import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
 import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
 import LivestreamPage from "./pages/Livestream/Livestream";
+import Profile from "./pages/Profile/profile";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
@@ -36,6 +38,8 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/livestream" element={<LivestreamPage />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </PlayerProvider>

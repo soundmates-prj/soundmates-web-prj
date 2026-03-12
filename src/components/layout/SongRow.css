@@ -1,0 +1,98 @@
+/* ============================================
+   SongRow.css
+   ============================================ */
+
+.song-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  transition: background 0.12s;
+}
+.song-row:hover { background: var(--neutral-50, #fafafa); }
+
+.song-cover {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.song-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--neutral-800, #262626);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-artist {
+  display: block;
+  font-size: 11.5px;
+  color: var(--neutral-400, #a3a3a3);
+  margin-top: 1px;
+}
+
+/* ── Toggle button (left panel) ── */
+.song-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+
+.song-toggle-btn.is-add {
+  background: var(--primary-50, #e6f0fb);
+  color: var(--primary-500, #004395);
+  border-color: var(--primary-200, #99c3ef);
+}
+.song-toggle-btn.is-add:hover { background: var(--primary-100, #cce1f7); }
+
+.song-toggle-btn.is-added {
+  background: #dcfce7;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+.song-toggle-btn.is-added:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* ── Remove button (right panel) ── */
+.song-remove-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--neutral-200, #e5e5e5);
+  background: transparent;
+  color: var(--neutral-400, #a3a3a3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.song-remove-btn:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
