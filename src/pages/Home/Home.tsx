@@ -183,6 +183,7 @@ const playlistTabs = [
 export default function Home() {
   const [activeTab, setActiveTab] = useState("Mới");
   const carouselRef = useRef<HTMLDivElement>(null);
+  const isLoggedIn = !!localStorage.getItem("accessToken");
 
   const scrollCarousel = (direction: "prev" | "next") => {
     if (carouselRef.current) {
@@ -204,10 +205,12 @@ export default function Home() {
               Listen <span className="gradient-text">Together</span>
             </h1>
             <p className="hero-subtitle">Chia sẻ âm nhạc của bạn</p>
-            <a href="#" className="hero-cta">
-              <Icon name="play" size={20} />
-              Bắt Đầu
-            </a>
+            {!isLoggedIn && (
+              <a href="/login" className="hero-cta">
+                <Icon name="play" size={20} />
+                Bắt Đầu
+              </a>
+            )}
           </div>
           <div className="hero-illustration">
             <img src={heroIllustration} alt="Listen Together" />
