@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Radio,
   Send,
@@ -7,7 +7,6 @@ import {
   Music,
   Users,
   Clock,
-  Disc3,
   Headphones,
   Mic2,
   Heart,
@@ -18,19 +17,27 @@ import {
   VolumeX,
   Sun,
   Moon,
-} from 'lucide-react';
-import { livestreamService, type NowPlayingData, type TrackInfo } from '../../services/livestreamService';
-import { usePlayer } from '../../context/PlayerContext';
-import html2canvas from 'html2canvas';
-import { showInfo, showSuccess, showError } from '../../components/common/toastUtils';
-import { Loading } from '../../components/common';
-import brandLogo from '../../assets/logo_notext.png';
-import './Livestream.css';
+} from "lucide-react";
+import {
+  livestreamService,
+  type NowPlayingData,
+  type TrackInfo,
+} from "../../services/livestreamService";
+import { usePlayer } from "../../context/PlayerContext";
+import html2canvas from "html2canvas";
+import {
+  showInfo,
+  showSuccess,
+  showError,
+} from "../../components/common/toastUtils";
+import { Loading } from "../../components/common";
+import brandLogo from "../../assets/logo_notext.png";
+import "./Livestream.css";
 
 // ===== TYPES =====
 interface ChatMessage {
   id: string;
-  type: 'system' | 'user' | 'host' | 'request';
+  type: "system" | "user" | "host" | "request";
   name: string;
   text: string;
   time: string;
@@ -43,10 +50,10 @@ interface ChatMessage {
 interface PodcastCard {
   id: string;
   category: string;
-  categoryColor: 'purple' | 'blue' | 'green' | 'red';
+  categoryColor: "purple" | "blue" | "green" | "red";
   title: string;
   author: string;
-  voiceType: 'ai' | 'real';
+  voiceType: "ai" | "real";
 }
 
 interface FloatingReaction {
@@ -58,86 +65,108 @@ interface FloatingReaction {
 // ===== DEMO DATA =====
 const DEMO_PODCASTS: PodcastCard[] = [
   {
-    id: '1',
-    category: 'Live Đêm: Chuyện Gia Đình',
-    categoryColor: 'purple',
+    id: "1",
+    category: "Live Đêm: Chuyện Gia Đình",
+    categoryColor: "purple",
     title: '"Tôi nhớ quê hương mình, nhớ gia đình mình.."',
-    author: 'Thanh Nguyen',
-    voiceType: 'ai',
+    author: "Thanh Nguyen",
+    voiceType: "ai",
   },
   {
-    id: '2',
-    category: 'Live Đêm: Chuyện Tình Cảm',
-    categoryColor: 'blue',
+    id: "2",
+    category: "Live Đêm: Chuyện Tình Cảm",
+    categoryColor: "blue",
     title: '"Lần đầu tiên rung động của tôi..."',
-    author: 'Dung Ho',
-    voiceType: 'real',
+    author: "Dung Ho",
+    voiceType: "real",
   },
   {
-    id: '3',
-    category: 'ON AIR: STORY TIME',
-    categoryColor: 'green',
+    id: "3",
+    category: "ON AIR: STORY TIME",
+    categoryColor: "green",
     title: '"Các câu chuyện đời thường của tôi bắt đầu vào 1 hôm kì lạ..."',
-    author: 'Oanh Tran',
-    voiceType: 'ai',
+    author: "Oanh Tran",
+    voiceType: "ai",
   },
 ];
 
 const DEMO_CHAT: ChatMessage[] = [
   {
-    id: '1',
-    type: 'system',
-    name: '',
-    text: 'Chào mừng đến SoundMates trực tuyến',
-    time: '',
+    id: "1",
+    type: "system",
+    name: "",
+    text: "Chào mừng đến SoundMates trực tuyến",
+    time: "",
   },
   {
-    id: '2',
-    type: 'user',
-    name: 'A. Minh',
-    text: 'Bài này hay quá ! 🔥 Có thể chạy bài của J97 tiếp được không?',
-    time: '10:42 PM',
-    avatarColor: '#3498db',
+    id: "2",
+    type: "user",
+    name: "A. Minh",
+    text: "Bài này hay quá ! 🔥 Có thể chạy bài của J97 tiếp được không?",
+    time: "10:42 PM",
+    avatarColor: "#3498db",
   },
   {
-    id: '3',
-    type: 'host',
-    name: 'Quoc Anh (Host)',
-    text: 'Oke! Sau bài này nhé. Mọi người xem live vui vẻ <3',
-    time: '10:43 PM',
+    id: "3",
+    type: "host",
+    name: "Quoc Anh (Host)",
+    text: "Oke! Sau bài này nhé. Mọi người xem live vui vẻ <3",
+    time: "10:43 PM",
     isHost: true,
-    avatarColor: '#2ecc71',
+    avatarColor: "#2ecc71",
   },
   {
-    id: '4',
-    type: 'request',
-    name: 'C.Thanh',
-    text: 'Tôi rất thích bài này!',
-    time: '10:44 PM',
-    avatarColor: '#e74c3c',
-    requestSong: 'Blue in Green',
+    id: "4",
+    type: "request",
+    name: "C.Thanh",
+    text: "Tôi rất thích bài này!",
+    time: "10:44 PM",
+    avatarColor: "#e74c3c",
+    requestSong: "Blue in Green",
   },
 ];
 
-const EMOTIONS = ['❤️', '🔥', '😍', '👏', '🎵', '✨', '🎶', '💜'];
-const EMOJIS = ['😀', '😂', '❤️', '🔥', '👏', '🎵', '😍', '🙌', '💯', '✨', '🎶', '💜', '😎', '🤩', '💙', '🫡', '😭', '🥰'];
+const EMOTIONS = ["❤️", "🔥", "😍", "👏", "🎵", "✨", "🎶", "💜"];
+const EMOJIS = [
+  "😀",
+  "😂",
+  "❤️",
+  "🔥",
+  "👏",
+  "🎵",
+  "😍",
+  "🙌",
+  "💯",
+  "✨",
+  "🎶",
+  "💜",
+  "😎",
+  "🤩",
+  "💙",
+  "🫡",
+  "😭",
+  "🥰",
+];
 
 // ===== HELPER FUNCTIONS =====
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 function formatPlayedAt(timestamp: number): string {
   const date = new Date(timestamp * 1000);
-  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function proxyArtUrl(url: string): string {
-  if (!url) return '';
+  if (!url) return "";
   // Replace host.docker.internal with localhost for browser access
-  return url.replace('host.docker.internal', 'localhost');
+  return url.replace("host.docker.internal", "localhost");
 }
 
 // ===== MAIN COMPONENT =====
@@ -148,17 +177,21 @@ const LivestreamPage: React.FC = () => {
   const [nowPlaying, setNowPlaying] = useState<NowPlayingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [elapsed, setElapsed] = useState(0);
-  const [sidebarTab, setSidebarTab] = useState<'chat' | 'playlist' | 'podcast'>('chat');
+  const [sidebarTab, setSidebarTab] = useState<"chat" | "playlist" | "podcast">(
+    "chat",
+  );
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(DEMO_CHAT);
-  const [chatInput, setChatInput] = useState('');
+  const [chatInput, setChatInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showEmotionPicker, setShowEmotionPicker] = useState(false);
-  const [floatingReactions, setFloatingReactions] = useState<FloatingReaction[]>([]);
+  const [floatingReactions, setFloatingReactions] = useState<
+    FloatingReaction[]
+  >([]);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showPodcastModal, setShowPodcastModal] = useState(false);
-  const [requestSearch, setRequestSearch] = useState('');
+  const [requestSearch, setRequestSearch] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   // Refs
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -166,14 +199,14 @@ const LivestreamPage: React.FC = () => {
 
   // Theme persistence
   useEffect(() => {
-    const stored = window.localStorage.getItem('livestreamTheme');
-    if (stored === 'light' || stored === 'dark') {
+    const stored = window.localStorage.getItem("livestreamTheme");
+    if (stored === "light" || stored === "dark") {
       setTheme(stored);
     }
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem('livestreamTheme', theme);
+    window.localStorage.setItem("livestreamTheme", theme);
   }, [theme]);
 
   // ===== DATA FETCHING =====
@@ -187,14 +220,17 @@ const LivestreamPage: React.FC = () => {
         title: data.currentTrack.title,
         artist: data.currentTrack.artist,
         album: data.currentTrack.album,
-        artUrl: data.currentTrack.artUrl.replace('host.docker.internal', 'localhost'),
+        artUrl: data.currentTrack.artUrl.replace(
+          "host.docker.internal",
+          "localhost",
+        ),
         duration: data.currentTrack.duration,
         elapsed: data.currentTrack.elapsed,
         listenUrl: data.listenUrl,
       });
       setLoading(false);
     } catch (err) {
-      console.error('Failed to fetch now playing:', err);
+      console.error("Failed to fetch now playing:", err);
       setLoading(false);
     }
   }, []);
@@ -219,7 +255,7 @@ const LivestreamPage: React.FC = () => {
 
   // Auto-scroll chat
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
   // ===== CHAT =====
@@ -227,20 +263,23 @@ const LivestreamPage: React.FC = () => {
     if (!chatInput.trim()) return;
     const newMsg: ChatMessage = {
       id: Date.now().toString(),
-      type: 'user',
-      name: 'Bạn',
+      type: "user",
+      name: "Bạn",
       text: chatInput.trim(),
-      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      time: new Date().toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
       isSelf: true,
-      avatarColor: '#5F6EE0',
+      avatarColor: "#5F6EE0",
     };
     setChatMessages((prev) => [...prev, newMsg]);
-    setChatInput('');
+    setChatInput("");
     setShowEmojiPicker(false);
   };
 
   const handleChatKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendChat();
     }
@@ -281,21 +320,44 @@ const LivestreamPage: React.FC = () => {
   if (loading) {
     return (
       <div className="livestream-page">
-        <Loading fullscreen size="large" text="Đang kết nối đến phiên phát sóng..." />
+        <Loading
+          fullscreen
+          size="large"
+          text="Đang kết nối đến phiên phát sóng..."
+        />
       </div>
     );
   }
 
   if (!nowPlaying) {
     return (
-      <div className="livestream-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+      <div
+        className="livestream-page"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 16,
+        }}
+      >
         <Radio size={48} color="#55C5F1" />
-        <p style={{ color: 'rgba(255,255,255,0.5)' }}>Không thể kết nối đến phiên phát sóng</p>
+        <p style={{ color: "rgba(255,255,255,0.5)" }}>
+          Không thể kết nối đến phiên phát sóng
+        </p>
       </div>
     );
   }
 
-  const { currentTrack, playingNext, songHistory, stationName, totalListeners, isLive, isOnline } = nowPlaying;
+  const {
+    currentTrack,
+    playingNext,
+    songHistory,
+    stationName,
+    totalListeners,
+    isLive,
+    isOnline,
+  } = nowPlaying;
 
   return (
     <div className={`livestream-page livestream-theme-${theme}`}>
@@ -304,16 +366,27 @@ const LivestreamPage: React.FC = () => {
         <div className="livestream-main">
           {/* Now Playing Hero */}
           <div className="now-playing-hero">
-            <div className="now-playing-cover" onClick={player.toggle} style={{ cursor: 'pointer' }}>
-              <img src={proxyArtUrl(currentTrack.artUrl)} alt={currentTrack.title} />
+            <div
+              className="now-playing-cover"
+              onClick={player.toggle}
+              style={{ cursor: "pointer" }}
+            >
+              <img
+                src={proxyArtUrl(currentTrack.artUrl)}
+                alt={currentTrack.title}
+              />
               <div className="now-playing-cover-overlay">
-                <div className="now-playing-cover-title">{currentTrack.title}</div>
-                <div className="now-playing-cover-artist">{currentTrack.artist}</div>
+                <div className="now-playing-cover-title">
+                  {currentTrack.title}
+                </div>
+                <div className="now-playing-cover-artist">
+                  {currentTrack.artist}
+                </div>
               </div>
               {player.isPlaying && (
                 <div
                   style={{
-                    position: 'absolute',
+                    position: "absolute",
                     bottom: 12,
                     right: 12,
                   }}
@@ -332,7 +405,7 @@ const LivestreamPage: React.FC = () => {
                 {(isLive || isOnline) && (
                   <span className="station-live-badge">
                     <span className="dot" />
-                    {isLive ? 'Trực tiếp' : 'Đang phát sóng'}
+                    {isLive ? "Trực tiếp" : "Đang phát sóng"}
                   </span>
                 )}
                 <span className="station-name">{stationName}</span>
@@ -344,7 +417,7 @@ const LivestreamPage: React.FC = () => {
 
               <div className="now-playing-meta">
                 <span className="meta-item">
-                  <Music size={13} /> {currentTrack.genre || 'Music'}
+                  <Music size={13} /> {currentTrack.genre || "Music"}
                 </span>
                 <span className="meta-item">
                   <Clock size={13} /> {formatTime(currentTrack.duration)}
@@ -378,14 +451,16 @@ const LivestreamPage: React.FC = () => {
               </button>
               <button
                 className="action-bar-icon-btn"
-                title={theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}
-                onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+                title={theme === "dark" ? "Giao diện sáng" : "Giao diện tối"}
+                onClick={() =>
+                  setTheme((t) => (t === "dark" ? "light" : "dark"))
+                }
               >
-                {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+                {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
               </button>
               <button
                 className="action-bar-icon-btn"
-                title={player.isMuted ? 'Bật tiếng' : 'Tắt tiếng'}
+                title={player.isMuted ? "Bật tiếng" : "Tắt tiếng"}
                 onClick={player.toggleMute}
               >
                 {player.isMuted ? <VolumeX size={17} /> : <Volume2 size={17} />}
@@ -403,7 +478,7 @@ const LivestreamPage: React.FC = () => {
               />
             </div>
 
-            <div className="action-bar-center" style={{ position: 'relative' }}>
+            <div className="action-bar-center" style={{ position: "relative" }}>
               <button
                 className="action-btn emotion"
                 onClick={() => {
@@ -438,7 +513,11 @@ const LivestreamPage: React.FC = () => {
               {showEmotionPicker && (
                 <div className="emotion-popup">
                   {EMOTIONS.map((em) => (
-                    <button key={em} className="emotion-btn" onClick={() => sendEmotion(em)}>
+                    <button
+                      key={em}
+                      className="emotion-btn"
+                      onClick={() => sendEmotion(em)}
+                    >
                       {em}
                     </button>
                   ))}
@@ -460,62 +539,65 @@ const LivestreamPage: React.FC = () => {
               <div className="podcast-card" key={pc.id}>
                 <div className="podcast-card-header">
                   <span className={`podcast-category-icon ${pc.categoryColor}`}>
-                    {pc.categoryColor === 'purple' && <Headphones size={12} />}
-                    {pc.categoryColor === 'blue' && <Heart size={12} />}
-                    {pc.categoryColor === 'green' && <Mic2 size={12} />}
-                    {pc.categoryColor === 'red' && <Radio size={12} />}
+                    {pc.categoryColor === "purple" && <Headphones size={12} />}
+                    {pc.categoryColor === "blue" && <Heart size={12} />}
+                    {pc.categoryColor === "green" && <Mic2 size={12} />}
+                    {pc.categoryColor === "red" && <Radio size={12} />}
                   </span>
-                  <span className={`podcast-category-name ${pc.categoryColor}`}>{pc.category}</span>
+                  <span className={`podcast-category-name ${pc.categoryColor}`}>
+                    {pc.category}
+                  </span>
                 </div>
                 <p className="podcast-card-title">{pc.title}</p>
                 <div className="podcast-card-footer">
                   <div className="podcast-card-author">
                     <div className="podcast-author-checkbox" />
-                    <span className="podcast-author-name">Được gửi bởi {pc.author}</span>
+                    <span className="podcast-author-name">
+                      Được gửi bởi {pc.author}
+                    </span>
                   </div>
                   <span className={`podcast-voice-badge ${pc.voiceType}`}>
-                    {pc.voiceType === 'ai' ? 'Giọng AI' : 'Giọng thật'}
+                    {pc.voiceType === "ai" ? "Giọng AI" : "Giọng thật"}
                   </span>
                 </div>
               </div>
             ))}
           </div>
-
         </div>
 
         {/* ===== RIGHT: Sidebar ===== */}
         <div className="livestream-sidebar">
           <div className="sidebar-tabs">
             <button
-              className={`sidebar-tab ${sidebarTab === 'chat' ? 'active' : ''}`}
-              onClick={() => setSidebarTab('chat')}
+              className={`sidebar-tab ${sidebarTab === "chat" ? "active" : ""}`}
+              onClick={() => setSidebarTab("chat")}
             >
               Chat
             </button>
             <button
-              className={`sidebar-tab ${sidebarTab === 'playlist' ? 'active' : ''}`}
-              onClick={() => setSidebarTab('playlist')}
+              className={`sidebar-tab ${sidebarTab === "playlist" ? "active" : ""}`}
+              onClick={() => setSidebarTab("playlist")}
             >
               Nhạc phát
             </button>
             <button
-              className={`sidebar-tab ${sidebarTab === 'podcast' ? 'active' : ''}`}
-              onClick={() => setSidebarTab('podcast')}
+              className={`sidebar-tab ${sidebarTab === "podcast" ? "active" : ""}`}
+              onClick={() => setSidebarTab("podcast")}
             >
               Podcast
             </button>
           </div>
 
           {/* Chat Tab */}
-          {sidebarTab === 'chat' && (
+          {sidebarTab === "chat" && (
             <div className="chat-panel">
               <div className="chat-messages">
                 {chatMessages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`chat-msg ${msg.type === 'system' ? 'system' : ''} ${msg.isSelf ? 'self' : ''}`}
+                    className={`chat-msg ${msg.type === "system" ? "system" : ""} ${msg.isSelf ? "self" : ""}`}
                   >
-                    {msg.type === 'system' ? (
+                    {msg.type === "system" ? (
                       <div className="chat-msg-system">{msg.text}</div>
                     ) : (
                       <>
@@ -523,22 +605,33 @@ const LivestreamPage: React.FC = () => {
                           <div className="chat-msg-header">
                             <div
                               className="chat-msg-avatar"
-                              style={{ background: msg.avatarColor || '#555' }}
+                              style={{ background: msg.avatarColor || "#555" }}
                             />
-                            <span className={`chat-msg-name ${msg.isHost ? 'host' : ''}`}>
+                            <span
+                              className={`chat-msg-name ${msg.isHost ? "host" : ""}`}
+                            >
                               {msg.name}
                             </span>
                             <span className="chat-msg-time">{msg.time}</span>
                           </div>
                         )}
-                        <div className={`chat-msg-bubble ${msg.requestSong ? 'request-bubble' : ''}`}>
+                        <div
+                          className={`chat-msg-bubble ${msg.requestSong ? "request-bubble" : ""}`}
+                        >
                           {msg.requestSong && (
-                            <div className="chat-request-tag">🎵 Requested "{msg.requestSong}"</div>
+                            <div className="chat-request-tag">
+                              🎵 Requested "{msg.requestSong}"
+                            </div>
                           )}
                           {msg.text}
                         </div>
                         {msg.isSelf && (
-                          <span className="chat-msg-time" style={{ marginTop: 2 }}>{msg.time}</span>
+                          <span
+                            className="chat-msg-time"
+                            style={{ marginTop: 2 }}
+                          >
+                            {msg.time}
+                          </span>
                         )}
                       </>
                     )}
@@ -547,11 +640,15 @@ const LivestreamPage: React.FC = () => {
                 <div ref={chatEndRef} />
               </div>
 
-              <div className="chat-input-area" style={{ position: 'relative' }}>
+              <div className="chat-input-area" style={{ position: "relative" }}>
                 {showEmojiPicker && (
                   <div className="emoji-picker-popup">
                     {EMOJIS.map((em) => (
-                      <button key={em} className="emoji-btn" onClick={() => addEmoji(em)}>
+                      <button
+                        key={em}
+                        className="emoji-btn"
+                        onClick={() => addEmoji(em)}
+                      >
                         {em}
                       </button>
                     ))}
@@ -584,13 +681,16 @@ const LivestreamPage: React.FC = () => {
           )}
 
           {/* Playlist Tab */}
-          {sidebarTab === 'playlist' && (
+          {sidebarTab === "playlist" && (
             <div className="playlist-panel">
               {/* Currently Playing */}
               <div className="playlist-now-label">Đang phát</div>
               <div className="playlist-item active">
                 <div className="playlist-item-art">
-                  <img src={proxyArtUrl(currentTrack.artUrl)} alt={currentTrack.title} />
+                  <img
+                    src={proxyArtUrl(currentTrack.artUrl)}
+                    alt={currentTrack.title}
+                  />
                   <div className="playlist-item-playing-indicator">
                     <div className="mini-visualizer">
                       <div className="bar" />
@@ -600,10 +700,16 @@ const LivestreamPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="playlist-item-info">
-                  <div className="playlist-item-title">{currentTrack.title}</div>
-                  <div className="playlist-item-artist">{currentTrack.artist}</div>
+                  <div className="playlist-item-title">
+                    {currentTrack.title}
+                  </div>
+                  <div className="playlist-item-artist">
+                    {currentTrack.artist}
+                  </div>
                 </div>
-                <div className="playlist-item-duration">{formatTime(currentTrack.duration)}</div>
+                <div className="playlist-item-duration">
+                  {formatTime(currentTrack.duration)}
+                </div>
               </div>
 
               {/* Up Next */}
@@ -612,13 +718,22 @@ const LivestreamPage: React.FC = () => {
                   <div className="playlist-next-label">Tiếp theo</div>
                   <div className="playlist-item">
                     <div className="playlist-item-art">
-                      <img src={proxyArtUrl(playingNext.artUrl)} alt={playingNext.title} />
+                      <img
+                        src={proxyArtUrl(playingNext.artUrl)}
+                        alt={playingNext.title}
+                      />
                     </div>
                     <div className="playlist-item-info">
-                      <div className="playlist-item-title">{playingNext.title}</div>
-                      <div className="playlist-item-artist">{playingNext.artist}</div>
+                      <div className="playlist-item-title">
+                        {playingNext.title}
+                      </div>
+                      <div className="playlist-item-artist">
+                        {playingNext.artist}
+                      </div>
                     </div>
-                    <div className="playlist-item-duration">{formatTime(playingNext.duration)}</div>
+                    <div className="playlist-item-duration">
+                      {formatTime(playingNext.duration)}
+                    </div>
                   </div>
                 </>
               )}
@@ -630,7 +745,10 @@ const LivestreamPage: React.FC = () => {
                   {songHistory.map((track: TrackInfo) => (
                     <div key={track.shId} className="playlist-item history">
                       <div className="playlist-item-art">
-                        <img src={proxyArtUrl(track.artUrl)} alt={track.title} />
+                        <img
+                          src={proxyArtUrl(track.artUrl)}
+                          alt={track.title}
+                        />
                       </div>
                       <div className="playlist-item-info">
                         <div className="playlist-item-title">{track.title}</div>
@@ -646,7 +764,7 @@ const LivestreamPage: React.FC = () => {
           )}
 
           {/* Podcast Tab */}
-          {sidebarTab === 'podcast' && (
+          {sidebarTab === "podcast" && (
             <div className="podcast-tab-panel">
               {DEMO_PODCASTS.map((pc) => (
                 <div key={pc.id} className="podcast-tab-item">
@@ -654,13 +772,13 @@ const LivestreamPage: React.FC = () => {
                     className="podcast-tab-item-category"
                     style={{
                       color:
-                        pc.categoryColor === 'purple'
-                          ? '#9b59ff'
-                          : pc.categoryColor === 'blue'
-                            ? '#55C5F1'
-                            : pc.categoryColor === 'green'
-                              ? '#2ecc71'
-                              : '#ff3b3f',
+                        pc.categoryColor === "purple"
+                          ? "#9b59ff"
+                          : pc.categoryColor === "blue"
+                            ? "#55C5F1"
+                            : pc.categoryColor === "green"
+                              ? "#2ecc71"
+                              : "#ff3b3f",
                     }}
                   >
                     {pc.category}
@@ -669,7 +787,7 @@ const LivestreamPage: React.FC = () => {
                   <div className="podcast-tab-item-footer">
                     <span>Bởi {pc.author}</span>
                     <span className={`podcast-voice-badge ${pc.voiceType}`}>
-                      {pc.voiceType === 'ai' ? 'Giọng AI' : 'Giọng thật'}
+                      {pc.voiceType === "ai" ? "Giọng AI" : "Giọng thật"}
                     </span>
                   </div>
                 </div>
@@ -689,12 +807,15 @@ const LivestreamPage: React.FC = () => {
           onRequest={(song) => {
             const newMsg: ChatMessage = {
               id: Date.now().toString(),
-              type: 'request',
-              name: 'Bạn',
+              type: "request",
+              name: "Bạn",
               text: `Mình muốn nghe bài này!`,
-              time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+              time: new Date().toLocaleTimeString("vi-VN", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
               isSelf: true,
-              avatarColor: '#5F6EE0',
+              avatarColor: "#5F6EE0",
               requestSong: song,
             };
             setChatMessages((prev) => [...prev, newMsg]);
@@ -721,7 +842,7 @@ const LivestreamPage: React.FC = () => {
           <span
             key={r.id}
             className="floating-emoji"
-            style={{ left: r.x, animationDelay: '0s' }}
+            style={{ left: r.x, animationDelay: "0s" }}
           >
             {r.emoji}
           </span>
@@ -767,7 +888,7 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
   const filteredSongs = requestableLibrary.filter(
     (s) =>
       s.title.toLowerCase().includes(requestSearch.toLowerCase()) ||
-      s.artist.toLowerCase().includes(requestSearch.toLowerCase())
+      s.artist.toLowerCase().includes(requestSearch.toLowerCase()),
   );
 
   const handleRequest = async (song: TrackInfo) => {
@@ -793,15 +914,15 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
           </button>
         </div>
         <div className="request-modal-search">
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: "relative" }}>
             <Search
               size={16}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'rgba(255,255,255,0.3)',
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "rgba(255,255,255,0.3)",
               }}
             />
             <input
@@ -829,14 +950,16 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
                 />
                 <div className="request-song-info">
                   <div className="request-song-title">{song.title}</div>
-                  <div className="request-song-artist">{song.artist} · {song.album}</div>
+                  <div className="request-song-artist">
+                    {song.artist} · {song.album}
+                  </div>
                 </div>
                 <button
                   className="request-song-btn"
                   disabled={loading || requestedIds.has(song.shId)}
                   onClick={() => handleRequest(song)}
                 >
-                  {requestedIds.has(song.shId) ? '✓ Đã gửi' : 'Request'}
+                  {requestedIds.has(song.shId) ? "✓ Đã gửi" : "Request"}
                 </button>
               </div>
             ))
@@ -853,10 +976,10 @@ interface PodcastSubmitModalProps {
 }
 
 const PodcastSubmitModal: React.FC<PodcastSubmitModalProps> = ({ onClose }) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [category, setCategory] = useState('story');
-  const [voiceType, setVoiceType] = useState('ai');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("story");
+  const [voiceType, setVoiceType] = useState("ai");
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -940,14 +1063,18 @@ interface ShareNowPlayingModalProps {
   onClose: () => void;
 }
 
-const ShareNowPlayingModal: React.FC<ShareNowPlayingModalProps> = ({ track, stationName, onClose }) => {
+const ShareNowPlayingModal: React.FC<ShareNowPlayingModalProps> = ({
+  track,
+  stationName,
+  onClose,
+}) => {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [generating, setGenerating] = useState(false);
   const [cachedDataUrl, setCachedDataUrl] = useState<string | null>(null);
 
-  const safeTitle = track.title || 'Bài hát đang phát';
-  const safeArtist = track.artist || 'Không rõ nghệ sĩ';
-  const safeAlbum = track.album || 'Live Radio';
+  const safeTitle = track.title || "Bài hát đang phát";
+  const safeArtist = track.artist || "Không rõ nghệ sĩ";
+  const safeAlbum = track.album || "Live Radio";
 
   const buildImage = async (): Promise<string | null> => {
     if (cachedDataUrl) return cachedDataUrl;
@@ -968,18 +1095,21 @@ const ShareNowPlayingModal: React.FC<ShareNowPlayingModalProps> = ({ track, stat
         windowWidth: document.documentElement.clientWidth,
       });
 
-      const dataUrl = canvas.toDataURL('image/png', 0.95);
+      const dataUrl = canvas.toDataURL("image/png", 0.95);
       setCachedDataUrl(dataUrl);
       return dataUrl;
     } catch (e) {
-      console.error('Failed to generate share image', e);
-      if (e instanceof DOMException && e.name === 'SecurityError') {
+      console.error("Failed to generate share image", e);
+      if (e instanceof DOMException && e.name === "SecurityError") {
         showError(
-          'Không xuất được ảnh đầy đủ',
-          'Server ảnh album chưa bật CORS nên trình duyệt không cho phép kèm cover trong file. Hãy cấu hình CORS cho domain cover hoặc dùng ảnh trong hệ thống SoundMates.'
+          "Không xuất được ảnh đầy đủ",
+          "Server ảnh album chưa bật CORS nên trình duyệt không cho phép kèm cover trong file. Hãy cấu hình CORS cho domain cover hoặc dùng ảnh trong hệ thống SoundMates.",
         );
       } else {
-        showError('Không tạo được ảnh chia sẻ', 'Vui lòng thử lại sau vài giây.');
+        showError(
+          "Không tạo được ảnh chia sẻ",
+          "Vui lòng thử lại sau vài giây.",
+        );
       }
       return null;
     } finally {
@@ -990,11 +1120,14 @@ const ShareNowPlayingModal: React.FC<ShareNowPlayingModalProps> = ({ track, stat
   const handleDownload = async () => {
     const dataUrl = await buildImage();
     if (!dataUrl) return;
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = dataUrl;
-    link.download = `soundmates-now-playing-${track.title || 'track'}.png`;
+    link.download = `soundmates-now-playing-${track.title || "track"}.png`;
     link.click();
-    showSuccess('Đã tải ảnh card', 'Bạn có thể dùng ảnh này để chia sẻ lên mạng xã hội.');
+    showSuccess(
+      "Đã tải ảnh card",
+      "Bạn có thể dùng ảnh này để chia sẻ lên mạng xã hội.",
+    );
   };
 
   const handleCopyLink = async () => {
@@ -1002,17 +1135,23 @@ const ShareNowPlayingModal: React.FC<ShareNowPlayingModalProps> = ({ track, stat
     if (!dataUrl) return;
     try {
       await navigator.clipboard.writeText(dataUrl);
-      showSuccess('Đã copy link ảnh', 'Dán link này vào nơi bạn muốn chia sẻ.');
+      showSuccess("Đã copy link ảnh", "Dán link này vào nơi bạn muốn chia sẻ.");
     } catch (e) {
-      console.error('Clipboard error', e);
-      showError('Không copy được link ảnh', 'Trình duyệt không cho phép copy, thử lại thủ công.');
+      console.error("Clipboard error", e);
+      showError(
+        "Không copy được link ảnh",
+        "Trình duyệt không cho phép copy, thử lại thủ công.",
+      );
     }
   };
 
   const handleShareToWall = async () => {
     // Demo: trong tương lai có thể gọi API tạo bài viết / status trong hệ thống
     await buildImage();
-    showInfo('Đã chia sẻ lên tường (demo)', 'Khi có backend tường bài viết, card này sẽ được đẩy lên đó.');
+    showInfo(
+      "Đã chia sẻ lên tường (demo)",
+      "Khi có backend tường bài viết, card này sẽ được đẩy lên đó.",
+    );
   };
 
   return (
@@ -1069,7 +1208,9 @@ const ShareNowPlayingModal: React.FC<ShareNowPlayingModalProps> = ({ track, stat
                   <div className="share-card-progress-shell">
                     <div className="share-card-progress-fill" />
                   </div>
-                  <span className="share-card-caption">Đang nghe cùng SoundMates</span>
+                  <span className="share-card-caption">
+                    Đang nghe cùng SoundMates
+                  </span>
                 </div>
                 <span className="share-card-tagline">soundmates.fm</span>
               </div>
