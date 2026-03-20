@@ -10,9 +10,10 @@ import {
   ChartBar,
   AudioLines,
   Plus,
+  Trash2,
+  Pencil,
 } from "lucide-react";
-
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
@@ -21,7 +22,7 @@ import "./profile-dark.css";
 import type { User } from "../../types/user";
 import type { Post } from "../../types/post";
 import CreatePostModal from "./modals/CreatePostModal";
-import { validateImageUrl } from "../../utils/stringUtils";
+import EditPostModal from "./modals/EditPostModal";
 import favoriteService from "../../services/favoriteService";
 import type { FavoriteItem } from "../../services/favoriteService";
 
@@ -69,6 +70,147 @@ const formatDate = (d?: string | null) =>
     : null;
 
 /* ──────────────────────────────────────────
+   POST CARD  (with 3-dot action menu)
+────────────────────────────────────────── */
+interface PostCardProps {
+  post: Post;
+  user: User;
+  name: string;
+  defaultAv: string;
+  onEdit: (post: Post) => void;
+  onDelete: (postId: string) => void;
+}
+
+function PostCard({
+  post,
+  user,
+  name,
+  defaultAv,
+  onEdit,
+  onDelete,
+}: PostCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
+  const handleDelete = async () => {
+    if (!window.confirm("Xoá bài đăng này?")) return;
+    setDeleting(true);
+    try {
+      await api.delete(`posts/${post.id}`);
+      onDelete(post.id);
+    } catch {
+      alert("Xoá thất bại, thử lại nhé!");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className={"post-card" + (deleting ? " post-card--deleting" : "")}>
+      {/* Header */}
+      <div className="post-header">
+        <Avatar src={user.profileImageUrl || defaultAv} name={name} size="sm" />
+        <div className="post-meta">
+          <p className="post-name">{name}</p>
+          <p className="post-time">
+            {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString(
+              "vi-VN",
+              {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              },
+            )}
+          </p>
+        </div>
+        {post.moodTag && <span className="post-mood">{post.moodTag}</span>}
+
+        {/* 3-dot menu */}
+        <div className="post-menu-wrap" ref={menuRef}>
+          <button
+            className="post-menu-btn"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Tuỳ chọn"
+          >
+            <MoreHorizontal size={16} />
+          </button>
+          {menuOpen && (
+            <div className="post-menu-dropdown">
+              <button
+                className="post-menu-item"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onEdit(post);
+                }}
+              >
+                <Pencil size={14} />
+                Chỉnh sửa
+              </button>
+              <div className="post-menu-divider" />
+              <button
+                className="post-menu-item post-menu-item--danger"
+                onClick={() => {
+                  setMenuOpen(false);
+                  handleDelete();
+                }}
+              >
+                <Trash2 size={14} />
+                Xoá bài
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="post-body-wrap">
+        {post.title && <p className="post-title">{post.title}</p>}
+        <p className="post-body">{post.contentText}</p>
+      </div>
+
+      {/* Media */}
+      {post.imageUrl?.startsWith("http") && (
+        <div className="post-img-wrap">
+          <img src={post.imageUrl} alt="post" />
+        </div>
+      )}
+      {post.audioUrl?.startsWith("http") && (
+        <div className="post-audio-wrap">
+          <audio controls src={post.audioUrl} />
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="post-actions">
+        <button className="post-btn">
+          <Heart size={14} /> Thích
+        </button>
+        <button className="post-btn">
+          <MessageCircle size={14} /> Bình luận
+        </button>
+        <button className="post-btn">
+          <Share2 size={14} /> Chia sẻ
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────
    PROFILE
 ────────────────────────────────────────── */
 export default function Profile() {
@@ -76,6 +218,7 @@ export default function Profile() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [tab, setTab] = useState<Tab>("overview");
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [editPost, setEditPost] = useState<Post | null>(null);
   const [favTracks, setFavTracks] = useState<FavoriteItem[]>([]);
 
   const loadFavorites = useCallback(async () => {
@@ -91,7 +234,7 @@ export default function Profile() {
 
   useEffect(() => {
     api
-      .get("/users/me/profile/full")
+      .get("users/me/profile/full")
       .then((r) => setUser(r.data.data))
       .catch((e) => console.error("Load profile failed", e));
 
@@ -100,6 +243,7 @@ export default function Profile() {
       .then((r) => setPosts(r.data?.data?.items ?? []))
       .catch((e) => console.error("Load posts failed", e));
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFavorites();
   }, [loadFavorites]);
 
@@ -115,16 +259,20 @@ export default function Profile() {
   const handlePostCreated = (post: Post) => {
     setPosts((prev) => [post, ...prev]);
   };
-  
-  // Validate profile image URL
-  const validProfileImage = validateImageUrl(user.profileImageUrl) || defaultAv;
-  const validBackgroundImage = validateImageUrl(user.backgroundImageUrl) || defaultCover;
+
+  const handlePostUpdated = (updated: Post) => {
+    setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  };
+
+  const handlePostDeleted = (postId: string) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  };
 
   return (
     <div className="pf">
       {/* COVER */}
       <div className="pf-cover">
-        <img src={validBackgroundImage} alt="cover" />
+        <img src={user.backgroundImageUrl || defaultCover} alt="cover" />
       </div>
 
       {/* PROFILE BAR */}
@@ -133,7 +281,7 @@ export default function Profile() {
           {/* Avatar + info */}
           <div className="pf-left">
             <Avatar
-              src={validProfileImage}
+              src={user.profileImageUrl || defaultAv}
               name={name}
               size="xl"
               className="pf-av"
@@ -193,39 +341,50 @@ export default function Profile() {
                   <button className="pf-link">Xem tất cả</button>
                 </div>
                 {favTracks.length > 0 ? (
-                favTracks.slice(0, 5).map((t, idx) => (
-                  <div key={t.id} className="track">
-                    <span className="track-n">
-                      {String(idx + 1).padStart(2, "0")}
-                    </span>
-                    <img
-                      className="track-img"
-                      src={t.imgUrl || "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1"}
-                      alt={t.name}
-                    />
-                    <div className="track-info">
-                      <p className="track-title">{t.name}</p>
-                      <p className="track-artist">
-                        {t.artistName}
-                        {t.albumName ? ` · ${t.albumName}` : ""}
-                      </p>
+                  favTracks.slice(0, 5).map((t, idx) => (
+                    <div key={t.id} className="track">
+                      <span className="track-n">
+                        {String(idx + 1).padStart(2, "0")}
+                      </span>
+                      <img
+                        className="track-img"
+                        src={
+                          t.imgUrl ||
+                          "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1"
+                        }
+                        alt={t.name}
+                      />
+                      <div className="track-info">
+                        <p className="track-title">{t.name}</p>
+                        <p className="track-artist">
+                          {t.artistName}
+                          {t.albumName ? ` · ${t.albumName}` : ""}
+                        </p>
+                      </div>
+                      <span className="track-dur">
+                        {t.durationMs ? formatDuration(t.durationMs) : "--:--"}
+                      </span>
+                      <span className="track-likes">
+                        <Heart size={12} />
+                      </span>
+                      <button className="track-more">
+                        <MoreHorizontal size={15} />
+                      </button>
                     </div>
-                    <span className="track-dur">
-                      {t.durationMs ? formatDuration(t.durationMs) : "--:--"}
-                    </span>
-                    <span className="track-likes">
-                      <Heart size={12} />
-                    </span>
-                    <button className="track-more">
-                      <MoreHorizontal size={15} />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p className="music-empty" style={{ textAlign: "center", padding: "16px 0", color: "var(--neutral-400, #a3a3a3)", fontSize: 13 }}>
-                  Chưa có bài hát yêu thích nào
-                </p>
-              )}
+                  ))
+                ) : (
+                  <p
+                    className="music-empty"
+                    style={{
+                      textAlign: "center",
+                      padding: "16px 0",
+                      color: "var(--neutral-400, #a3a3a3)",
+                      fontSize: 13,
+                    }}
+                  >
+                    Chưa có bài hát yêu thích nào
+                  </p>
+                )}
               </div>
 
               {/* Community Posts */}
@@ -250,7 +409,7 @@ export default function Profile() {
                   onClick={() => setShowCreatePost(true)}
                 >
                   <Avatar
-                    src={validProfileImage}
+                    src={user.profileImageUrl || defaultAv}
                     name={name}
                     size="sm"
                   />
@@ -315,69 +474,15 @@ export default function Profile() {
                 ) : (
                   <div className="post-list">
                     {posts.map((post) => (
-                      <div key={post.id} className="post-card">
-                        {/* Header */}
-                        <div className="post-header">
-                          <Avatar
-                            src={validProfileImage}
-                            name={name}
-                            size="sm"
-                          />
-                          <div className="post-meta">
-                            <p className="post-name">{name}</p>
-                            <p className="post-time">
-                              {new Date(
-                                post.publishedAt ?? post.createdAt,
-                              ).toLocaleDateString("vi-VN", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                          {post.moodTag && (
-                            <span className="post-mood">{post.moodTag}</span>
-                          )}
-                        </div>
-
-                        {/* Body */}
-                        <div className="post-body-wrap">
-                          {post.title && (
-                            <p className="post-title">{post.title}</p>
-                          )}
-                          <p className="post-body">{post.contentText}</p>
-                        </div>
-
-                        {/* Media */}
-                        {post.imageUrl?.startsWith("http") && (
-                          <div className="post-img-wrap">
-                            <img src={post.imageUrl} alt="post" />
-                          </div>
-                        )}
-                        {post.audioUrl?.startsWith("http") && (
-                          <div className="post-audio-wrap">
-                            <audio controls src={post.audioUrl} />
-                          </div>
-                        )}
-
-                        {/* Actions */}
-                        <div className="post-actions">
-                          <button className="post-btn">
-                            <Heart size={14} />
-                            Thích
-                          </button>
-                          <button className="post-btn">
-                            <MessageCircle size={14} />
-                            Bình luận
-                          </button>
-                          <button className="post-btn">
-                            <Share2 size={14} />
-                            Chia sẻ
-                          </button>
-                        </div>
-                      </div>
+                      <PostCard
+                        key={post.id}
+                        post={post}
+                        user={user}
+                        name={name}
+                        defaultAv={defaultAv}
+                        onEdit={setEditPost}
+                        onDelete={handlePostDeleted}
+                      />
                     ))}
                   </div>
                 )}
@@ -427,7 +532,7 @@ export default function Profile() {
               onClick={() => setShowCreatePost(true)}
             >
               <Avatar
-                src={validProfileImage}
+                src={user.profileImageUrl || defaultAv}
                 name={name}
                 size="sm"
               />
@@ -450,57 +555,15 @@ export default function Profile() {
             ) : (
               <div className="post-list">
                 {posts.map((post) => (
-                  <div key={post.id} className="post-card">
-                    <div className="post-header">
-                      <Avatar
-                        src={validProfileImage}
-                        name={name}
-                        size="sm"
-                      />
-                      <div className="post-meta">
-                        <p className="post-name">{name}</p>
-                        <p className="post-time">
-                          {new Date(
-                            post.publishedAt ?? post.createdAt,
-                          ).toLocaleDateString("vi-VN", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                      {post.moodTag && (
-                        <span className="post-mood">{post.moodTag}</span>
-                      )}
-                    </div>
-                    <div className="post-body-wrap">
-                      {post.title && <p className="post-title">{post.title}</p>}
-                      <p className="post-body">{post.contentText}</p>
-                    </div>
-                    {post.imageUrl?.startsWith("http") && (
-                      <div className="post-img-wrap">
-                        <img src={post.imageUrl} alt="post" />
-                      </div>
-                    )}
-                    {post.audioUrl?.startsWith("http") && (
-                      <div className="post-audio-wrap">
-                        <audio controls src={post.audioUrl} />
-                      </div>
-                    )}
-                    <div className="post-actions">
-                      <button className="post-btn">
-                        <Heart size={14} /> Thích
-                      </button>
-                      <button className="post-btn">
-                        <MessageCircle size={14} /> Bình luận
-                      </button>
-                      <button className="post-btn">
-                        <Share2 size={14} /> Chia sẻ
-                      </button>
-                    </div>
-                  </div>
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    user={user}
+                    name={name}
+                    defaultAv={defaultAv}
+                    onEdit={setEditPost}
+                    onDelete={handlePostDeleted}
+                  />
                 ))}
               </div>
             )}
@@ -522,7 +585,10 @@ export default function Profile() {
                   </span>
                   <img
                     className="track-img"
-                    src={t.imgUrl || "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1"}
+                    src={
+                      t.imgUrl ||
+                      "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1"
+                    }
                     alt={t.name}
                   />
                   <div className="track-info">
@@ -571,6 +637,17 @@ export default function Profile() {
         name={name}
         defaultAv={defaultAv}
         onCreated={handlePostCreated}
+      />
+
+      {/* EDIT POST MODAL */}
+      <EditPostModal
+        open={editPost !== null}
+        post={editPost}
+        onClose={() => setEditPost(null)}
+        user={user}
+        name={name}
+        defaultAv={defaultAv}
+        onUpdated={handlePostUpdated}
       />
     </div>
   );
