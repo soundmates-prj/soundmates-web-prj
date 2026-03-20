@@ -1,0 +1,388 @@
+import { useState, useEffect, useCallback } from "react";
+import {
+  ListMusic,
+  RefreshCw,
+  Plus,
+  ChevronRight,
+  ArrowDownToLine,
+  Music,
+  Trash2,
+  X,
+} from "lucide-react";
+import { liveSessionApiService } from "../../../services/liveSessionApiService";
+import type {
+  StationResult,
+  PlaylistResult,
+  PlaylistMediaResult,
+  MusicResult,
+} from "../../../services/liveSessionApiService";
+import { showSuccess, showError } from "../../../components/common/toastUtils";
+import "./PlaylistsScreen.css";
+
+export function PlaylistsScreen() {
+  const [stations, setStations] = useState<StationResult[]>([]);
+  const [selectedStation, setSelectedStation] = useState<StationResult | null>(null);
+  const [playlists, setPlaylists] = useState<PlaylistResult[]>([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistResult | null>(null);
+  const [tracks, setTracks] = useState<PlaylistMediaResult[]>([]);
+  const [stationMusic, setStationMusic] = useState<MusicResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingTracks, setLoadingTracks] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAddTracksModal, setShowAddTracksModal] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [newPlaylistDesc, setNewPlaylistDesc] = useState("");
+
+  useEffect(() => {
+    loadStations();
+  }, []);
+
+  const loadStations = async () => {
+    setLoading(true);
+    try {
+      const data = await liveSessionApiService.getStations();
+      setStations(data);
+      if (data.length > 0 && !selectedStation) {
+        handleSelectStation(data[0]);
+      }
+    } catch {
+      showError("Lỗi", "Không thể tải stations");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectStation = useCallback(async (station: StationResult) => {
+    setSelectedStation(station);
+    setSelectedPlaylist(null);
+    setTracks([]);
+    try {
+      const data = await liveSessionApiService.getStationPlaylists(station.id);
+      setPlaylists(data);
+    } catch {
+      setPlaylists([]);
+    }
+  }, []);
+
+  const handleSelectPlaylist = async (pl: PlaylistResult) => {
+    setSelectedPlaylist(pl);
+    setLoadingTracks(true);
+    try {
+      const data = await liveSessionApiService.getPlaylistTracks(pl.id);
+      setTracks(data);
+    } catch {
+      setTracks([]);
+    } finally {
+      setLoadingTracks(false);
+    }
+  };
+
+  const handleSyncPlaylists = async () => {
+    if (!selectedStation) return;
+    setSyncing(true);
+    try {
+      const result = await liveSessionApiService.syncStationPlaylists(selectedStation.id);
+      showSuccess("Sync thành công!", `${result.created} tạo, ${result.updated} cập nhật`);
+      const data = await liveSessionApiService.getStationPlaylists(selectedStation.id);
+      setPlaylists(data);
+    } catch {
+      showError("Sync thất bại", "Không thể sync playlists");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleCreatePlaylist = async () => {
+    if (!selectedStation || !newPlaylistName.trim()) return;
+    try {
+      await liveSessionApiService.createPlaylist({
+        stationId: selectedStation.id,
+        playlistName: newPlaylistName.trim(),
+        description: newPlaylistDesc.trim() || undefined,
+        isAutoPlay: false,
+      });
+      showSuccess("Tạo thành công!", `Playlist "${newPlaylistName}" đã được tạo`);
+      setShowCreateModal(false);
+      setNewPlaylistName("");
+      setNewPlaylistDesc("");
+      const data = await liveSessionApiService.getStationPlaylists(selectedStation.id);
+      setPlaylists(data);
+    } catch {
+      showError("Lỗi", "Không thể tạo playlist");
+    }
+  };
+
+  const handleOpenAddTracks = async () => {
+    if (!selectedStation || !selectedPlaylist) return;
+    try {
+      const music = await liveSessionApiService.getStationMusic(selectedStation.id);
+      setStationMusic(music);
+      setShowAddTracksModal(true);
+    } catch {
+      showError("Lỗi", "Không thể tải danh sách nhạc");
+    }
+  };
+
+  const handleAddTrack = async (musicId: string) => {
+    if (!selectedPlaylist) return;
+    try {
+      await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, [musicId]);
+      showSuccess("Đã thêm", "Track đã được thêm vào playlist");
+      const data = await liveSessionApiService.getPlaylistTracks(selectedPlaylist.id);
+      setTracks(data);
+    } catch {
+      showError("Lỗi", "Không thể thêm track");
+    }
+  };
+
+  const handleRemoveTrack = async (musicId: string) => {
+    if (!selectedPlaylist) return;
+    try {
+      await liveSessionApiService.removeTracksFromPlaylist(selectedPlaylist.id, [musicId]);
+      setTracks((prev) => prev.filter((t) => t.mediaFileId !== musicId));
+      showSuccess("Đã xóa", "Track đã được xóa khỏi playlist");
+    } catch {
+      showError("Lỗi", "Không thể xóa track");
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="staff-loading">
+        <RefreshCw size={24} className="staff-spin" />
+        <p>Đang tải...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="staff-dashboard">
+      {/* Header */}
+      <div className="staff-page-header">
+        <div>
+          <h1 className="staff-page-title">Playlists</h1>
+          <p className="staff-page-subtitle">Quản lý playlist cho từng station</p>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            className="staff-btn staff-btn--outline"
+            onClick={handleSyncPlaylists}
+            disabled={!selectedStation || syncing}
+          >
+            <ArrowDownToLine size={16} className={syncing ? "staff-spin" : ""} />
+            {syncing ? "Syncing..." : "Sync Playlists"}
+          </button>
+          <button
+            className="staff-btn staff-btn--primary"
+            onClick={() => setShowCreateModal(true)}
+            disabled={!selectedStation}
+          >
+            <Plus size={16} />
+            Tạo Playlist
+          </button>
+        </div>
+      </div>
+
+      {/* Station selector */}
+      <div className="pl-station-tabs">
+        {stations.map((s) => (
+          <button
+            key={s.id}
+            className={`pl-station-tab ${selectedStation?.id === s.id ? "active" : ""}`}
+            onClick={() => handleSelectStation(s)}
+          >
+            {s.stationName}
+          </button>
+        ))}
+      </div>
+
+      {/* 2 Column: playlists list + playlist detail */}
+      <div className="pl-layout">
+        {/* Left: playlists */}
+        <div className="pl-sidebar">
+          <div className="pl-sidebar-header">
+            <h3>Playlists ({playlists.length})</h3>
+          </div>
+          {playlists.length === 0 ? (
+            <p className="staff-empty" style={{ padding: "20px 12px" }}>Chưa có playlist</p>
+          ) : (
+            <div className="pl-list">
+              {playlists.map((pl) => (
+                <button
+                  key={pl.id}
+                  className={`pl-item ${selectedPlaylist?.id === pl.id ? "active" : ""}`}
+                  onClick={() => handleSelectPlaylist(pl)}
+                >
+                  <ListMusic size={16} />
+                  <div className="pl-item-info">
+                    <span className="pl-item-name">{pl.playlistName}</span>
+                    <span className="pl-item-meta">
+                      {pl.totalTracks} tracks · {formatDuration(pl.totalDuration)}
+                    </span>
+                  </div>
+                  <ChevronRight size={14} className="pl-item-arrow" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right: tracks */}
+        <div className="pl-detail">
+          {!selectedPlaylist ? (
+            <div className="pl-detail-empty">
+              <ListMusic size={40} style={{ color: "#c4b5fd" }} />
+              <p>Chọn một playlist để xem chi tiết</p>
+            </div>
+          ) : (
+            <>
+              <div className="pl-detail-header">
+                <div>
+                  <h3>{selectedPlaylist.playlistName}</h3>
+                  {selectedPlaylist.description && (
+                    <p className="pl-detail-desc">{selectedPlaylist.description}</p>
+                  )}
+                </div>
+                <button className="staff-btn staff-btn--outline" onClick={handleOpenAddTracks}>
+                  <Plus size={15} />
+                  Thêm nhạc
+                </button>
+              </div>
+
+              {loadingTracks ? (
+                <div className="staff-loading" style={{ minHeight: 200 }}>
+                  <RefreshCw size={20} className="staff-spin" />
+                  <p>Đang tải tracks...</p>
+                </div>
+              ) : tracks.length === 0 ? (
+                <p className="staff-empty">Playlist trống. Nhấn "Thêm nhạc" để bắt đầu.</p>
+              ) : (
+                <div className="pl-tracks">
+                  {tracks.map((t, i) => (
+                    <div className="pl-track-row" key={t.id}>
+                      <span className="pl-track-num">{i + 1}</span>
+                      <Music size={16} style={{ color: "#7C5CFC", flexShrink: 0 }} />
+                      <div className="pl-track-info">
+                        <span className="pl-track-title">{t.title}</span>
+                        <span className="pl-track-artist">
+                          {t.artist || "Unknown"} {t.album ? `· ${t.album}` : ""}
+                        </span>
+                      </div>
+                      <span className="pl-track-dur">{formatDuration(t.durationSeconds)}</span>
+                      <button
+                        className="pl-track-remove"
+                        onClick={() => handleRemoveTrack(t.mediaFileId)}
+                        title="Xóa khỏi playlist"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Create Playlist Modal */}
+      {showCreateModal && (
+        <div className="staff-modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="staff-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="staff-modal-header">
+              <h3>Tạo Playlist mới</h3>
+              <button className="staff-modal-close" onClick={() => setShowCreateModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="staff-modal-body">
+              <label className="staff-label">Tên playlist</label>
+              <input
+                className="staff-input"
+                value={newPlaylistName}
+                onChange={(e) => setNewPlaylistName(e.target.value)}
+                placeholder="Nhập tên playlist..."
+                autoFocus
+              />
+              <label className="staff-label" style={{ marginTop: 12 }}>Mô tả (tuỳ chọn)</label>
+              <textarea
+                className="staff-input staff-textarea"
+                value={newPlaylistDesc}
+                onChange={(e) => setNewPlaylistDesc(e.target.value)}
+                placeholder="Mô tả ngắn..."
+                rows={3}
+              />
+            </div>
+            <div className="staff-modal-footer">
+              <button className="staff-btn staff-btn--outline" onClick={() => setShowCreateModal(false)}>
+                Huỷ
+              </button>
+              <button
+                className="staff-btn staff-btn--primary"
+                onClick={handleCreatePlaylist}
+                disabled={!newPlaylistName.trim()}
+              >
+                Tạo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Tracks Modal */}
+      {showAddTracksModal && (
+        <div className="staff-modal-overlay" onClick={() => setShowAddTracksModal(false)}>
+          <div className="staff-modal staff-modal--wide" onClick={(e) => e.stopPropagation()}>
+            <div className="staff-modal-header">
+              <h3>Thêm nhạc vào "{selectedPlaylist?.playlistName}"</h3>
+              <button className="staff-modal-close" onClick={() => setShowAddTracksModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="staff-modal-body" style={{ maxHeight: 400, overflowY: "auto" }}>
+              {stationMusic.length === 0 ? (
+                <p className="staff-empty">Không có nhạc nào trong station. Hãy sync hoặc upload trước.</p>
+              ) : (
+                stationMusic.map((m) => {
+                  const isAdded = tracks.some((t) => t.mediaFileId === m.id);
+                  return (
+                    <div className="pl-track-row" key={m.id}>
+                      <Music size={16} style={{ color: "#7C5CFC", flexShrink: 0 }} />
+                      <div className="pl-track-info">
+                        <span className="pl-track-title">{m.title}</span>
+                        <span className="pl-track-artist">{m.artist} {m.album ? `· ${m.album}` : ""}</span>
+                      </div>
+                      <span className="pl-track-dur">{formatDuration(m.duration)}</span>
+                      <button
+                        className={`staff-btn ${isAdded ? "staff-btn--outline" : "staff-btn--primary"}`}
+                        style={{ padding: "5px 14px", fontSize: 12 }}
+                        onClick={() => !isAdded && handleAddTrack(m.id)}
+                        disabled={isAdded}
+                      >
+                        {isAdded ? "Đã thêm" : "Thêm"}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div className="staff-modal-footer">
+              <button className="staff-btn staff-btn--outline" onClick={() => setShowAddTracksModal(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default PlaylistsScreen;

@@ -125,6 +125,7 @@ const Settings: React.FC = () => {
             </button>
           ))}
 
+          <div className="sidebar-divider" />
           <button
             className="sidebar-logout"
             onClick={() => {

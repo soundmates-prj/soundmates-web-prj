@@ -96,3 +96,49 @@
   border-color: #fecaca;
   color: #dc2626;
 }
+
+/* ── Dark theme ── */
+[data-theme='dark'] .song-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='dark'] .song-title {
+  color: var(--text-primary, #f3f4f6);
+}
+
+[data-theme='dark'] .song-artist {
+  color: var(--text-secondary, #9ca3af);
+}
+
+[data-theme='dark'] .song-toggle-btn.is-add {
+  background: rgba(85, 197, 241, 0.12);
+  color: #55c5f1;
+  border-color: rgba(85, 197, 241, 0.25);
+}
+
+[data-theme='dark'] .song-toggle-btn.is-add:hover {
+  background: rgba(85, 197, 241, 0.2);
+}
+
+[data-theme='dark'] .song-toggle-btn.is-added {
+  background: rgba(22, 163, 74, 0.15);
+  color: #4ade80;
+  border-color: rgba(22, 163, 74, 0.3);
+}
+
+[data-theme='dark'] .song-toggle-btn.is-added:hover {
+  background: rgba(220, 38, 38, 0.15);
+  color: #f87171;
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+[data-theme='dark'] .song-remove-btn {
+  border-color: #444;
+  color: var(--text-secondary, #9ca3af);
+}
+
+[data-theme='dark'] .song-remove-btn:hover {
+  background: rgba(220, 38, 38, 0.15);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #f87171;
+}

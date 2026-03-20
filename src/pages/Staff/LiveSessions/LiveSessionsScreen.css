@@ -1,0 +1,179 @@
+/* ============================================
+   Live Sessions Screen
+   ============================================ */
+
+.ls-filter-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.ls-tab-count {
+    font-size: 10px;
+    background: rgba(124, 92, 252, 0.12);
+    color: #7C5CFC;
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+    font-weight: 700;
+}
+
+.pl-station-tab.active .ls-tab-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+/* ── Sessions Grid ── */
+.ls-sessions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.ls-session-card {
+    background: #fff;
+    border: 1px solid #f1f0fe;
+    border-radius: 16px;
+    padding: 20px;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+.ls-session-card:hover {
+    box-shadow: 0 6px 24px rgba(124, 92, 252, 0.08);
+    transform: translateY(-2px);
+}
+
+.ls-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.ls-card-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.ls-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.18s;
+}
+
+.ls-action-btn--start {
+    background: rgba(52, 211, 153, 0.12);
+    color: #16a34a;
+}
+.ls-action-btn--start:hover {
+    background: rgba(52, 211, 153, 0.25);
+    transform: scale(1.08);
+}
+
+.ls-action-btn--stop {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+.ls-action-btn--stop:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: scale(1.08);
+}
+
+.ls-session-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px;
+}
+
+.ls-session-desc {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 12px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ls-session-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 12px;
+    border-top: 1px solid #f5f3ff;
+}
+
+.ls-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #94a3b8;
+}
+.ls-meta-item svg {
+    flex-shrink: 0;
+}
+
+/* ============================================
+   Dark Theme
+   ============================================ */
+[data-theme='dark'] .ls-tab-count {
+    background: rgba(167, 139, 250, 0.15);
+    color: #A78BFA;
+}
+[data-theme='dark'] .pl-station-tab.active .ls-tab-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+[data-theme='dark'] .ls-session-card {
+    background: #18181b;
+    border-color: #2e2e35;
+}
+[data-theme='dark'] .ls-session-card:hover {
+    box-shadow: 0 6px 24px rgba(124, 92, 252, 0.12);
+}
+
+[data-theme='dark'] .ls-session-name {
+    color: #f3f4f6;
+}
+[data-theme='dark'] .ls-session-desc {
+    color: #9ca3af;
+}
+[data-theme='dark'] .ls-session-meta {
+    border-top-color: #2e2e35;
+}
+[data-theme='dark'] .ls-meta-item {
+    color: #6b7280;
+}
+
+[data-theme='dark'] .ls-action-btn--start {
+    background: rgba(52, 211, 153, 0.15);
+    color: #4ade80;
+}
+[data-theme='dark'] .ls-action-btn--start:hover {
+    background: rgba(52, 211, 153, 0.25);
+}
+[data-theme='dark'] .ls-action-btn--stop {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+}
+[data-theme='dark'] .ls-action-btn--stop:hover {
+    background: rgba(239, 68, 68, 0.22);
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+    .ls-sessions-grid {
+        grid-template-columns: 1fr;
+    }
+}

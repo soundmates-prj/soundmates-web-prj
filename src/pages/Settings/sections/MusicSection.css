@@ -34,12 +34,13 @@
 .music-search-input {
   width: 100%;
   padding: 9px 12px 9px 32px;
-  border: 1px solid var(--neutral-300, #d4d4d4);
+  border: 1px solid var(--border-medium, #d4d4d4);
   border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
   outline: none;
-  background: #fff;
+  background: var(--bg-secondary, #fff);
+  color: var(--text-primary, #171717);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -76,6 +77,62 @@
   color: var(--neutral-400, #a3a3a3);
   text-align: center;
   padding: 24px 0;
+}
+
+/* ── Loading state ── */
+.music-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 0;
+  font-size: 12.5px;
+  color: var(--neutral-400, #a3a3a3);
+}
+
+.music-spinner {
+  animation: music-spin 1s linear infinite;
+}
+
+@keyframes music-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Dark theme ── */
+[data-theme='dark'] .music-search-input {
+  background: var(--bg-secondary, #1e1e1e);
+  border-color: #333;
+  color: var(--text-primary, #f3f4f6);
+}
+
+[data-theme='dark'] .music-search-input:focus {
+  border-color: #55c5f1;
+  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.15);
+}
+
+[data-theme='dark'] .music-search-input::placeholder {
+  color: var(--text-secondary, #9ca3af);
+}
+
+[data-theme='dark'] .music-search-icon {
+  color: var(--text-secondary, #9ca3af);
+}
+
+[data-theme='dark'] .music-list::-webkit-scrollbar-thumb {
+  background: #444;
+}
+
+[data-theme='dark'] .music-right-hint {
+  color: var(--text-secondary, #9ca3af);
+}
+
+[data-theme='dark'] .music-empty {
+  color: var(--text-secondary, #9ca3af);
+}
+
+[data-theme='dark'] .music-loading {
+  color: var(--text-secondary, #9ca3af);
 }
 
 /* ── Responsive ── */

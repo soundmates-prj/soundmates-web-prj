@@ -3,18 +3,23 @@ import { Check, Plus, X } from "lucide-react";
 import "./SongRow.css";
 
 export interface Song {
-  id: number;
+  id: string;
   title: string;
   artist: string;
   cover: string;
   added: boolean;
+  albumName?: string;
+  itemId?: string;
+  source?: string;
+  durationMs?: number;
+  externalUrl?: string;
 }
 
 interface Props {
   song: Song;
   /** "left" = search panel (toggle add/remove),  "right" = favorites panel (remove only) */
   variant: "left" | "right";
-  onToggle: (id: number) => void;
+  onToggle: (id: string) => void;
 }
 
 const SongRow: React.FC<Props> = ({ song, variant, onToggle }) => (

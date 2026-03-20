@@ -134,6 +134,12 @@
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .input-wrapper:focus-within {
+    border-color: #55C5F1;
+    box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.15);
   }
 
   .input-wrapper.input-error {
@@ -142,7 +148,7 @@
   }
 
   .input-wrapper svg {
-    color: #5bc0eb;
+    color: #55C5F1;
     flex-shrink: 0;
   }
 
@@ -179,7 +185,7 @@
   }
 
   .toggle-password:hover {
-    color: #5bc0eb;
+    color: #55C5F1;
   }
   /* GOOGLE */
   .btn-google {
@@ -212,13 +218,34 @@
     text-align: center;
     margin-top: 20px;
     font-size: 15px;
+    color: var(--text-secondary);
   }
 
   .login span {
     font-family: poppins, sans-serif;
-    color: var(--primary-500);
+    color: #55C5F1;
     cursor: pointer;
     font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .login span:hover {
+    color: #3AA8D4;
+    text-decoration: underline;
+  }
+
+  /* REGISTER BUTTON - Override */
+  .register-box .btn-primary {
+    background: #55C5F1 !important;
+    color: white !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(85, 197, 241, 0.3);
+  }
+
+  .register-box .btn-primary:hover {
+    background: #3AA8D4 !important;
+    box-shadow: 0 6px 16px rgba(85, 197, 241, 0.4);
+    transform: translateY(-1px);
   }
 
   .error-text {

@@ -68,6 +68,8 @@ const Login: React.FC = () => {
       const roleName = userData?.roleName?.toUpperCase();
       if (roleName === "ADMIN") {
         navigate("/admin/dashboard");
+      } else if (roleName === "STAFF") {
+        navigate("/staff/dashboard");
       } else {
         navigate("/");
       }
