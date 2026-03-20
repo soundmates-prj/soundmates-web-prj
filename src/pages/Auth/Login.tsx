@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import "./Login.css";
-import logo from "../../assets/light_logo.png";
+import logoLight from "../../assets/light_logo.png";
+import logoDark from "../../assets/dark_logo.png";
 import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/common";
 import api from "../../services/axios";
 import { useNavigate } from "react-router-dom";
 import { showError, showSuccess } from "../../components/common/toastUtils";
 import { GoogleLogin } from "@react-oauth/google";
+import { useTheme } from "../../context/ThemeContext";
 
 const Login: React.FC = () => {
+  const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -75,7 +78,7 @@ const Login: React.FC = () => {
       {/* LEFT */}
       <div className="login-left">
         <div className="brand">
-          <img src={logo} alt="SoundMates" />
+          <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
           <h1>SoundMates</h1>
           <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
         </div>

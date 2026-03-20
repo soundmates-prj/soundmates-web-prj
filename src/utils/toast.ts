@@ -1,4 +1,5 @@
-import { toast, Id } from 'react-toastify';
+import { toast } from 'react-toastify';
+import type { Id } from 'react-toastify';
 
 /**
  * Toast Utility Functions
@@ -68,7 +69,9 @@ export const showToast = {
    * @param toastId - ID của toast cần dismiss (optional, không truyền sẽ dismiss tất cả)
    */
   dismiss: (toastId?: Id) => {
-  };
+    toast.dismiss(toastId);
+  },
+};
 
-  // Export default cho các trường hợp đơn giản
-  export default showToast;
+// Export default cho các trường hợp đơn giản
+export default showToast;

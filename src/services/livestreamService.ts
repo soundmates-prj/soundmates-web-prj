@@ -49,7 +49,11 @@ export interface SongRequestItem {
 }
 
 // The station UUID from the backend
+<<<<<<< Updated upstream
 const STATION_UUID = '0ce08925-9216-4aa3-8c0b-e8d4e19ef2a3';
+=======
+const STATION_UUID = "62cc221f-063b-4522-8401-2b5fe9614aee";
+>>>>>>> Stashed changes
 
 // AzuraCast direct API for requests
 const AZURACAST_BASE = 'http://localhost:5000/api';

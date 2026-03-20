@@ -6,7 +6,26 @@ import './MusicPlayer.css';
 export function MusicPlayer() {
   const { track, isPlaying, volume, isMuted, toggle, setVolume, toggleMute } = usePlayer();
 
+<<<<<<< Updated upstream
   // ── Realtime elapsed counter ────────────────────────────────────────────
+=======
+  const location = useLocation();
+
+  /* ── Pause khi navigate sang trang khác ──────────────────────────────── */
+  useEffect(() => {
+    const shouldPauseForAuthPage =
+      location.pathname === "/login" || location.pathname === "/register";
+
+    // Chỉ auto pause tại login/register, giữ nguyên nhạc ở các trang còn lại.
+    if (shouldPauseForAuthPage && isPlaying && !isMuted) {
+      toggleMute();
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  /* ── Realtime elapsed counter ────────────────────────────────────────── */
+>>>>>>> Stashed changes
   const [localElapsed, setLocalElapsed] = useState(0);
 
   // Sync when the API poll delivers a fresh elapsed value

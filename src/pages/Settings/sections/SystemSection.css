@@ -1,0 +1,165 @@
+/* ============================================
+   SystemSection.css
+   ============================================ */
+
+.settings-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Form group (dùng chung với Profile) ── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-group input,
+.form-group select {
+  padding: 9px 12px;
+  border: 1px solid var(--neutral-300, #d4d4d4);
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary-400, #3387df);
+  box-shadow: 0 0 0 3px rgba(52, 135, 223, 0.12);
+}
+
+.input-readonly {
+  background: var(--bg-secondary) !important;
+  color: var(--text-muted) !important;
+  cursor: default;
+}
+
+/* ── Input with left prefix icon ── */
+.input-prefix { position: relative; }
+
+.input-prefix-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.input-prefix input { padding-left: 34px; }
+
+/* ── Input with right suffix (password toggle) ── */
+.input-suffix { position: relative; }
+
+.input-suffix input {
+  padding-right: 38px;
+  width: 100%;
+  padding: 9px 38px 9px 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  font-size: 13.5px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input-suffix input:focus {
+  border-color: var(--primary-400, #3387df);
+  box-shadow: 0 0 0 3px rgba(52, 135, 223, 0.12);
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+.pw-toggle:hover { color: var(--text-primary); }
+
+/* ── Select with prefix icon + chevron ── */
+.select-wrap { position: relative; }
+
+.select-wrap select {
+  appearance: none;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+.select-chevron {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--neutral-500, #737373);
+}
+
+.select-prefix-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* When prefix icon is present, push text right */
+.select-wrap:has(.select-prefix-icon) select { padding-left: 34px; }
+
+/* ── Change password button ── */
+.btn-change-pw {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  width: fit-content;
+  transition: background 0.15s;
+}
+.btn-change-pw:hover { background: var(--border-light); }
+
+/* ── Collapsible password section ── */
+.pw-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  padding: 18px;
+  margin-top: -8px;
+  animation: fadeDown 0.2s ease;
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

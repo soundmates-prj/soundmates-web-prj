@@ -34,6 +34,7 @@
   color: #ffffff;
 }
 
+<<<<<<< Updated upstream
 /* RIGHT */
 .verify-right {
   flex: 1;
@@ -51,6 +52,26 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   text-align: center;
 }
+=======
+  /* RIGHT */
+  .verify-right {
+    flex: 1;
+    background: var(--bg-secondary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .verify-card {
+    background: var(--bg-primary);
+    padding: 40px;
+    width: 500px;
+    border-radius: 12px;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    text-align: center;
+  }
+>>>>>>> Stashed changes
 
 .verify-card .icon {
   width: 64px;
@@ -69,11 +90,19 @@
   color: #5cc3f0;
 }
 
+<<<<<<< Updated upstream
 .verify-card .email {
   font-size: 14px;
   color: #666;
   margin-bottom: 24px;
 }
+=======
+  .verify-card .email {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+  }
+>>>>>>> Stashed changes
 
 
 /* OTP */
@@ -90,6 +119,7 @@
   position: relative;
 }
 
+<<<<<<< Updated upstream
 .otp-box {
   width: 48px;
   height: 52px;
@@ -105,6 +135,23 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   user-select: none;
 }
+=======
+  .otp-box {
+    width: 48px;
+    height: 52px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+  }
+>>>>>>> Stashed changes
 
 .otp-box-active {
   border-color: #5cc3f0;
@@ -159,6 +206,59 @@
   cursor: default;
 }
 
+<<<<<<< Updated upstream
 .otp-resend-btn:not(:disabled):hover {
   text-decoration: underline;
+=======
+  .otp-resend-btn:not(:disabled):hover {
+    text-decoration: underline;
+  }
+}
+
+/* Dark theme support */
+[data-theme='dark'] .verify-container .verify-left {
+  background: #101826;
+}
+
+[data-theme='dark'] .verify-container .verify-left h1 {
+  color: #55C5F1;
+}
+
+[data-theme='dark'] .verify-container .verify-card {
+  background: rgba(20, 20, 30, 0.95);
+  border-color: rgba(85, 197, 241, 0.2);
+}
+
+[data-theme='dark'] .verify-container .verify-card h2 {
+  color: #55C5F1;
+}
+
+[data-theme='dark'] .verify-container .verify-card .icon {
+  background: linear-gradient(135deg, #55C5F1 0%, #8ED8F6 100%);
+  color: #111827;
+}
+
+[data-theme='dark'] .verify-container .otp-box {
+  background: rgba(30, 30, 40, 0.8);
+  border-color: rgba(85, 197, 241, 0.3);
+  color: #ffffff;
+}
+
+[data-theme='dark'] .verify-container .otp-box-active {
+  border-color: #55C5F1;
+  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.2);
+}
+
+[data-theme='dark'] .verify-container .otp-box-filled {
+  border-color: #55C5F1;
+}
+
+[data-theme='dark'] .verify-container .otp-resend-btn {
+  color: #55C5F1;
+}
+
+[data-theme='dark'] .verify-container .otp-submit-btn {
+  background: linear-gradient(135deg, #55C5F1 0%, #8ED8F6 100%);
+  color: #111827;
+>>>>>>> Stashed changes
 }

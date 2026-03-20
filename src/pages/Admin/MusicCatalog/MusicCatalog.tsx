@@ -19,7 +19,6 @@ import {
   MoreHorizontal,
   FolderPlus,
   ArrowUpDown,
-  Save
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import './MusicCatalog.css';

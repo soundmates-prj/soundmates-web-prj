@@ -1,11 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Icon, Button } from "../common";
-import logoNoText from "../../assets/light_logo.png";
+import logoLight from "../../assets/light_logo.png";
+import logoDark from "../../assets/dark_logo.png";
+import { useTheme } from "../../context/ThemeContext";
 import "./Header.css";
+<<<<<<< Updated upstream
 import { useNavigate, Link } from "react-router-dom";
 import { UserCircle2, Bell, Search, X, Clock, TrendingUp, ChevronDown, Radio, Mic2, Calendar, Zap } from "lucide-react";
 import { usePlayer } from "../../context/PlayerContext";
 import { showInfo } from "../common/toastUtils";
+=======
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import {
+  UserCircle2,
+  Bell,
+  Search,
+  X,
+  Clock,
+  TrendingUp,
+  ChevronDown,
+  Radio,
+  Mic2,
+  Calendar,
+  Zap,
+} from "lucide-react";
+import { validateImageUrl } from "../../utils/stringUtils";
+import api from "../../services/axios";
+>>>>>>> Stashed changes
 
 interface UserInfo {
     firstName?: string;
@@ -28,6 +49,7 @@ const SEARCH_CATEGORIES = [
 const TRENDING_TOPICS = ["Sơn Tùng M-TP", "SpaceSpeakers", "Podcast Tâm Lý", "Rhymastic Live", "Hoàng Thùy Linh"];
 
 const Header: React.FC = () => {
+<<<<<<< Updated upstream
     const [isScrolled, setIsScrolled] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -110,6 +132,52 @@ const Header: React.FC = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userInfo');
         setIsLoggedIn(false);
+=======
+  const { theme } = useTheme();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchCategory, setSearchCategory] = useState("all");
+  const [showLiveDropdown, setShowLiveDropdown] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<string>(location.pathname);
+  const isLiveRoute = location.pathname === "/livestream";
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const searchPanelRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const liveDropdownRef = useRef<HTMLDivElement>(null);
+
+  const syncAuthState = () => {
+    const token = localStorage.getItem("accessToken");
+    setIsLoggedIn(!!token);
+    if (token) {
+      try {
+        const stored = localStorage.getItem("userInfo");
+        if (stored) {
+          const parsedUserInfo = JSON.parse(stored);
+          // Fetch fresh profile data to get profileImageUrl
+          api.get("/users/me/profile/full")
+            .then((res) => {
+              const profileData = res.data.data;
+              setUserInfo({
+                ...parsedUserInfo,
+                avatarUrl: validateImageUrl(profileData.profileImageUrl) || null
+              });
+            })
+            .catch(() => {
+              setUserInfo(parsedUserInfo);
+            });
+        } else {
+          setUserInfo(null);
+        }
+      } catch {
+>>>>>>> Stashed changes
         setUserInfo(null);
         setShowDropdown(false);
         window.dispatchEvent(new Event('authChange'));
@@ -125,6 +193,7 @@ const Header: React.FC = () => {
         navigate('/profile');
     };
 
+<<<<<<< Updated upstream
     return (
         <div className='header'>
             <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
@@ -134,6 +203,76 @@ const Header: React.FC = () => {
                     <div className="header-left" onClick={() => navigate("/")}>
                         <img src={logoNoText} alt="SoundMates" />
                         <span className="header-brand">SoundMates</span>
+=======
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("userInfo");
+    setIsLoggedIn(false);
+    setUserInfo(null);
+    setShowDropdown(false);
+    window.dispatchEvent(new Event("authChange"));
+    navigate("/");
+  };
+
+  const handleProfile = () => {
+    setShowDropdown(false);
+    navigate("/profile");
+  };
+
+  return (
+    <div className="header">
+      <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
+        <div className="header-container">
+          {/* LEFT */}
+          <div className="header-left" onClick={() => navigate("/")}>
+            <img src={theme === 'dark' ? logoDark : logoLight} alt="SoundMates" />
+            <span className="header-brand">SoundMates</span>
+          </div>
+
+          {/* CENTER */}
+          <nav className="header-center">
+            <Link
+              className={`nav-item${activeTab === "/" ? " active" : ""}`}
+              to="/"
+              onClick={() => setActiveTab("/")}
+            >
+              Trang Chủ
+            </Link>
+
+            {/* Phiên Trực Tiếp — with dropdown */}
+            <div className="nav-item-dropdown-wrap" ref={liveDropdownRef}>
+              <button
+                className={`nav-item nav-item-btn${isLiveRoute ? " active" : ""}`}
+                onClick={() => {
+                  setShowLiveDropdown((prev) => !prev);
+                }}
+              >
+                Phiên Trực Tiếp
+                <ChevronDown
+                  size={14}
+                  className={`nav-chevron ${showLiveDropdown ? "open" : ""}`}
+                />
+              </button>
+
+              {showLiveDropdown && (
+                <div className="nav-live-dropdown">
+                  <div className="nav-live-dropdown-header">Khám phá Live</div>
+                  <a
+                    className="nav-live-item"
+                    href="/livestream"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowLiveDropdown(false);
+                      navigate("/livestream");
+                    }}
+                  >
+                    <span className="nav-live-icon">
+                      <Radio size={16} />
+                    </span>
+                    <div>
+                      <p>Live Stream âm nhạc</p>
+                      <span>Nghe nhạc trực tiếp từ nghệ sĩ</span>
+>>>>>>> Stashed changes
                     </div>
 
                     {/* CENTER */}
@@ -374,8 +513,97 @@ const Header: React.FC = () => {
                     </div>
                 </div>
 
+<<<<<<< Updated upstream
 
             </header>
+=======
+                {/* Avatar */}
+                <div className="avatar-container" ref={dropdownRef}>
+                  <div
+                    className="avatar"
+                    onClick={() => {
+                      setShowDropdown((prev) => !prev);
+                      setShowNotifications(false);
+                      setShowSearch(false);
+                      setShowLiveDropdown(false);
+                    }}
+                  >
+                    {validateImageUrl(userInfo?.avatarUrl) ? (
+                      <img src={validateImageUrl(userInfo?.avatarUrl)!} alt="User avatar" />
+                    ) : (
+                      <div className="avatar-default">
+                        <UserCircle2
+                          size={44}
+                          color="#55C5F1"
+                          strokeWidth={1.5}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {showDropdown && (
+                    <div className="avatar-dropdown">
+                      <div className="avatar-dropdown-user">
+                        <div className="avatar-dropdown-avatar">
+                          {validateImageUrl(userInfo?.avatarUrl) ? (
+                            <img src={validateImageUrl(userInfo?.avatarUrl)!} alt="avatar" />
+                          ) : (
+                            <UserCircle2
+                              size={32}
+                              color="#55C5F1"
+                              strokeWidth={1.5}
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <p className="avatar-dropdown-name">
+                            {userInfo?.firstName && userInfo?.lastName
+                              ? `${userInfo.firstName} ${userInfo.lastName}`
+                              : userInfo?.username || "Người dùng"}
+                          </p>
+                          <p className="avatar-dropdown-email">
+                            {userInfo?.email || ""}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="avatar-dropdown-divider" />
+
+                      <button className="dropdown-item" onClick={handleProfile}>
+                        <Icon name="user" size={18} />
+                        <span>Trang cá nhân</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setShowDropdown(false);
+                          navigate("/settings");
+                        }}
+                      >
+                        <Icon name="settings" size={18} />
+                        <span>Cài đặt</span>
+                      </button>
+
+                      <div className="avatar-dropdown-divider" />
+
+                      <button
+                        className="dropdown-item logout"
+                        onClick={handleLogout}
+                      >
+                        <Icon name="logout" size={18} />
+                        <span>Đăng xuất</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <Button className="login-btn" onClick={() => navigate("/login")}>
+                Đăng nhập
+              </Button>
+            )}
+          </div>
+>>>>>>> Stashed changes
         </div>
     );
 };

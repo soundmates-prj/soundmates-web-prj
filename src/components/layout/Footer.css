@@ -2,10 +2,14 @@
    Footer Component Styles
    ============================================ */
 .home-footer {
-    background: #F9FAFB;
-    border-top: 3px solid #55C5F1;
+    background: var(--footer-bg);
+    border-top: 3px solid var(--footer-border);
     padding: 40px 32px 20px;
+<<<<<<< Updated upstream
 }
+=======
+    transition: background 0.3s ease, border-color 0.3s ease;
+>>>>>>> Stashed changes
 
 .footer-container {
     max-width: 100%;
@@ -57,6 +61,7 @@
     margin: 0;
 }
 
+<<<<<<< Updated upstream
 .footer-tagline {
     font-size: 0.85rem;
     color: #6B7280;
@@ -70,6 +75,22 @@
     margin-bottom: 16px;
     align-items: center;
 }
+=======
+    .footer-logo-text {
+        font-family: 'Inter', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--footer-border);
+        margin: 0;
+    }
+
+    .footer-tagline {
+        font-size: 0.85rem;
+        color: var(--footer-text);
+        margin: 0;
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+>>>>>>> Stashed changes
 
 .footer-social-link {
     width: 48px;
@@ -84,6 +105,7 @@
     border: none;
 }
 
+<<<<<<< Updated upstream
 .footer-social-link:hover {
     background: #55C5F1;
     color: white;
@@ -102,6 +124,33 @@
     padding: 0;
     margin: 0;
 }
+=======
+    .footer-social-link {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--footer-social-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--footer-social-color);
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .footer-social-link:hover {
+        background: var(--footer-social-hover-bg);
+        color: var(--footer-social-hover-color);
+    }
+
+    .footer-section-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--footer-title);
+        margin-bottom: 16px;
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+>>>>>>> Stashed changes
 
 .footer-links li {
     margin-bottom: 10px;
@@ -115,11 +164,25 @@
     font-family: 'Be Vietnam Pro', sans-serif;
 }
 
+<<<<<<< Updated upstream
 .footer-links a:hover {
     color: #55C5F1;
 }
 
 /* App Section */
+=======
+    .footer-links a {
+        font-size: 0.95rem;
+        color: var(--footer-text);
+        text-decoration: none;
+        transition: color 0.3s ease;
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+
+    .footer-links a:hover {
+        color: var(--footer-border);
+    }
+>>>>>>> Stashed changes
 
 .footer-app-section {
     display: flex;
@@ -134,11 +197,21 @@
     font-family: 'Be Vietnam Pro', sans-serif;
 }
 
+<<<<<<< Updated upstream
 .footer-app-buttons {
     display: flex;
     flex-direction: row;
     gap: 16px;
 }
+=======
+    .footer-app-title {
+        font-size: 0.95rem;
+        color: var(--footer-text);
+        margin-bottom: 16px;
+        margin-top: 0;
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+>>>>>>> Stashed changes
 
 .app-store-link {
     display: inline-block;
@@ -165,9 +238,26 @@
     /* border-top: 1px solid #E5E7EB; */
 }
 
+<<<<<<< Updated upstream
 .footer-copyright {
     font-size: 0.85rem;
     color: #9CA3AF;
     margin: 0;
     font-family: 'Be Vietnam Pro', sans-serif;
+=======
+    .footer-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-top: 20px;
+        /* border-top: 1px solid #E5E7EB; */
+    }
+
+    .footer-copyright {
+        font-size: 0.85rem;
+        color: var(--footer-text);
+        margin: 0;
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+>>>>>>> Stashed changes
 }

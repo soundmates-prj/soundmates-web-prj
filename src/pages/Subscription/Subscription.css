@@ -1,0 +1,615 @@
+/* ============================================
+   SoundMates Subscription Page Styles
+   TRAE-inspired Modern Dark Theme
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Ephesis&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ============================================
+   Page Container
+   ============================================ */
+.subscription-page {
+    min-height: calc(100vh - 89px - 55px);
+    background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 50%, #f0f9ff 100%);
+    padding: 0 20px 100px;
+    overflow-x: hidden;
+    color: #0f172a;
+}
+
+/* ============================================
+   Page Header
+   ============================================ */
+.subscription-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px 40px;
+}
+
+.subscription-title {
+    font-family: 'Ephesis', cursive;
+    font-size: 5rem;
+    font-weight: 400;
+    line-height: 1.1;
+    margin: 0;
+    text-align: center;
+    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 50%, #8ED8F6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    animation: gradientShift 8s ease infinite;
+    letter-spacing: 2px;
+    filter: drop-shadow(0 4px 16px rgba(85, 197, 241, 0.3));
+    position: relative;
+}
+
+.subscription-title::after {
+    content: 'Gói đăng ký';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 50%, #8ED8F6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: blur(20px);
+    opacity: 0.3;
+    z-index: -1;
+}
+
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.subscription-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    color: #64748b;
+    margin-top: 16px;
+    text-align: center;
+    max-width: 600px;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+/* ============================================
+   Subscription Plans Container
+   ============================================ */
+.subscription-plans {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto 60px;
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   Subscription Cards
+   ============================================ */
+.subscription-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 0;
+    width: 100%;
+    max-width: 340px;
+    min-height: 580px;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+    overflow: visible;
+}
+
+.subscription-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+    border-color: rgba(85, 197, 241, 0.3);
+}
+
+.subscription-card.free {
+    border: 2px solid rgba(226, 232, 240, 0.8);
+}
+
+.subscription-card.free:hover {
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+.subscription-card.premium {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.95) 100%);
+    border: 2px solid rgba(85, 197, 241, 0.3);
+    box-shadow: 0 12px 40px rgba(85, 197, 241, 0.15);
+}
+
+.subscription-card.premium:hover {
+    border-color: rgba(85, 197, 241, 0.5);
+    box-shadow: 0 20px 56px rgba(85, 197, 241, 0.2);
+}
+
+.subscription-card.elite {
+    background: linear-gradient(135deg, rgba(240, 249, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+    border: 2px solid rgba(85, 197, 241, 0.5);
+    box-shadow: 0 12px 40px rgba(85, 197, 241, 0.2);
+    transform: scale(1.02);
+    z-index: 2;
+}
+
+.subscription-card.elite:hover {
+    transform: scale(1.02) translateY(-6px);
+    border-color: rgba(85, 197, 241, 0.7);
+    box-shadow: 0 20px 56px rgba(85, 197, 241, 0.3);
+}
+
+.subscription-card.elite::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    border-radius: 24px;
+    background: radial-gradient(800px circle at top, rgba(85, 197, 241, 0.08), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ============================================
+   Popular Badge
+   ============================================ */
+.popular-badge {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 100%);
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 24px;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 4px 24px rgba(85, 197, 241, 0.4);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+/* ============================================
+   Popular Badge
+   ============================================ */
+.popular-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 100%);
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(85, 197, 241, 0.4);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+/* ============================================
+   Plan Header
+   ============================================ */
+.plan-header {
+    padding: 36px 28px 20px;
+    text-align: left;
+    position: relative;
+    z-index: 1;
+}
+
+.subscription-card.elite .plan-header {
+    padding-top: 44px;
+}
+
+.plan-name {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 16px;
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+}
+
+.plan-pricing {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    min-height: 56px;
+}
+
+.currency {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #64748b;
+    text-decoration: underline;
+    margin-top: 6px;
+}
+
+.price {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 2.75rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+    letter-spacing: -1.2px;
+}
+
+.period {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-top: 24px;
+    line-height: 1;
+}
+
+.plan-description {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #475569;
+    line-height: 1.5;
+    margin: 0;
+    min-height: 44px;
+}
+
+/* ============================================
+   Subscribe Button
+   ============================================ */
+.plan-button {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    margin: 0 28px 24px;
+    display: block;
+    width: calc(100% - 56px);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+}
+
+.plan-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+}
+
+.subscription-card.premium .plan-button {
+    background: linear-gradient(135deg, #55C5F1 0%, #3B9FD8 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 20px rgba(85, 197, 241, 0.3);
+}
+
+.subscription-card.premium .plan-button:hover {
+    box-shadow: 0 8px 28px rgba(85, 197, 241, 0.4);
+}
+
+.subscription-card.elite .plan-button {
+    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 100%);
+    color: #ffffff;
+    box-shadow: 0 6px 24px rgba(85, 197, 241, 0.4);
+}
+
+.subscription-card.elite .plan-button:hover {
+    box-shadow: 0 10px 32px rgba(85, 197, 241, 0.5);
+}
+
+/* ============================================
+   Features Section
+   ============================================ */
+.plan-features {
+    padding: 0 28px 28px;
+    flex-grow: 1;
+    position: relative;
+    z-index: 1;
+    overflow-y: auto;
+    max-height: 280px;
+}
+
+.plan-features::-webkit-scrollbar {
+    width: 4px;
+}
+
+.plan-features::-webkit-scrollbar-track {
+    background: rgba(226, 232, 240, 0.3);
+    border-radius: 4px;
+}
+
+.plan-features::-webkit-scrollbar-thumb {
+    background: rgba(85, 197, 241, 0.3);
+    border-radius: 4px;
+}
+
+.plan-features::-webkit-scrollbar-thumb:hover {
+    background: rgba(85, 197, 241, 0.5);
+}
+
+.features-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0 0 16px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.features-list li {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #475569;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    padding-left: 28px;
+    position: relative;
+}
+
+.features-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 3px;
+    width: 18px;
+    height: 18px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.subscription-card.premium .features-list li::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355C5F1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    opacity: 1;
+}
+
+.subscription-card.elite .features-list li::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355C5F1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    opacity: 1;
+}
+
+.features-list li strong {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* ============================================
+   Included Features Note
+   ============================================ */
+.included-features {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #64748b;
+    text-align: left;
+    margin: 0 28px 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+/* ============================================
+   Current Plan Badge
+   ============================================ */
+.current-plan-badge {
+    background: rgba(248, 250, 252, 0.8);
+    color: #64748b;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 14px 20px;
+    border-radius: 0 0 24px 24px;
+    margin-top: auto;
+    border-top: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+[data-theme='dark'] .subscription-page {
+    background: #000000;
+    background-image: radial-gradient(circle at 50% 0%, rgba(85, 197, 241, 0.1) 0%, #000000 70%);
+    color: #ffffff;
+}
+
+[data-theme='dark'] .subscription-title {
+    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 50%, #8ED8F6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    filter: drop-shadow(0 4px 20px rgba(85, 197, 241, 0.5));
+}
+
+[data-theme='dark'] .subscription-title::after {
+    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 50%, #8ED8F6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+[data-theme='dark'] .subscription-subtitle {
+    color: #9ca3af;
+}
+
+[data-theme='dark'] .subscription-card {
+    background: rgba(20, 20, 20, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .subscription-card:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='dark'] .subscription-card.free {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .subscription-card.premium {
+    border: 1px solid rgba(85, 197, 241, 0.3);
+    box-shadow: 0 10px 50px rgba(85, 197, 241, 0.15);
+}
+
+[data-theme='dark'] .subscription-card.elite {
+    background: linear-gradient(180deg, rgba(20, 30, 40, 0.9) 0%, rgba(15, 20, 30, 0.9) 100%);
+    border: 2px solid rgba(85, 197, 241, 0.4);
+    box-shadow: 0 16px 48px rgba(85, 197, 241, 0.15);
+}
+
+[data-theme='dark'] .subscription-card.elite:hover {
+    border-color: rgba(85, 197, 241, 0.6);
+    box-shadow: 0 24px 64px rgba(85, 197, 241, 0.25);
+}
+
+[data-theme='dark'] .plan-name,
+[data-theme='dark'] .price,
+[data-theme='dark'] .features-list li strong {
+    color: #ffffff;
+}
+
+[data-theme='dark'] .currency,
+[data-theme='dark'] .period,
+[data-theme='dark'] .plan-description,
+[data-theme='dark'] .features-title,
+[data-theme='dark'] .features-list li,
+[data-theme='dark'] .included-features,
+[data-theme='dark'] .current-plan-badge {
+    color: #9ca3af;
+}
+
+[data-theme='dark'] .plan-button {
+    background: linear-gradient(135deg, rgba(85, 197, 241, 0.15) 0%, rgba(85, 197, 241, 0.1) 100%);
+    border: 1px solid rgba(85, 197, 241, 0.3);
+    color: #55C5F1;
+}
+
+[data-theme='dark'] .plan-button:hover {
+    background: linear-gradient(135deg, rgba(85, 197, 241, 0.25) 0%, rgba(85, 197, 241, 0.15) 100%);
+    border-color: rgba(85, 197, 241, 0.5);
+}
+
+[data-theme='dark'] .subscription-card.premium .plan-button {
+    background: linear-gradient(135deg, #55C5F1 0%, #3B9FD8 100%);
+    color: #ffffff;
+    border: none;
+}
+
+[data-theme='dark'] .subscription-card.elite .plan-button {
+    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 100%);
+    color: #ffffff;
+    border: none;
+}
+
+[data-theme='dark'] .current-plan-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .included-features {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 1200px) {
+    .subscription-plans {
+        gap: 20px;
+    }
+    
+    .subscription-card.elite {
+        transform: scale(1);
+    }
+    
+    .subscription-card.elite:hover {
+        transform: translateY(-6px);
+    }
+}
+
+@media (max-width: 992px) {
+    .subscription-plans {
+        align-items: center;
+    }
+
+    .subscription-card {
+        max-width: calc(50% - 15px);
+        min-height: 560px;
+    }
+    
+    .subscription-card.elite {
+        order: -1;
+        max-width: 100%;
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .subscription-plans {
+        flex-direction: column;
+        gap: 24px;
+        margin-bottom: 40px;
+    }
+
+    .subscription-card {
+        max-width: 100%;
+        width: 100%;
+        min-height: auto;
+    }
+
+    .subscription-title {
+        font-size: 3.5rem;
+    }
+    
+    .subscription-title::after {
+        display: none;
+    }
+    
+    .subscription-header {
+        padding: 60px 20px 30px;
+    }
+    
+    .subscription-subtitle {
+        font-size: 0.95rem;
+    }
+    
+    .plan-features {
+        max-height: none;
+        overflow-y: visible;
+    }
+}

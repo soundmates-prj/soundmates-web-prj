@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
 import "./Home.css";
 import Icon from "../../components/common/Icon";
+import { motion } from "framer-motion";
+import type { Variants } from "framer-motion";
 
 import heroIllustration from "../../assets/images/hero_background.png";
 import playlistCover1 from "../../assets/images/playlist_cover_1.png";
@@ -140,6 +142,26 @@ const playlistTabs = [
   "Phim",
 ];
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15
+    }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { y: 30, opacity: 0, scale: 0.95 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    scale: 1,
+    transition: { type: "spring", stiffness: 120, damping: 20 }
+  }
+};
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState("Mới");
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -160,18 +182,52 @@ export default function Home() {
       <section className="hero-section">
         <div className="hero-container">
           <div className="hero-content">
-            <h1 className="hero-title">
+            <motion.h1 
+              className="hero-title"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
               Listen <span className="gradient-text">Together</span>
+<<<<<<< Updated upstream
             </h1>
             <p className="hero-subtitle">Chia sẻ âm nhạc của bạn</p>
             <a href="#" className="hero-cta">
               <Icon name="play" size={20} />
               Bắt Đầu
             </a>
+=======
+            </motion.h1>
+            <motion.p 
+              className="hero-subtitle"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              Chia sẻ âm nhạc của bạn
+            </motion.p>
+            {!isLoggedIn && (
+              <motion.a 
+                href="/login" 
+                className="hero-cta"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                <Icon name="play" size={20} />
+                Bắt Đầu
+              </motion.a>
+            )}
+>>>>>>> Stashed changes
           </div>
-          <div className="hero-illustration">
+          <motion.div 
+            className="hero-illustration"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
             <img src={heroIllustration} alt="Listen Together" />
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -200,9 +256,16 @@ export default function Home() {
             <Icon name="chevron-left" size={24} />
           </button>
 
-          <div className="playlist-carousel-inner" ref={carouselRef}>
+          <motion.div 
+            className="playlist-carousel-inner" 
+            ref={carouselRef}
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+          >
             {playlists.map((playlist) => (
-              <div key={playlist.id} className="playlist-card hover-lift">
+              <motion.div key={playlist.id} className="playlist-card hover-lift" variants={itemVariants} whileHover={{ y: -8 }}>
                 <img
                   src={playlist.image}
                   alt={playlist.title}
@@ -212,9 +275,9 @@ export default function Home() {
                   <h4 className="playlist-card-title">{playlist.title}</h4>
                   <p className="playlist-card-subtitle">{playlist.subtitle}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           <button
             className="carousel-nav next"
@@ -273,9 +336,15 @@ export default function Home() {
           </a>
         </div>
 
-        <div className="schedule-list">
+        <motion.div 
+          className="schedule-list"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           {scheduleItems.map((item) => (
-            <div key={item.id} className="schedule-item hover-lift">
+            <motion.div key={item.id} className="schedule-item hover-lift" variants={itemVariants} whileHover={{ x: 5 }}>
               <div className="schedule-item-time">
                 <span className="schedule-item-time-value">{item.time}</span>
                 <span className="schedule-item-time-period">{item.period}</span>
@@ -296,9 +365,9 @@ export default function Home() {
               >
                 {item.isLive ? "Đang Phát" : "Thông báo"}
               </button>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* Forum Section */}
@@ -311,9 +380,15 @@ export default function Home() {
           </a>
         </div>
 
-        <div className="forum-list">
+        <motion.div 
+          className="forum-list"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           {forumPosts.map((post) => (
-            <div key={post.id} className="forum-item hover-lift">
+            <motion.div key={post.id} className="forum-item hover-lift" variants={itemVariants} whileHover={{ scale: 1.01 }}>
               <img
                 src={post.avatar}
                 alt={post.author}
@@ -341,10 +416,77 @@ export default function Home() {
                 </div>
               </div>
               <button className="forum-item-action">Xem Ngay</button>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
+<<<<<<< Updated upstream
+=======
+
+      {/* Letter Podcast Section */}
+      <section className="section podcast-section">
+        <div className="section-header">
+          <h2 className="section-title">Các thư Podcast yêu thích</h2>
+          <a href="#" className="section-link">
+            Xem tất cả
+            <Icon name="chevron-right" size={16} />
+          </a>
+        </div>
+
+        <motion.div 
+          className="podcast-grid"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          {podcasts.map((podcast) => (
+            <motion.div key={podcast.id} className="podcast-card hover-lift" variants={itemVariants} whileHover={{ y: -5 }}>
+              <div className="podcast-card-image-wrapper">
+                <img
+                  src={podcast.image}
+                  alt={podcast.title}
+                  className="podcast-card-image"
+                />
+              </div>
+              <div className="podcast-card-content">
+                <h4 className="podcast-card-title">{podcast.title}</h4>
+                <p className="podcast-card-subtitle">{podcast.subtitle}</p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* Subscription Section - Group 30 */}
+      <section className="subscription-section">
+        <motion.div 
+          className="subscription-container"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.7 }}
+        >
+          <div className="subscription-content">
+            <span className="subscription-tag">Premium</span>
+            <h2 className="subscription-title">
+              Trở thành Hội Viên SoundMates
+            </h2>
+            <p className="subscription-description">
+              Chỉ với <span className="price">159.000đ / tháng</span>, bạn mở
+              khóa toàn bộ đặc quyền dành riêng cho những người yêu âm nhạc và 
+              muốn trải nghiệm trọn vẹn nhất.
+            </p>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ display: 'inline-block' }}>
+              <Link to="/subscription" className="subscription-cta">
+                Khám Phá Các Gói
+                <Icon name="arrow-right" size={18} />
+              </Link>
+            </motion.div>
+          </div>
+        </motion.div>
+      </section>
+>>>>>>> Stashed changes
     </div>
   );
 }
