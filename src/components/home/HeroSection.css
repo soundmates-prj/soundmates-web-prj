@@ -1,0 +1,317 @@
+/* ============================================
+   Premium Hero Section — Big-Tech Level
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ─── Main Container ─── */
+.premium-hero {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    background: #050a18;
+    cursor: default;
+}
+
+[data-theme='light'] .premium-hero {
+    background: linear-gradient(180deg, #e8f7ff 0%, #f5fbff 40%, #ffffff 100%);
+}
+
+/* ─── Canvas ─── */
+.hero-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ─── Blur overlay on top of canvas ─── */
+.hero-blur-overlay {
+    position: absolute;
+    inset: 0;
+    backdrop-filter: blur(60px) saturate(1.6);
+    -webkit-backdrop-filter: blur(60px) saturate(1.6);
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* ─── Noise texture overlay ─── */
+.hero-noise-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 128px 128px;
+}
+
+/* ─── Main Content Grid ─── */
+.hero-main-content {
+    position: relative;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    align-items: center;
+    gap: 60px;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 120px 48px 80px;
+    width: 100%;
+}
+
+/* ─── Headline (Left) ─── */
+.hero-headline {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.hero-big-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 5rem;
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1;
+    margin: 0;
+}
+
+.hero-glow-text {
+    background: linear-gradient(135deg, #55C5F1 0%, #0af 40%, #58e6ff 75%, #a0f0ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(85, 197, 241, 0.4));
+    animation: glow-pulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes glow-pulse {
+    0%   { filter: drop-shadow(0 0 20px rgba(85, 197, 241, 0.3)); }
+    100% { filter: drop-shadow(0 0 40px rgba(85, 197, 241, 0.6)); }
+}
+
+[data-theme='light'] .hero-glow-text {
+    background: linear-gradient(135deg, #1a8abf 0%, #3AA8D4 40%, #55C5F1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 20px rgba(85, 197, 241, 0.25));
+}
+
+.hero-tagline {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.7;
+    max-width: 420px;
+    margin: 0;
+}
+
+[data-theme='light'] .hero-tagline {
+    color: #4a6e82;
+}
+
+/* ─── CTA Button ─── */
+.hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #55C5F1, #3AA8D4);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: 14px;
+    text-decoration: none;
+    box-shadow:
+        0 4px 20px rgba(85, 197, 241, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hero-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 30px rgba(85, 197, 241, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+/* ─── Bento Grid (Right) ─── */
+.hero-bento-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+/* ─── Bento Block ─── */
+.bento-block {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+.bento-block.span-2 {
+    grid-column: span 2;
+}
+
+.bento-block-inner {
+    position: relative;
+    z-index: 2;
+    padding: 28px 24px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 6px;
+
+    /* Glassmorphism */
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-theme='light'] .bento-block-inner {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(85, 197, 241, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+/* Hover effects */
+.bento-block:hover .bento-block-inner {
+    background: rgba(85, 197, 241, 0.08);
+    border-color: rgba(85, 197, 241, 0.25);
+    box-shadow:
+        0 0 30px rgba(85, 197, 241, 0.12),
+        inset 0 0 30px rgba(85, 197, 241, 0.04);
+    backdrop-filter: blur(40px) saturate(1.8);
+    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+}
+
+[data-theme='light'] .bento-block:hover .bento-block-inner {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: rgba(85, 197, 241, 0.35);
+    box-shadow: 0 8px 32px rgba(85, 197, 241, 0.15);
+}
+
+/* Gradient glow behind blocks on hover */
+.bento-glow {
+    position: absolute;
+    inset: -2px;
+    border-radius: 22px;
+    opacity: 0;
+    z-index: 1;
+    background: conic-gradient(
+        from 0deg,
+        rgba(85, 197, 241, 0.4),
+        rgba(0, 170, 255, 0.2),
+        rgba(88, 230, 255, 0.4),
+        rgba(85, 197, 241, 0.2),
+        rgba(0, 170, 255, 0.4)
+    );
+    transition: opacity 0.4s ease;
+    filter: blur(4px);
+}
+
+.bento-block:hover .bento-glow {
+    opacity: 1;
+    animation: glow-spin 4s linear infinite;
+}
+
+@keyframes glow-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.bento-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+[data-theme='light'] .bento-title {
+    color: #1e3a4f;
+}
+
+.bento-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.45);
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+[data-theme='light'] .bento-desc {
+    color: #6b8fa8;
+}
+
+.bento-block:hover .bento-title {
+    color: #58e6ff;
+}
+
+[data-theme='light'] .bento-block:hover .bento-title {
+    color: #1a8abf;
+}
+
+.bento-block:hover .bento-desc {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme='light'] .bento-block:hover .bento-desc {
+    color: #3AA8D4;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1024px) {
+    .hero-main-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding: 100px 24px 60px;
+        gap: 40px;
+    }
+    .hero-headline { align-items: center; }
+    .hero-big-title { font-size: 3.5rem; }
+    .hero-tagline { max-width: 100%; }
+}
+
+@media (max-width: 768px) {
+    .hero-big-title { font-size: 2.8rem; }
+    .hero-bento-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .bento-block.span-2 {
+        grid-column: span 2;
+    }
+    .bento-block-inner {
+        padding: 20px 16px;
+        min-height: 90px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-bento-grid {
+        grid-template-columns: 1fr;
+    }
+    .bento-block.span-2 {
+        grid-column: span 1;
+    }
+}
