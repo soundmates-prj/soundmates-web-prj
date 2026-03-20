@@ -14,6 +14,8 @@ import {
   Pencil,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
@@ -23,6 +25,9 @@ import type { User } from "../../types/user";
 import type { Post } from "../../types/post";
 import CreatePostModal from "./modals/CreatePostModal";
 import EditPostModal from "./modals/EditPostModal";
+import { validateImageUrl } from "../../utils/stringUtils";
+import favoriteService from "../../services/favoriteService";
+import type { FavoriteItem } from "../../services/favoriteService";
 
 type Tab = "overview" | "songs" | "playlists" | "podcasts" | "community";
 
@@ -34,38 +39,12 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "community", label: "Cộng đồng" },
 ];
 
-const TRACKS = [
-  {
-    id: 1,
-    n: "01",
-    title: "Late Night Melodies",
-    artist: "Lofi Vibes · Midnight Sessions",
-    dur: "3:42",
-    likes: "12.4k",
-    cover:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=48&h=48&fit=crop",
-  },
-  {
-    id: 2,
-    n: "02",
-    title: "Ocean Waves",
-    artist: "Chill Beats · Summer Haze",
-    dur: "4:15",
-    likes: "8.9k",
-    cover:
-      "https://images.unsplash.com/photo-1501612780327-45045538702b?w=48&h=48&fit=crop",
-  },
-  {
-    id: 3,
-    n: "03",
-    title: "Skyward Dreams",
-    artist: "Ambient Collection · Vol.2",
-    dur: "5:01",
-    likes: "6.1k",
-    cover:
-      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=48&h=48&fit=crop",
-  },
-];
+const formatDuration = (ms: number) => {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+};
 
 const PODCASTS = [
   {
@@ -243,6 +222,18 @@ export default function Profile() {
   const [tab, setTab] = useState<Tab>("overview");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
+  const [favTracks, setFavTracks] = useState<FavoriteItem[]>([]);
+
+  const loadFavorites = useCallback(async () => {
+    try {
+      const res = await favoriteService.getFavorites("track");
+      if (res.success && res.data) {
+        setFavTracks(res.data);
+      }
+    } catch (err) {
+      console.error("Load favorites failed", err);
+    }
+  }, []);
 
   useEffect(() => {
     api
@@ -254,7 +245,9 @@ export default function Profile() {
       .get("me/posts")
       .then((r) => setPosts(r.data?.data?.items ?? []))
       .catch((e) => console.error("Load posts failed", e));
-  }, []);
+
+    loadFavorites();
+  }, [loadFavorites]);
 
   if (!user) return <div className="pf-loading">Đang tải...</div>;
 
@@ -349,24 +342,51 @@ export default function Profile() {
                   </h3>
                   <button className="pf-link">Xem tất cả</button>
                 </div>
-                {TRACKS.map((t) => (
-                  <div key={t.id} className="track">
-                    <span className="track-n">{t.n}</span>
-                    <img className="track-img" src={t.cover} alt={t.title} />
-                    <div className="track-info">
-                      <p className="track-title">{t.title}</p>
-                      <p className="track-artist">{t.artist}</p>
+                {favTracks.length > 0 ? (
+                  favTracks.slice(0, 5).map((t, idx) => (
+                    <div key={t.id} className="track">
+                      <span className="track-n">
+                        {String(idx + 1).padStart(2, "0")}
+                      </span>
+                      <img
+                        className="track-img"
+                        src={
+                          t.imgUrl ||
+                          "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1"
+                        }
+                        alt={t.name}
+                      />
+                      <div className="track-info">
+                        <p className="track-title">{t.name}</p>
+                        <p className="track-artist">
+                          {t.artistName}
+                          {t.albumName ? ` · ${t.albumName}` : ""}
+                        </p>
+                      </div>
+                      <span className="track-dur">
+                        {t.durationMs ? formatDuration(t.durationMs) : "--:--"}
+                      </span>
+                      <span className="track-likes">
+                        <Heart size={12} />
+                      </span>
+                      <button className="track-more">
+                        <MoreHorizontal size={15} />
+                      </button>
                     </div>
-                    <span className="track-dur">{t.dur}</span>
-                    <span className="track-likes">
-                      <Heart size={12} />
-                      {t.likes}
-                    </span>
-                    <button className="track-more">
-                      <MoreHorizontal size={15} />
-                    </button>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p
+                    className="music-empty"
+                    style={{
+                      textAlign: "center",
+                      padding: "16px 0",
+                      color: "var(--neutral-400, #a3a3a3)",
+                      fontSize: 13,
+                    }}
+                  >
+                    Chưa có bài hát yêu thích nào
+                  </p>
+                )}
               </div>
 
               {/* Community Posts */}
@@ -552,7 +572,58 @@ export default function Profile() {
           </div>
         )}
 
-        {tab !== "overview" && tab !== "community" && (
+        {tab === "songs" && (
+          <div className="pf-card">
+            <div className="pf-card-top">
+              <h3>
+                <AudioLines size={18} /> Bài hát yêu thích
+              </h3>
+            </div>
+            {favTracks.length > 0 ? (
+              favTracks.map((t, idx) => (
+                <div key={t.id} className="track">
+                  <span className="track-n">
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <img
+                    className="track-img"
+                    src={
+                      t.imgUrl ||
+                      "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1"
+                    }
+                    alt={t.name}
+                  />
+                  <div className="track-info">
+                    <p className="track-title">{t.name}</p>
+                    <p className="track-artist">
+                      {t.artistName}
+                      {t.albumName ? ` · ${t.albumName}` : ""}
+                    </p>
+                  </div>
+                  <span className="track-dur">
+                    {t.durationMs ? formatDuration(t.durationMs) : "--:--"}
+                  </span>
+                  <span className="track-likes">
+                    <Heart size={12} />
+                  </span>
+                  <button className="track-more">
+                    <MoreHorizontal size={15} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="pf-empty">
+                <Music2 size={28} />
+                <p>Chưa có bài hát yêu thích nào</p>
+                <Link to="/settings" className="pf-link">
+                  Thêm bài hát yêu thích
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab !== "overview" && tab !== "community" && tab !== "songs" && (
           <div className="pf-empty">
             <Music2 size={28} />
             <p>Chưa có nội dung nào</p>

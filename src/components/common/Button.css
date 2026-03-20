@@ -49,17 +49,25 @@
   padding: 12px;
   border: none;
   border-radius: 10px;
-  background: #5bc0eb;
+  background: #55C5F1;
   color: white;
   font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
   margin-bottom: 20px;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(85, 197, 241, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #3AA8D4;
+  box-shadow: 0 6px 16px rgba(85, 197, 241, 0.4);
+  transform: translateY(-1px);
 }
 
 .btn-primary:active {
   transform: translateY(0);
-  box-shadow: none;
+  box-shadow: 0 2px 8px rgba(85, 197, 241, 0.3);
 }
 
 .btn-secondary {

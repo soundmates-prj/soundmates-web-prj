@@ -279,7 +279,14 @@ const LivestreamPage: React.FC = () => {
     setShowEmojiPicker(false);
   };
 
-  const handleChatKeyDown = (e: React.KeyboardEvent) => {
+  const handleChatKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Block all keys that might scroll the page (arrow keys, space, enter, etc.)
+    const scrollKeys = ["Enter", " ", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"];
+    if (scrollKeys.includes(e.key)) {
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+    }
+    // Enter without Shift → send message
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendChat();
@@ -584,34 +591,35 @@ const LivestreamPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 + index * 0.1 }}
-                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
               >
-                <div className="podcast-card-header">
-                  <span className={`podcast-category-icon ${pc.categoryColor}`}>
-                    {pc.categoryColor === "purple" && <Headphones size={12} />}
-                    {pc.categoryColor === "blue" && <Heart size={12} />}
-                    {pc.categoryColor === "green" && <Mic2 size={12} />}
-                    {pc.categoryColor === "red" && <Radio size={12} />}
-                  </span>
-                  <span className={`podcast-category-name ${pc.categoryColor}`}>
-                    {pc.category}
-                  </span>
-                </div>
-                <p className="podcast-card-title">{pc.title}</p>
-                <div className="podcast-card-footer">
-                  <div className="podcast-card-author">
-                    <div className="podcast-author-checkbox" />
-                    <span className="podcast-author-name">
-                      Được gửi bởi {pc.author}
+                <div className="podcast-card-inner-pad">
+                  <div className="podcast-card-header">
+                    <span className={`podcast-category-icon ${pc.categoryColor}`}>
+                      {pc.categoryColor === "purple" && <Headphones size={11} />}
+                      {pc.categoryColor === "blue" && <Heart size={11} />}
+                      {pc.categoryColor === "green" && <Mic2 size={11} />}
+                      {pc.categoryColor === "red" && <Radio size={11} />}
+                    </span>
+                    <span className={`podcast-category-name ${pc.categoryColor}`}>
+                      {pc.category}
                     </span>
                   </div>
-                  <span className={`podcast-voice-badge ${pc.voiceType}`}>
-                    {pc.voiceType === "ai" ? "Giọng AI" : "Giọng thật"}
-                  </span>
+                  <p className="podcast-card-title">{pc.title}</p>
+                  <div className="podcast-card-footer">
+                    <div className="podcast-card-author">
+                      <div className="podcast-author-avatar">
+                        {pc.author.charAt(0)}
+                      </div>
+                      <span className="podcast-author-name">{pc.author}</span>
+                    </div>
+                    <span className={`podcast-voice-badge ${pc.voiceType}`}>
+                      {pc.voiceType === "ai" ? "AI" : "Thật"}
+                    </span>
+                  </div>
                 </div>
               </motion.div>
             ))}
-
           </motion.div>
         </div>
 
@@ -704,7 +712,11 @@ const LivestreamPage: React.FC = () => {
                   <div ref={chatEndRef} />
                 </div>
 
-                <div className="chat-input-area" style={{ position: "relative" }}>
+                <div
+                  className="chat-input-area"
+                  style={{ position: "relative" }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
                   <AnimatePresence>
                     {showEmojiPicker && (
                       <motion.div 
@@ -726,10 +738,11 @@ const LivestreamPage: React.FC = () => {
                     )}
                   </AnimatePresence>
                   <div className="chat-input-wrap">
-                    <input
+                    <textarea
                       className="chat-input"
                       placeholder="Gửi tin nhắn..."
                       value={chatInput}
+                      rows={1}
                       onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={handleChatKeyDown}
                     />

@@ -58,6 +58,7 @@
     font-size: 36px;
     margin-bottom: 8px;
     color: #55C5F1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
   .brand p {
@@ -86,6 +87,26 @@
     animation: slideUp 0.7s ease-out;
   }
 
+  .login-box h2 {
+    font-family: poppins, sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #55C5F1;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .subtitle {
     font-family: poppins, sans-serif;
     text-align: center;
@@ -104,6 +125,12 @@
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .input-wrapper:focus-within {
+    border-color: #55C5F1;
+    box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.15);
   }
 
   .input-wrapper input {
@@ -137,11 +164,11 @@
   }
 
   .toggle-password:hover {
-    color: #5bc0eb;
+    color: #55C5F1;
   }
 
   .input-wrapper svg {
-    color: #5bc0eb;
+    color: #55C5F1;
     flex-shrink: 0;
   }
 
@@ -154,8 +181,28 @@
   .forgot {
     font-family: poppins, sans-serif;
     font-size: 13px;
-    color: var(--primary-500);
+    color: #55C5F1;
     cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .forgot:hover {
+    color: #3AA8D4;
+    text-decoration: underline;
+  }
+
+  /* LOGIN BUTTON - Override */
+  .login-box .btn-primary {
+    background: #55C5F1 !important;
+    color: white !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(85, 197, 241, 0.3);
+  }
+
+  .login-box .btn-primary:hover {
+    background: #3AA8D4 !important;
+    box-shadow: 0 6px 16px rgba(85, 197, 241, 0.4);
+    transform: translateY(-1px);
   }
 
   .divider {
@@ -204,13 +251,20 @@
     text-align: center;
     margin-top: 20px;
     font-size: 13px;
+    color: var(--text-secondary);
   }
 
   .register span {
     font-family: poppins, sans-serif;
-    color: var(--primary-500);
+    color: #55C5F1;
     cursor: pointer;
     font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .register span:hover {
+    color: #3AA8D4;
+    text-decoration: underline;
   }
 }
 

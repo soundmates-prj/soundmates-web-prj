@@ -205,7 +205,6 @@ const itemVariants: Variants = {
 export default function Home() {
   const [activeTab, setActiveTab] = useState("Mới");
   const carouselRef = useRef<HTMLDivElement>(null);
-  const isLoggedIn = !!localStorage.getItem("accessToken");
 
   const scrollCarousel = (direction: "prev" | "next") => {
     if (carouselRef.current) {
@@ -339,7 +338,6 @@ export default function Home() {
               </a>
             </div>
             <button className="live-room-cta">
-              <Icon name="headphones" size={18} />
               Tham Gia
             </button>
           </div>

@@ -18,6 +18,11 @@ import Subscription from "./pages/Subscription/Subscription";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import Profile from "./pages/Profile/profile";
 import Settings from "./pages/Settings";
+import StaffLayout from "./components/layout/StaffLayout";
+import { StaffDashboard } from "./pages/Staff/Dashboard/StaffDashboard";
+import { StationsScreen } from "./pages/Staff/Stations/StationsScreen";
+import { PlaylistsScreen } from "./pages/Staff/Playlists/PlaylistsScreen";
+import { LiveSessionsScreen } from "./pages/Staff/LiveSessions/LiveSessionsScreen";
 
 function App() {
   return (
@@ -43,6 +48,21 @@ function App() {
           <Route path="analytics" element={<AnalyticsScreen />} />
           <Route path="music" element={<MusicCatalogScreen />} />
           <Route path="users" element={<UserManagementScreen />} />
+        </Route>
+
+        {/* Staff Routes with Sidebar Layout - Protected for STAFF role */}
+        <Route
+          path="/staff"
+          element={
+            <ProtectedRoute requiredRole="STAFF">
+              <StaffLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<StaffDashboard />} />
+          <Route path="stations" element={<StationsScreen />} />
+          <Route path="playlists" element={<PlaylistsScreen />} />
+          <Route path="sessions" element={<LiveSessionsScreen />} />
         </Route>
 
         {/* Public Routes with Main Layout */}
