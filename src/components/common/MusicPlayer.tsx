@@ -85,6 +85,13 @@ export function MusicPlayer() {
   // Nút play hiển thị icon Play khi: chưa phát, đang mute, hoặc volume = 0
   const showPlayIcon = !isPlaying || isMuted || volume === 0;
 
+  // Detect dark theme to set icon color
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const iconAccent = isDark ? '#55C5F1' : '#55C5F1';
+  const iconMuted  = isDark ? 'rgba(255,255,255,0.35)' : '#9CA3AF';
+  const iconHeart  = isDark ? '#818cf8' : '#5F6EE0';
+  const volTrack   = isDark ? 'rgba(255,255,255,0.12)' : '#D9D9D9';
+
   return (
     <div className="music-player">
       <div className="music-player-container">
@@ -122,7 +129,7 @@ export function MusicPlayer() {
                 title="Yêu thích"
                 style={{ cursor: "pointer" }}
               >
-                <Heart size={16} strokeWidth={1.8} color="#5F6EE0" />
+                <Heart size={16} strokeWidth={1.8} color={iconHeart} />
               </div>
             )}
           </div>
@@ -156,7 +163,7 @@ export function MusicPlayer() {
               title="Danh sách phát"
               style={{ cursor: "pointer" }}
             >
-              <ListMusic size={20} strokeWidth={1.8} color="#55C5F1" />
+              <ListMusic size={20} strokeWidth={1.8} color={iconAccent} />
             </div>
 
             <div
@@ -166,9 +173,9 @@ export function MusicPlayer() {
               style={{ cursor: "pointer" }}
             >
               {isMuted || volume === 0 ? (
-                <VolumeX size={20} strokeWidth={1.8} color="#9CA3AF" />
+                <VolumeX size={20} strokeWidth={1.8} color={iconMuted} />
               ) : (
-                <Volume2 size={20} strokeWidth={1.8} color="#55C5F1" />
+                <Volume2 size={20} strokeWidth={1.8} color={iconAccent} />
               )}
             </div>
 
@@ -181,7 +188,7 @@ export function MusicPlayer() {
                 onChange={(e) => setVolume(Number(e.target.value))}
                 className="volume-slider"
                 style={{
-                  background: `linear-gradient(to right, #55C5F1 0%, #55C5F1 ${displayVolume}%, #D9D9D9 ${displayVolume}%, #D9D9D9 100%)`,
+                  background: `linear-gradient(to right, var(--mp-icon-accent) 0%, var(--mp-icon-accent) ${displayVolume}%, ${volTrack} ${displayVolume}%, ${volTrack} 100%)`,
                 }}
               />
             </div>
@@ -194,7 +201,7 @@ export function MusicPlayer() {
                 title="Thoát Live Session"
                 style={{ cursor: "pointer" }}
               >
-                <X size={18} strokeWidth={2} color="#9CA3AF" />
+                <X size={18} strokeWidth={2} color={iconMuted} />
               </div>
             )}
           </div>
