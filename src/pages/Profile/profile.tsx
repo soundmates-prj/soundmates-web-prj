@@ -13,9 +13,7 @@ import {
   Trash2,
   Pencil,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
@@ -25,7 +23,6 @@ import type { User } from "../../types/user";
 import type { Post } from "../../types/post";
 import CreatePostModal from "./modals/CreatePostModal";
 import EditPostModal from "./modals/EditPostModal";
-import { validateImageUrl } from "../../utils/stringUtils";
 import favoriteService from "../../services/favoriteService";
 import type { FavoriteItem } from "../../services/favoriteService";
 
@@ -246,6 +243,7 @@ export default function Profile() {
       .then((r) => setPosts(r.data?.data?.items ?? []))
       .catch((e) => console.error("Load posts failed", e));
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFavorites();
   }, [loadFavorites]);
 
