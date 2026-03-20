@@ -13,6 +13,15 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;
+  postType?: "share-music" | string | null;
+  shareMusic?: {
+    trackId: string;
+    title: string;
+    artist: string;
+    albumImage: string;
+    previewUrl?: string | null;
+    template: "dark" | "light" | "gradient" | "minimal";
+  } | null;
 }
 
 export interface PostsResponse {

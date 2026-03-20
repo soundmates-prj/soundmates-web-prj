@@ -24,9 +24,24 @@ export interface StationResult {
   streamUrl: string;
   publicPlayerUrl: string | null;
   isEnabled: boolean;
+  createdAt: string;
   lastSyncedAt: string | null;
   syncStatus: string;
   mounts: MountResult[];
+}
+
+export interface DailyListenerPointResult {
+  date: string;
+  listenerCount: number;
+}
+
+export interface StaffDashboardOverviewResult {
+  totalStations: number;
+  stationsCreatedToday: number;
+  totalSessions: number;
+  liveSessions: number;
+  listenersToday: number;
+  dailyListeners: DailyListenerPointResult[];
 }
 
 export interface SyncStationsResult {
@@ -100,6 +115,10 @@ export interface LiveSessionResult {
   peakListeners: number;
   totalDuration: number;
   createdAt: string;
+  streamUrl: string | null;
+  thumbnailUrl: string | null;
+  genre: string | null;
+  listenersCount: number;
 }
 
 export interface ListenerStatsResult {
@@ -255,14 +274,19 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async getActiveSessions(): Promise<LiveSessionResult[]> {
+    const res = await api.get<ApiResponse<LiveSessionResult[]>>("/livesession/active");
+    return res.data.data;
+  }
+
   async getLiveSession(id: string): Promise<LiveSessionResult> {
     const res = await api.get<ApiResponse<LiveSessionResult>>(`/livesession/${id}`);
     return res.data.data;
   }
 
   async createLiveSession(data: {
-    userId: string;
     stationId: string;
+    hostUserId: string;
     sessionName: string;
     description?: string;
   }): Promise<LiveSessionResult> {
@@ -282,6 +306,13 @@ class LiveSessionApiService {
 
   async getListenerStats(id: string): Promise<ListenerStatsResult> {
     const res = await api.get<ApiResponse<ListenerStatsResult>>(`/livesession/${id}/listeners`);
+    return res.data.data;
+  }
+
+  async getStaffDashboardOverview(days = 7): Promise<StaffDashboardOverviewResult> {
+    const res = await api.get<ApiResponse<StaffDashboardOverviewResult>>(`/livesession/dashboard/overview`, {
+      params: { days },
+    });
     return res.data.data;
   }
 

@@ -1,0 +1,132 @@
+.appearance-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-section-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.settings-section-header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.appearance-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.appearance-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.appearance-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 24px;
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 2px solid var(--border-light);
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.theme-option:hover:not(:disabled) {
+  border-color: #55c5f1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(85, 197, 241, 0.15);
+}
+
+.theme-option.active {
+  border-color: #55c5f1;
+  background: rgba(85, 197, 241, 0.08);
+}
+
+.theme-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.theme-option-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(85, 197, 241, 0.1);
+  border-radius: 12px;
+  color: #55c5f1;
+  flex-shrink: 0;
+}
+
+.theme-option.active .theme-option-icon {
+  background: #55c5f1;
+  color: white;
+}
+
+.theme-option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.theme-option-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.theme-option-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.theme-option-check {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #55c5f1;
+  color: white;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .appearance-card {
+    padding: 24px 20px;
+  }
+
+  .theme-options {
+    grid-template-columns: 1fr;
+  }
+}

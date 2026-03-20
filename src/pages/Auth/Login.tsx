@@ -83,6 +83,12 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !loading) {
+      handleLogin();
+    }
+  };
+
   return (
     <div className="login-container">
       {/* LEFT */}
@@ -108,6 +114,7 @@ const Login: React.FC = () => {
               placeholder="Tên người dùng hoặc Email"
               value={emailOrUsername}
               onChange={(e) => setEmailOrUsername(e.target.value)}
+              onKeyPress={handleKeyPress}
             />
           </div>
 
@@ -119,6 +126,7 @@ const Login: React.FC = () => {
               placeholder="Mật khẩu"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
             />
             <span
               className="toggle-password"

@@ -1,21 +1,20 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
 import {
     LayoutDashboard,
-    Sparkles,
     Users,
-    Radio,
+    Crown,
     FileText,
-    Music,
-    Star,
+    Radio,
     BarChart3,
     Settings,
-    ChevronRight,
-    Headphones,
-    LogOut
+    LogOut,
+    Music2
 } from 'lucide-react';
+import logoLight from "../../assets/light_logo.png";
+import logoDark from "../../assets/dark_logo.png";
 import "./AdminSidebar.css";
-import { showSuccess } from "../../components/common/toastUtils";
+import { showSuccess } from "../common/toastUtils";
+import { useTheme } from "../../context/ThemeContext";
 
 interface MenuItem {
     id: string;
@@ -25,126 +24,57 @@ interface MenuItem {
 }
 
 const sidebarMenuItems: MenuItem[] = [
-    { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Tổng Quan', path: '/admin/dashboard' },
-    { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Thống Kê', path: '/admin/analytics' },
-    { id: 'ai-content', icon: <Sparkles size={20} />, label: 'Nội Dung AI', path: '/admin/ai-content' },
-    { id: 'users', icon: <Users size={20} />, label: 'Quản Lý Users', path: '/admin/users' },
-    { id: 'broadcasts', icon: <Radio size={20} />, label: 'Phát Sóng Live', path: '/admin/broadcasts' },
-    { id: 'content', icon: <FileText size={20} />, label: 'Bài Viết & Podcast', path: '/admin/posts' },
-    { id: 'music', icon: <Music size={20} />, label: 'Kho Nhạc', path: '/admin/music' },
-    { id: 'mentors', icon: <Star size={20} />, label: 'Đánh Giá Mentors', path: '/admin/mentors' },
-    { id: 'settings', icon: <Settings size={20} />, label: 'Cài Đặt Hệ Thống', path: '/admin/settings' },
+    { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/admin/dashboard' },
+    { id: 'users', icon: <Users size={20} />, label: 'Users', path: '/admin/users' },
+    { id: 'subscriptions', icon: <Crown size={20} />, label: 'Subscriptions', path: '/admin/subscriptions' },
+    { id: 'posts', icon: <FileText size={20} />, label: 'Posts', path: '/admin/posts' },
+    { id: 'stations', icon: <Music2 size={20} />, label: 'Stations', path: '/admin/stations' },
+    { id: 'sessions', icon: <Radio size={20} />, label: 'Live Sessions', path: '/admin/sessions' },
+    { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Reports', path: '/admin/analytics' },
+    { id: 'settings', icon: <Settings size={20} />, label: 'Settings', path: '/admin/settings' },
 ];
 
-interface AdminSidebarProps {
-    collapsed?: boolean;
-    onToggle?: () => void;
-}
-
-export default function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
+export default function AdminSidebar() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [userInfo, setUserInfo] = useState<any>(null);
-
-    useEffect(() => {
-        // Load user info from localStorage
-        const storedUserInfo = localStorage.getItem('userInfo');
-        if (storedUserInfo) {
-            try {
-                setUserInfo(JSON.parse(storedUserInfo));
-            } catch (error) {
-                console.error('Failed to parse user info:', error);
-            }
-        }
-    }, []);
+    const { theme } = useTheme();
 
     const isActive = (path: string) => {
         return location.pathname === path;
     };
 
-    const handleNavigation = (path: string) => {
-        navigate(path);
-    };
-
     const handleLogout = () => {
-        // Clear localStorage
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userInfo');
-        
-        // Dispatch auth change event
         window.dispatchEvent(new Event('authChange'));
-        
-        // Show success message
         showSuccess('Đăng xuất thành công', 'Hẹn gặp lại bạn!');
-        
-        // Redirect to login
         navigate('/login');
     };
 
     return (
-        <aside className={`admin-sidebar ${collapsed ? "collapsed" : ""}`}>
-            {/* Logo Section */}
-            <div className="sidebar-logo">
-                {!collapsed ? (
-                    <div className="logo-text">
-                        <h1 className="logo-title">
-                            <span className="logo-listen">Listen </span>
-                            <span className="logo-together">Together.</span>
-                        </h1>
-                        <span className="logo-subtitle">Admin Dashboard</span>
-                    </div>
-                ) : (
-                    <div className="logo-icon">
-                        <Headphones size={28} color="#fff" />
-                    </div>
-                )}
+        <aside className="admin-sidebar">
+            <div className="admin-sidebar-logo" onClick={() => navigate('/admin/dashboard')}>
+                <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
+                <span className="admin-logo-text">SoundMates</span>
             </div>
 
-            {/* Navigation */}
-            <nav className="sidebar-nav">
+            <nav className="admin-sidebar-nav">
                 {sidebarMenuItems.map((item) => (
                     <button
                         key={item.id}
-                        className={`sidebar-nav-item ${isActive(item.path) ? "active" : ""}`}
-                        onClick={() => handleNavigation(item.path)}
-                        title={collapsed ? item.label : undefined}
+                        className={`admin-nav-item ${isActive(item.path) ? "active" : ""}`}
+                        onClick={() => navigate(item.path)}
                     >
-                        <span className="nav-icon">{item.icon}</span>
-                        {!collapsed && (
-                            <>
-                                <span className="nav-label">{item.label}</span>
-                                {isActive(item.path) && (
-                                    <ChevronRight size={16} className="nav-arrow" />
-                                )}
-                            </>
-                        )}
+                        {item.icon}
+                        <span>{item.label}</span>
                     </button>
                 ))}
             </nav>
 
-            {/* User Profile Section */}
-            <div className="sidebar-user">
-                <div className="user-avatar">
-                    <span>{userInfo?.firstName?.charAt(0) || userInfo?.username?.charAt(0) || 'A'}</span>
-                </div>
-                {!collapsed && (
-                    <div className="user-info">
-                        <span className="user-name">
-                            {userInfo?.firstName && userInfo?.lastName 
-                                ? `${userInfo.firstName} ${userInfo.lastName}` 
-                                : userInfo?.username || 'Admin User'}
-                        </span>
-                        <span className="user-role">{userInfo?.roleName || 'Admin'}</span>
-                    </div>
-                )}
-                <button 
-                    className="logout-btn" 
-                    onClick={handleLogout}
-                    title="Đăng xuất"
-                >
-                    <LogOut size={18} />
-                </button>
-            </div>
+            <button className="admin-logout-btn" onClick={handleLogout}>
+                <LogOut size={20} />
+                <span>Logout</span>
+            </button>
         </aside>
     );
 }

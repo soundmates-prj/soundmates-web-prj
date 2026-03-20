@@ -106,6 +106,12 @@ const Register: React.FC = () => {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !loading) {
+      handleRegister();
+    }
+  };
+
   return (
     <div className="register-container">
       <div className="register-left">
@@ -130,6 +136,7 @@ const Register: React.FC = () => {
                 placeholder="Họ"
                 value={form.firstName}
                 onChange={handleChange}
+                onKeyPress={handleKeyPress}
                 required
               />
             </div>
@@ -142,6 +149,7 @@ const Register: React.FC = () => {
                 placeholder="Tên"
                 value={form.lastName}
                 onChange={handleChange}
+                onKeyPress={handleKeyPress}
                 required
               />
             </div>
@@ -155,6 +163,7 @@ const Register: React.FC = () => {
               placeholder="Tên người dùng"
               value={form.username}
               onChange={handleChange}
+              onKeyPress={handleKeyPress}
               required
             />
           </div>
@@ -167,6 +176,7 @@ const Register: React.FC = () => {
               placeholder="Email"
               value={form.email}
               onChange={handleChange}
+              onKeyPress={handleKeyPress}
               required
             />
           </div>
@@ -180,6 +190,7 @@ const Register: React.FC = () => {
               placeholder="Mật khẩu"
               value={form.password}
               onChange={handleChange}
+              onKeyPress={handleKeyPress}
             />
             <span
               className="toggle-password"

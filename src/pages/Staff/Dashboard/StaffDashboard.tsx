@@ -1,233 +1,212 @@
-import { useState, useEffect } from "react";
 import {
   Radio,
-  ListMusic,
-  Disc3,
-  Users,
-  RefreshCw,
-  TrendingUp,
+  Calendar,
+  Music,
+  Mic,
   Clock,
-  Zap,
-} from "lucide-react";
-import { liveSessionApiService } from "../../../services/liveSessionApiService";
-import type {
-  StationResult,
-  LiveSessionResult,
-} from "../../../services/liveSessionApiService";
-import { showError } from "../../../components/common/toastUtils";
-import "./StaffDashboard.css";
+  ArrowUp,
+  CheckCircle,
+  XCircle,
+  AlertCircle
+} from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import './StaffDashboard.css';
 
-interface QuickStat {
-  label: string;
-  value: string | number;
+const sessionData = [
+  { day: 'Mon', sessions: 3, listeners: 245 },
+  { day: 'Tue', sessions: 5, listeners: 389 },
+  { day: 'Wed', sessions: 4, listeners: 312 },
+  { day: 'Thu', sessions: 6, listeners: 456 },
+  { day: 'Fri', sessions: 7, listeners: 523 },
+  { day: 'Sat', sessions: 8, listeners: 678 },
+  { day: 'Sun', sessions: 6, listeners: 534 },
+];
+
+const upcomingSessions = [
+  { id: 1, title: 'Chill Night Radio', time: '20:00 - 22:00', date: 'Today', host: 'DJ Minh', status: 'scheduled' },
+  { id: 2, title: 'Morning Jazz', time: '08:00 - 10:00', date: 'Tomorrow', host: 'Sarah Lee', status: 'scheduled' },
+  { id: 3, title: 'Acoustic Session', time: '15:00 - 17:00', date: 'Tomorrow', host: 'John Doe', status: 'scheduled' },
+];
+
+const recentRequests = [
+  { id: 1, type: 'music', title: 'Bohemian Rhapsody - Queen', user: 'User123', status: 'pending', time: '5 min ago' },
+  { id: 2, type: 'podcast', title: 'Tech Talk Episode 5', user: 'PodcastFan', status: 'approved', time: '15 min ago' },
+  { id: 3, type: 'music', title: 'Imagine - John Lennon', user: 'MusicLover', status: 'pending', time: '23 min ago' },
+  { id: 4, type: 'podcast', title: 'Daily News Briefing', user: 'NewsJunkie', status: 'rejected', time: '1 hour ago' },
+];
+
+interface StatCardProps {
+  title: string;
+  value: string;
+  change: string;
+  isPositive: boolean;
   icon: React.ReactNode;
-  color: string;
+  subtitle?: string;
+}
+
+function StatCard({ title, value, change, isPositive, icon, subtitle }: StatCardProps) {
+  return (
+    <div className="staff-stat-card">
+      <div className="staff-stat-header">
+        <div className="staff-stat-icon">{icon}</div>
+        <div className={`staff-stat-change ${isPositive ? 'positive' : 'negative'}`}>
+          <ArrowUp size={14} />
+          <span>{change}</span>
+        </div>
+      </div>
+      <h3 className="staff-stat-title">{title}</h3>
+      <p className="staff-stat-value">{value}</p>
+      {subtitle && <p className="staff-stat-subtitle">{subtitle}</p>}
+    </div>
+  );
 }
 
 export function StaffDashboard() {
-  const [stations, setStations] = useState<StationResult[]>([]);
-  const [recentSessions, setRecentSessions] = useState<LiveSessionResult[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  const loadDashboard = async () => {
-    setLoading(true);
-    try {
-      const [stationsData, sessionsData] = await Promise.allSettled([
-        liveSessionApiService.getStations(),
-        liveSessionApiService.getLiveSessions({ pageSize: 5 }),
-      ]);
-      if (stationsData.status === "fulfilled") setStations(stationsData.value);
-      if (sessionsData.status === "fulfilled") setRecentSessions(sessionsData.value.items);
-    } catch {
-      showError("Lỗi", "Không thể tải dữ liệu dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const liveSessions = recentSessions.filter((s) => s.status === "Live");
-  const totalListeners = liveSessions.reduce((sum, s) => sum + s.totalListeners, 0);
-
-  const quickStats: QuickStat[] = [
-    {
-      label: "Stations",
-      value: stations.length,
-      icon: <Radio size={22} />,
-      color: "#7C5CFC",
-    },
-    {
-      label: "Đang phát sóng",
-      value: liveSessions.length,
-      icon: <Disc3 size={22} />,
-      color: "#34D399",
-    },
-    {
-      label: "Tổng sessions",
-      value: recentSessions.length,
-      icon: <ListMusic size={22} />,
-      color: "#F59E0B",
-    },
-    {
-      label: "Listeners",
-      value: totalListeners,
-      icon: <Users size={22} />,
-      color: "#55C5F1",
-    },
-  ];
-
-  const getStatusBadge = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case "Live":
-        return <span className="staff-badge staff-badge--live">LIVE</span>;
-      case "Scheduled":
-        return <span className="staff-badge staff-badge--scheduled">Scheduled</span>;
-      case "Ended":
-        return <span className="staff-badge staff-badge--ended">Ended</span>;
+      case 'approved':
+        return <CheckCircle size={16} className="status-icon approved" />;
+      case 'rejected':
+        return <XCircle size={16} className="status-icon rejected" />;
       default:
-        return <span className="staff-badge staff-badge--draft">{status}</span>;
+        return <AlertCircle size={16} className="status-icon pending" />;
     }
   };
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="staff-loading">
-        <RefreshCw size={24} className="staff-spin" />
-        <p>Đang tải dashboard...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="staff-dashboard">
-      {/* Header */}
-      <div className="staff-page-header">
+      <div className="staff-dashboard-header">
         <div>
-          <h1 className="staff-page-title">Xin chào! 👋</h1>
-          <p className="staff-page-subtitle">
-            Đây là tổng quan hệ thống phát sóng của bạn hôm nay
-          </p>
+          <h1 className="staff-dashboard-title">Staff Dashboard</h1>
+          <p className="staff-dashboard-subtitle">Manage your live sessions and content requests</p>
         </div>
-        <button className="staff-btn staff-btn--outline" onClick={loadDashboard}>
-          <RefreshCw size={16} />
-          Làm mới
-        </button>
       </div>
 
-      {/* Quick Stats */}
       <div className="staff-stats-grid">
-        {quickStats.map((stat) => (
-          <div className="staff-stat-card" key={stat.label}>
-            <div
-              className="staff-stat-icon"
-              style={{ background: `${stat.color}18`, color: stat.color }}
-            >
-              {stat.icon}
-            </div>
-            <div className="staff-stat-content">
-              <span className="staff-stat-value">{stat.value}</span>
-              <span className="staff-stat-label">{stat.label}</span>
-            </div>
-          </div>
-        ))}
+        <StatCard
+          title="Active Sessions"
+          value="3"
+          change="+2"
+          isPositive={true}
+          icon={<Radio size={24} />}
+          subtitle="Currently live"
+        />
+        <StatCard
+          title="Scheduled Today"
+          value="5"
+          change="+1"
+          isPositive={true}
+          icon={<Calendar size={24} />}
+          subtitle="Sessions planned"
+        />
+        <StatCard
+          title="Music Requests"
+          value="12"
+          change="+5"
+          isPositive={true}
+          icon={<Music size={24} />}
+          subtitle="Pending approval"
+        />
+        <StatCard
+          title="Podcast Requests"
+          value="8"
+          change="+3"
+          isPositive={true}
+          icon={<Mic size={24} />}
+          subtitle="Pending review"
+        />
       </div>
 
-      {/* Two-column grid */}
-      <div className="staff-dashboard-grid">
-        {/* Stations */}
-        <div className="staff-card">
-          <div className="staff-card-header">
-            <h3>
-              <Radio size={18} /> Stations
-            </h3>
-          </div>
-          <div className="staff-card-body">
-            {stations.length === 0 ? (
-              <p className="staff-empty">Chưa có station nào. Hãy Sync từ AzuraCast.</p>
-            ) : (
-              stations.map((s) => (
-                <div className="staff-list-item" key={s.id}>
-                  <div className="staff-list-dot" style={{ background: s.isEnabled ? "#34D399" : "#94a3b8" }} />
-                  <div className="staff-list-info">
-                    <span className="staff-list-title">{s.stationName}</span>
-                    <span className="staff-list-sub">
-                      {s.stationShortcode || "No shortcode"} · {s.syncStatus}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+      <div className="staff-content-grid">
+        <div className="staff-chart-card">
+          <h3 className="staff-chart-title">Weekly Sessions & Listeners</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={sessionData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+              <XAxis dataKey="day" stroke="#64748b" />
+              <YAxis stroke="#64748b" />
+              <Tooltip />
+              <Bar dataKey="sessions" fill="#7481F8" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="listeners" fill="#004395" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Recent Sessions */}
-        <div className="staff-card">
-          <div className="staff-card-header">
-            <h3>
-              <Clock size={18} /> Sessions gần đây
-            </h3>
+        <div className="staff-list-card">
+          <div className="staff-list-header">
+            <h3 className="staff-list-title">Upcoming Sessions</h3>
+            <button className="staff-view-all-btn">View All</button>
           </div>
-          <div className="staff-card-body">
-            {recentSessions.length === 0 ? (
-              <p className="staff-empty">Chưa có session nào</p>
-            ) : (
-              recentSessions.map((s) => (
-                <div className="staff-list-item" key={s.id}>
-                  {getStatusBadge(s.status)}
-                  <div className="staff-list-info">
-                    <span className="staff-list-title">{s.sessionName}</span>
-                    <span className="staff-list-sub">
-                      {s.stationName || "Unknown"} · {formatDate(s.createdAt)}
-                    </span>
-                  </div>
+          <div className="staff-list-content">
+            {upcomingSessions.map((session) => (
+              <div key={session.id} className="staff-session-item">
+                <div className="staff-session-icon">
+                  <Radio size={20} />
                 </div>
-              ))
-            )}
+                <div className="staff-session-info">
+                  <h4 className="staff-session-title">{session.title}</h4>
+                  <p className="staff-session-meta">
+                    <Clock size={14} />
+                    {session.time} • {session.date}
+                  </p>
+                  <p className="staff-session-host">Host: {session.host}</p>
+                </div>
+                <span className="staff-session-badge scheduled">Scheduled</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="staff-card">
-        <div className="staff-card-header">
-          <h3>
-            <Zap size={18} /> Thao tác nhanh
-          </h3>
+      <div className="staff-requests-card">
+        <div className="staff-list-header">
+          <h3 className="staff-list-title">Recent Requests</h3>
+          <button className="staff-view-all-btn">View All</button>
         </div>
-        <div className="staff-quick-actions">
-          <a href="/staff/stations" className="staff-action-btn">
-            <Radio size={20} />
-            <span>Quản lý Stations</span>
-            <TrendingUp size={14} className="staff-action-arrow" />
-          </a>
-          <a href="/staff/playlists" className="staff-action-btn">
-            <ListMusic size={20} />
-            <span>Quản lý Playlists</span>
-            <TrendingUp size={14} className="staff-action-arrow" />
-          </a>
-          <a href="/staff/sessions" className="staff-action-btn">
-            <Disc3 size={20} />
-            <span>Tạo Live Session</span>
-            <TrendingUp size={14} className="staff-action-arrow" />
-          </a>
+        <div className="staff-requests-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Title</th>
+                <th>User</th>
+                <th>Status</th>
+                <th>Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentRequests.map((request) => (
+                <tr key={request.id}>
+                  <td>
+                    <span className={`staff-type-badge ${request.type}`}>
+                      {request.type === 'music' ? <Music size={14} /> : <Mic size={14} />}
+                      {request.type}
+                    </span>
+                  </td>
+                  <td className="staff-request-title">{request.title}</td>
+                  <td>{request.user}</td>
+                  <td>
+                    <span className={`staff-status-badge ${request.status}`}>
+                      {getStatusIcon(request.status)}
+                      {request.status}
+                    </span>
+                  </td>
+                  <td className="staff-request-time">{request.time}</td>
+                  <td>
+                    {request.status === 'pending' && (
+                      <div className="staff-action-buttons">
+                        <button className="staff-action-btn approve">Approve</button>
+                        <button className="staff-action-btn reject">Reject</button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }
-
-export default StaffDashboard;

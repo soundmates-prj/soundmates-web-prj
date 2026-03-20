@@ -223,6 +223,44 @@ export const playlistService = {
 };
 
 // ============================================
+// User APIs
+// ============================================
+
+export interface HostUser {
+  id: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roleId: string;
+  roleName: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HostUsersResponse {
+  items: HostUser[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export const userService = {
+  // Get users with HOST role (Admin/Staff only)
+  getHosts: async (params?: { page?: number; pageSize?: number }): Promise<HostUsersResponse> => {
+    const response = await api.get('/users/hosts', {
+      params: {
+        page: params?.page || 1,
+        pageSize: params?.pageSize || 20,
+      },
+    });
+    return response.data.data;
+  },
+};
+
+// ============================================
 // Export all services
 // ============================================
 
@@ -230,4 +268,5 @@ export default {
   station: stationService,
   musicCatalog: musicCatalogService,
   playlist: playlistService,
+  user: userService,
 };

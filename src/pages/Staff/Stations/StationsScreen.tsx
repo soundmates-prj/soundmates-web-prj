@@ -6,6 +6,8 @@ import {
   WifiOff,
   Globe,
   ArrowDownToLine,
+  ExternalLink,
+  Calendar,
 } from "lucide-react";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import type { StationResult } from "../../../services/liveSessionApiService";
@@ -58,6 +60,15 @@ export function StationsScreen() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const handleViewLive = (station: StationResult) => {
+    const target = station.publicPlayerUrl || station.streamUrl;
+    if (!target) {
+      showError("Không có link phát", "Station này chưa có URL phát trực tiếp");
+      return;
+    }
+    window.open(target, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -130,6 +141,10 @@ export function StationsScreen() {
                   <RefreshCw size={13} />
                   <span>{formatDate(station.lastSyncedAt)}</span>
                 </div>
+                <div className="station-meta-item">
+                  <Calendar size={13} />
+                  <span>Tạo lúc: {formatDate(station.createdAt)}</span>
+                </div>
               </div>
 
               <div className="station-footer">
@@ -142,6 +157,14 @@ export function StationsScreen() {
                 >
                   {station.syncStatus}
                 </span>
+                <button
+                  className="station-live-btn"
+                  onClick={() => handleViewLive(station)}
+                  disabled={!station.publicPlayerUrl && !station.streamUrl}
+                >
+                  <ExternalLink size={14} />
+                  Xem trực tiếp
+                </button>
               </div>
             </div>
           ))}
