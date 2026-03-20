@@ -8,8 +8,9 @@ import {
 } from "lucide-react";
 
 import api from "../../../services/axios";
-import { showSuccess } from "../../../components/common/toastUtils";
+import { showSuccess, showError } from "../../../components/common/toastUtils";
 import type { User } from "../../../types/user";
+import { validateImageUrl } from "../../../utils/stringUtils";
 
 import "./ProfileSection.css";
 
@@ -81,10 +82,17 @@ const ProfileSection: React.FC = () => {
           dateOfBirth: data.dateOfBirth ? data.dateOfBirth.slice(0, 10) : "",
         });
 
-        if (data.profileImageUrl) setAvatarPreview(data.profileImageUrl);
+        // Validate and clean profile image URL
+        const cleanProfileImageUrl = validateImageUrl(data.profileImageUrl);
+        if (cleanProfileImageUrl) {
+          setAvatarPreview(cleanProfileImageUrl);
+        }
 
-        if (data.backgroundImageUrl)
-          setBackgroundPreview(data.backgroundImageUrl);
+        // Validate and clean background image URL
+        const cleanBackgroundImageUrl = validateImageUrl(data.backgroundImageUrl);
+        if (cleanBackgroundImageUrl) {
+          setBackgroundPreview(cleanBackgroundImageUrl);
+        }
       } catch (error) {
         console.error("Load profile failed", error);
       }
@@ -175,34 +183,66 @@ const ProfileSection: React.FC = () => {
 
       // Upload ảnh mới lên Cloudinary, nhận về URL
       if (avatarFile) {
+        console.log("Uploading avatar to Cloudinary...");
         profileImageUrl = await uploadToCloudinary(avatarFile);
+        console.log("Avatar uploaded:", profileImageUrl);
       }
 
       if (backgroundFile) {
+        console.log("Uploading background to Cloudinary...");
         backgroundImageUrl = await uploadToCloudinary(backgroundFile);
+        console.log("Background uploaded:", backgroundImageUrl);
       }
 
-      // Gửi URL string vào backend
-      await api.put("auth/profile", {
+      // Clean và validate URLs trước khi gửi
+      const cleanProfileImageUrl = validateImageUrl(profileImageUrl);
+      const cleanBackgroundImageUrl = validateImageUrl(backgroundImageUrl);
+
+      // Prepare payload
+      const payload = {
         firstName: form.firstName,
         lastName: form.lastName,
-        bio: form.bio,
-        phone: form.phone,
-        gender: form.gender,
+        bio: form.bio || null,
+        phone: form.phone || null,
+        gender: form.gender ? form.gender.charAt(0).toUpperCase() + form.gender.slice(1).toLowerCase() : null,
         dateOfBirth: form.dateOfBirth
           ? new Date(form.dateOfBirth).toISOString()
-          : undefined,
-        profileImageUrl,
-        backgroundImageUrl,
-      });
+          : null,
+        profileImageUrl: cleanProfileImageUrl || null,
+        backgroundImageUrl: cleanBackgroundImageUrl || null,
+      };
+
+      console.log("Sending profile update:", payload);
+
+      // Gửi URL string vào backend
+      const response = await api.put("/auth/profile", payload);
+      
+      console.log("Profile update response:", response.data);
 
       showSuccess("Đã lưu", "Thông tin hồ sơ đã được cập nhật!");
 
-      const res = await api.get("users/me/profile/full");
-
-      setUser(res.data.data);
-    } catch (error) {
-      console.error("Update profile failed", error);
+      // Reload profile data
+      const res = await api.get("/users/me/profile/full");
+      const updatedUser = res.data.data;
+      
+      console.log("Updated user data:", updatedUser);
+      
+      setUser(updatedUser);
+      
+      // Update localStorage userInfo with new avatar
+      const storedUserInfo = localStorage.getItem("userInfo");
+      if (storedUserInfo) {
+        const userInfo = JSON.parse(storedUserInfo);
+        userInfo.avatarUrl = updatedUser.profileImageUrl;
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+        window.dispatchEvent(new Event("authChange"));
+      }
+    } catch (error: any) {
+      console.error("Update profile failed:", error);
+      console.error("Error response:", error.response?.data);
+      
+      const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra khi cập nhật profile";
+      showError("Lỗi", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -225,8 +265,10 @@ const ProfileSection: React.FC = () => {
     setPhoneError("");
     setAvatarFile(null);
     setBackgroundFile(null);
-    setAvatarPreview(user.profileImageUrl);
-    setBackgroundPreview(user.backgroundImageUrl);
+    
+    // Validate URLs when canceling
+    setAvatarPreview(validateImageUrl(user.profileImageUrl));
+    setBackgroundPreview(validateImageUrl(user.backgroundImageUrl));
   };
 
   if (!user) {
@@ -265,8 +307,9 @@ const ProfileSection: React.FC = () => {
 
           <div className="avatar-wrapper">
             <img
-              src={avatarPreview || "https://i.pravatar.cc/150"}
+              src={avatarPreview || "https://via.placeholder.com/150?text=Avatar"}
               className="avatar"
+              alt="Profile avatar"
             />
 
             <button

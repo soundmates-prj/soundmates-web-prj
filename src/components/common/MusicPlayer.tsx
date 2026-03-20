@@ -37,6 +37,18 @@ export function MusicPlayer() {
       toggleMute();
     }
 
+  const location = useLocation();
+
+  /* ── Pause khi navigate sang trang khác ──────────────────────────────── */
+  useEffect(() => {
+    const shouldPauseForAuthPage =
+      location.pathname === "/login" || location.pathname === "/register";
+
+    // Chỉ auto pause tại login/register, giữ nguyên nhạc ở các trang còn lại.
+    if (shouldPauseForAuthPage && isPlaying && !isMuted) {
+      toggleMute();
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 

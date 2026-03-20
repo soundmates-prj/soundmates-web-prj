@@ -153,7 +153,7 @@ export function UserManagementScreen() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   
   // Sort state
-  const [sortBy, setSortBy] = useState<'name' | 'joinDate' | 'lastActive'>('joinDate');
+  const [sortBy] = useState<'name' | 'joinDate' | 'lastActive'>('joinDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Fetch users from API

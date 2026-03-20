@@ -18,6 +18,7 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   livestreamService,
   type NowPlayingData,
@@ -307,7 +308,12 @@ const LivestreamPage: React.FC = () => {
     return (
       <div className="now-playing-progress">
         <div className="progress-bar-track">
-          <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+          <motion.div 
+            className="progress-bar-fill" 
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }} 
+            transition={{ duration: 1, ease: "linear" }}
+          />
         </div>
         <div className="progress-times">
           <span>{formatTime(elapsed)}</span>
@@ -319,13 +325,20 @@ const LivestreamPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="livestream-page">
+      </div>
+=======
+      <motion.div 
+        className="livestream-page"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
         <Loading
           fullscreen
           size="large"
           text="Đang kết nối đến phiên phát sóng..."
         />
-      </div>
+      </motion.div>
     );
   }
 
@@ -365,11 +378,20 @@ const LivestreamPage: React.FC = () => {
         {/* ===== LEFT: Main Content ===== */}
         <div className="livestream-main">
           {/* Now Playing Hero */}
-          <div className="now-playing-hero">
-            <div
+            <div className="now-playing-cover" onClick={player.toggle} style={{ cursor: 'pointer' }}>
+              <img src={proxyArtUrl(currentTrack.artUrl)} alt={currentTrack.title} />
+          <motion.div 
+            className="now-playing-hero"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.div
               className="now-playing-cover"
               onClick={player.toggle}
               style={{ cursor: "pointer" }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               <img
                 src={proxyArtUrl(currentTrack.artUrl)}
@@ -398,7 +420,7 @@ const LivestreamPage: React.FC = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
 
             <div className="now-playing-info">
               <div className="now-playing-station">
@@ -429,10 +451,15 @@ const LivestreamPage: React.FC = () => {
 
               {renderProgressBar()}
             </div>
-          </div>
+          </motion.div>
 
           {/* Live Action Bar – đặt gần hero để nằm trong 1 màn hình */}
-          <div className="livestream-action-bar">
+          <motion.div 
+            className="livestream-action-bar"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             <div className="action-bar-left">
               <button className="action-bar-icon-btn" title="Cài đặt">
                 <Settings2 size={17} />
@@ -478,9 +505,13 @@ const LivestreamPage: React.FC = () => {
               />
             </div>
 
-            <div className="action-bar-center" style={{ position: "relative" }}>
               <button
+=======
+            <div className="action-bar-center" style={{ position: "relative" }}>
+              <motion.button
                 className="action-btn emotion"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setShowEmotionPicker((p) => !p);
                   setShowRequestModal(false);
@@ -488,9 +519,11 @@ const LivestreamPage: React.FC = () => {
                 }}
               >
                 <Smile size={15} /> Cảm xúc
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 className="action-btn request"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setShowRequestModal(true);
                   setShowEmotionPicker(false);
@@ -498,9 +531,11 @@ const LivestreamPage: React.FC = () => {
                 }}
               >
                 <Music size={15} /> Request Nhạc
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 className="action-btn podcast-submit"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setShowPodcastModal(true);
                   setShowEmotionPicker(false);
@@ -508,21 +543,29 @@ const LivestreamPage: React.FC = () => {
                 }}
               >
                 <Mic2 size={15} /> Gửi Podcast
-              </button>
+              </motion.button>
 
-              {showEmotionPicker && (
-                <div className="emotion-popup">
-                  {EMOTIONS.map((em) => (
-                    <button
-                      key={em}
-                      className="emotion-btn"
-                      onClick={() => sendEmotion(em)}
-                    >
-                      {em}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence>
+                {showEmotionPicker && (
+                  <motion.div 
+                    className="emotion-popup"
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                  >
+                    {EMOTIONS.map((em) => (
+                      <motion.button
+                        key={em}
+                        className="emotion-btn"
+                        whileHover={{ scale: 1.3 }}
+                        onClick={() => sendEmotion(em)}
+                      >
+                        {em}
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="action-bar-right">
@@ -531,12 +574,24 @@ const LivestreamPage: React.FC = () => {
                 {totalListeners || 128}
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Podcast Cards */}
-          <div className="podcast-section">
-            {DEMO_PODCASTS.map((pc) => (
-              <div className="podcast-card" key={pc.id}>
+          <motion.div 
+            className="podcast-section"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            {DEMO_PODCASTS.map((pc, index) => (
+              <motion.div 
+                className="podcast-card" 
+                key={pc.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 + index * 0.1 }}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              >
                 <div className="podcast-card-header">
                   <span className={`podcast-category-icon ${pc.categoryColor}`}>
                     {pc.categoryColor === "purple" && <Headphones size={12} />}
@@ -560,13 +615,19 @@ const LivestreamPage: React.FC = () => {
                     {pc.voiceType === "ai" ? "Giọng AI" : "Giọng thật"}
                   </span>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+
+          </motion.div>
         </div>
 
         {/* ===== RIGHT: Sidebar ===== */}
-        <div className="livestream-sidebar">
+        <motion.div 
+          className="livestream-sidebar"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
           <div className="sidebar-tabs">
             <button
               className={`sidebar-tab ${sidebarTab === "chat" ? "active" : ""}`}
@@ -589,7 +650,6 @@ const LivestreamPage: React.FC = () => {
           </div>
 
           {/* Chat Tab */}
-          {sidebarTab === "chat" && (
             <div className="chat-panel">
               <div className="chat-messages">
                 {chatMessages.map((msg) => (
@@ -652,201 +712,334 @@ const LivestreamPage: React.FC = () => {
                         {em}
                       </button>
                     ))}
-                  </div>
-                )}
-                <div className="chat-input-wrap">
-                  <input
-                    className="chat-input"
-                    placeholder="Gửi tin nhắn..."
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={handleChatKeyDown}
-                  />
-                  <button
-                    className="chat-emoji-btn"
-                    onClick={() => setShowEmojiPicker((p) => !p)}
-                  >
-                    <Smile size={18} />
-                  </button>
-                  <button
-                    className="chat-send-btn"
-                    disabled={!chatInput.trim()}
-                    onClick={sendChat}
-                  >
-                    <Send size={16} />
-                  </button>
+=======
+          <AnimatePresence mode="wait">
+            {sidebarTab === "chat" && (
+              <motion.div 
+                className="chat-panel"
+                key="chat"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="chat-messages">
+                  {chatMessages.map((msg) => (
+                    <motion.div
+                      key={msg.id}
+                      className={`chat-msg ${msg.type === "system" ? "system" : ""} ${msg.isSelf ? "self" : ""}`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      {msg.type === "system" ? (
+                        <div className="chat-msg-system">{msg.text}</div>
+                      ) : (
+                        <>
+                          {!msg.isSelf && (
+                            <div className="chat-msg-header">
+                              <div
+                                className="chat-msg-avatar"
+                                style={{ background: msg.avatarColor || "#555" }}
+                              />
+                              <span
+                                className={`chat-msg-name ${msg.isHost ? "host" : ""}`}
+                              >
+                                {msg.name}
+                              </span>
+                              <span className="chat-msg-time">{msg.time}</span>
+                            </div>
+                          )}
+                          <div
+                            className={`chat-msg-bubble ${msg.requestSong ? "request-bubble" : ""}`}
+                          >
+                            {msg.requestSong && (
+                              <div className="chat-request-tag">
+                                🎵 Requested "{msg.requestSong}"
+                              </div>
+                            )}
+                            {msg.text}
+                          </div>
+                          {msg.isSelf && (
+                            <span
+                              className="chat-msg-time"
+                              style={{ marginTop: 2 }}
+                            >
+                              {msg.time}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
+                  ))}
+                  <div ref={chatEndRef} />
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* Playlist Tab */}
-          {sidebarTab === "playlist" && (
-            <div className="playlist-panel">
-              {/* Currently Playing */}
-              <div className="playlist-now-label">Đang phát</div>
-              <div className="playlist-item active">
-                <div className="playlist-item-art">
-                  <img
-                    src={proxyArtUrl(currentTrack.artUrl)}
-                    alt={currentTrack.title}
-                  />
-                  <div className="playlist-item-playing-indicator">
-                    <div className="mini-visualizer">
-                      <div className="bar" />
-                      <div className="bar" />
-                      <div className="bar" />
-                    </div>
+                <div className="chat-input-area" style={{ position: "relative" }}>
+                  <AnimatePresence>
+                    {showEmojiPicker && (
+                      <motion.div 
+                        className="emoji-picker-popup"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                      >
+                        {EMOJIS.map((em) => (
+                          <button
+                            key={em}
+                            className="emoji-btn"
+                            onClick={() => addEmoji(em)}
+                          >
+                            {em}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <div className="chat-input-wrap">
+                    <input
+                      className="chat-input"
+                      placeholder="Gửi tin nhắn..."
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={handleChatKeyDown}
+                    />
+                    <button
+                      className="chat-emoji-btn"
+                      onClick={() => setShowEmojiPicker((p) => !p)}
+                    >
+                      <Smile size={18} />
+                    </button>
+                    <button
+                      className="chat-send-btn"
+                      disabled={!chatInput.trim()}
+                      onClick={sendChat}
+                    >
+                      <Send size={16} />
+                    </button>
                   </div>
                 </div>
-                <div className="playlist-item-info">
-                  <div className="playlist-item-title">
-                    {currentTrack.title}
-                  </div>
-                  <div className="playlist-item-artist">
-                    {currentTrack.artist}
-                  </div>
-                </div>
-                <div className="playlist-item-duration">
-                  {formatTime(currentTrack.duration)}
-                </div>
-              </div>
+              </motion.div>
+            )}
 
-              {/* Up Next */}
-              {playingNext && (
-                <>
-                  <div className="playlist-next-label">Tiếp theo</div>
-                  <div className="playlist-item">
-                    <div className="playlist-item-art">
-                      <img
-                        src={proxyArtUrl(playingNext.artUrl)}
-                        alt={playingNext.title}
-                      />
-                    </div>
-                    <div className="playlist-item-info">
-                      <div className="playlist-item-title">
-                        {playingNext.title}
+                      <div className="playlist-item-title">{playingNext.title}</div>
+                      <div className="playlist-item-artist">{playingNext.artist}</div>
+            {/* Playlist Tab */}
+            {sidebarTab === "playlist" && (
+              <motion.div 
+                className="playlist-panel"
+                key="playlist"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Currently Playing */}
+                <div className="playlist-now-label">Đang phát</div>
+                <motion.div 
+                  className="playlist-item active"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="playlist-item-art">
+                    <img
+                      src={proxyArtUrl(currentTrack.artUrl)}
+                      alt={currentTrack.title}
+                    />
+                    <div className="playlist-item-playing-indicator">
+                      <div className="mini-visualizer">
+                        <div className="bar" />
+                        <div className="bar" />
+                        <div className="bar" />
                       </div>
-                      <div className="playlist-item-artist">
-                        {playingNext.artist}
-                      </div>
-                    </div>
-                    <div className="playlist-item-duration">
-                      {formatTime(playingNext.duration)}
                     </div>
                   </div>
-                </>
-              )}
+                  <div className="playlist-item-info">
+                    <div className="playlist-item-title">
+                      {currentTrack.title}
+                    </div>
+                    <div className="playlist-item-artist">
+                      {currentTrack.artist}
+                    </div>
+                  </div>
+                  <div className="playlist-item-duration">
+                    {formatTime(currentTrack.duration)}
+                  </div>
+                </motion.div>
 
-              {/* History */}
-              {songHistory && songHistory.length > 0 && (
-                <>
-                  <div className="playlist-history-label">Đã phát</div>
-                  {songHistory.map((track: TrackInfo) => (
-                    <div key={track.shId} className="playlist-item history">
+                {/* Up Next */}
+                {playingNext && (
+                  <>
+                    <div className="playlist-next-label">Tiếp theo</div>
+                    <motion.div 
+                      className="playlist-item"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                    >
                       <div className="playlist-item-art">
                         <img
-                          src={proxyArtUrl(track.artUrl)}
-                          alt={track.title}
+                          src={proxyArtUrl(playingNext.artUrl)}
+                          alt={playingNext.title}
                         />
                       </div>
                       <div className="playlist-item-info">
-                        <div className="playlist-item-title">{track.title}</div>
+                        <div className="playlist-item-title">
+                          {playingNext.title}
+                        </div>
                         <div className="playlist-item-artist">
-                          {track.artist} · {formatPlayedAt(track.playedAt)}
+                          {playingNext.artist}
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
+                      <div className="playlist-item-duration">
+                        {formatTime(playingNext.duration)}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
 
-          {/* Podcast Tab */}
-          {sidebarTab === "podcast" && (
-            <div className="podcast-tab-panel">
-              {DEMO_PODCASTS.map((pc) => (
-                <div key={pc.id} className="podcast-tab-item">
-                  <div
-                    className="podcast-tab-item-category"
-                    style={{
-                      color:
-                        pc.categoryColor === "purple"
-                          ? "#9b59ff"
-                          : pc.categoryColor === "blue"
-                            ? "#55C5F1"
-                            : pc.categoryColor === "green"
-                              ? "#2ecc71"
-                              : "#ff3b3f",
-                    }}
+                {/* History */}
+                {songHistory && songHistory.length > 0 && (
+                  <>
+                    <div className="playlist-history-label">Đã phát</div>
+                    {songHistory.map((track: TrackInfo, index: number) => (
+                      <motion.div 
+                        key={track.shId} 
+                        className="playlist-item history"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 + index * 0.05 }}
+                      >
+                        <div className="playlist-item-art">
+                          <img
+                            src={proxyArtUrl(track.artUrl)}
+                            alt={track.title}
+                          />
+                        </div>
+                        <div className="playlist-item-info">
+                          <div className="playlist-item-title">{track.title}</div>
+                          <div className="playlist-item-artist">
+                            {track.artist} · {formatPlayedAt(track.playedAt)}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </>
+                )}
+              </motion.div>
+            )}
+
+            {/* Podcast Tab */}
+            {sidebarTab === "podcast" && (
+              <motion.div 
+                className="podcast-tab-panel"
+                key="podcast"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {DEMO_PODCASTS.map((pc, index) => (
+                  <motion.div 
+                    key={pc.id} 
+                    className="podcast-tab-item"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
                   >
-                    {pc.category}
-                  </div>
-                  <div className="podcast-tab-item-text">{pc.title}</div>
-                  <div className="podcast-tab-item-footer">
-                    <span>Bởi {pc.author}</span>
-                    <span className={`podcast-voice-badge ${pc.voiceType}`}>
-                      {pc.voiceType === "ai" ? "Giọng AI" : "Giọng thật"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                    <div
+                      className="podcast-tab-item-category"
+                      style={{
+                        color:
+                          pc.categoryColor === "purple"
+                            ? "#9b59ff"
+                            : pc.categoryColor === "blue"
+                              ? "#55C5F1"
+                              : pc.categoryColor === "green"
+                                ? "#2ecc71"
+                                : "#ff3b3f",
+                      }}
+                    >
+                      {pc.category}
+                    </div>
+                    <div className="podcast-tab-item-text">{pc.title}</div>
+                    <div className="podcast-tab-item-footer">
+                      <span>Bởi {pc.author}</span>
+                      <span className={`podcast-voice-badge ${pc.voiceType}`}>
+                        {pc.voiceType === "ai" ? "Giọng AI" : "Giọng thật"}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
       {/* ===== MODALS ===== */}
-      {showRequestModal && (
-        <RequestMusicModal
-          onClose={() => setShowRequestModal(false)}
-          requestSearch={requestSearch}
-          setRequestSearch={setRequestSearch}
-          songHistory={songHistory}
-          onRequest={(song) => {
-            const newMsg: ChatMessage = {
-              id: Date.now().toString(),
-              type: "request",
-              name: "Bạn",
-              text: `Mình muốn nghe bài này!`,
-              time: new Date().toLocaleTimeString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              isSelf: true,
-              avatarColor: "#5F6EE0",
-              requestSong: song,
-            };
-            setChatMessages((prev) => [...prev, newMsg]);
-            setShowRequestModal(false);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {showRequestModal && (
+          <RequestMusicModal
+            onClose={() => setShowRequestModal(false)}
+            requestSearch={requestSearch}
+            setRequestSearch={setRequestSearch}
+            songHistory={songHistory}
+            onRequest={(song) => {
+              const newMsg: ChatMessage = {
+                id: Date.now().toString(),
+                type: "request",
+                name: "Bạn",
+                text: `Mình muốn nghe bài này!`,
+                time: new Date().toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+                isSelf: true,
+                avatarColor: "#5F6EE0",
+                requestSong: song,
+              };
+              setChatMessages((prev) => [...prev, newMsg]);
+              setShowRequestModal(false);
+            }}
+          />
+        )}
 
-      {showPodcastModal && (
-        <PodcastSubmitModal onClose={() => setShowPodcastModal(false)} />
-      )}
+        {showPodcastModal && (
+          <PodcastSubmitModal onClose={() => setShowPodcastModal(false)} />
+        )}
 
-      {showShareModal && (
-        <ShareNowPlayingModal
-          track={currentTrack}
-          stationName={stationName}
-          onClose={() => setShowShareModal(false)}
-        />
-      )}
+        {showShareModal && (
+          <ShareNowPlayingModal
+            track={currentTrack}
+            stationName={stationName}
+            onClose={() => setShowShareModal(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Floating Reactions */}
-      <div className="floating-reactions">
-        {floatingReactions.map((r) => (
-          <span
-            key={r.id}
-            className="floating-emoji"
-            style={{ left: r.x, animationDelay: "0s" }}
-          >
-            {r.emoji}
-          </span>
-        ))}
+      <div className="floating-reactions" style={{ pointerEvents: 'none', position: 'absolute', bottom: '80px', left: '50%', zIndex: 1000 }}>
+        <AnimatePresence>
+          {floatingReactions.map((r) => (
+            <motion.span
+              key={r.id}
+              className="floating-emoji"
+              initial={{ opacity: 0, y: 0, x: r.x, scale: 0.5 }}
+              animate={{ 
+                opacity: [0, 1, 1, 0], 
+                y: -300 - Math.random() * 100, 
+                x: r.x + (Math.random() * 100 - 50),
+                scale: [0.5, 1.5, 1.2, 1] 
+              }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 2.2, ease: "easeOut" }}
+              style={{ position: 'absolute', fontSize: '2rem', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))' }}
+            >
+              {r.emoji}
+            </motion.span>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -905,8 +1098,20 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="request-modal" onClick={(e) => e.stopPropagation()}>
+    <motion.div 
+      className="modal-overlay" 
+      onClick={onClose}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div 
+        className="request-modal" 
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+      >
         <div className="request-modal-header">
           <span className="request-modal-title">🎵 Request Nhạc</span>
           <button className="request-modal-close" onClick={onClose}>
@@ -965,8 +1170,8 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
             ))
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
@@ -982,8 +1187,20 @@ const PodcastSubmitModal: React.FC<PodcastSubmitModalProps> = ({ onClose }) => {
   const [voiceType, setVoiceType] = useState("ai");
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="podcast-modal" onClick={(e) => e.stopPropagation()}>
+    <motion.div 
+      className="modal-overlay" 
+      onClick={onClose}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div 
+        className="podcast-modal" 
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+      >
         <div className="podcast-modal-title">
           🎙️ Gửi Podcast
           <button className="request-modal-close" onClick={onClose}>
@@ -1051,8 +1268,8 @@ const PodcastSubmitModal: React.FC<PodcastSubmitModalProps> = ({ onClose }) => {
             Gửi Podcast
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

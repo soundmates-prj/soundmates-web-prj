@@ -2,6 +2,13 @@
    SystemSection.css
    ============================================ */
 
+.settings-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 /* ── Form group (dùng chung với Profile) ── */
 .form-group {
   display: flex;
@@ -13,7 +20,7 @@
 .form-group label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--neutral-700, #404040);
+  color: var(--text-primary);
 }
 
 .form-group input,
@@ -22,8 +29,8 @@
   border: 1px solid var(--neutral-300, #d4d4d4);
   border-radius: 8px;
   font-size: 13.5px;
-  color: var(--neutral-800, #262626);
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-primary);
   outline: none;
   font-family: inherit;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -37,8 +44,8 @@
 }
 
 .input-readonly {
-  background: var(--neutral-50, #fafafa) !important;
-  color: var(--neutral-400, #a3a3a3) !important;
+  background: var(--bg-secondary) !important;
+  color: var(--text-muted) !important;
   cursor: default;
 }
 
@@ -63,9 +70,11 @@
   padding-right: 38px;
   width: 100%;
   padding: 9px 38px 9px 12px;
-  border: 1px solid var(--neutral-300, #d4d4d4);
+  border: 1px solid var(--border-medium);
   border-radius: 8px;
   font-size: 13.5px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   outline: none;
   font-family: inherit;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -83,13 +92,13 @@
   transform: translateY(-50%);
   background: transparent;
   border: none;
-  color: var(--neutral-400, #a3a3a3);
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   padding: 0;
 }
-.pw-toggle:hover { color: var(--neutral-700, #404040); }
+.pw-toggle:hover { color: var(--text-primary); }
 
 /* ── Select with prefix icon + chevron ── */
 .select-wrap { position: relative; }
@@ -128,22 +137,22 @@
   align-items: center;
   gap: 8px;
   padding: 9px 14px;
-  background: var(--neutral-100, #f5f5f5);
-  border: 1px solid var(--neutral-200, #e5e5e5);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: var(--neutral-700, #404040);
+  color: var(--text-primary);
   cursor: pointer;
   width: fit-content;
   transition: background 0.15s;
 }
-.btn-change-pw:hover { background: var(--neutral-200, #e5e5e5); }
+.btn-change-pw:hover { background: var(--border-light); }
 
 /* ── Collapsible password section ── */
 .pw-section {
-  background: var(--neutral-50, #fafafa);
-  border: 1px solid var(--neutral-200, #e5e5e5);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
   border-radius: 10px;
   padding: 18px;
   margin-top: -8px;

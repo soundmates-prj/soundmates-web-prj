@@ -1,13 +1,16 @@
 import React, { useState } from "react";
 import "./Register.css";
-import logo from "../../assets/light_logo.png";
+import logoLight from "../../assets/light_logo.png";
+import logoDark from "../../assets/dark_logo.png";
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/common";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/axios";
 import { showError, showSuccess } from "../../components/common/toastUtils";
+import { useTheme } from "../../context/ThemeContext";
 
 const Register: React.FC = () => {
+  const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
@@ -107,7 +110,7 @@ const Register: React.FC = () => {
     <div className="register-container">
       <div className="register-left">
         <div className="brand">
-          <img src={logo} alt="SoundMates" />
+          <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
           <h1>SoundMates</h1>
           <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
         </div>

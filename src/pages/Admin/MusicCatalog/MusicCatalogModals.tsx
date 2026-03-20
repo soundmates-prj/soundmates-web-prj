@@ -1,7 +1,7 @@
 import { 
   X,
   Upload,
-  Image as ImageIcon,
+
   Save,
   Check,
   AlertCircle,

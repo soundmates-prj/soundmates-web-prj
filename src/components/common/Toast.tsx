@@ -14,7 +14,6 @@ export function ToastProvider() {
       draggable
       theme="light"
       toastClassName="custom-toast"
-      bodyClassName="custom-toast-body"
     />
   );
 }

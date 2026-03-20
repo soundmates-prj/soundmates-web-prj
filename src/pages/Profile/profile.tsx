@@ -20,6 +20,7 @@ import "./profile.css";
 import type { User } from "../../types/user";
 import type { Post } from "../../types/post";
 import CreatePostModal from "./modals/CreatePostModal";
+import { validateImageUrl } from "../../utils/stringUtils";
 
 type Tab = "overview" | "songs" | "playlists" | "podcasts" | "community";
 
@@ -109,6 +110,15 @@ export default function Profile() {
       .get("me/posts")
       .then((r) => setPosts(r.data?.data?.items ?? []))
       .catch((e) => console.error("Load posts failed", e));
+export default function Profile() {
+  const [user, setUser] = useState<User | null>(null);
+  const [tab, setTab] = useState<Tab>("overview");
+
+  useEffect(() => {
+    api
+      .get("/users/me/profile/full")
+      .then((r) => setUser(r.data.data))
+      .catch((e) => console.error("Load profile failed", e));
   }, []);
 
   if (!user) return <div className="pf-loading">Đang tải...</div>;
@@ -123,12 +133,17 @@ export default function Profile() {
   const handlePostCreated = (post: Post) => {
     setPosts((prev) => [post, ...prev]);
   };
+  
+  // Validate profile image URL
+  const validProfileImage = validateImageUrl(user.profileImageUrl) || defaultAv;
+  const validBackgroundImage = validateImageUrl(user.backgroundImageUrl) || defaultCover;
 
   return (
     <div className="pf">
       {/* COVER */}
       <div className="pf-cover">
         <img src={user.backgroundImageUrl || defaultCover} alt="cover" />
+        <img src={validBackgroundImage} alt="cover" />
       </div>
 
       {/* PROFILE BAR */}
@@ -138,6 +153,7 @@ export default function Profile() {
           <div className="pf-left">
             <Avatar
               src={user.profileImageUrl || defaultAv}
+              src={validProfileImage}
               name={name}
               size="xl"
               className="pf-av"
@@ -217,6 +233,7 @@ export default function Profile() {
               </div>
 
               {/* Community Posts */}
+              {/* Post */}
               <div className="pf-card">
                 <div className="pf-card-top">
                   <h3>
@@ -369,6 +386,38 @@ export default function Profile() {
                     ))}
                   </div>
                 )}
+                </div>
+                <div className="post">
+                  <div className="post-top">
+                    <Avatar
+                      src={validProfileImage}
+                      name={name}
+                      size="sm"
+                    />
+                    <div>
+                      <p className="post-name">{name}</p>
+                      <p className="post-time">2 giờ trước</p>
+                    </div>
+                  </div>
+                  <p className="post-body">
+                    Vừa tìm ra nghệ sĩ lofi mới! "Late Night Melodies" nghe cực
+                    chill 🎵
+                  </p>
+                  <div className="post-actions">
+                    <button className="post-btn">
+                      <Heart size={13} />
+                      324
+                    </button>
+                    <button className="post-btn">
+                      <MessageCircle size={13} />
+                      18
+                    </button>
+                    <button className="post-btn">
+                      <Share2 size={13} />
+                      Chia sẻ
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -496,6 +545,7 @@ export default function Profile() {
         )}
 
         {tab !== "overview" && tab !== "community" && (
+        {tab !== "overview" && (
           <div className="pf-empty">
             <Music2 size={28} />
             <p>Chưa có nội dung nào</p>

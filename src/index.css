@@ -155,6 +155,81 @@ body {
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 70px;
   --header-height: 60px;
+
+  /* ============================================
+     THEME SPECIFIC VARIABLES
+     ============================================ */
+  --header-bg: #ffffff;
+  --header-border: #e5e7eb;
+  --header-text: #374151;
+  --nav-bg: #ffffff;
+  --nav-border: #D1D5DB;
+  --nav-hover-border: #93DDF5;
+  --nav-hover-text: #55C5F1;
+  --nav-active-bg: #ffffff;
+  --nav-active-text: #55C5F1;
+  --nav-active-border: #55C5F1;
+
+  --footer-bg: #F9FAFB;
+  --footer-border: #55C5F1;
+  --footer-text: #6B7280;
+  --footer-title: #1F2937;
+  --footer-social-bg: #F3F4F6;
+  --footer-social-color: #000000;
+  --footer-social-hover-bg: #55C5F1;
+  --footer-social-hover-color: #ffffff;
+  
+  --dropdown-bg: #ffffff;
+  --dropdown-border: #E5E7EB;
+  --dropdown-text: #374151;
+  --dropdown-hover: #F3F4F6;
+  --dropdown-shadow: rgba(0, 0, 0, 0.1);
+  
+  --search-bg: #F9FAFB;
+  --search-border: #E5E7EB;
+  --search-text: #374151;
+}
+
+[data-theme='dark'] {
+  --header-bg: #121212;
+  --header-border: #333333;
+  --header-text: #e0e0e0;
+  --nav-bg: #1e1e1e;
+  --nav-border: #444444;
+  --nav-hover-border: #55C5F1;
+  --nav-hover-text: #55C5F1;
+  --nav-active-bg: #1e1e1e;
+  --nav-active-text: #55C5F1;
+  --nav-active-border: #55C5F1;
+
+  --footer-bg: #121212;
+  --footer-border: #55C5F1;
+  --footer-text: #a0a0a0;
+  --footer-title: #e0e0e0;
+  --footer-social-bg: #2a2a2a;
+  --footer-social-color: #ffffff;
+  --footer-social-hover-bg: #55C5F1;
+  --footer-social-hover-color: #ffffff;
+  
+  --dropdown-bg: #1e1e1e;
+  --dropdown-border: #333333;
+  --dropdown-text: #e0e0e0;
+  --dropdown-hover: #2a2a2a;
+  --dropdown-shadow: rgba(0, 0, 0, 0.5);
+
+  --search-bg: #1e1e1e;
+  --search-border: #444444;
+  --search-text: #e0e0e0;
+
+  /* Background Colors */
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-card: #1e1e1e;
+  
+  /* Text Colors */
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-inverse: #111827;
 }
 
 /* ============================================

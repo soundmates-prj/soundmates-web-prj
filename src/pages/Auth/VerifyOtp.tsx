@@ -1,14 +1,17 @@
 import React, { useRef, useState } from "react";
 import "./VerifyOtp.css";
-import logo from "../../assets/light_logo.png";
+import logoLight from "../../assets/light_logo.png";
+import logoDark from "../../assets/dark_logo.png";
 import { Button } from "../../components/common";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/axios";
 import { showError, showSuccess, showInfo } from "../../components/common/toastUtils";
 import { ShieldCheck } from "lucide-react";
 import { maskEmail } from "../../utils/stringUtils";
+import { useTheme } from "../../context/ThemeContext";
 
 const VerifyOtp: React.FC = () => {
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
@@ -102,7 +105,7 @@ const VerifyOtp: React.FC = () => {
     <div className="verify-container">
       {/* LEFT */}
       <div className="verify-left">
-        <img src={logo} alt="SoundMates" />
+        <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
         <h1>SoundMates</h1>
         <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
       </div>
