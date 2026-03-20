@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Plus, Smile, Globe, Users, Lock } from "lucide-react";
+import { X, Save, Smile, Globe, Users, Lock } from "lucide-react";
 
 const MOOD_TAGS = [
   "happy",
@@ -27,23 +27,25 @@ import "./ImageUploader.css";
 import type { User } from "../../../types/user";
 import type { Post } from "../../../types/post";
 
-interface CreatePostModalProps {
+interface EditPostModalProps {
   open: boolean;
+  post: Post | null;
   onClose: () => void;
   user: User;
   name: string;
   defaultAv: string;
-  onCreated: (post: Post) => void;
+  onUpdated: (post: Post) => void;
 }
 
-export default function CreatePostModal({
+export default function EditPostModal({
   open,
+  post,
   onClose,
   user,
   name,
   defaultAv,
-  onCreated,
-}: CreatePostModalProps) {
+  onUpdated,
+}: EditPostModalProps) {
   const [title, setTitle] = useState("");
   const [contentText, setContentText] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -53,18 +55,18 @@ export default function CreatePostModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* reset khi mở */
+  /* Prefill dữ liệu bài hiện tại */
   useEffect(() => {
-    if (open) {
-      setTitle("");
-      setContentText("");
-      setImageUrl(null);
-      setAudioUrl(null);
-      setPrivacyScope("public");
-      setMoodTag("");
+    if (post && open) {
+      setTitle(post.title ?? "");
+      setContentText(post.contentText ?? "");
+      setImageUrl(post.imageUrl || null);
+      setAudioUrl(post.audioUrl || null);
+      setPrivacyScope((post.privacyScope as PrivacyScope) ?? "public");
+      setMoodTag(post.moodTag ?? "");
       setError("");
     }
-  }, [open]);
+  }, [post, open]);
 
   /* Escape để đóng */
   useEffect(() => {
@@ -80,38 +82,41 @@ export default function CreatePostModal({
       setError("Vui lòng nhập nội dung bài đăng.");
       return;
     }
+    if (!post) return;
     setError("");
     setLoading(true);
     try {
       const payload: Record<string, string> = {
         contentText: contentText.trim(),
         privacyScope,
+        // Luôn gửi title (kể cả rỗng) để backend có thể xoá title cũ
+        title: title.trim(),
+        // Luôn gửi imageUrl/audioUrl: "" = xoá media, URL = giữ/thay mới
+        imageUrl: imageUrl ?? "",
+        audioUrl: audioUrl ?? "",
       };
-      if (title.trim()) payload.title = title.trim();
-      if (imageUrl) payload.imageUrl = imageUrl; // Cloudinary URL
-      if (audioUrl) payload.audioUrl = audioUrl; // Cloudinary URL
       if (moodTag) payload.moodTag = moodTag;
 
-      const res = await api.post("posts", payload);
-      onCreated(res.data?.data ?? res.data);
+      const res = await api.put(`posts/${post.id}`, payload);
+      onUpdated(res.data?.data ?? res.data);
       onClose();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { message?: string } } };
       setError(
-        err?.response?.data?.message ?? "Đăng bài thất bại, thử lại nhé!",
+        err?.response?.data?.message ?? "Cập nhật thất bại, thử lại nhé!",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  if (!open) return null;
+  if (!open || !post) return null;
 
   return (
     <div className="cp-overlay" onClick={onClose}>
       <div className="cp-modal" onClick={(e) => e.stopPropagation()}>
         <div className="cp-header">
-          <h2 className="cp-title">Tạo bài đăng</h2>
+          <h2 className="cp-title">Chỉnh sửa bài đăng</h2>
           <button className="cp-close" onClick={onClose} aria-label="Đóng">
             <X size={18} />
           </button>
@@ -151,7 +156,7 @@ export default function CreatePostModal({
 
         <textarea
           className="cp-textarea"
-          placeholder="Bạn đang nghe gì? Chia sẻ cảm xúc âm nhạc của bạn..."
+          placeholder="Nội dung bài đăng..."
           value={contentText}
           onChange={(e) => setContentText(e.target.value)}
           rows={4}
@@ -175,7 +180,7 @@ export default function CreatePostModal({
         </div>
 
         <div className="cp-media-label">
-          <span>Thêm phương tiện</span>
+          <span>Phương tiện</span>
         </div>
 
         <ImageUploader preview={imageUrl} onChange={setImageUrl} />
@@ -203,11 +208,11 @@ export default function CreatePostModal({
             >
               {loading ? (
                 <>
-                  <span className="cp-spinner" /> Đang đăng...
+                  <span className="cp-spinner" /> Đang lưu...
                 </>
               ) : (
                 <>
-                  <Plus size={14} /> Đăng bài
+                  <Save size={14} /> Lưu thay đổi
                 </>
               )}
             </button>
