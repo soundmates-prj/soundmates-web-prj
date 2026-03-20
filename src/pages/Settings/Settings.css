@@ -73,13 +73,13 @@
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--neutral-600, #525252);
   cursor: pointer;
   text-align: left;
   transition: background 0.15s, color 0.15s;
 }
-.sidebar-item:hover        { background: var(--bg-secondary); color: var(--primary-500, #004395); }
-.sidebar-item.active       { background: var(--bg-secondary); color: var(--primary-500, #004395); font-weight: 600; }
+.sidebar-item:hover        { background: var(--primary-50, #e6f0fb); color: var(--primary-500, #004395); }
+.sidebar-item.active       { background: var(--primary-50, #e6f0fb); color: var(--primary-500, #004395); font-weight: 600; }
 
 .sidebar-logout {
   display: flex;

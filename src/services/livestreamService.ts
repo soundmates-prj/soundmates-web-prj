@@ -1,4 +1,4 @@
-import api from './axios';
+import api from "./axios";
 
 // Types for the backend API response
 export interface TrackInfo {
@@ -49,14 +49,10 @@ export interface SongRequestItem {
 }
 
 // The station UUID from the backend
-<<<<<<< Updated upstream
-const STATION_UUID = '0ce08925-9216-4aa3-8c0b-e8d4e19ef2a3';
-=======
 const STATION_UUID = "62cc221f-063b-4522-8401-2b5fe9614aee";
->>>>>>> Stashed changes
 
 // AzuraCast direct API for requests
-const AZURACAST_BASE = 'http://localhost:5000/api';
+const AZURACAST_BASE = "http://localhost:5000/api";
 const STATION_ID = 1;
 
 export const livestreamService = {
@@ -65,7 +61,7 @@ export const livestreamService = {
    */
   async getNowPlaying(): Promise<NowPlayingData> {
     const response = await api.get<ApiResponse<NowPlayingData>>(
-      `station/${STATION_UUID}/now-playing`
+      `station/${STATION_UUID}/now-playing`,
     );
     return response.data.data;
   },
@@ -75,7 +71,9 @@ export const livestreamService = {
    */
   async getRequestableSongs(): Promise<SongRequestItem[]> {
     try {
-      const response = await fetch(`${AZURACAST_BASE}/station/${STATION_ID}/requests`);
+      const response = await fetch(
+        `${AZURACAST_BASE}/station/${STATION_ID}/requests`,
+      );
       const data = await response.json();
       return data || [];
     } catch {
@@ -88,9 +86,12 @@ export const livestreamService = {
    */
   async requestSong(requestId: string): Promise<boolean> {
     try {
-      const response = await fetch(`${AZURACAST_BASE}/station/${STATION_ID}/request/${requestId}`, {
-        method: 'POST',
-      });
+      const response = await fetch(
+        `${AZURACAST_BASE}/station/${STATION_ID}/request/${requestId}`,
+        {
+          method: "POST",
+        },
+      );
       return response.ok;
     } catch {
       return false;
@@ -105,9 +106,9 @@ export const livestreamService = {
    * can forward the request to AzuraCast without CORS issues.
    */
   getListenUrl(listenUrl?: string): string {
-    const raw = listenUrl || 'http://localhost/listen/my_fav_station/radio.mp3';
+    const raw = listenUrl || "http://localhost/listen/my_fav_station/radio.mp3";
     // Strip the host part so the URL is root-relative (proxied by Vite)
-    return raw.replace(/^https?:\/\/[^\/]+/, '');
+    return raw.replace(/^https?:\/\/[^\/]+/, "");
   },
 };
 

@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
     LayoutDashboard,
     Sparkles,
@@ -8,12 +9,13 @@ import {
     Music,
     Star,
     BarChart3,
-    Bell,
     Settings,
     ChevronRight,
-    Headphones
+    Headphones,
+    LogOut
 } from 'lucide-react';
 import "./AdminSidebar.css";
+import { showSuccess } from "../../components/common/toastUtils";
 
 interface MenuItem {
     id: string;
@@ -42,6 +44,19 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
     const location = useLocation();
     const navigate = useNavigate();
+    const [userInfo, setUserInfo] = useState<any>(null);
+
+    useEffect(() => {
+        // Load user info from localStorage
+        const storedUserInfo = localStorage.getItem('userInfo');
+        if (storedUserInfo) {
+            try {
+                setUserInfo(JSON.parse(storedUserInfo));
+            } catch (error) {
+                console.error('Failed to parse user info:', error);
+            }
+        }
+    }, []);
 
     const isActive = (path: string) => {
         return location.pathname === path;
@@ -49,6 +64,21 @@ export default function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
 
     const handleNavigation = (path: string) => {
         navigate(path);
+    };
+
+    const handleLogout = () => {
+        // Clear localStorage
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('userInfo');
+        
+        // Dispatch auth change event
+        window.dispatchEvent(new Event('authChange'));
+        
+        // Show success message
+        showSuccess('Đăng xuất thành công', 'Hẹn gặp lại bạn!');
+        
+        // Redirect to login
+        navigate('/login');
     };
 
     return (
@@ -95,14 +125,25 @@ export default function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
             {/* User Profile Section */}
             <div className="sidebar-user">
                 <div className="user-avatar">
-                    <span>A</span>
+                    <span>{userInfo?.firstName?.charAt(0) || userInfo?.username?.charAt(0) || 'A'}</span>
                 </div>
                 {!collapsed && (
                     <div className="user-info">
-                        <span className="user-name">Admin User</span>
-                        <span className="user-role">Super Admin</span>
+                        <span className="user-name">
+                            {userInfo?.firstName && userInfo?.lastName 
+                                ? `${userInfo.firstName} ${userInfo.lastName}` 
+                                : userInfo?.username || 'Admin User'}
+                        </span>
+                        <span className="user-role">{userInfo?.roleName || 'Admin'}</span>
                     </div>
                 )}
+                <button 
+                    className="logout-btn" 
+                    onClick={handleLogout}
+                    title="Đăng xuất"
+                >
+                    <LogOut size={18} />
+                </button>
             </div>
         </aside>
     );

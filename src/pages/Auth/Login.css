@@ -7,138 +7,105 @@
   display: flex;
   height: 100vh;
   animation: fadeIn 0.6s ease-out;
-}
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
-  to {
-    opacity: 1;
-  }
-}
-
-/* LEFT */
-.login-left {
-  flex: 1;
-  background: #3C5F99;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-
-.brand {
-  text-align: center;
-  max-width: 400px;
-  animation: slideLeft 0.8s ease-out;
-}
-
-@keyframes slideLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-40px);
+  /* LEFT */
+  .login-left {
+    flex: 1;
+    background: #3C5F99;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
   }
 
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-
-.brand img {
-  width: 200px;
-  margin-bottom: 20px;
-}
-
-.brand h1 {
-  font-family: poppins, sans-serif;
-  font-size: 36px;
-  margin-bottom: 8px;
-  color: #55C5F1;
-}
-
-.brand p {
-  font-family: poppins, sans-serif;
-  font-size: 16px;
-  opacity: 0.9;
-  color: #ffffff;
-}
-
-/* RIGHT */
-.login-right {
-  flex: 1;
-  background: #f7f9fc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.login-box {
-  width: 400px;
-  background: #ffffff;
-  padding: 40px;
-  border-radius: 14px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-  animation: slideUp 0.7s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
+  .brand {
+    text-align: center;
+    max-width: 400px;
+    animation: slideLeft 0.8s ease-out;
   }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  @keyframes slideLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
-}
 
 
-.login-box h2 {
-  font-family: poppins, sans-serif;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 6px;
-  color: #55C5F1;
-}
+  .brand img {
+    width: 200px;
+    margin-bottom: 20px;
+  }
 
-.subtitle {
-  font-family: poppins, sans-serif;
-  text-align: center;
-  font-size: 14px;
-  color: #777;
-  margin-bottom: 28px;
-}
+  .brand h1 {
+    font-family: poppins, sans-serif;
+    font-size: 36px;
+    margin-bottom: 8px;
+    color: #55C5F1;
+  }
 
-/* INPUT */
-.input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-}
+  .brand p {
+    font-family: poppins, sans-serif;
+    font-size: 16px;
+    opacity: 0.9;
+    color: #ffffff;
+  }
 
-<<<<<<< Updated upstream
-.input-wrapper svg {
-  color: #5bc0eb;
-  flex-shrink: 0;
-}
+  /* RIGHT */
+  .login-right {
+    flex: 1;
+    background: #f7f9fc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-.input-wrapper input {
-  border: none;
-  outline: none;
-  flex: 1;
-  font-size: 14px;
-  background: transparent;
-}
-=======
+  .login-box {
+    width: 400px;
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    animation: slideUp 0.7s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+
+  .login-box h2 {
+    font-family: poppins, sans-serif;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 6px;
+    color: #55C5F1;
+  }
+
   /* RIGHT */
   .login-right {
     flex: 1;
@@ -157,55 +124,45 @@
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
     animation: slideUp 0.7s ease-out;
   }
->>>>>>> Stashed changes
 
-/* Ẩn icon mặc định của trình duyệt */
-.input-wrapper input::-ms-reveal,
-.input-wrapper input::-ms-clear {
-  display: none;
-}
+  .input-wrapper svg {
+    color: #5bc0eb;
+    flex-shrink: 0;
+  }
 
-.input-wrapper input::-webkit-contacts-auto-fill-button,
-.input-wrapper input::-webkit-credentials-auto-fill-button {
-  visibility: hidden;
-  display: none !important;
-  pointer-events: none;
-}
+  .input-wrapper input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 14px;
+    background: transparent;
+  }
 
-.toggle-password {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  color: #999;
-  transition: color 0.2s ease;
-}
+  /* Ẩn icon mặc định của trình duyệt */
+  .input-wrapper input::-ms-reveal,
+  .input-wrapper input::-ms-clear {
+    display: none;
+  }
 
-.toggle-password:hover {
-  color: #5bc0eb;
-}
+  .input-wrapper input::-webkit-contacts-auto-fill-button,
+  .input-wrapper input::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    display: none !important;
+    pointer-events: none;
+  }
 
+  .toggle-password {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: #999;
+    transition: color 0.2s ease;
+  }
 
-/* ACTIONS */
-.actions {
-  text-align: right;
-  margin-bottom: 18px;
-}
+  .toggle-password:hover {
+    color: #5bc0eb;
+  }
 
-<<<<<<< Updated upstream
-.forgot {
-  font-family: poppins, sans-serif;
-  font-size: 13px;
-  color: #5bc0eb;
-  cursor: pointer;
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-=======
   .subtitle {
     font-family: poppins, sans-serif;
     text-align: center;
@@ -225,21 +182,14 @@
     padding: 12px 14px;
     margin-bottom: 16px;
   }
->>>>>>> Stashed changes
 
-.divider span {
-  flex: 1;
-  height: 1px;
-  background: #ddd;
-}
+  .forgot {
+    font-family: poppins, sans-serif;
+    font-size: 13px;
+    color: #5bc0eb;
+    cursor: pointer;
+  }
 
-<<<<<<< Updated upstream
-.divider p {
-  font-family: poppins, sans-serif;
-  font-size: 13px;
-  color: #999;
-}
-=======
   .input-wrapper input {
     border: none;
     outline: none;
@@ -248,35 +198,13 @@
     background: transparent;
     color: var(--text-primary);
   }
->>>>>>> Stashed changes
 
-/* GOOGLE */
-.btn-google {
-  font-family: poppins, sans-serif;
-  width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 10px;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.25s ease;
-}
+  .divider span {
+    flex: 1;
+    height: 1px;
+    background: #ddd;
+  }
 
-<<<<<<< Updated upstream
-.btn-google:hover {
-  background: #f3f7fb;
-}
-
-
-.btn-google img {
-  width: 18px;
-}
-=======
   .input-wrapper input::-webkit-contacts-auto-fill-button,
   .input-wrapper input::-webkit-credentials-auto-fill-button {
     visibility: hidden;
@@ -349,25 +277,16 @@
   .btn-google:hover {
     background: var(--bg-secondary);
   }
->>>>>>> Stashed changes
 
 
-/* REGISTER */
-.register {
-  font-family: poppins, sans-serif;
-  text-align: center;
-  margin-top: 20px;
-  font-size: 13px;
-}
+  /* REGISTER */
+  .register {
+    font-family: poppins, sans-serif;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+  }
 
-<<<<<<< Updated upstream
-.register span {
-  font-family: poppins, sans-serif;
-  color: #5bc0eb;
-  cursor: pointer;
-  font-weight: 600;
-}
-=======
 
   /* REGISTER */
   .register {
@@ -409,4 +328,3 @@
 [data-theme='dark'] .login-container .btn-primary:hover {
   background: linear-gradient(135deg, #3AA8D4 0%, #55C5F1 100%);
 }
->>>>>>> Stashed changes

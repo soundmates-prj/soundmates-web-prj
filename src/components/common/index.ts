@@ -4,3 +4,5 @@ export { default as Card } from './Card';
 export { default as Avatar } from './Avatar';
 export { default as Badge } from './Badge';
 export { ToastProvider } from './Toast';
+export { default as Loading } from './Loading';
+export { default as ProtectedRoute } from './ProtectedRoute';

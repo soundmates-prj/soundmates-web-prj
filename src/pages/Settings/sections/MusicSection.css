@@ -1,0 +1,84 @@
+/* ============================================
+   MusicSection.css
+   ============================================ */
+
+/* ── Two-column panel ── */
+.music-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: -16px;
+}
+
+.music-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ── Search bar ── */
+.music-search-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.music-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--neutral-400, #a3a3a3);
+  pointer-events: none;
+}
+
+.music-search-input {
+  width: 100%;
+  padding: 9px 12px 9px 32px;
+  border: 1px solid var(--neutral-300, #d4d4d4);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.music-search-input:focus {
+  border-color: var(--primary-400, #3387df);
+  box-shadow: 0 0 0 3px rgba(52, 135, 223, 0.1);
+}
+
+/* ── Scrollable song list ── */
+.music-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.music-list::-webkit-scrollbar        { width: 4px; }
+.music-list::-webkit-scrollbar-track  { background: transparent; }
+.music-list::-webkit-scrollbar-thumb  { background: var(--neutral-300, #d4d4d4); border-radius: 4px; }
+
+/* ── Right-panel hint ── */
+.music-right-hint {
+  font-size: 12px;
+  color: var(--neutral-400, #a3a3a3);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+/* ── Empty state ── */
+.music-empty {
+  font-size: 12.5px;
+  color: var(--neutral-400, #a3a3a3);
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .music-panel { grid-template-columns: 1fr; }
+}

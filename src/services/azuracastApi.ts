@@ -1,16 +1,16 @@
 // AzuraCast Music Catalog API Service
-import axios from 'axios';
+import axios from "axios";
 
 // Base AzuraCast API configuration
-const AZURACAST_BASE_URL = 'http://localhost:5000/api'; // Thay đổi URL theo cấu hình của bạn
-const AZURACAST_TOKEN = 'f1785167c121b500:e43ea60801a9af0e111a78a8d7c76762';
+const AZURACAST_BASE_URL = "http://localhost:8081/api"; // Thay đổi URL theo cấu hình của bạn
+const AZURACAST_TOKEN = "fa5093c6c01985e1:187b5dd46ba5434cccea3c397625e9f3";
 
 // Create axios instance for AzuraCast
 const azuracastApi = axios.create({
   baseURL: AZURACAST_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${AZURACAST_TOKEN}`,
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${AZURACAST_TOKEN}`,
   },
   timeout: 30000,
 });
@@ -18,12 +18,14 @@ const azuracastApi = axios.create({
 // Request interceptor for logging
 azuracastApi.interceptors.request.use(
   (config) => {
-    console.log(`AzuraCast API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    console.log(
+      `AzuraCast API Request: ${config.method?.toUpperCase()} ${config.url}`,
+    );
     return config;
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor for error handling
@@ -32,9 +34,12 @@ azuracastApi.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('AzuraCast API Error:', error.response?.data || error.message);
+    console.error(
+      "AzuraCast API Error:",
+      error.response?.data || error.message,
+    );
     return Promise.reject(error);
-  }
+  },
 );
 
 // TypeScript interfaces for AzuraCast API responses
@@ -145,23 +150,30 @@ export interface AzuraCastUploadFile {
 export interface MediaFilterOptions {
   searchPhrase?: string;
   playlists?: string;
-  sort?: 'song_id' | 'title' | 'artist' | 'album' | 'genre' | 'length' | 'mtime';
-  sortOrder?: 'asc' | 'desc';
+  sort?:
+    | "song_id"
+    | "title"
+    | "artist"
+    | "album"
+    | "genre"
+    | "length"
+    | "mtime";
+  sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
 }
 
 export interface PlaylistFilterOptions {
   searchPhrase?: string;
-  sort?: 'name' | 'type';
-  sortOrder?: 'asc' | 'desc';
+  sort?: "name" | "type";
+  sortOrder?: "asc" | "desc";
 }
 
 // Music Catalog API functions
 export const musicCatalogApi = {
   // Station Management
   async getStations(): Promise<AzuraCastStation[]> {
-    const response = await azuracastApi.get('/stations');
+    const response = await azuracastApi.get("/stations");
     return response.data;
   },
 
@@ -171,30 +183,45 @@ export const musicCatalogApi = {
   },
 
   // Media/Files Management
-  async getMediaFiles(stationId: number, options: MediaFilterOptions = {}): Promise<{
-    data: AzuraCastMedia[],
-    links: any,
-    meta: any
+  async getMediaFiles(
+    stationId: number,
+    options: MediaFilterOptions = {},
+  ): Promise<{
+    data: AzuraCastMedia[];
+    links: any;
+    meta: any;
   }> {
     const params = new URLSearchParams();
-    
-    if (options.searchPhrase) params.append('searchPhrase', options.searchPhrase);
-    if (options.playlists) params.append('playlists', options.playlists);
-    if (options.sort) params.append('sort', options.sort);
-    if (options.sortOrder) params.append('sortOrder', options.sortOrder);
-    if (options.page) params.append('page', options.page.toString());
-    if (options.limit) params.append('limit', options.limit.toString());
 
-    const response = await azuracastApi.get(`/station/${stationId}/files?${params.toString()}`);
+    if (options.searchPhrase)
+      params.append("searchPhrase", options.searchPhrase);
+    if (options.playlists) params.append("playlists", options.playlists);
+    if (options.sort) params.append("sort", options.sort);
+    if (options.sortOrder) params.append("sortOrder", options.sortOrder);
+    if (options.page) params.append("page", options.page.toString());
+    if (options.limit) params.append("limit", options.limit.toString());
+
+    const response = await azuracastApi.get(
+      `/station/${stationId}/files?${params.toString()}`,
+    );
     return response.data;
   },
 
-  async getMediaFile(stationId: number, mediaId: number): Promise<AzuraCastMedia> {
-    const response = await azuracastApi.get(`/station/${stationId}/file/${mediaId}`);
+  async getMediaFile(
+    stationId: number,
+    mediaId: number,
+  ): Promise<AzuraCastMedia> {
+    const response = await azuracastApi.get(
+      `/station/${stationId}/file/${mediaId}`,
+    );
     return response.data;
   },
 
-  async updateMediaFile(stationId: number, mediaId: number, data: Partial<AzuraCastMedia>): Promise<void> {
+  async updateMediaFile(
+    stationId: number,
+    mediaId: number,
+    data: Partial<AzuraCastMedia>,
+  ): Promise<void> {
     await azuracastApi.put(`/station/${stationId}/file/${mediaId}`, data);
   },
 
@@ -202,100 +229,135 @@ export const musicCatalogApi = {
     await azuracastApi.delete(`/station/${stationId}/file/${mediaId}`);
   },
 
-  async uploadMediaFile(stationId: number, formData: FormData): Promise<AzuraCastMedia> {
+  async uploadMediaFile(
+    stationId: number,
+    formData: FormData,
+  ): Promise<AzuraCastMedia> {
     // Try the single file upload endpoint first
     try {
-      const response = await azuracastApi.post(`/station/${stationId}/files/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+      const response = await azuracastApi.post(
+        `/station/${stationId}/files/upload`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 60000, // Increase timeout for large files
         },
-        timeout: 60000, // Increase timeout for large files
-      });
-      
-      console.log('Upload response from /files/upload:', response.data);
-      
+      );
+
+      console.log("Upload response from /files/upload:", response.data);
+
       if (response.data) {
         return Array.isArray(response.data) ? response.data[0] : response.data;
       }
     } catch (error) {
-      console.warn('Upload endpoint failed, trying bulk endpoint:', error);
+      console.warn("Upload endpoint failed, trying bulk endpoint:", error);
     }
-    
+
     // Fallback to bulk files endpoint
-    const response = await azuracastApi.post(`/station/${stationId}/files`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
+    const response = await azuracastApi.post(
+      `/station/${stationId}/files`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 60000, // Increase timeout for large files
       },
-      timeout: 60000, // Increase timeout for large files
-    });
-    
-    console.log('Upload response from /files:', response.data);
-    
+    );
+
+    console.log("Upload response from /files:", response.data);
+
     // AzuraCast returns an array of uploaded files, take the first one
     if (Array.isArray(response.data) && response.data.length > 0) {
-      console.log('Returning first item from array:', response.data[0]);
+      console.log("Returning first item from array:", response.data[0]);
       return response.data[0];
     } else if (response.data && !Array.isArray(response.data)) {
-      console.log('Returning single response object:', response.data);
+      console.log("Returning single response object:", response.data);
       return response.data;
     } else {
-      console.error('Invalid upload response format:', response.data);
+      console.error("Invalid upload response format:", response.data);
       // If response doesn't contain media data, create a basic structure
       if (response.data && response.data.success) {
         // Some APIs return just success message, create basic media object
         return {
-            id: undefined, // Will be handled by musicCatalogService
-            title: 'Uploaded Track',
-            artist: 'Unknown Artist',
-            album: 'Unknown Album',
-            length_text: '0:00',
-            genre: 'Unknown',
-            unique_id: `temp_${Date.now()}`,
-            song_id: `temp_${Date.now()}`,
-            text: 'Uploaded Track',
-            lyrics: '',
-            length: 0,
-            path: '/uploaded',
-            custom_fields: [],
-            media: {
-                modified_time: Math.floor(Date.now() / 1000)
-            }
+          id: undefined, // Will be handled by musicCatalogService
+          title: "Uploaded Track",
+          artist: "Unknown Artist",
+          album: "Unknown Album",
+          length_text: "0:00",
+          genre: "Unknown",
+          unique_id: `temp_${Date.now()}`,
+          song_id: `temp_${Date.now()}`,
+          text: "Uploaded Track",
+          lyrics: "",
+          length: 0,
+          path: "/uploaded",
+          custom_fields: [],
+          media: {
+            modified_time: Math.floor(Date.now() / 1000),
+          },
         } as unknown as AzuraCastMedia;
       }
-      throw new Error('No file uploaded or invalid response format');
+      throw new Error("No file uploaded or invalid response format");
     }
   },
 
   async batchDeleteMedia(stationId: number, mediaIds: number[]): Promise<void> {
     await azuracastApi.delete(`/station/${stationId}/files`, {
-      data: { files: mediaIds }
+      data: { files: mediaIds },
     });
   },
 
   // Playlist Management
-  async getPlaylists(stationId: number, options: PlaylistFilterOptions = {}): Promise<AzuraCastPlaylist[]> {
+  async getPlaylists(
+    stationId: number,
+    options: PlaylistFilterOptions = {},
+  ): Promise<AzuraCastPlaylist[]> {
     const params = new URLSearchParams();
-    
-    if (options.searchPhrase) params.append('searchPhrase', options.searchPhrase);
-    if (options.sort) params.append('sort', options.sort);
-    if (options.sortOrder) params.append('sortOrder', options.sortOrder);
 
-    const response = await azuracastApi.get(`/station/${stationId}/playlists?${params.toString()}`);
+    if (options.searchPhrase)
+      params.append("searchPhrase", options.searchPhrase);
+    if (options.sort) params.append("sort", options.sort);
+    if (options.sortOrder) params.append("sortOrder", options.sortOrder);
+
+    const response = await azuracastApi.get(
+      `/station/${stationId}/playlists?${params.toString()}`,
+    );
     return response.data;
   },
 
-  async getPlaylist(stationId: number, playlistId: number): Promise<AzuraCastPlaylist> {
-    const response = await azuracastApi.get(`/station/${stationId}/playlist/${playlistId}`);
+  async getPlaylist(
+    stationId: number,
+    playlistId: number,
+  ): Promise<AzuraCastPlaylist> {
+    const response = await azuracastApi.get(
+      `/station/${stationId}/playlist/${playlistId}`,
+    );
     return response.data;
   },
 
-  async createPlaylist(stationId: number, data: Partial<AzuraCastPlaylist>): Promise<AzuraCastPlaylist> {
-    const response = await azuracastApi.post(`/station/${stationId}/playlists`, data);
+  async createPlaylist(
+    stationId: number,
+    data: Partial<AzuraCastPlaylist>,
+  ): Promise<AzuraCastPlaylist> {
+    const response = await azuracastApi.post(
+      `/station/${stationId}/playlists`,
+      data,
+    );
     return response.data;
   },
 
-  async updatePlaylist(stationId: number, playlistId: number, data: Partial<AzuraCastPlaylist>): Promise<void> {
-    await azuracastApi.put(`/station/${stationId}/playlist/${playlistId}`, data);
+  async updatePlaylist(
+    stationId: number,
+    playlistId: number,
+    data: Partial<AzuraCastPlaylist>,
+  ): Promise<void> {
+    await azuracastApi.put(
+      `/station/${stationId}/playlist/${playlistId}`,
+      data,
+    );
   },
 
   async deletePlaylist(stationId: number, playlistId: number): Promise<void> {
@@ -303,21 +365,40 @@ export const musicCatalogApi = {
   },
 
   // Playlist Media Management
-  async getPlaylistMedia(stationId: number, playlistId: number): Promise<AzuraCastMedia[]> {
-    const response = await azuracastApi.get(`/station/${stationId}/playlist/${playlistId}/files`);
+  async getPlaylistMedia(
+    stationId: number,
+    playlistId: number,
+  ): Promise<AzuraCastMedia[]> {
+    const response = await azuracastApi.get(
+      `/station/${stationId}/playlist/${playlistId}/files`,
+    );
     return response.data;
   },
 
-  async addMediaToPlaylist(stationId: number, playlistId: number, mediaIds: number[]): Promise<void> {
-    await azuracastApi.put(`/station/${stationId}/playlist/${playlistId}/files`, {
-      files: mediaIds.map(id => ({ media_id: id }))
-    });
+  async addMediaToPlaylist(
+    stationId: number,
+    playlistId: number,
+    mediaIds: number[],
+  ): Promise<void> {
+    await azuracastApi.put(
+      `/station/${stationId}/playlist/${playlistId}/files`,
+      {
+        files: mediaIds.map((id) => ({ media_id: id })),
+      },
+    );
   },
 
-  async removeMediaFromPlaylist(stationId: number, playlistId: number, mediaIds: number[]): Promise<void> {
-    await azuracastApi.delete(`/station/${stationId}/playlist/${playlistId}/files`, {
-      data: { files: mediaIds.map(id => ({ media_id: id })) }
-    });
+  async removeMediaFromPlaylist(
+    stationId: number,
+    playlistId: number,
+    mediaIds: number[],
+  ): Promise<void> {
+    await azuracastApi.delete(
+      `/station/${stationId}/playlist/${playlistId}/files`,
+      {
+        data: { files: mediaIds.map((id) => ({ media_id: id })) },
+      },
+    );
   },
 
   // Statistics and Reports
@@ -328,7 +409,9 @@ export const musicCatalogApi = {
     by_genre: Record<string, number>;
     by_artist: Record<string, number>;
   }> {
-    const response = await azuracastApi.get(`/station/${stationId}/files/stats`);
+    const response = await azuracastApi.get(
+      `/station/${stationId}/files/stats`,
+    );
     return response.data;
   },
 
@@ -344,41 +427,56 @@ export const musicCatalogApi = {
   },
 
   // Search and Filter utilities
-  async searchMedia(stationId: number, query: string, limit = 50): Promise<AzuraCastMedia[]> {
+  async searchMedia(
+    stationId: number,
+    query: string,
+    limit = 50,
+  ): Promise<AzuraCastMedia[]> {
     const response = await this.getMediaFiles(stationId, {
       searchPhrase: query,
       limit,
-      sort: 'title',
-      sortOrder: 'asc'
+      sort: "title",
+      sortOrder: "asc",
     });
     return response.data;
   },
 
-  async getMediaByGenre(stationId: number, genre: string, limit = 50): Promise<AzuraCastMedia[]> {
+  async getMediaByGenre(
+    stationId: number,
+    genre: string,
+    limit = 50,
+  ): Promise<AzuraCastMedia[]> {
     const response = await this.getMediaFiles(stationId, {
       searchPhrase: `genre:${genre}`,
       limit,
-      sort: 'title',
-      sortOrder: 'asc'
+      sort: "title",
+      sortOrder: "asc",
     });
     return response.data;
   },
 
-  async getMediaByArtist(stationId: number, artist: string, limit = 50): Promise<AzuraCastMedia[]> {
+  async getMediaByArtist(
+    stationId: number,
+    artist: string,
+    limit = 50,
+  ): Promise<AzuraCastMedia[]> {
     const response = await this.getMediaFiles(stationId, {
       searchPhrase: `artist:${artist}`,
       limit,
-      sort: 'title',
-      sortOrder: 'asc'
+      sort: "title",
+      sortOrder: "asc",
     });
     return response.data;
   },
 
   // Bulk operations
-  async bulkUpdateMedia(stationId: number, updates: Array<{
-    id: number;
-    data: Partial<AzuraCastMedia>;
-  }>): Promise<void> {
+  async bulkUpdateMedia(
+    stationId: number,
+    updates: Array<{
+      id: number;
+      data: Partial<AzuraCastMedia>;
+    }>,
+  ): Promise<void> {
     // Process updates sequentially to avoid overwhelming the server
     for (const update of updates) {
       await this.updateMediaFile(stationId, update.id, update.data);
@@ -386,27 +484,37 @@ export const musicCatalogApi = {
   },
 
   // File management
-  async renameMediaFile(stationId: number, mediaId: number, newPath: string): Promise<void> {
+  async renameMediaFile(
+    stationId: number,
+    mediaId: number,
+    newPath: string,
+  ): Promise<void> {
     await azuracastApi.post(`/station/${stationId}/file/${mediaId}/rename`, {
-      path: newPath
+      path: newPath,
     });
   },
 
   // Custom helper functions for common operations
-  async getPopularTracks(stationId: number, limit = 20): Promise<AzuraCastMedia[]> {
+  async getPopularTracks(
+    stationId: number,
+    limit = 20,
+  ): Promise<AzuraCastMedia[]> {
     const response = await this.getMediaFiles(stationId, {
       limit,
-      sort: 'song_id',
-      sortOrder: 'desc'
+      sort: "song_id",
+      sortOrder: "desc",
     });
     return response.data;
   },
 
-  async getRecentlyAdded(stationId: number, limit = 20): Promise<AzuraCastMedia[]> {
+  async getRecentlyAdded(
+    stationId: number,
+    limit = 20,
+  ): Promise<AzuraCastMedia[]> {
     const response = await this.getMediaFiles(stationId, {
       limit,
-      sort: 'mtime',
-      sortOrder: 'desc'
+      sort: "mtime",
+      sortOrder: "desc",
     });
     return response.data;
   },

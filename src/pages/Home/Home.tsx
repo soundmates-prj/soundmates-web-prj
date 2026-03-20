@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import "./Home.css";
 import Icon from "../../components/common/Icon";
 import { motion } from "framer-motion";
@@ -132,6 +133,45 @@ const forumPosts = [
   },
 ];
 
+const podcasts = [
+  {
+    id: 1,
+    title: "Podcast 1",
+    subtitle: "mật thư",
+    image: playlistCover1,
+  },
+  {
+    id: 2,
+    title: "Podcast 2",
+    subtitle: "câu chuyện chúng ta",
+    image: playlistCover2,
+  },
+  {
+    id: 3,
+    title: "Podcast 3",
+    subtitle: "tâm trạng",
+    image: playlistCover3,
+  },
+  {
+    id: 4,
+    title: "Podcast 4",
+    subtitle: "tự sự",
+    image: playlistCover4,
+  },
+  {
+    id: 5,
+    title: "Podcast 5",
+    subtitle: "yêu lành",
+    image: playlistCover5,
+  },
+  {
+    id: 6,
+    title: "Podcast 6",
+    subtitle: "kể chuyện",
+    image: playlistCover1,
+  },
+];
+
 const playlistTabs = [
   "Mới",
   "Thịnh Hành",
@@ -165,6 +205,7 @@ const itemVariants: Variants = {
 export default function Home() {
   const [activeTab, setActiveTab] = useState("Mới");
   const carouselRef = useRef<HTMLDivElement>(null);
+  const isLoggedIn = !!localStorage.getItem("accessToken");
 
   const scrollCarousel = (direction: "prev" | "next") => {
     if (carouselRef.current) {
@@ -189,14 +230,10 @@ export default function Home() {
               transition={{ duration: 0.6 }}
             >
               Listen <span className="gradient-text">Together</span>
-<<<<<<< Updated upstream
-            </h1>
-            <p className="hero-subtitle">Chia sẻ âm nhạc của bạn</p>
             <a href="#" className="hero-cta">
               <Icon name="play" size={20} />
               Bắt Đầu
             </a>
-=======
             </motion.h1>
             <motion.p 
               className="hero-subtitle"
@@ -218,7 +255,6 @@ export default function Home() {
                 Bắt Đầu
               </motion.a>
             )}
->>>>>>> Stashed changes
           </div>
           <motion.div 
             className="hero-illustration"
@@ -420,8 +456,6 @@ export default function Home() {
           ))}
         </motion.div>
       </section>
-<<<<<<< Updated upstream
-=======
 
       {/* Letter Podcast Section */}
       <section className="section podcast-section">
@@ -486,7 +520,6 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
->>>>>>> Stashed changes
     </div>
   );
 }

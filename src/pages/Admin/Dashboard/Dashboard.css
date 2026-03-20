@@ -41,689 +41,689 @@
   width: 100%;
   background: var(--dash-bg);
   min-height: 100vh;
-}
 
-/* ============================================
+  /* ============================================
    Header Styles - Matching Figma Design
    ============================================ */
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 24px 32px;
-  background: var(--dash-bg);
-  border-bottom: 1px solid var(--dash-border);
-}
-
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.page-title {
-  font-family: 'Pacifico', cursive;
-  font-size: 40px;
-  color: var(--dash-primary);
-  font-weight: 400;
-  margin: 0;
-}
-
-.page-subtitle {
-  font-family: 'Arimo', sans-serif;
-  font-size: 14px;
-  color: var(--dash-text-secondary);
-  margin: 0;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-date {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--dash-card-bg);
-  padding: 12px 16px;
-  border-radius: 12px;
-  box-shadow: var(--dash-shadow-sm);
-  font-family: 'Arimo', sans-serif;
-  font-size: 14px;
-  color: var(--dash-text-dark);
-}
-
-.header-date svg {
-  color: var(--dash-primary);
-}
-
-.notification-btn {
-  position: relative;
-  width: 48px;
-  height: 48px;
-  background: var(--dash-card-bg);
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--dash-primary);
-  box-shadow: var(--dash-shadow-sm);
-  transition: all 0.2s ease;
-}
-
-.notification-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--dash-shadow);
-}
-
-.notification-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 8px;
-  height: 8px;
-  background: var(--dash-error);
-  border-radius: 50%;
-}
-
-/* ============================================
-   Stats Cards Section - Matching Figma
-   ============================================ */
-.stats-section {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-  padding: 32px;
-}
-
-.stat-card {
-  background: var(--dash-card-bg);
-  border-radius: 16px;
-  padding: 24px;
-  position: relative;
-  box-shadow: var(--dash-shadow);
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(85, 197, 241, 0.2);
-}
-
-.stat-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, var(--dash-gradient-start), var(--dash-gradient-end));
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-.stat-icon {
-  color: var(--dash-primary);
-}
-
-.stat-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stat-label {
-  font-family: 'Arimo', sans-serif;
-  font-size: 14px;
-  color: var(--dash-text-secondary);
-  font-weight: 400;
-}
-
-.stat-value {
-  font-family: 'Arimo', sans-serif;
-  font-size: 30px;
-  font-weight: 700;
-  color: var(--dash-text-dark);
-}
-
-.stat-change {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-family: 'Arimo', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.stat-change.up {
-  color: var(--dash-success);
-}
-
-.stat-change.down {
-  color: var(--dash-error);
-}
-
-/* ============================================
-   Content Grid - Matching Figma Layout
-   ============================================ */
-.content-grid {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 24px;
-  padding: 0 32px 32px;
-}
-
-.bottom-grid {
-  grid-template-columns: 1fr 1fr;
-}
-
-/* ============================================
-   Quick Actions Card - Matching Figma
-   ============================================ */
-.quick-actions-card {
-  background: var(--dash-card-bg);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: var(--dash-shadow);
-}
-
-.card-title {
-  font-family: 'Arimo', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--dash-text-dark);
-  margin: 0 0 16px 0;
-}
-
-.quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.quick-action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 16px;
-  background: var(--dash-card-bg);
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--dash-shadow-sm);
-}
-
-.quick-action-btn:hover {
-  box-shadow: var(--dash-shadow);
-  transform: translateY(-2px);
-}
-
-.quick-action-btn .action-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, var(--dash-gradient-start), var(--dash-gradient-end));
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--dash-primary);
-}
-
-.quick-action-btn span {
-  font-family: 'Arimo', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--dash-text-dark);
-  text-align: center;
-}
-
-/* ============================================
-   Activity Card - Matching Figma
-   ============================================ */
-.activity-card {
-  background: var(--dash-card-bg);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: var(--dash-shadow);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.card-header .card-title {
-  margin-bottom: 0;
-}
-
-.view-all-link {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  color: var(--dash-primary);
-  font-family: 'Arimo', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-
-.view-all-link:hover {
-  opacity: 0.8;
-}
-
-.activity-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.activity-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--dash-border);
-}
-
-.activity-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.activity-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-top: 6px;
-  flex-shrink: 0;
-}
-
-.activity-dot.broadcast {
-  background: var(--dash-error);
-}
-
-.activity-dot.content {
-  background: var(--dash-primary);
-}
-
-.activity-dot.user {
-  background: var(--dash-primary-light);
-}
-
-.activity-dot.music {
-  background: var(--dash-warning);
-}
-
-.activity-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.activity-title {
-  font-family: 'Arimo', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--dash-text-dark);
-  margin: 0 0 4px 0;
-}
-
-.activity-desc {
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  color: var(--dash-text-secondary);
-  margin: 0;
-}
-
-.activity-time {
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  color: var(--dash-text-secondary);
-  white-space: nowrap;
-}
-
-/* ============================================
-   Live Sessions Card - Matching Figma
-   ============================================ */
-.live-sessions-card {
-  background: var(--dash-card-bg);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: var(--dash-shadow);
-}
-
-.live-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--dash-error);
-  color: var(--dash-text-white);
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 9999px;
-}
-
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--dash-text-white);
-  border-radius: 50%;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.sessions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.session-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 16px;
-  background: var(--dash-bg);
-  border-radius: 12px;
-  box-shadow: var(--dash-shadow-sm);
-  transition: all 0.2s ease;
-}
-
-.session-item:hover {
-  box-shadow: var(--dash-shadow);
-}
-
-.session-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.session-title {
-  font-family: 'Arimo', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--dash-text-dark);
-  margin: 0;
-}
-
-.session-host,
-.session-duration {
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  color: var(--dash-text-secondary);
-}
-
-.session-stats {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 38px;
-}
-
-.listeners-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--dash-error);
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.session-link {
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  color: var(--dash-primary);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-
-.session-link:hover {
-  text-decoration: underline;
-}
-
-/* ============================================
-   Pending Approvals Card - Matching Figma
-   ============================================ */
-.pending-card {
-  background: var(--dash-card-bg);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: var(--dash-shadow);
-}
-
-.pending-count {
-  background: var(--dash-primary);
-  color: var(--dash-text-white);
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 9999px;
-}
-
-.pending-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.pending-item {
-  padding: 16px;
-  background: var(--dash-bg);
-  border-radius: 12px;
-  box-shadow: var(--dash-shadow-sm);
-}
-
-.pending-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.pending-type {
-  font-family: 'Arimo', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 9999px;
-  background: rgba(140, 197, 250, 0.4);
-  color: var(--dash-primary);
-}
-
-.pending-time {
-  font-family: 'Arimo', sans-serif;
-  font-size: 10px;
-  color: var(--dash-text-secondary);
-}
-
-.pending-title {
-  font-family: 'Arimo', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--dash-text-dark);
-  margin: 0 0 4px 0;
-}
-
-.pending-author {
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  color: var(--dash-text-secondary);
-  display: block;
-  margin-bottom: 12px;
-}
-
-.pending-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.approve-btn {
-  flex: 1;
-  padding: 8px 16px;
-  background: var(--dash-primary);
-  color: var(--dash-text-white);
-  border: none;
-  border-radius: 9999px;
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.approve-btn:hover {
-  background: #00BBD9;
-}
-
-.reject-btn {
-  flex: 1;
-  padding: 8px 16px;
-  background: #F3F4F6;
-  color: var(--dash-text-secondary);
-  border: none;
-  border-radius: 9999px;
-  font-family: 'Arimo', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.reject-btn:hover {
-  background: #E5E7EB;
-}
-
-/* ============================================
-   Scrollbar Styling
-   ============================================ */
-.pending-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.pending-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.pending-list::-webkit-scrollbar-thumb {
-  background: var(--dash-border);
-  border-radius: 4px;
-}
-
-/* ============================================
-   Responsive Design
-   ============================================ */
-@media (max-width: 1400px) {
-  .stats-section {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 1200px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .bottom-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
   .dashboard-header {
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-  }
-
-  .header-right {
-    width: 100%;
+    display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    padding: 24px 32px;
+    background: var(--dash-bg);
+    border-bottom: 1px solid var(--dash-border);
   }
 
-  .stats-section {
-    grid-template-columns: 1fr;
-    padding: 16px;
-  }
-
-  .content-grid {
-    padding: 0 16px 16px;
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .page-title {
-    font-size: 28px;
+    font-family: 'Pacifico', cursive;
+    font-size: 40px;
+    color: var(--dash-primary);
+    font-weight: 400;
+    margin: 0;
+  }
+
+  .page-subtitle {
+    font-family: 'Arimo', sans-serif;
+    font-size: 14px;
+    color: var(--dash-text-secondary);
+    margin: 0;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--dash-card-bg);
+    padding: 12px 16px;
+    border-radius: 12px;
+    box-shadow: var(--dash-shadow-sm);
+    font-family: 'Arimo', sans-serif;
+    font-size: 14px;
+    color: var(--dash-text-dark);
+  }
+
+  .header-date svg {
+    color: var(--dash-primary);
+  }
+
+  .notification-btn {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    background: var(--dash-card-bg);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dash-primary);
+    box-shadow: var(--dash-shadow-sm);
+    transition: all 0.2s ease;
+  }
+
+  .notification-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--dash-shadow);
+  }
+
+  .notification-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background: var(--dash-error);
+    border-radius: 50%;
+  }
+
+  /* ============================================
+   Stats Cards Section - Matching Figma
+   ============================================ */
+  .stats-section {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    padding: 32px;
+  }
+
+  .stat-card {
+    background: var(--dash-card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    box-shadow: var(--dash-shadow);
+    transition: all 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(85, 197, 241, 0.2);
+  }
+
+  .stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--dash-gradient-start), var(--dash-gradient-end));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .stat-icon {
+    color: var(--dash-primary);
+  }
+
+  .stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stat-label {
+    font-family: 'Arimo', sans-serif;
+    font-size: 14px;
+    color: var(--dash-text-secondary);
+    font-weight: 400;
+  }
+
+  .stat-value {
+    font-family: 'Arimo', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--dash-text-dark);
+  }
+
+  .stat-change {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Arimo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .stat-change.up {
+    color: var(--dash-success);
+  }
+
+  .stat-change.down {
+    color: var(--dash-error);
+  }
+
+  /* ============================================
+   Content Grid - Matching Figma Layout
+   ============================================ */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 24px;
+    padding: 0 32px 32px;
+  }
+
+  .bottom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ============================================
+   Quick Actions Card - Matching Figma
+   ============================================ */
+  .quick-actions-card {
+    background: var(--dash-card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--dash-shadow);
+  }
+
+  .card-title {
+    font-family: 'Arimo', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dash-text-dark);
+    margin: 0 0 16px 0;
   }
 
   .quick-actions-grid {
-    grid-template-columns: 1fr 1fr;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
-}
 
-/* ============================================
+  .quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    background: var(--dash-card-bg);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--dash-shadow-sm);
+  }
+
+  .quick-action-btn:hover {
+    box-shadow: var(--dash-shadow);
+    transform: translateY(-2px);
+  }
+
+  .quick-action-btn .action-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--dash-gradient-start), var(--dash-gradient-end));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dash-primary);
+  }
+
+  .quick-action-btn span {
+    font-family: 'Arimo', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--dash-text-dark);
+    text-align: center;
+  }
+
+  /* ============================================
+   Activity Card - Matching Figma
+   ============================================ */
+  .activity-card {
+    background: var(--dash-card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--dash-shadow);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .card-header .card-title {
+    margin-bottom: 0;
+  }
+
+  .view-all-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--dash-primary);
+    font-family: 'Arimo', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .view-all-link:hover {
+    opacity: 0.8;
+  }
+
+  .activity-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--dash-border);
+  }
+
+  .activity-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .activity-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .activity-dot.broadcast {
+    background: var(--dash-error);
+  }
+
+  .activity-dot.content {
+    background: var(--dash-primary);
+  }
+
+  .activity-dot.user {
+    background: var(--dash-primary-light);
+  }
+
+  .activity-dot.music {
+    background: var(--dash-warning);
+  }
+
+  .activity-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .activity-title {
+    font-family: 'Arimo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--dash-text-dark);
+    margin: 0 0 4px 0;
+  }
+
+  .activity-desc {
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    color: var(--dash-text-secondary);
+    margin: 0;
+  }
+
+  .activity-time {
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    color: var(--dash-text-secondary);
+    white-space: nowrap;
+  }
+
+  /* ============================================
+   Live Sessions Card - Matching Figma
+   ============================================ */
+  .live-sessions-card {
+    background: var(--dash-card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--dash-shadow);
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--dash-error);
+    color: var(--dash-text-white);
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 9999px;
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--dash-text-white);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .session-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px;
+    background: var(--dash-bg);
+    border-radius: 12px;
+    box-shadow: var(--dash-shadow-sm);
+    transition: all 0.2s ease;
+  }
+
+  .session-item:hover {
+    box-shadow: var(--dash-shadow);
+  }
+
+  .session-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .session-title {
+    font-family: 'Arimo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--dash-text-dark);
+    margin: 0;
+  }
+
+  .session-host,
+  .session-duration {
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    color: var(--dash-text-secondary);
+  }
+
+  .session-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 38px;
+  }
+
+  .listeners-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--dash-error);
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .session-link {
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    color: var(--dash-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .session-link:hover {
+    text-decoration: underline;
+  }
+
+  /* ============================================
+   Pending Approvals Card - Matching Figma
+   ============================================ */
+  .pending-card {
+    background: var(--dash-card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--dash-shadow);
+  }
+
+  .pending-count {
+    background: var(--dash-primary);
+    color: var(--dash-text-white);
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 9999px;
+  }
+
+  .pending-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .pending-item {
+    padding: 16px;
+    background: var(--dash-bg);
+    border-radius: 12px;
+    box-shadow: var(--dash-shadow-sm);
+  }
+
+  .pending-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .pending-type {
+    font-family: 'Arimo', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    background: rgba(140, 197, 250, 0.4);
+    color: var(--dash-primary);
+  }
+
+  .pending-time {
+    font-family: 'Arimo', sans-serif;
+    font-size: 10px;
+    color: var(--dash-text-secondary);
+  }
+
+  .pending-title {
+    font-family: 'Arimo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--dash-text-dark);
+    margin: 0 0 4px 0;
+  }
+
+  .pending-author {
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    color: var(--dash-text-secondary);
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .pending-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .approve-btn {
+    flex: 1;
+    padding: 8px 16px;
+    background: var(--dash-primary);
+    color: var(--dash-text-white);
+    border: none;
+    border-radius: 9999px;
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .approve-btn:hover {
+    background: #00BBD9;
+  }
+
+  .reject-btn {
+    flex: 1;
+    padding: 8px 16px;
+    background: #F3F4F6;
+    color: var(--dash-text-secondary);
+    border: none;
+    border-radius: 9999px;
+    font-family: 'Arimo', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .reject-btn:hover {
+    background: #E5E7EB;
+  }
+
+  /* ============================================
+   Scrollbar Styling
+   ============================================ */
+  .pending-list::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .pending-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .pending-list::-webkit-scrollbar-thumb {
+    background: var(--dash-border);
+    border-radius: 4px;
+  }
+
+  /* ============================================
+   Responsive Design
+   ============================================ */
+  @media (max-width: 1400px) {
+    .stats-section {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .bottom-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-header {
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .header-right {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .stats-section {
+      grid-template-columns: 1fr;
+      padding: 16px;
+    }
+
+    .content-grid {
+      padding: 0 16px 16px;
+    }
+
+    .page-title {
+      font-size: 28px;
+    }
+
+    .quick-actions-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* ============================================
    Animations
    ============================================ */
-.stat-card,
-.quick-actions-card,
-.activity-card,
-.live-sessions-card,
-.pending-card {
-  animation: fadeInUp 0.5s ease-out;
-}
-
-.stat-card:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.stat-card:nth-child(2) {
-  animation-delay: 0.1s;
-}
-
-.stat-card:nth-child(3) {
-  animation-delay: 0.2s;
-}
-
-.stat-card:nth-child(4) {
-  animation-delay: 0.3s;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+  .stat-card,
+  .quick-actions-card,
+  .activity-card,
+  .live-sessions-card,
+  .pending-card {
+    animation: fadeInUp 0.5s ease-out;
   }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .stat-card:nth-child(1) {
+    animation-delay: 0s;
+  }
+
+  .stat-card:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  .stat-card:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+
+  .stat-card:nth-child(4) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

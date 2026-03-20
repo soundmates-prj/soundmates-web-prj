@@ -57,12 +57,20 @@ const Login: React.FC = () => {
           username: userData.username,
           email: userData.email,
           avatarUrl: userData.avatarUrl || null,
+          roleName: userData.roleName,
         }));
       }
       window.dispatchEvent(new Event("authChange"));
 
       showSuccess("Đăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
-      navigate("/");
+      
+      // Redirect based on role
+      const roleName = userData?.roleName?.toUpperCase();
+      if (roleName === "ADMIN") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (error: any) {
       showError(
         "Đăng nhập không thành công!",
@@ -175,12 +183,20 @@ const Login: React.FC = () => {
                       username: googleUserData.username,
                       email: googleUserData.email,
                       avatarUrl: googleUserData.avatarUrl || null,
+                      roleName: googleUserData.roleName,
                     }));
                   }
                   window.dispatchEvent(new Event("authChange"));
 
                   showSuccess("Đăng nhập Google thành công!", "Chào mừng bạn quay trở lại SoundMates");
-                  navigate("/");
+                  
+                  // Redirect based on role
+                  const roleName = googleUserData?.roleName?.toUpperCase();
+                  if (roleName === "ADMIN") {
+                    navigate("/admin/dashboard");
+                  } else {
+                    navigate("/");
+                  }
                 } catch (err: any) {
                   showError(
                     "Đăng nhập Google thất bại",
