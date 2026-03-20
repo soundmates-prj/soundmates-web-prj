@@ -1,8 +1,11 @@
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './toast.css';
+import { useTheme } from '../../context/ThemeContext';
 
 export function ToastProvider() {
+  const { theme } = useTheme();
+  
   return (
     <ToastContainer
       position="top-right"
@@ -12,7 +15,7 @@ export function ToastProvider() {
       closeOnClick
       pauseOnHover
       draggable
-      theme="light"
+      theme={theme}
       toastClassName="custom-toast"
     />
   );

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./ForgetPassword.css";
+import "./ForgetPassword-dark.css";
 import logo from "../../assets/light_logo.png";
 import { Mail, Lock, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { maskEmail } from "../../utils/stringUtils";
