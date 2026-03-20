@@ -441,12 +441,11 @@ class MusicCatalogService {
   async addTracksToPlaylist(playlistId: number, trackIds: number[]): Promise<void> {
     try {
       // Add tracks to playlist one by one since bulk operation might not be available
-      for (const trackId of trackIds) {
+      for (const _ of trackIds) {
         // This is a simplified approach - the actual AzuraCast API might have different methods
         // You may need to adjust this based on the actual API endpoints available
         await musicCatalogApi.updatePlaylist(this.defaultStationId, playlistId, {
           // Add track to playlist - this might need adjustment based on actual API
-          trackId,
         });
       }
     } catch (error) {

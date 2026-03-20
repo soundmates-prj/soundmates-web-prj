@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
+import { useTheme } from "../../../context/ThemeContext";
 import "./SystemSection.css";
 import "./ProfileSection.css"; /* reuse .form-group, .input-prefix, .select-wrap */
 
@@ -16,8 +17,10 @@ interface PwForm {
 }
 
 const SystemSection: React.FC = () => {
+  const { theme, setTheme } = useTheme();
+  
   const [systemForm, setSystemForm] = useState<SystemForm>({
-    theme: "Sáng",
+    theme: theme === 'dark' ? "Tối" : "Sáng",
     language: "Tiếng Việt",
   });
 
@@ -67,16 +70,17 @@ const SystemSection: React.FC = () => {
         <div className="form-group">
           <label>Themes</label>
           <div className="select-wrap">
-            <span className="select-prefix-icon">🌙</span>
+            <span className="select-prefix-icon">{theme === 'dark' ? '🌙' : '☀️'}</span>
             <select
               value={systemForm.theme}
-              onChange={(e) =>
-                setSystemForm({ ...systemForm, theme: e.target.value })
-              }
+              onChange={(e) => {
+                const newThemeStr = e.target.value;
+                setSystemForm({ ...systemForm, theme: newThemeStr });
+                setTheme(newThemeStr === 'Tối' ? 'dark' : 'light');
+              }}
             >
               <option>Sáng</option>
               <option>Tối</option>
-              <option>Hệ thống</option>
             </select>
             <ChevronDown size={15} className="select-chevron" />
           </div>

@@ -1,6 +1,7 @@
 /* ============================================
    SoundMates Home Page Styles
    Primary Color: #55C5F1
+   TRAE-inspired Sleek Modern Theme
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Ephesis&family=Pacifico&family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -16,7 +17,7 @@
     --home-primary-darker: #2E8AB0;
 
     --home-gradient-start: #55C5F1;
-    --home-gradient-end: #A78BFA;
+    --home-gradient-end: #8ED8F6;
     --home-gradient-pink: #F9A8D4;
 
     --home-bg-hero: linear-gradient(180deg, #D6F2FC 0%, #FFFFFF 100%);
@@ -28,6 +29,50 @@
 
     --home-card-shadow: 0 4px 20px rgba(85, 197, 241, 0.15);
     --home-card-hover-shadow: 0 8px 30px rgba(85, 197, 241, 0.25);
+
+    --home-card-bg: #ffffff;
+    --home-card-border: #f1f5f9;
+    --home-nav-bg: #ffffff;
+    --home-nav-color: var(--home-text-dark);
+    --home-subscription-bg: linear-gradient(135deg, #f7fcff 0%, #ecf7ff 100%);
+    --home-subscription-border: rgba(85, 197, 241, 0.3);
+    --home-subscription-shadow: 0 20px 60px rgba(85, 197, 241, 0.22);
+    --home-subscription-glow: radial-gradient(circle, rgba(85, 197, 241, 0.18) 0%, transparent 70%);
+    --home-subscription-desc: #1e293b;
+    --home-subscription-price: #2e8ab0;
+}
+
+[data-theme='dark'] {
+    --home-primary: #55C5F1;
+    --home-primary-light: #8ED8F6;
+    --home-primary-lighter: #1A2235;
+    --home-primary-dark: #3AA8D4;
+    --home-primary-darker: #2E8AB0;
+
+    --home-gradient-start: #55C5F1;
+    --home-gradient-end: #8ED8F6;
+    --home-gradient-pink: #D6F2FC;
+
+    --home-bg-hero: linear-gradient(180deg, #0A0F1A 0%, #050810 100%);
+    --home-bg-section: #050810;
+
+    --home-text-dark: #FFFFFF;
+    --home-text-secondary: #94A3B8;
+    --home-text-light: #64748B;
+
+    --home-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    --home-card-hover-shadow: 0 12px 40px rgba(255, 215, 0, 0.2);
+
+    --home-card-bg: rgba(20, 20, 30, 0.6);
+    --home-card-border: rgba(255, 255, 255, 0.05);
+    --home-nav-bg: rgba(30, 30, 40, 0.8);
+    --home-nav-color: #ffffff;
+    --home-subscription-bg: linear-gradient(135deg, #1A1A2E 0%, #101018 100%);
+    --home-subscription-border: rgba(255, 255, 255, 0.05);
+    --home-subscription-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    --home-subscription-glow: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    --home-subscription-desc: #e2e8f0;
+    --home-subscription-price: #55C5F1;
 }
 
 /* ============================================
@@ -37,30 +82,29 @@
     min-height: 100vh;
     background: var(--home-bg-section);
     overflow: auto;
-
-
-    /* ============================================
+    color: var(--home-text-dark);
+}
 
 /* ============================================
    Hero Section
    ============================================ */
-    .hero-section {
-        background: var(--home-bg-section);
-        padding: 60px 32px 0px;
-        position: relative;
-        overflow: hidden;
-    }
+.hero-section {
+    background: var(--home-bg-hero);
+    padding: 60px 32px 0px;
+    position: relative;
+    overflow: hidden;
+}
 
-    .hero-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2355C5F1' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-        opacity: 0.5;
-    }
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(85, 197, 241, 0.1) 0%, transparent 60%);
+    opacity: 0.8;
+}
 
     .hero-container {
         max-width: 100%;
@@ -96,7 +140,7 @@
     }
 
     .hero-title .gradient-text {
-        background: linear-gradient(90deg, #55C5F1 41%, #A78BFA 100%);
+        background: linear-gradient(90deg, #55C5F1 0%, #8ED8F6 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -220,8 +264,8 @@
         font-size: 0.85rem;
         font-weight: 500;
         color: var(--home-text-secondary);
-        background: #f8fafc;
-        border: none;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 20px;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -231,6 +275,8 @@
     .section-tab.active {
         background: var(--home-primary);
         color: white;
+        border-color: var(--home-primary);
+        box-shadow: 0 0 15px rgba(85, 197, 241, 0.3);
     }
 
     .section-link {
@@ -740,15 +786,17 @@
         overflow: hidden;
     }
 
-    .subscription-container::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 500px;
-        height: 500px;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-        border-radius: 50%;
+    .playlist-card {
+        flex: 0 0 180px;
+        scroll-snap-align: start;
+        background: var(--home-card-bg);
+        border: 1px solid var(--home-card-border);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        overflow: auto;
+        box-shadow: var(--home-card-shadow);
+        transition: all 0.3s ease;
+        cursor: pointer;
     }
 
     .subscription-content {
@@ -787,6 +835,465 @@
 
     .subscription-description .price {
         color: var(--home-primary-darker);
+        font-weight: 700;
+    }
+
+    .playlist-card-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--home-text-dark);
+        white-space: nowrap;
+        /* overflow: auto; */
+        text-overflow: ellipsis;
+        margin-bottom: 4px;
+    }
+
+    .playlist-card-subtitle {
+        font-size: 0.75rem;
+        color: var(--home-text-light);
+    }
+
+    .carousel-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(30, 30, 40, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.3s ease;
+        z-index: 10;
+    }
+
+    .carousel-nav:hover {
+        background: var(--home-primary);
+        color: white;
+    }
+
+    .carousel-nav.prev {
+        left: -22px;
+    }
+
+    .carousel-nav.next {
+        right: -22px;
+    }
+
+    /* ============================================
+   Live Room Section
+   ============================================ */
+    .live-room-card {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        background: linear-gradient(135deg, rgba(85, 197, 241, 0.1), rgba(249, 168, 212, 0.1));
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 32px;
+        box-shadow: var(--home-card-shadow);
+        backdrop-filter: blur(10px);
+    }
+
+    .live-room-badge {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #ef4444;
+    }
+
+    .live-room-badge::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        animation: pulse-dot 1.5s infinite;
+    }
+
+    @keyframes pulse-dot {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .subscription-cta:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(85, 197, 241, 0.5);
+    }
+
+    .schedule-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: var(--home-card-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        box-shadow: var(--home-card-shadow);
+        border: 1px solid var(--home-card-border);
+        transition: all 0.3s ease;
+    }
+
+    .schedule-item:hover {
+        border-color: rgba(85, 197, 241, 0.3);
+        box-shadow: var(--home-card-hover-shadow);
+    }
+
+    .schedule-item-time {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 80px;
+    }
+
+    .schedule-item-time-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--home-primary);
+    }
+
+    .schedule-item-time-period {
+        font-size: 0.75rem;
+        color: var(--home-text-light);
+    }
+
+    .schedule-item-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: var(--home-primary-lighter);
+    }
+
+    .schedule-item-content {
+        flex: 1;
+    }
+
+    .schedule-item-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--home-text-dark);
+        margin-bottom: 4px;
+    }
+
+    .schedule-item-subtitle {
+        font-size: 0.85rem;
+        color: var(--home-text-secondary);
+    }
+
+    .schedule-item-action {
+        padding: 10px 24px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .schedule-item-action.live {
+        background: var(--home-primary);
+        color: white;
+    }
+
+    .schedule-item-action.upcoming {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--home-text-secondary);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .schedule-item-action:hover {
+        transform: translateY(-2px);
+    }
+
+    /* ============================================
+   Forum Section
+   ============================================ */
+    .forum-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .forum-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px;
+        background: var(--home-card-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        box-shadow: var(--home-card-shadow);
+        border: 1px solid var(--home-card-border);
+        transition: all 0.3s ease;
+    }
+
+    .forum-item:hover {
+        border-color: rgba(85, 197, 241, 0.3);
+        box-shadow: var(--home-card-hover-shadow);
+    }
+
+    .forum-item-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: linear-gradient(135deg, var(--home-primary), var(--home-gradient-end));
+    }
+
+    .forum-item-content {
+        flex: 1;
+    }
+
+    .forum-item-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .forum-item-author {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--home-text-dark);
+    }
+
+    .forum-item-badge {
+        background: var(--home-primary-lighter);
+        color: var(--home-primary-dark);
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    .forum-item-title {
+        font-size: 1rem;
+        color: var(--home-text-dark);
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+
+    .forum-item-meta {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        font-size: 0.8rem;
+        color: var(--home-text-light);
+    }
+
+    .forum-item-meta span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .forum-item-action {
+        background: var(--home-primary);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        align-self: center;
+    }
+
+    .forum-item-action:hover {
+        background: var(--home-primary-dark);
+    }
+
+    /* ============================================
+   Podcast Section
+   ============================================ */
+    .podcast-section {
+        margin-top: 40px;
+    }
+
+    .podcast-grid {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding: 10px 0;
+        scrollbar-width: none;
+    }
+
+    .podcast-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .podcast-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        background: var(--home-card-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: var(--home-card-shadow);
+        border: 1px solid var(--home-card-border);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        width: 220px;
+    }
+
+    /* ============================================
+   Responsive Design
+   ============================================ */
+    @media (max-width: 1024px) {
+        .hero-container {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+        }
+
+        .hero-illustration img {
+            max-width: 300px;
+        }
+
+        .footer-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .podcast-card-image-wrapper {
+        width: 137px;
+        height: 137px;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(85, 197, 241, 0.2);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .podcast-card:hover .podcast-card-image-wrapper {
+        box-shadow: 0 8px 25px rgba(85, 197, 241, 0.35);
+        transform: scale(1.05);
+    }
+
+    .podcast-card-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .podcast-card:hover .podcast-card-image {
+        transform: scale(1.1);
+    }
+
+    .podcast-card-content {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .podcast-card-title {
+        font-size: 0.95rem;
+        font-weight: 400;
+        color: var(--home-text-dark);
+    }
+
+    .podcast-card-subtitle {
+        font-size: 0.75rem;
+        color: var(--home-text-dark);
+        font-weight: 400;
+    }
+
+    /* ============================================
+   Subscription Section (Group 30)
+   ============================================ */
+    .subscription-section {
+        margin: 60px 0;
+        padding: 0 32px;
+    }
+
+    .subscription-container {
+        background: var(--home-subscription-bg);
+        border: 1px solid var(--home-subscription-border);
+        box-shadow: var(--home-subscription-shadow);
+        border-radius: 30px;
+        padding: 60px 40px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .subscription-container::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 500px;
+        height: 500px;
+        background: var(--home-subscription-glow);
+        border-radius: 50%;
+    }
+
+    .subscription-content {
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .subscription-tag {
+        display: inline-block;
+        font-size: 0.9rem;
+        color: var(--home-primary-darker);
+        font-weight: 600;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .subscription-title {
+        font-family: 'Be Vietnam Pro', sans-serif;
+        font-size: 3.5rem;
+        color: var(--home-primary);
+        margin-bottom: 24px;
+        line-height: 1.2;
+        font-weight: 400;
+    }
+
+    .subscription-description {
+        font-size: 1.1rem;
+        color: var(--home-subscription-desc);
+        line-height: 1.6;
+        margin-bottom: 32px;
+    }
+
+    .subscription-description .price {
+        color: var(--home-subscription-price);
         font-weight: 700;
     }
 
@@ -975,4 +1482,3 @@
             transform: scaleY(1.5);
         }
     }
-}

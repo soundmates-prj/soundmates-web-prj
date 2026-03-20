@@ -70,7 +70,7 @@
   /* RIGHT */
   .login-right {
     flex: 1;
-    background: #f7f9fc;
+    background: var(--bg-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -78,39 +78,19 @@
 
   .login-box {
     width: 400px;
-    background: #ffffff;
+    background: var(--bg-primary);
     padding: 40px;
     border-radius: 14px;
+    border: 1px solid var(--border-light);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
     animation: slideUp 0.7s ease-out;
-  }
-
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(40px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-
-  .login-box h2 {
-    font-family: poppins, sans-serif;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 6px;
-    color: #55C5F1;
   }
 
   .subtitle {
     font-family: poppins, sans-serif;
     text-align: center;
     font-size: 14px;
-    color: #777;
+    color: var(--text-secondary);
     margin-bottom: 28px;
   }
 
@@ -119,15 +99,11 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-medium);
+    background: var(--bg-secondary);
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 16px;
-  }
-
-  .input-wrapper svg {
-    color: #5bc0eb;
-    flex-shrink: 0;
   }
 
   .input-wrapper input {
@@ -136,6 +112,7 @@
     flex: 1;
     font-size: 14px;
     background: transparent;
+    color: var(--text-primary);
   }
 
   /* Ẩn icon mặc định của trình duyệt */
@@ -155,7 +132,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    color: #999;
+    color: var(--text-muted);
     transition: color 0.2s ease;
   }
 
@@ -163,6 +140,10 @@
     color: #5bc0eb;
   }
 
+  .input-wrapper svg {
+    color: #5bc0eb;
+    flex-shrink: 0;
+  }
 
   /* ACTIONS */
   .actions {
@@ -173,7 +154,7 @@
   .forgot {
     font-family: poppins, sans-serif;
     font-size: 13px;
-    color: #5bc0eb;
+    color: var(--primary-500);
     cursor: pointer;
   }
 
@@ -187,23 +168,23 @@
   .divider span {
     flex: 1;
     height: 1px;
-    background: #ddd;
+    background: var(--border-medium);
   }
 
   .divider p {
     font-family: poppins, sans-serif;
     font-size: 13px;
-    color: #999;
+    color: var(--text-muted);
   }
 
   /* GOOGLE */
   .btn-google {
     font-family: poppins, sans-serif;
     width: 100%;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-medium);
     border-radius: 10px;
     padding: 10px;
-    background: white;
+    background: var(--bg-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -214,14 +195,8 @@
   }
 
   .btn-google:hover {
-    background: #f3f7fb;
+    background: var(--bg-secondary);
   }
-
-
-  .btn-google img {
-    width: 18px;
-  }
-
 
   /* REGISTER */
   .register {
@@ -233,8 +208,33 @@
 
   .register span {
     font-family: poppins, sans-serif;
-    color: #5bc0eb;
+    color: var(--primary-500);
     cursor: pointer;
     font-weight: 600;
   }
+}
+
+[data-theme='dark'] .login-container .login-left {
+  background: #101826;
+}
+
+[data-theme='dark'] .login-container .login-box h2 {
+  color: #55C5F1;
+}
+
+[data-theme='dark'] .login-container .input-wrapper svg,
+[data-theme='dark'] .login-container .toggle-password:hover,
+[data-theme='dark'] .login-container .forgot,
+[data-theme='dark'] .login-container .register span {
+  color: #55C5F1;
+}
+
+[data-theme='dark'] .login-container .btn-primary {
+  background: linear-gradient(135deg, #55C5F1 0%, #8ED8F6 100%);
+  color: #111827;
+  border: none;
+}
+
+[data-theme='dark'] .login-container .btn-primary:hover {
+  background: linear-gradient(135deg, #3AA8D4 0%, #55C5F1 100%);
 }

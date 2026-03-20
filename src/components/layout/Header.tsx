@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Icon, Button } from "../common";
-import logoNoText from "../../assets/light_logo.png";
+import logoLight from "../../assets/light_logo.png";
+import logoDark from "../../assets/dark_logo.png";
+import { useTheme } from "../../context/ThemeContext";
 import "./Header.css";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
@@ -18,6 +20,8 @@ import {
 } from "lucide-react";
 import { usePlayer } from "../../context/PlayerContext";
 import { showInfo } from "../common/toastUtils";
+import { validateImageUrl } from "../../utils/stringUtils";
+import api from "../../services/axios";
 
 interface UserInfo {
   firstName?: string;
@@ -46,10 +50,10 @@ const TRENDING_TOPICS = [
 ];
 
 const Header: React.FC = () => {
+  const { theme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const player = usePlayer();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -59,11 +63,13 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>(location.pathname);
+  const isLiveRoute = location.pathname === "/livestream";
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const searchPanelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const liveDropdownRef = useRef<HTMLDivElement>(null);
+  const player = usePlayer();
 
   const syncAuthState = () => {
     const token = localStorage.getItem("accessToken");
@@ -71,7 +77,23 @@ const Header: React.FC = () => {
     if (token) {
       try {
         const stored = localStorage.getItem("userInfo");
-        setUserInfo(stored ? JSON.parse(stored) : null);
+        if (stored) {
+          const parsedUserInfo = JSON.parse(stored);
+          // Fetch fresh profile data to get profileImageUrl
+          api.get("/users/me/profile/full")
+            .then((res) => {
+              const profileData = res.data.data;
+              setUserInfo({
+                ...parsedUserInfo,
+                avatarUrl: validateImageUrl(profileData.profileImageUrl) || null
+              });
+            })
+            .catch(() => {
+              setUserInfo(parsedUserInfo);
+            });
+        } else {
+          setUserInfo(null);
+        }
       } catch {
         setUserInfo(null);
       }
@@ -171,7 +193,7 @@ const Header: React.FC = () => {
         <div className="header-container">
           {/* LEFT */}
           <div className="header-left" onClick={() => navigate("/")}>
-            <img src={logoNoText} alt="SoundMates" />
+            <img src={theme === 'dark' ? logoDark : logoLight} alt="SoundMates" />
             <span className="header-brand">SoundMates</span>
           </div>
 
@@ -188,10 +210,9 @@ const Header: React.FC = () => {
             {/* Phiên Trực Tiếp — with dropdown */}
             <div className="nav-item-dropdown-wrap" ref={liveDropdownRef}>
               <button
-                className={`nav-item nav-item-btn${activeTab === "live" ? " active" : ""}`}
+                className={`nav-item nav-item-btn${isLiveRoute ? " active" : ""}`}
                 onClick={() => {
                   setShowLiveDropdown((prev) => !prev);
-                  setActiveTab("live");
                 }}
               >
                 Phiên Trực Tiếp
@@ -350,11 +371,11 @@ const Header: React.FC = () => {
 
                   <div className="search-divider" />
 
-                  {/* Recent */}
+                  {/* Recent searches */}
                   <div className="search-section">
                     <div className="search-section-title">
                       <Clock size={14} />
-                      <span>Tìm kiếm gần đây</span>
+                      <span>Gần đây</span>
                     </div>
                     <p className="search-empty">Chưa có lịch sử tìm kiếm</p>
                   </div>
@@ -437,8 +458,8 @@ const Header: React.FC = () => {
                       setShowLiveDropdown(false);
                     }}
                   >
-                    {userInfo?.avatarUrl ? (
-                      <img src={userInfo.avatarUrl} alt="User avatar" />
+                    {validateImageUrl(userInfo?.avatarUrl) ? (
+                      <img src={validateImageUrl(userInfo?.avatarUrl)!} alt="User avatar" />
                     ) : (
                       <div className="avatar-default">
                         <UserCircle2
@@ -454,8 +475,8 @@ const Header: React.FC = () => {
                     <div className="avatar-dropdown">
                       <div className="avatar-dropdown-user">
                         <div className="avatar-dropdown-avatar">
-                          {userInfo?.avatarUrl ? (
-                            <img src={userInfo.avatarUrl} alt="avatar" />
+                          {validateImageUrl(userInfo?.avatarUrl) ? (
+                            <img src={validateImageUrl(userInfo?.avatarUrl)!} alt="avatar" />
                           ) : (
                             <UserCircle2
                               size={32}

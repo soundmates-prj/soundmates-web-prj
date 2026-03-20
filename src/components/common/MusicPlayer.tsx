@@ -32,8 +32,11 @@ export function MusicPlayer() {
 
   /* ── Pause khi navigate sang trang khác ──────────────────────────────── */
   useEffect(() => {
-    // Nếu đang phát và không bị mute → mute lại (pause stream)
-    if (isPlaying && !isMuted) {
+    const shouldPauseForAuthPage =
+      location.pathname === "/login" || location.pathname === "/register";
+
+    // Chỉ auto pause tại login/register, giữ nguyên nhạc ở các trang còn lại.
+    if (shouldPauseForAuthPage && isPlaying && !isMuted) {
       toggleMute();
     }
 

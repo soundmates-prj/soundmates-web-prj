@@ -69,7 +69,7 @@
   /* RIGHT */
   .register-right {
     flex: 1;
-    background: #f7f9fc;
+    background: var(--bg-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -77,9 +77,10 @@
 
   .register-box {
     width: 400px;
-    background: #ffffff;
+    background: var(--bg-primary);
     padding: 40px;
     border-radius: 14px;
+    border: 1px solid var(--border-light);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
     animation: slideUp 0.7s ease-out;
   }
@@ -109,7 +110,7 @@
     font-family: poppins, sans-serif;
     text-align: center;
     font-size: 14px;
-    color: #777;
+    color: var(--text-secondary);
     margin-bottom: 28px;
   }
 
@@ -128,7 +129,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-medium);
+    background: var(--bg-secondary);
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 16px;
@@ -152,6 +154,7 @@
     width: 0;
     font-size: 14px;
     background: transparent;
+    color: var(--text-primary);
   }
 
   /* Ẩn icon mặc định của trình duyệt */
@@ -171,75 +174,21 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    color: #999;
+    color: var(--text-muted);
     transition: color 0.2s ease;
   }
 
   .toggle-password:hover {
     color: #5bc0eb;
   }
-
-
-  /* ACTIONS */
-  .actions {
-    text-align: right;
-    margin-bottom: 18px;
-  }
-
-  .forgot {
-    font-family: poppins, sans-serif;
-    font-size: 13px;
-    color: #5bc0eb;
-    cursor: pointer;
-  }
-
-  /* BUTTONS */
-  .btn-primary {
-    font-family: poppins, sans-serif;
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    background: #5bc0eb;
-    color: white;
-    font-size: 15px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-
-  .btn-primary:active {
-    transform: translateY(0);
-    box-shadow: none;
-  }
-
-
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .divider span {
-    flex: 1;
-    height: 1px;
-    background: #ddd;
-  }
-
-  .divider p {
-    font-family: poppins, sans-serif;
-    font-size: 13px;
-    color: #999;
-  }
-
   /* GOOGLE */
   .btn-google {
     font-family: poppins, sans-serif;
     width: 100%;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-medium);
     border-radius: 10px;
     padding: 10px;
-    background: white;
+    background: var(--bg-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -250,15 +199,14 @@
   }
 
   .btn-google:hover {
-    background: #f3f7fb;
+    background: var(--bg-secondary);
   }
-
 
   .btn-google img {
     width: 18px;
   }
 
-  /* REGISTER */
+  /* LOGIN LINK */
   .login {
     font-family: poppins, sans-serif;
     text-align: center;
@@ -268,7 +216,7 @@
 
   .login span {
     font-family: poppins, sans-serif;
-    color: #5bc0eb;
+    color: var(--primary-500);
     cursor: pointer;
     font-weight: 600;
   }
@@ -280,4 +228,28 @@
     margin-bottom: 12px;
     margin-left: 6px;
   }
+}
+
+[data-theme='dark'] .register-container .register-left {
+  background: #101826;
+}
+
+[data-theme='dark'] .register-container .register-box h2 {
+  color: #55C5F1;
+}
+
+[data-theme='dark'] .register-container .input-wrapper svg,
+[data-theme='dark'] .register-container .toggle-password:hover,
+[data-theme='dark'] .register-container .login span {
+  color: #55C5F1;
+}
+
+[data-theme='dark'] .register-container .btn-primary {
+  background: linear-gradient(135deg, #55C5F1 0%, #8ED8F6 100%);
+  color: #111827;
+  border: none;
+}
+
+[data-theme='dark'] .register-container .btn-primary:hover {
+  background: linear-gradient(135deg, #3AA8D4 0%, #55C5F1 100%);
 }

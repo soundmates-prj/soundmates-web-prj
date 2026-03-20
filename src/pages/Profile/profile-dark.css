@@ -1,0 +1,141 @@
+/* ================================================================
+   profile-dark.css  ·  Dark Theme Support for Profile Page
+================================================================ */
+
+[data-theme='dark'] .pf {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .pf-bar {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid #333333;
+}
+
+[data-theme='dark'] .pf-av {
+  border-color: var(--bg-secondary) !important;
+}
+
+[data-theme='dark'] .pf-name {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .pf-bio {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .pf-dob {
+  color: var(--text-muted);
+}
+
+[data-theme='dark'] .pf-tabs-row {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid #333333;
+}
+
+[data-theme='dark'] .pf-tab {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .pf-tab:hover {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .pf-tab.active {
+  color: #55c5f1;
+}
+
+[data-theme='dark'] .pf-card {
+  background: var(--bg-secondary);
+  border-color: #333333;
+}
+
+[data-theme='dark'] .pf-card-top h3 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .pf-compose-bar {
+  background: rgba(30, 30, 40, 0.5);
+  border-color: #333333;
+}
+
+[data-theme='dark'] .pf-compose-bar:hover {
+  background: rgba(30, 30, 40, 0.8);
+  border-color: #55c5f1;
+}
+
+[data-theme='dark'] .pf-compose-placeholder {
+  color: var(--text-muted);
+}
+
+[data-theme='dark'] .track:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .track-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .track-artist,
+[data-theme='dark'] .track-dur,
+[data-theme='dark'] .track-likes {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .post-card {
+  background: rgba(30, 30, 40, 0.5);
+  border-color: #333333;
+}
+
+[data-theme='dark'] .post-card:hover {
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 16px rgba(85, 197, 241, 0.15);
+}
+
+[data-theme='dark'] .post-name {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .post-time {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .post-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .post-body {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .post-btn {
+  border-color: #333333;
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .post-btn:hover {
+  background: rgba(85, 197, 241, 0.1);
+  border-color: #55c5f1;
+  color: #55c5f1;
+}
+
+[data-theme='dark'] .post-actions {
+  border-top-color: #333333;
+}
+
+[data-theme='dark'] .pf-empty {
+  background: var(--bg-secondary);
+  border-color: #333333;
+  color: var(--text-muted);
+}
+
+[data-theme='dark'] .pod:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .pod-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .pod-ep {
+  color: var(--text-secondary);
+}

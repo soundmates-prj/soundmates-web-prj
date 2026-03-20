@@ -1,18 +1,22 @@
 import React from 'react';
-import lighLogo from '../../assets/light_logo.png';
+import logoLight from '../../assets/light_logo.png';
+import logoDark from '../../assets/dark_logo.png';
+import { useTheme } from '../../context/ThemeContext';
 import appStoreImg from '../../assets/AppStore.png';
 import chPlayImg from '../../assets/CHPlay.png';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import './Footer.css';
 
 const Footer: React.FC = () => {
+  const { theme } = useTheme();
+
   return (
     <footer className="home-footer">
       <div className="footer-container">
         <div className="footer-grid">
           <div className="footer-brand">
             <div className="footer-logo">
-              <img src={lighLogo} alt="SoundMates" />
+              <img src={theme === 'dark' ? logoDark : logoLight} alt="SoundMates" />
               <div className="footer-logo-info">
                 <h3 className="footer-logo-text">SoundMates</h3>
                 <p className="footer-tagline">Đọc thư phát sóng mỗi ngày</p>

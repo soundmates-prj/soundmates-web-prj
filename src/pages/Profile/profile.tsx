@@ -17,9 +17,11 @@ import { Link } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
 import "./profile.css";
+import "./profile-dark.css";
 import type { User } from "../../types/user";
 import type { Post } from "../../types/post";
 import CreatePostModal from "./modals/CreatePostModal";
+import { validateImageUrl } from "../../utils/stringUtils";
 
 type Tab = "overview" | "songs" | "playlists" | "podcasts" | "community";
 
@@ -101,7 +103,7 @@ export default function Profile() {
 
   useEffect(() => {
     api
-      .get("users/me/profile/full")
+      .get("/users/me/profile/full")
       .then((r) => setUser(r.data.data))
       .catch((e) => console.error("Load profile failed", e));
 
@@ -123,12 +125,16 @@ export default function Profile() {
   const handlePostCreated = (post: Post) => {
     setPosts((prev) => [post, ...prev]);
   };
+  
+  // Validate profile image URL
+  const validProfileImage = validateImageUrl(user.profileImageUrl) || defaultAv;
+  const validBackgroundImage = validateImageUrl(user.backgroundImageUrl) || defaultCover;
 
   return (
     <div className="pf">
       {/* COVER */}
       <div className="pf-cover">
-        <img src={user.backgroundImageUrl || defaultCover} alt="cover" />
+        <img src={validBackgroundImage} alt="cover" />
       </div>
 
       {/* PROFILE BAR */}
@@ -137,7 +143,7 @@ export default function Profile() {
           {/* Avatar + info */}
           <div className="pf-left">
             <Avatar
-              src={user.profileImageUrl || defaultAv}
+              src={validProfileImage}
               name={name}
               size="xl"
               className="pf-av"
@@ -238,7 +244,7 @@ export default function Profile() {
                   onClick={() => setShowCreatePost(true)}
                 >
                   <Avatar
-                    src={user.profileImageUrl || defaultAv}
+                    src={validProfileImage}
                     name={name}
                     size="sm"
                   />
@@ -307,7 +313,7 @@ export default function Profile() {
                         {/* Header */}
                         <div className="post-header">
                           <Avatar
-                            src={user.profileImageUrl || defaultAv}
+                            src={validProfileImage}
                             name={name}
                             size="sm"
                           />
@@ -415,7 +421,7 @@ export default function Profile() {
               onClick={() => setShowCreatePost(true)}
             >
               <Avatar
-                src={user.profileImageUrl || defaultAv}
+                src={validProfileImage}
                 name={name}
                 size="sm"
               />
@@ -441,7 +447,7 @@ export default function Profile() {
                   <div key={post.id} className="post-card">
                     <div className="post-header">
                       <Avatar
-                        src={user.profileImageUrl || defaultAv}
+                        src={validProfileImage}
                         name={name}
                         size="sm"
                       />

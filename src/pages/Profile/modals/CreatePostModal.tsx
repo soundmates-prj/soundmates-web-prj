@@ -3,6 +3,7 @@ import { X, Plus, Image, Mic, Globe, Users, Lock, Smile } from "lucide-react";
 import api from "../../../services/axios";
 import { Avatar } from "../../../components/common";
 import "./CreatePostModal.css";
+import "./CreatePostModal-dark.css";
 import type { User } from "../../../types/user";
 import type { Post } from "../../../types/post";
 
