@@ -18,25 +18,8 @@ import {
   Calendar,
   Zap,
 } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
-import { UserCircle2, Bell, Search, X, Clock, TrendingUp, ChevronDown, Radio, Mic2, Calendar, Zap } from "lucide-react";
 import { usePlayer } from "../../context/PlayerContext";
 import { showInfo } from "../common/toastUtils";
-=======
-import { useNavigate, Link, useLocation } from "react-router-dom";
-import {
-  UserCircle2,
-  Bell,
-  Search,
-  X,
-  Clock,
-  TrendingUp,
-  ChevronDown,
-  Radio,
-  Mic2,
-  Calendar,
-  Zap,
-} from "lucide-react";
 import { validateImageUrl } from "../../utils/stringUtils";
 import api from "../../services/axios";
 
@@ -67,92 +50,6 @@ const TRENDING_TOPICS = [
 ];
 
 const Header: React.FC = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const player = usePlayer();
-    const [isScrolled, setIsScrolled] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-    const player = usePlayer();
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [showSearch, setShowSearch] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [searchCategory, setSearchCategory] = useState("all");
-    const [showLiveDropdown, setShowLiveDropdown] = useState(false);
-    const navigate = useNavigate();
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const notificationRef = useRef<HTMLDivElement>(null);
-    const searchPanelRef = useRef<HTMLDivElement>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
-    const liveDropdownRef = useRef<HTMLDivElement>(null);
-
-    const syncAuthState = () => {
-        const token = localStorage.getItem('accessToken');
-        setIsLoggedIn(!!token);
-        if (token) {
-            try {
-                const stored = localStorage.getItem('userInfo');
-                setUserInfo(stored ? JSON.parse(stored) : null);
-            } catch {
-                setUserInfo(null);
-            }
-        } else {
-            setUserInfo(null);
-        }
-    };
-
-    useEffect(() => {
-        const onScroll = () => setIsScrolled(window.scrollY > 10);
-        window.addEventListener("scroll", onScroll);
-        return () => window.removeEventListener("scroll", onScroll);
-    }, []);
-
-    useEffect(() => {
-        syncAuthState();
-        window.addEventListener('authChange', syncAuthState);
-        window.addEventListener('storage', syncAuthState);
-        return () => {
-            window.removeEventListener('authChange', syncAuthState);
-            window.removeEventListener('storage', syncAuthState);
-        };
-    }, []);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setShowDropdown(false);
-            }
-            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-                setShowNotifications(false);
-            }
-            if (searchPanelRef.current && !searchPanelRef.current.contains(event.target as Node)) {
-                setShowSearch(false);
-            }
-            if (liveDropdownRef.current && !liveDropdownRef.current.contains(event.target as Node)) {
-                setShowLiveDropdown(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    // Auto-focus search input when panel opens
-    useEffect(() => {
-        if (showSearch) {
-            setTimeout(() => searchInputRef.current?.focus(), 50);
-        }
-    }, [showSearch]);
-
-    const handleLogout = () => {
-        if (player.isPlaying) {
-            player.toggle();
-            showInfo('Nhạc đã dừng', 'Bạn đã đăng xuất khỏi SoundMates');
-        }
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('userInfo');
-        setIsLoggedIn(false);
   const { theme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -172,6 +69,7 @@ const Header: React.FC = () => {
   const searchPanelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const liveDropdownRef = useRef<HTMLDivElement>(null);
+  const player = usePlayer();
 
   const syncAuthState = () => {
     const token = localStorage.getItem("accessToken");
@@ -295,7 +193,7 @@ const Header: React.FC = () => {
         <div className="header-container">
           {/* LEFT */}
           <div className="header-left" onClick={() => navigate("/")}>
-            <img src={logoNoText} alt="SoundMates" />
+            <img src={theme === 'dark' ? logoDark : logoLight} alt="SoundMates" />
             <span className="header-brand">SoundMates</span>
           </div>
 
@@ -312,10 +210,9 @@ const Header: React.FC = () => {
             {/* Phiên Trực Tiếp — with dropdown */}
             <div className="nav-item-dropdown-wrap" ref={liveDropdownRef}>
               <button
-                className={`nav-item nav-item-btn${activeTab === "live" ? " active" : ""}`}
+                className={`nav-item nav-item-btn${isLiveRoute ? " active" : ""}`}
                 onClick={() => {
                   setShowLiveDropdown((prev) => !prev);
-                  setActiveTab("live");
                 }}
               >
                 Phiên Trực Tiếp
@@ -472,74 +369,13 @@ const Header: React.FC = () => {
                     </div>
                   </div>
 
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("userInfo");
-    setIsLoggedIn(false);
-    setUserInfo(null);
-    setShowDropdown(false);
-    window.dispatchEvent(new Event("authChange"));
-    navigate("/");
-  };
+                  <div className="search-divider" />
 
-  const handleProfile = () => {
-    setShowDropdown(false);
-    navigate("/profile");
-  };
-
-  return (
-    <div className="header">
-      <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
-        <div className="header-container">
-          {/* LEFT */}
-          <div className="header-left" onClick={() => navigate("/")}>
-            <img src={theme === 'dark' ? logoDark : logoLight} alt="SoundMates" />
-            <span className="header-brand">SoundMates</span>
-          </div>
-
-          {/* CENTER */}
-          <nav className="header-center">
-            <Link
-              className={`nav-item${activeTab === "/" ? " active" : ""}`}
-              to="/"
-              onClick={() => setActiveTab("/")}
-            >
-              Trang Chủ
-            </Link>
-
-            {/* Phiên Trực Tiếp — with dropdown */}
-            <div className="nav-item-dropdown-wrap" ref={liveDropdownRef}>
-              <button
-                className={`nav-item nav-item-btn${isLiveRoute ? " active" : ""}`}
-                onClick={() => {
-                  setShowLiveDropdown((prev) => !prev);
-                }}
-              >
-                Phiên Trực Tiếp
-                <ChevronDown
-                  size={14}
-                  className={`nav-chevron ${showLiveDropdown ? "open" : ""}`}
-                />
-              </button>
-
-              {showLiveDropdown && (
-                <div className="nav-live-dropdown">
-                  <div className="nav-live-dropdown-header">Khám phá Live</div>
-                  <a
-                    className="nav-live-item"
-                    href="/livestream"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowLiveDropdown(false);
-                      navigate("/livestream");
-                    }}
-                  >
-                    <span className="nav-live-icon">
-                      <Radio size={16} />
-                    </span>
-                    <div>
-                      <p>Live Stream âm nhạc</p>
-                      <span>Nghe nhạc trực tiếp từ nghệ sĩ</span>
+                  {/* Recent searches */}
+                  <div className="search-section">
+                    <div className="search-section-title">
+                      <Clock size={14} />
+                      <span>Gần đây</span>
                     </div>
                     <p className="search-empty">Chưa có lịch sử tìm kiếm</p>
                   </div>

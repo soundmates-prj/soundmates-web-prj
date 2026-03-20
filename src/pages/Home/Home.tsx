@@ -230,10 +230,6 @@ export default function Home() {
               transition={{ duration: 0.6 }}
             >
               Listen <span className="gradient-text">Together</span>
-            <a href="#" className="hero-cta">
-              <Icon name="play" size={20} />
-              Bắt Đầu
-            </a>
             </motion.h1>
             <motion.p 
               className="hero-subtitle"
@@ -243,18 +239,6 @@ export default function Home() {
             >
               Chia sẻ âm nhạc của bạn
             </motion.p>
-            {!isLoggedIn && (
-              <motion.a 
-                href="/login" 
-                className="hero-cta"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-              >
-                <Icon name="play" size={20} />
-                Bắt Đầu
-              </motion.a>
-            )}
           </div>
           <motion.div 
             className="hero-illustration"

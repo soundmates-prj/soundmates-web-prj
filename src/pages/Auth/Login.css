@@ -70,45 +70,6 @@
   /* RIGHT */
   .login-right {
     flex: 1;
-    background: #f7f9fc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .login-box {
-    width: 400px;
-    background: #ffffff;
-    padding: 40px;
-    border-radius: 14px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-    animation: slideUp 0.7s ease-out;
-  }
-
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(40px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-
-  .login-box h2 {
-    font-family: poppins, sans-serif;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 6px;
-    color: #55C5F1;
-  }
-
-  /* RIGHT */
-  .login-right {
-    flex: 1;
     background: var(--bg-secondary);
     display: flex;
     align-items: center;
@@ -123,44 +84,6 @@
     border: 1px solid var(--border-light);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
     animation: slideUp 0.7s ease-out;
-  }
-
-  .input-wrapper svg {
-    color: #5bc0eb;
-    flex-shrink: 0;
-  }
-
-  .input-wrapper input {
-    border: none;
-    outline: none;
-    flex: 1;
-    font-size: 14px;
-    background: transparent;
-  }
-
-  /* Ẩn icon mặc định của trình duyệt */
-  .input-wrapper input::-ms-reveal,
-  .input-wrapper input::-ms-clear {
-    display: none;
-  }
-
-  .input-wrapper input::-webkit-contacts-auto-fill-button,
-  .input-wrapper input::-webkit-credentials-auto-fill-button {
-    visibility: hidden;
-    display: none !important;
-    pointer-events: none;
-  }
-
-  .toggle-password {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    color: #999;
-    transition: color 0.2s ease;
-  }
-
-  .toggle-password:hover {
-    color: #5bc0eb;
   }
 
   .subtitle {
@@ -183,13 +106,6 @@
     margin-bottom: 16px;
   }
 
-  .forgot {
-    font-family: poppins, sans-serif;
-    font-size: 13px;
-    color: #5bc0eb;
-    cursor: pointer;
-  }
-
   .input-wrapper input {
     border: none;
     outline: none;
@@ -199,10 +115,10 @@
     color: var(--text-primary);
   }
 
-  .divider span {
-    flex: 1;
-    height: 1px;
-    background: #ddd;
+  /* Ẩn icon mặc định của trình duyệt */
+  .input-wrapper input::-ms-reveal,
+  .input-wrapper input::-ms-clear {
+    display: none;
   }
 
   .input-wrapper input::-webkit-contacts-auto-fill-button,
@@ -224,6 +140,10 @@
     color: #5bc0eb;
   }
 
+  .input-wrapper svg {
+    color: #5bc0eb;
+    flex-shrink: 0;
+  }
 
   /* ACTIONS */
   .actions {
@@ -277,16 +197,6 @@
   .btn-google:hover {
     background: var(--bg-secondary);
   }
-
-
-  /* REGISTER */
-  .register {
-    font-family: poppins, sans-serif;
-    text-align: center;
-    margin-top: 20px;
-    font-size: 13px;
-  }
-
 
   /* REGISTER */
   .register {

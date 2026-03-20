@@ -85,7 +85,7 @@ const DEMO_PODCASTS: PodcastCard[] = [
     id: "3",
     category: "ON AIR: STORY TIME",
     categoryColor: "green",
-    title: '"Các câu chuyện đời thường của tôi bắt đầu vào 1 hôm kì lạ..."',
+    title: '"Các câu chuyện đồi thường của tôi bắt đầu vào 1 hôm kì lạ..."',
     author: "Oanh Tran",
     voiceType: "ai",
   },
@@ -111,7 +111,7 @@ const DEMO_CHAT: ChatMessage[] = [
     id: "3",
     type: "host",
     name: "Quoc Anh (Host)",
-    text: "Oke! Sau bài này nhé. Mọi người xem live vui vẻ <3",
+    text: "Oke! Sau bài này nhé. Mọi ngườii xem live vui vẻ <3",
     time: "10:43 PM",
     isHost: true,
     avatarColor: "#2ecc71",
@@ -325,8 +325,6 @@ const LivestreamPage: React.FC = () => {
 
   if (loading) {
     return (
-      </div>
-=======
       <motion.div 
         className="livestream-page"
         initial={{ opacity: 0 }}
@@ -378,8 +376,6 @@ const LivestreamPage: React.FC = () => {
         {/* ===== LEFT: Main Content ===== */}
         <div className="livestream-main">
           {/* Now Playing Hero */}
-            <div className="now-playing-cover" onClick={player.toggle} style={{ cursor: 'pointer' }}>
-              <img src={proxyArtUrl(currentTrack.artUrl)} alt={currentTrack.title} />
           <motion.div 
             className="now-playing-hero"
             initial={{ opacity: 0, y: 20 }}
@@ -445,7 +441,7 @@ const LivestreamPage: React.FC = () => {
                   <Clock size={13} /> {formatTime(currentTrack.duration)}
                 </span>
                 <span className="meta-item">
-                  <Users size={13} /> {totalListeners} người nghe
+                  <Users size={13} /> {totalListeners} ngườii nghe
                 </span>
               </div>
 
@@ -453,7 +449,7 @@ const LivestreamPage: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* Live Action Bar – đặt gần hero để nằm trong 1 màn hình */}
+          {/* Live Action Bar */}
           <motion.div 
             className="livestream-action-bar"
             initial={{ opacity: 0, y: 20 }}
@@ -505,8 +501,6 @@ const LivestreamPage: React.FC = () => {
               />
             </div>
 
-              <button
-=======
             <div className="action-bar-center" style={{ position: "relative" }}>
               <motion.button
                 className="action-btn emotion"
@@ -649,70 +643,6 @@ const LivestreamPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Chat Tab */}
-            <div className="chat-panel">
-              <div className="chat-messages">
-                {chatMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`chat-msg ${msg.type === "system" ? "system" : ""} ${msg.isSelf ? "self" : ""}`}
-                  >
-                    {msg.type === "system" ? (
-                      <div className="chat-msg-system">{msg.text}</div>
-                    ) : (
-                      <>
-                        {!msg.isSelf && (
-                          <div className="chat-msg-header">
-                            <div
-                              className="chat-msg-avatar"
-                              style={{ background: msg.avatarColor || "#555" }}
-                            />
-                            <span
-                              className={`chat-msg-name ${msg.isHost ? "host" : ""}`}
-                            >
-                              {msg.name}
-                            </span>
-                            <span className="chat-msg-time">{msg.time}</span>
-                          </div>
-                        )}
-                        <div
-                          className={`chat-msg-bubble ${msg.requestSong ? "request-bubble" : ""}`}
-                        >
-                          {msg.requestSong && (
-                            <div className="chat-request-tag">
-                              🎵 Requested "{msg.requestSong}"
-                            </div>
-                          )}
-                          {msg.text}
-                        </div>
-                        {msg.isSelf && (
-                          <span
-                            className="chat-msg-time"
-                            style={{ marginTop: 2 }}
-                          >
-                            {msg.time}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-
-              <div className="chat-input-area" style={{ position: "relative" }}>
-                {showEmojiPicker && (
-                  <div className="emoji-picker-popup">
-                    {EMOJIS.map((em) => (
-                      <button
-                        key={em}
-                        className="emoji-btn"
-                        onClick={() => addEmoji(em)}
-                      >
-                        {em}
-                      </button>
-                    ))}
-=======
           <AnimatePresence mode="wait">
             {sidebarTab === "chat" && (
               <motion.div 
@@ -821,8 +751,6 @@ const LivestreamPage: React.FC = () => {
               </motion.div>
             )}
 
-                      <div className="playlist-item-title">{playingNext.title}</div>
-                      <div className="playlist-item-artist">{playingNext.artist}</div>
             {/* Playlist Tab */}
             {sidebarTab === "playlist" && (
               <motion.div 
@@ -1218,7 +1146,7 @@ const PodcastSubmitModal: React.FC<PodcastSubmitModalProps> = ({ onClose }) => {
             <option value="story">Story Time</option>
             <option value="family">Chuyện Gia Đình</option>
             <option value="love">Chuyện Tình Cảm</option>
-            <option value="life">Chuyện Đời Thường</option>
+            <option value="life">Chuyện Đồi Thường</option>
           </select>
         </div>
 
