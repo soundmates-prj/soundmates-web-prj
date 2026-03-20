@@ -544,7 +544,7 @@ export default function Profile() {
           </div>
         )}
 
-        {tab !== "overview" && tab !== "community" && (
+        
         {tab !== "overview" && (
           <div className="pf-empty">
             <Music2 size={28} />
