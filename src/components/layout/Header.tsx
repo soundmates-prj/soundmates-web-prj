@@ -5,23 +5,14 @@ import logoDark from "../../assets/dark_logo.png";
 import { useTheme } from "../../context/ThemeContext";
 import "./Header.css";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import {
-  UserCircle2,
-  Bell,
-  Search,
-  X,
-  Clock,
-  TrendingUp,
-  ChevronDown,
-  Radio,
-  Mic2,
-  Calendar,
-  Zap,
-} from "lucide-react";
+import { UserCircle2, ChevronDown, Radio, Mic2, Calendar, Zap } from "lucide-react";
 import { usePlayer } from "../../context/PlayerContext";
 import { showInfo } from "../common/toastUtils";
 import { validateImageUrl } from "../../utils/stringUtils";
 import api from "../../services/axios";
+import NotificationButton from "./NotificationButton";
+import SearchBar from "./SearchBar";
+import ThemeToggle from "./ThemeToggle";
 
 interface UserInfo {
   firstName?: string;
@@ -31,43 +22,19 @@ interface UserInfo {
   avatarUrl?: string | null;
 }
 
-const SEARCH_CATEGORIES = [
-  { key: "all", label: "Tất cả" },
-  { key: "podcast", label: "Podcast" },
-  { key: "music", label: "Nhạc" },
-  { key: "artist", label: "Nghệ sĩ" },
-  { key: "playlist", label: "Playlist" },
-  { key: "live", label: "Live Stream" },
-  { key: "forum", label: "Diễn đàn" },
-];
-
-const TRENDING_TOPICS = [
-  "Sơn Tùng M-TP",
-  "SpaceSpeakers",
-  "Podcast Tâm Lý",
-  "Rhymastic Live",
-  "Hoàng Thùy Linh",
-];
-
 const Header: React.FC = () => {
   const { theme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchCategory, setSearchCategory] = useState("all");
   const [showLiveDropdown, setShowLiveDropdown] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>(location.pathname);
   const isLiveRoute = location.pathname === "/livestream";
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const notificationRef = useRef<HTMLDivElement>(null);
-  const searchPanelRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const liveDropdownRef = useRef<HTMLDivElement>(null);
   const player = usePlayer();
 
@@ -79,13 +46,13 @@ const Header: React.FC = () => {
         const stored = localStorage.getItem("userInfo");
         if (stored) {
           const parsedUserInfo = JSON.parse(stored);
-          // Fetch fresh profile data to get profileImageUrl
-          api.get("/users/me/profile/full")
+          api
+            .get("/users/me/profile/full")
             .then((res) => {
               const profileData = res.data.data;
               setUserInfo({
                 ...parsedUserInfo,
-                avatarUrl: validateImageUrl(profileData.profileImageUrl) || null
+                avatarUrl: validateImageUrl(profileData.profileImageUrl) || null,
               });
             })
             .catch(() => {
@@ -102,7 +69,6 @@ const Header: React.FC = () => {
     }
   };
 
-  // Sync active tab with browser navigation
   useEffect(() => {
     setActiveTab(location.pathname);
   }, [location.pathname]);
@@ -125,41 +91,16 @@ const Header: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
       }
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target as Node)
-      ) {
-        setShowNotifications(false);
-      }
-      if (
-        searchPanelRef.current &&
-        !searchPanelRef.current.contains(event.target as Node)
-      ) {
-        setShowSearch(false);
-      }
-      if (
-        liveDropdownRef.current &&
-        !liveDropdownRef.current.contains(event.target as Node)
-      ) {
+      if (liveDropdownRef.current && !liveDropdownRef.current.contains(event.target as Node)) {
         setShowLiveDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  // Auto-focus search input when panel opens
-  useEffect(() => {
-    if (showSearch) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    }
-  }, [showSearch]);
 
   const handleLogout = () => {
     if (player.isPlaying) {
@@ -178,10 +119,7 @@ const Header: React.FC = () => {
   const handleProfile = () => {
     if (player.isPlaying) {
       player.toggle();
-      showInfo(
-        "Nhạc đã dừng",
-        "Chuyển sang trang cá nhân — bạn có thể phát lại bất cứ lúc nào",
-      );
+      showInfo("Nhạc đã dừng", "Chuyển sang trang cá nhân");
     }
     setShowDropdown(false);
     navigate("/profile");
@@ -191,35 +129,23 @@ const Header: React.FC = () => {
     <div className="header">
       <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
         <div className="header-container">
-          {/* LEFT */}
           <div className="header-left" onClick={() => navigate("/")}>
-            <img src={theme === 'dark' ? logoDark : logoLight} alt="SoundMates" />
+            <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
             <span className="header-brand">SoundMates</span>
           </div>
 
-          {/* CENTER */}
           <nav className="header-center">
-            <Link
-              className={`nav-item${activeTab === "/" ? " active" : ""}`}
-              to="/"
-              onClick={() => setActiveTab("/")}
-            >
+            <Link className={`nav-item${activeTab === "/" ? " active" : ""}`} to="/" onClick={() => setActiveTab("/")}>
               Trang Chủ
             </Link>
 
-            {/* Phiên Trực Tiếp — with dropdown */}
             <div className="nav-item-dropdown-wrap" ref={liveDropdownRef}>
               <button
                 className={`nav-item nav-item-btn${isLiveRoute ? " active" : ""}`}
-                onClick={() => {
-                  setShowLiveDropdown((prev) => !prev);
-                }}
+                onClick={() => setShowLiveDropdown((prev) => !prev)}
               >
                 Phiên Trực Tiếp
-                <ChevronDown
-                  size={14}
-                  className={`nav-chevron ${showLiveDropdown ? "open" : ""}`}
-                />
+                <ChevronDown size={14} className={`nav-chevron ${showLiveDropdown ? "open" : ""}`} />
               </button>
 
               {showLiveDropdown && (
@@ -302,171 +228,24 @@ const Header: React.FC = () => {
             </Link>
           </nav>
 
-          {/* RIGHT */}
           <div className="header-right">
-            {/* Search trigger */}
-            <div className="search-trigger" ref={searchPanelRef}>
-              <div
-                className={`header-search ${showSearch ? "active" : ""}`}
-                onClick={() => {
-                  setShowSearch(true);
-                  setShowNotifications(false);
-                  setShowDropdown(false);
-                  setShowLiveDropdown(false);
-                }}
-              >
-                <Search size={16} color="#9CA3AF" />
-                <input
-                  ref={searchInputRef}
-                  placeholder="Tìm kiếm..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setShowSearch(true)}
-                />
-                {searchQuery && (
-                  <button
-                    className="search-clear"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSearchQuery("");
-                    }}
-                  >
-                    <X size={14} color="#9CA3AF" />
-                  </button>
-                )}
-              </div>
+            <button className="icon-btn" onClick={() => setShowSearch(true)}>
+              <Icon name="search" size={18} />
+            </button>
 
-              {showSearch && (
-                <div className="search-panel">
-                  {/* Category chips */}
-                  <div className="search-categories">
-                    {SEARCH_CATEGORIES.map((cat) => (
-                      <button
-                        key={cat.key}
-                        className={`search-cat-chip ${searchCategory === cat.key ? "active" : ""}`}
-                        onClick={() => setSearchCategory(cat.key)}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="search-divider" />
-
-                  {/* Trending */}
-                  <div className="search-section">
-                    <div className="search-section-title">
-                      <TrendingUp size={14} />
-                      <span>Xu hướng</span>
-                    </div>
-                    <div className="search-suggestions">
-                      {TRENDING_TOPICS.map((topic) => (
-                        <button key={topic} className="search-suggestion-item">
-                          <Search size={13} color="#9CA3AF" />
-                          <span>{topic}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="search-divider" />
-
-                  {/* Recent searches */}
-                  <div className="search-section">
-                    <div className="search-section-title">
-                      <Clock size={14} />
-                      <span>Gần đây</span>
-                    </div>
-                    <p className="search-empty">Chưa có lịch sử tìm kiếm</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ThemeToggle />
 
             {isLoggedIn ? (
               <>
-                {/* Notification */}
-                <div className="notification-container" ref={notificationRef}>
-                  <button
-                    className="icon-btn notif-btn"
-                    onClick={() => {
-                      setShowNotifications((prev) => !prev);
-                      setShowSearch(false);
-                      setShowDropdown(false);
-                      setShowLiveDropdown(false);
-                    }}
-                  >
-                    <Bell size={20} color="#55C5F1" strokeWidth={1.8} />
-                    <span className="notif-badge">3</span>
-                  </button>
+                <NotificationButton />
 
-                  {showNotifications && (
-                    <div className="notification-dropdown">
-                      <div className="notification-header">
-                        <h3>Thông báo</h3>
-                        <button className="notif-mark-read">
-                          Đánh dấu đã đọc
-                        </button>
-                      </div>
-                      <div className="notification-list">
-                        <div className="notif-item unread">
-                          <div className="notif-dot" />
-                          <div className="notif-content">
-                            <p className="notif-text">
-                              Bạn đã đăng ký tài khoản thành công!
-                            </p>
-                            <span className="notif-time">Vừa xong</span>
-                          </div>
-                        </div>
-                        <div className="notif-item unread">
-                          <div className="notif-dot" />
-                          <div className="notif-content">
-                            <p className="notif-text">
-                              Có phiên Live mới từ{" "}
-                              <strong>SpaceSpeakers</strong>
-                            </p>
-                            <span className="notif-time">5 phút trước</span>
-                          </div>
-                        </div>
-                        <div className="notif-item unread">
-                          <div className="notif-dot" />
-                          <div className="notif-content">
-                            <p className="notif-text">
-                              Podcast mới:{" "}
-                              <strong>"Tâm lý học ứng dụng"</strong> đã phát
-                              hành
-                            </p>
-                            <span className="notif-time">1 giờ trước</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="notification-footer">
-                        <button>Xem tất cả thông báo</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Avatar */}
                 <div className="avatar-container" ref={dropdownRef}>
-                  <div
-                    className="avatar"
-                    onClick={() => {
-                      setShowDropdown((prev) => !prev);
-                      setShowNotifications(false);
-                      setShowSearch(false);
-                      setShowLiveDropdown(false);
-                    }}
-                  >
+                  <div className="avatar" onClick={() => setShowDropdown((prev) => !prev)}>
                     {validateImageUrl(userInfo?.avatarUrl) ? (
                       <img src={validateImageUrl(userInfo?.avatarUrl)!} alt="User avatar" />
                     ) : (
                       <div className="avatar-default">
-                        <UserCircle2
-                          size={44}
-                          color="#55C5F1"
-                          strokeWidth={1.5}
-                        />
+                        <UserCircle2 size={40} color="#55C5F1" strokeWidth={1.5} />
                       </div>
                     )}
                   </div>
@@ -478,11 +257,7 @@ const Header: React.FC = () => {
                           {validateImageUrl(userInfo?.avatarUrl) ? (
                             <img src={validateImageUrl(userInfo?.avatarUrl)!} alt="avatar" />
                           ) : (
-                            <UserCircle2
-                              size={32}
-                              color="#55C5F1"
-                              strokeWidth={1.5}
-                            />
+                            <UserCircle2 size={32} color="#55C5F1" strokeWidth={1.5} />
                           )}
                         </div>
                         <div>
@@ -491,9 +266,7 @@ const Header: React.FC = () => {
                               ? `${userInfo.firstName} ${userInfo.lastName}`
                               : userInfo?.username || "Người dùng"}
                           </p>
-                          <p className="avatar-dropdown-email">
-                            {userInfo?.email || ""}
-                          </p>
+                          <p className="avatar-dropdown-email">{userInfo?.email || ""}</p>
                         </div>
                       </div>
 
@@ -516,10 +289,7 @@ const Header: React.FC = () => {
 
                       <div className="avatar-dropdown-divider" />
 
-                      <button
-                        className="dropdown-item logout"
-                        onClick={handleLogout}
-                      >
+                      <button className="dropdown-item logout" onClick={handleLogout}>
                         <Icon name="logout" size={18} />
                         <span>Đăng xuất</span>
                       </button>
@@ -535,6 +305,8 @@ const Header: React.FC = () => {
           </div>
         </div>
       </header>
+
+      <SearchBar isOpen={showSearch} onClose={() => setShowSearch(false)} />
     </div>
   );
 };

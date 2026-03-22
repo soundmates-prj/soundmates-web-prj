@@ -1,332 +1,131 @@
-/* ============================================
-   Staff Sidebar — Friendly pastel style
-   ============================================ */
-
 .staff-sidebar {
-    width: 272px;
-    background: #fff;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 260px;
+    background: #ffffff;
+    border-right: 1px solid var(--neutral-200);
     display: flex;
     flex-direction: column;
-    position: fixed;
-    height: 100vh;
     z-index: 100;
-    transition: width 0.3s ease;
-    border-right: 1px solid #ede9fe;
 }
 
-/* ── Logo ── */
+[data-theme="dark"] .staff-sidebar {
+    background: #0a0a0a;
+    border-right-color: rgba(255, 255, 255, 0.1);
+}
+
 .staff-sidebar-logo {
+    padding: 24px 20px;
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 24px 22px;
-    border-bottom: 1px solid #ede9fe;
+    gap: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--neutral-200);
 }
 
-.staff-logo-icon {
-    width: 42px;
-    height: 42px;
-    background: linear-gradient(135deg, #7C5CFC, #A78BFA);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+[data-theme="dark"] .staff-sidebar-logo {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.staff-sidebar-logo img {
+    width: 32px;
+    height: 32px;
 }
 
 .staff-logo-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.staff-logo-title {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
-    margin: 0;
-    line-height: 1.2;
+    color: #55c5f1;
 }
 
-.staff-logo-listen {
-    color: #7C5CFC;
+[data-theme="dark"] .staff-logo-text {
+    color: #55c5f1;
 }
 
-.staff-logo-mates {
-    color: #1e293b;
-}
-
-.staff-logo-subtitle {
-    font-size: 11px;
-    color: #94a3b8;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-}
-
-/* ── Navigation ── */
 .staff-sidebar-nav {
     flex: 1;
     padding: 16px 12px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     overflow-y: auto;
-}
-
-.staff-nav-section-label {
-    font-size: 10px;
-    font-weight: 700;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 1.4px;
-    padding: 0 12px;
-    margin-bottom: 8px;
 }
 
 .staff-nav-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 11px 14px;
+    padding: 12px 16px;
+    border-radius: 8px;
     border: none;
     background: transparent;
-    color: #64748b;
+    color: var(--neutral-600);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.18s ease;
-    width: 100%;
+    transition: all 0.2s;
     text-align: left;
-    border-radius: 12px;
-    position: relative;
-    font-family: inherit;
+}
+
+[data-theme="dark"] .staff-nav-item {
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .staff-nav-item:hover {
-    background: #f5f3ff;
-    color: #7C5CFC;
+    background: var(--neutral-100);
+    color: var(--neutral-900);
 }
 
-.staff-nav-item:hover .staff-nav-icon {
-    color: #7C5CFC;
+[data-theme="dark"] .staff-nav-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
 }
 
 .staff-nav-item.active {
-    background: linear-gradient(135deg, rgba(124, 92, 252, 0.12), rgba(167, 139, 250, 0.08));
-    color: #7C5CFC;
+    background: var(--secondary-50);
+    color: var(--secondary-600);
     font-weight: 600;
 }
 
-.staff-nav-item.active .staff-nav-icon {
-    color: #7C5CFC;
-}
-
-.staff-nav-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.18s ease;
-}
-
-.staff-nav-label {
-    flex: 1;
-}
-
-.staff-nav-arrow {
-    margin-left: auto;
-    color: #7C5CFC;
-    opacity: 0.7;
-}
-
-/* ── User Section ── */
-.staff-sidebar-user {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 20px 22px;
-    border-top: 1px solid #ede9fe;
-    margin-top: auto;
-}
-
-.staff-user-avatar {
-    width: 38px;
-    height: 38px;
-    background: linear-gradient(135deg, #7C5CFC, #A78BFA);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-weight: 700;
-    font-size: 15px;
-    flex-shrink: 0;
-}
-
-.staff-user-info {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-}
-
-.staff-user-name {
-    color: #1e293b;
-    font-size: 13.5px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.staff-user-role {
-    color: #94a3b8;
-    font-size: 11.5px;
-    font-weight: 400;
+[data-theme="dark"] .staff-nav-item.active {
+    background: rgba(116, 129, 248, 0.15);
+    color: var(--secondary-400);
 }
 
 .staff-logout-btn {
+    margin: 12px;
+    padding: 12px 16px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
+    gap: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--neutral-200);
     background: transparent;
-    border: none;
-    border-radius: 10px;
+    color: var(--error-500);
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    color: #94a3b8;
-    transition: all 0.18s ease;
-    flex-shrink: 0;
+    transition: all 0.2s;
 }
 
-.staff-logout-btn:hover {
-    background: #fef2f2;
+[data-theme="dark"] .staff-logout-btn {
+    border-color: rgba(255, 255, 255, 0.1);
     color: #ef4444;
 }
 
-/* ── Scrollbar ── */
-.staff-sidebar-nav::-webkit-scrollbar {
-    width: 4px;
-}
-.staff-sidebar-nav::-webkit-scrollbar-track {
-    background: transparent;
-}
-.staff-sidebar-nav::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
-    border-radius: 4px;
+.staff-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.05);
+    border-color: var(--error-500);
 }
 
-/* ============================================
-   Dark Theme
-   ============================================ */
-[data-theme='dark'] .staff-sidebar {
-    background: #18181b;
-    border-right-color: #2e2e35;
+[data-theme="dark"] .staff-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
 }
 
-[data-theme='dark'] .staff-sidebar-logo {
-    border-bottom-color: #2e2e35;
-}
-
-[data-theme='dark'] .staff-logo-mates {
-    color: #f3f4f6;
-}
-
-[data-theme='dark'] .staff-logo-subtitle {
-    color: #6b7280;
-}
-
-[data-theme='dark'] .staff-nav-section-label {
-    color: #6b7280;
-}
-
-[data-theme='dark'] .staff-nav-item {
-    color: #9ca3af;
-}
-
-[data-theme='dark'] .staff-nav-item:hover {
-    background: rgba(124, 92, 252, 0.1);
-    color: #A78BFA;
-}
-
-[data-theme='dark'] .staff-nav-item:hover .staff-nav-icon {
-    color: #A78BFA;
-}
-
-[data-theme='dark'] .staff-nav-item.active {
-    background: rgba(124, 92, 252, 0.15);
-    color: #A78BFA;
-}
-
-[data-theme='dark'] .staff-nav-item.active .staff-nav-icon {
-    color: #A78BFA;
-}
-
-[data-theme='dark'] .staff-nav-arrow {
-    color: #A78BFA;
-}
-
-[data-theme='dark'] .staff-sidebar-user {
-    border-top-color: #2e2e35;
-}
-
-[data-theme='dark'] .staff-user-name {
-    color: #f3f4f6;
-}
-
-[data-theme='dark'] .staff-user-role {
-    color: #6b7280;
-}
-
-[data-theme='dark'] .staff-logout-btn {
-    color: #6b7280;
-}
-
-[data-theme='dark'] .staff-logout-btn:hover {
-    background: rgba(239, 68, 68, 0.12);
-    color: #f87171;
-}
-
-[data-theme='dark'] .staff-sidebar-nav::-webkit-scrollbar-thumb {
-    background: #3f3f46;
-}
-
-/* ── Responsive ── */
 @media (max-width: 1024px) {
     .staff-sidebar {
-        width: 70px;
-    }
-
-    .staff-sidebar-logo .staff-logo-text,
-    .staff-nav-item .staff-nav-label,
-    .staff-nav-item .staff-nav-arrow,
-    .staff-nav-section-label,
-    .staff-user-info {
-        display: none;
-    }
-
-    .staff-sidebar-logo {
-        justify-content: center;
-        padding: 20px 10px;
-    }
-
-    .staff-nav-item {
-        justify-content: center;
-        padding: 14px;
-        border-radius: 10px;
-    }
-
-    .staff-sidebar-user {
-        justify-content: center;
-        padding: 16px;
-    }
-
-    .staff-sidebar-nav {
-        padding: 16px 8px;
-    }
-}
-
-@media (max-width: 640px) {
-    .staff-sidebar {
-        display: none;
+        transform: translateX(-100%);
     }
 }

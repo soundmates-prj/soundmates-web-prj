@@ -1,0 +1,92 @@
+/* Voice Selector Styles */
+
+:root {
+  --voice-select-bg: #ffffff;
+  --voice-select-border: #d1d5db;
+  --voice-select-text: #1e293b;
+  --voice-select-focus: #55C5F1;
+  --voice-error-border: #ef4444;
+  --voice-error-text: #dc2626;
+  --voice-error-bg: #fee2e2;
+  --voice-retry-bg: #f3f4f6;
+  --voice-retry-hover: #e5e7eb;
+}
+
+[data-theme='dark'] {
+  --voice-select-bg: #1a1f2e;
+  --voice-select-border: rgba(255, 255, 255, 0.2);
+  --voice-select-text: #f0f6ff;
+  --voice-select-focus: #55C5F1;
+  --voice-error-border: #ef4444;
+  --voice-error-text: #fca5a5;
+  --voice-error-bg: rgba(220, 38, 38, 0.1);
+  --voice-retry-bg: rgba(255, 255, 255, 0.05);
+  --voice-retry-hover: rgba(255, 255, 255, 0.1);
+}
+
+.voice-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.voice-selector-select {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 14px;
+  color: var(--voice-select-text);
+  background-color: var(--voice-select-bg);
+  border: 1px solid var(--voice-select-border);
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-selector-select:focus {
+  border-color: var(--voice-select-focus);
+  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.1);
+}
+
+.voice-selector-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.voice-selector-select.voice-selector-error {
+  border-color: var(--voice-error-border);
+}
+
+.voice-selector-select.voice-selector-error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.voice-selector-error-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--voice-error-text);
+  margin-top: 4px;
+}
+
+.voice-selector-retry {
+  align-self: flex-start;
+  padding: 6px 12px;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 13px;
+  color: var(--voice-select-text);
+  background-color: var(--voice-retry-bg);
+  border: 1px solid var(--voice-select-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-selector-retry:hover {
+  background-color: var(--voice-retry-hover);
+}
+
+/* Option styling (limited browser support) */
+.voice-selector-select option {
+  padding: 8px;
+}

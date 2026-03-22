@@ -17,6 +17,7 @@ import type {
   MusicResult,
 } from "../../../services/liveSessionApiService";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
+import "../StaffShared.css";
 import "./PlaylistsScreen.css";
 
 export function PlaylistsScreen() {
@@ -26,6 +27,10 @@ export function PlaylistsScreen() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistResult | null>(null);
   const [tracks, setTracks] = useState<PlaylistMediaResult[]>([]);
   const [stationMusic, setStationMusic] = useState<MusicResult[]>([]);
+  const [systemMusic, setSystemMusic] = useState<MusicResult[]>([]);
+  const [musicTab, setMusicTab] = useState<"station" | "system">("station");
+  const [selectedSystemMediaIds, setSelectedSystemMediaIds] = useState<string[]>([]);
+  const [musicActionLoading, setMusicActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -83,11 +88,11 @@ export function PlaylistsScreen() {
     setSyncing(true);
     try {
       const result = await liveSessionApiService.syncStationPlaylists(selectedStation.id);
-      showSuccess("Sync thành công!", `${result.created} tạo, ${result.updated} cập nhật`);
+      showSuccess("Đồng bộ thành công!", `${result.created} tạo, ${result.updated} cập nhật`);
       const data = await liveSessionApiService.getStationPlaylists(selectedStation.id);
       setPlaylists(data);
     } catch {
-      showError("Sync thất bại", "Không thể sync playlists");
+      showError("Đồng bộ thất bại", "Không thể đồng bộ playlists");
     } finally {
       setSyncing(false);
     }
@@ -116,8 +121,15 @@ export function PlaylistsScreen() {
   const handleOpenAddTracks = async () => {
     if (!selectedStation || !selectedPlaylist) return;
     try {
-      const music = await liveSessionApiService.getStationMusic(selectedStation.id);
-      setStationMusic(music);
+      const [stationMedia, allMedia] = await Promise.all([
+        liveSessionApiService.getStationMusic(selectedStation.id),
+        liveSessionApiService.getAllMusic(),
+      ]);
+
+      setStationMusic(stationMedia);
+      setSystemMusic(allMedia.filter((m) => m.sourceType === "system"));
+      setMusicTab("station");
+      setSelectedSystemMediaIds([]);
       setShowAddTracksModal(true);
     } catch {
       showError("Lỗi", "Không thể tải danh sách nhạc");
@@ -144,6 +156,64 @@ export function PlaylistsScreen() {
       showSuccess("Đã xóa", "Track đã được xóa khỏi playlist");
     } catch {
       showError("Lỗi", "Không thể xóa track");
+    }
+  };
+
+  const toggleSystemMediaSelection = (mediaId: string) => {
+    setSelectedSystemMediaIds((prev) =>
+      prev.includes(mediaId)
+        ? prev.filter((id) => id !== mediaId)
+        : [...prev, mediaId]
+    );
+  };
+
+  const handleImportSystemMediaBatch = async () => {
+    if (!selectedStation || selectedSystemMediaIds.length === 0) return;
+
+    setMusicActionLoading(true);
+    try {
+      const result = await liveSessionApiService.importSystemMediaBatch(selectedStation.id, selectedSystemMediaIds);
+      showSuccess(
+        "Import thành công",
+        `Imported ${result.importedCount}, skipped ${result.skippedCount}, failed ${result.failedCount}`
+      );
+
+      if (result.errors.length > 0) {
+        showError("Một số bài import lỗi", result.errors[0]);
+      }
+
+      const stationMedia = await liveSessionApiService.getStationMusic(selectedStation.id);
+      setStationMusic(stationMedia);
+      setSelectedSystemMediaIds([]);
+    } catch {
+      showError("Lỗi", "Không thể import system media vào station");
+    } finally {
+      setMusicActionLoading(false);
+    }
+  };
+
+  const handleAddSelectedSystemToPlaylist = async () => {
+    if (!selectedPlaylist || selectedSystemMediaIds.length === 0) return;
+
+    const existingIds = new Set(tracks.map((t) => t.mediaFileId));
+    const idsToAdd = selectedSystemMediaIds.filter((id) => !existingIds.has(id));
+
+    if (idsToAdd.length === 0) {
+      showError("Đã tồn tại", "Các bài đã được thêm vào playlist trước đó");
+      return;
+    }
+
+    setMusicActionLoading(true);
+    try {
+      await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, idsToAdd);
+      const updatedTracks = await liveSessionApiService.getPlaylistTracks(selectedPlaylist.id);
+      setTracks(updatedTracks);
+      showSuccess("Đã thêm", `Đã thêm ${idsToAdd.length} bài từ System Media vào playlist`);
+      setSelectedSystemMediaIds([]);
+    } catch {
+      showError("Lỗi", "Không thể thêm system media vào playlist");
+    } finally {
+      setMusicActionLoading(false);
     }
   };
 
@@ -346,10 +416,30 @@ export function PlaylistsScreen() {
                 <X size={18} />
               </button>
             </div>
+            <div className="pl-media-tabs">
+              <button
+                className={`pl-media-tab ${musicTab === "station" ? "active" : ""}`}
+                onClick={() => setMusicTab("station")}
+              >
+                Station Media ({stationMusic.length})
+              </button>
+              <button
+                className={`pl-media-tab ${musicTab === "system" ? "active" : ""}`}
+                onClick={() => setMusicTab("system")}
+              >
+                System Media ({systemMusic.length})
+              </button>
+            </div>
             <div className="staff-modal-body" style={{ maxHeight: 400, overflowY: "auto" }}>
-              {stationMusic.length === 0 ? (
+              {musicTab === "station" && stationMusic.length === 0 ? (
                 <p className="staff-empty">Không có nhạc nào trong station. Hãy sync hoặc upload trước.</p>
-              ) : (
+              ) : null}
+
+              {musicTab === "system" && systemMusic.length === 0 ? (
+                <p className="staff-empty">Không có system media nào. Hãy upload media hệ thống trước.</p>
+              ) : null}
+
+              {musicTab === "station" ? (
                 stationMusic.map((m) => {
                   const isAdded = tracks.some((t) => t.mediaFileId === m.id);
                   return (
@@ -371,9 +461,52 @@ export function PlaylistsScreen() {
                     </div>
                   );
                 })
+              ) : (
+                systemMusic.map((m) => {
+                  const checked = selectedSystemMediaIds.includes(m.id);
+                  const isAdded = tracks.some((t) => t.mediaFileId === m.id);
+
+                  return (
+                    <div className="pl-track-row" key={m.id}>
+                      <input
+                        type="checkbox"
+                        className="pl-track-check"
+                        checked={checked}
+                        onChange={() => toggleSystemMediaSelection(m.id)}
+                        disabled={isAdded}
+                      />
+                      <Music size={16} style={{ color: "#7C5CFC", flexShrink: 0 }} />
+                      <div className="pl-track-info">
+                        <span className="pl-track-title">{m.title}</span>
+                        <span className="pl-track-artist">{m.artist} {m.album ? `· ${m.album}` : ""}</span>
+                      </div>
+                      <span className={`pl-source-badge ${isAdded ? "added" : "system"}`}>
+                        {isAdded ? "Đã có" : "System"}
+                      </span>
+                    </div>
+                  );
+                })
               )}
             </div>
             <div className="staff-modal-footer">
+              {musicTab === "system" && (
+                <>
+                  <button
+                    className="staff-btn staff-btn--outline"
+                    onClick={handleImportSystemMediaBatch}
+                    disabled={selectedSystemMediaIds.length === 0 || musicActionLoading}
+                  >
+                    Import vào Station
+                  </button>
+                  <button
+                    className="staff-btn staff-btn--primary"
+                    onClick={handleAddSelectedSystemToPlaylist}
+                    disabled={selectedSystemMediaIds.length === 0 || musicActionLoading}
+                  >
+                    Add to Station Playlist
+                  </button>
+                </>
+              )}
               <button className="staff-btn staff-btn--outline" onClick={() => setShowAddTracksModal(false)}>
                 Đóng
               </button>

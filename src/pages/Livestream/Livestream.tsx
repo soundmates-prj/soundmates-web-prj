@@ -26,6 +26,10 @@ import {
 } from "../../services/livestreamService";
 import { usePlayer } from "../../context/PlayerContext";
 import html2canvas from "html2canvas";
+
+// Legacy default station for the old Livestream page
+const DEFAULT_STATION_UUID = "62cc221f-063b-4522-8401-2b5fe9614aee";
+const DEFAULT_EXTERNAL_STATION_ID = 1;
 import {
   showInfo,
   showSuccess,
@@ -213,7 +217,7 @@ const LivestreamPage: React.FC = () => {
   // ===== DATA FETCHING =====
   const fetchNowPlaying = useCallback(async () => {
     try {
-      const data = await livestreamService.getNowPlaying();
+      const data = await livestreamService.getNowPlaying(DEFAULT_STATION_UUID);
       setNowPlaying(data);
       setElapsed(data.currentTrack.elapsed);
       // Push track info to global player context
@@ -1029,7 +1033,7 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
     setLoading(true);
     // Try to request via AzuraCast API
     try {
-      await livestreamService.requestSong(song.shId.toString());
+      await livestreamService.requestSong(DEFAULT_EXTERNAL_STATION_ID, song.shId.toString());
     } catch {
       // demo fallback - still show in chat
     }

@@ -1,0 +1,124 @@
+.payment-result-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-primary);
+}
+
+.payment-result-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 48px 40px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Icon ── */
+.result-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.result-icon.success { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
+.result-icon.failed  { background: rgba(239, 68, 68, 0.12);  color: #ef4444; }
+.result-icon.loading { background: rgba(85, 197, 241, 0.12); color: #55c5f1; }
+
+/* ── Title ── */
+.result-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.result-subtitle {
+  font-size: 14px;
+  color: var(--text-muted, #737373);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+/* ── Details table ── */
+.result-details {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  text-align: left;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  font-size: 13.5px;
+}
+
+.result-row:not(:last-child) {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.result-row-label { color: var(--text-muted, #737373); }
+.result-row-value { font-weight: 600; color: var(--text-primary); }
+
+.result-row-value.success { color: #22c55e; }
+.result-row-value.failed  { color: #ef4444; }
+
+/* ── Actions ── */
+.result-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-result-primary {
+  padding: 10px 24px;
+  background: var(--primary-500, #3387df);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-result-primary:hover { background: var(--primary-600, #2563eb); }
+
+.btn-result-ghost {
+  padding: 10px 24px;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-result-ghost:hover { background: var(--bg-secondary); }
+
+/* ── Spinner ── */
+.result-spinner {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Dark theme ── */
+[data-theme='dark'] .payment-result-card {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}

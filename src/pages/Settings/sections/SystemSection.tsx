@@ -1,8 +1,11 @@
-import React, { useState } from "react";
-import { ChevronDown, Eye, EyeOff } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { ChevronDown, Eye, EyeOff, Loader2, Music } from "lucide-react";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
 import { useTheme } from "../../../context/ThemeContext";
+import favoriteService from "../../../services/favoriteService";
+import type { FavoriteItem } from "../../../services/favoriteService";
 import "./SystemSection.css";
+import "./MusicSection.css";
 import "./ProfileSection.css"; /* reuse .form-group, .input-prefix, .select-wrap */
 
 interface SystemForm {
@@ -18,7 +21,24 @@ interface PwForm {
 
 const SystemSection: React.FC = () => {
   const { theme, setTheme } = useTheme();
-  
+
+  /* ── Favorites music ── */
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [loadingFav, setLoadingFav] = useState(true);
+
+  const loadFavorites = useCallback(async () => {
+    try {
+      const res = await favoriteService.getFavorites("track");
+      if (res.success && res.data) setFavorites(res.data);
+    } catch {
+      // silent
+    } finally {
+      setLoadingFav(false);
+    }
+  }, []);
+
+  useEffect(() => { loadFavorites(); }, [loadFavorites]);
+
   const [systemForm, setSystemForm] = useState<SystemForm>({
     theme: theme === 'dark' ? "Tối" : "Sáng",
     language: "Tiếng Việt",
@@ -176,6 +196,38 @@ const SystemSection: React.FC = () => {
             </div>
           </div>
         )}
+        {/* Favorites music list */}
+        <div className="form-group">
+          <label>Âm nhạc yêu thích</label>
+          {loadingFav ? (
+            <div className="music-loading">
+              <Loader2 size={18} className="music-spinner" />
+              <span>Đang tải...</span>
+            </div>
+          ) : favorites.length === 0 ? (
+            <div className="sys-fav-empty">
+              <Music size={20} />
+              <span>Chưa có bài hát nào. Vào mục <strong>Âm nhạc yêu thích</strong> để thêm nhạc.</span>
+            </div>
+          ) : (
+            <div className="sys-fav-list">
+              {favorites.map((fav) => (
+                <div key={fav.id} className="sys-fav-row">
+                  <img
+                    src={fav.imgUrl || "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1"}
+                    alt={fav.name}
+                    className="sys-fav-cover"
+                  />
+                  <div className="sys-fav-info">
+                    <span className="sys-fav-title">{fav.name}</span>
+                    <span className="sys-fav-artist">{fav.artistName}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
