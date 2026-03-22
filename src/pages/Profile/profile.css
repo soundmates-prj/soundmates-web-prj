@@ -430,21 +430,23 @@
   padding: 8px 0;
 }
 
-.post-list {
+.pf .post-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-.post-card {
+.pf .post-card {
+  display: block;
+  width: 100%;
   border: 1px solid #f0f2f5;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 22px 24px;
   background: #fafbfc;
   transition: box-shadow .18s, background .18s;
 }
 
-.post-card:hover {
+.pf .post-card:hover {
   background: #fff;
   box-shadow: 0 4px 16px rgba(85, 197, 241, 0.08);
 }
@@ -452,33 +454,33 @@
 .post-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .post-meta { flex: 1; min-width: 0; }
 
-.post-name {
-  font-size: 13.5px;
+.pf .post-name {
+  font-size: 16px;
   font-weight: 700;
   color: #111827;
-  margin: 0 0 2px;
+  margin: 0 0 4px;
 }
 
-.post-time {
-  font-size: 11.5px;
+.pf .post-time {
+  font-size: 13px;
   color: #9ca3af;
   margin: 0;
 }
 
-.post-mood {
+.pf .post-mood {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
   background: #e8f8fe;
   color: #2db1e0;
   border-radius: 20px;
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: capitalize;
   flex-shrink: 0;
@@ -486,19 +488,21 @@
 
 .post-body-wrap { margin-bottom: 12px; }
 
-.post-title {
-  font-size: 14.5px;
+.pf .post-title {
+  font-size: 18px;
   font-weight: 700;
   color: #111827;
-  margin: 0 0 5px;
+  margin: 0 0 8px;
   line-height: 1.4;
 }
 
-.post-body {
-  font-size: 14px;
+.pf .post-body {
+  font-size: 18px;
   color: #374151;
-  line-height: 1.65;
+  line-height: 1.7;
   margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .post-img-wrap {
@@ -508,7 +512,7 @@
   background: #f0f2f5;
 }
 
-.post-img-wrap img {
+.pf .post-img-wrap img {
   width: 100%;
   height: auto;
   max-height: 420px;
@@ -516,14 +520,14 @@
   object-fit: contain;
 }
 
-.post-audio-wrap {
-  margin-bottom: 12px;
+.pf .post-audio-wrap {
+  margin-bottom: 14px;
   background: #f4f6f9;
   border-radius: 10px;
   padding: 6px 10px;
 }
 
-.post-audio-wrap audio {
+.pf .post-audio-wrap audio {
   width: 100%;
   height: 36px;
   display: block;
@@ -531,28 +535,29 @@
 
 .post-actions {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 10px;
   padding-top: 12px;
   border-top: 1px solid #f0f2f5;
 }
 
-.post-btn {
+.pf .post-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
+  gap: 8px;
+  padding: 8px 18px;
   background: transparent;
   border: 1px solid #e9ecef;
   border-radius: 20px;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 500;
   color: #6b7280;
   cursor: pointer;
   transition: all .15s;
 }
 
-.post-btn:hover {
+.pf .post-btn:hover {
   background: #e8f8fe;
   border-color: #a8e3f7;
   color: #2db1e0;

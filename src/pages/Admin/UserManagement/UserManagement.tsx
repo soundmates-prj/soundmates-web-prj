@@ -2,61 +2,31 @@ import {
   Users, 
   Search, 
   Plus, 
-  Filter,
+  RefreshCw,
   MoreVertical,
   UserCheck,
   UserX,
-  Shield,
-  Mail,
-  Download,
-  Upload,
-  List,
-  Grid,
-  TrendingUp,
-  TrendingDown,
+  Clock,
   Edit,
   Trash2,
-  Ban,
   Eye,
-  MoreHorizontal,
-  Clock,
-  ArrowUpDown
+  Shield
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import './UserManagement.css';
-import {
-  AddUserModal,
-  EditUserModal,
-  DeleteUserModal,
-  BanUserModal,
-  ViewUserModal,
-  RoleManagementModal,
-  ImportUsersModal,
-  SendMessageModal
-} from './UserManagementModals';
 import userService, { type UserDto } from '../../../services/userService';
-import Loading from '../../../components/common/Loading';
 
 interface User {
-  id: string; // Changed from number to string (Guid)
+  id: string;
   name: string;
   email: string;
   username: string;
-  avatar?: string;
-  role: 'admin' | 'moderator' | 'mentor' | 'user';
-  roleName?: string;
-  status: 'active' | 'inactive' | 'banned' | 'pending';
+  roleName: string;
   isActive: boolean;
-  joinDate: string;
-  lastActive: string;
-  totalListens: number;
-  totalBroadcasts: number;
-  followers: number;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Helper function to convert UserDto from API to User for display
 function mapUserDtoToUser(dto: UserDto): User {
   const fullName = [dto.firstName, dto.lastName].filter(Boolean).join(' ') || dto.username;
   
@@ -65,43 +35,31 @@ function mapUserDtoToUser(dto: UserDto): User {
     name: fullName,
     email: dto.email,
     username: dto.username,
-    role: (dto.roleName?.toLowerCase() as User['role']) || 'user',
-    roleName: dto.roleName,
-    status: dto.isActive ? 'active' : 'inactive',
+    roleName: dto.roleName || 'USER',
     isActive: dto.isActive,
-    joinDate: dto.createdAt ? new Date(dto.createdAt).toLocaleDateString('vi-VN') : '',
-    lastActive: dto.updatedAt ? new Date(dto.updatedAt).toLocaleDateString('vi-VN') : 'Chưa cập nhật',
-    totalListens: 0, // Not available from API
-    totalBroadcasts: 0, // Not available from API
-    followers: 0, // Not available from API
-    createdAt: dto.createdAt,
-    updatedAt: dto.updatedAt,
+    createdAt: dto.createdAt || '',
+    updatedAt: dto.updatedAt || '',
   };
 }
-
-const roles = ['Tất cả', 'Admin', 'Moderator', 'Mentor', 'User'];
-const statuses = ['Tất cả', 'Active', 'Inactive', 'Banned', 'Pending'];
 
 interface StatCardProps {
   icon: React.ReactNode;
   label: string;
   value: string;
   trend?: { value: string; positive: boolean };
-  colorClass: string;
 }
 
-function StatCard({ icon, label, value, trend, colorClass }: StatCardProps) {
+function StatCard({ icon, label, value, trend }: StatCardProps) {
   return (
-    <div className="stats-card">
-      <div className={`stats-card-icon ${colorClass}`}>
+    <div className="lm-stat-card">
+      <div className="lm-stat-icon">
         {icon}
       </div>
-      <div className="stats-card-content">
-        <p className="stats-card-label">{label}</p>
-        <p className="stats-card-value">{value}</p>
+      <div className="lm-stat-content">
+        <span className="lm-stat-label">{label}</span>
+        <span className="lm-stat-value">{value}</span>
         {trend && (
-          <div className={`stats-card-trend ${trend.positive ? 'positive' : 'negative'}`}>
-            {trend.positive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+          <div className={`lm-stat-change ${trend.positive ? 'positive' : 'negative'}`}>
             <span>{trend.value}</span>
           </div>
         )}
@@ -110,491 +68,223 @@ function StatCard({ icon, label, value, trend, colorClass }: StatCardProps) {
   );
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map(word => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
 export function UserManagementScreen() {
-  // UI State
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [selectedRole, setSelectedRole] = useState('Tất cả');
-  const [selectedStatus, setSelectedStatus] = useState('Tất cả');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  
-  // API State
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true); // Set true initially to show loading on first mount
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  
-  // Modal states
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showBanModal, setShowBanModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showRoleModal, setShowRoleModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [showMessageModal, setShowMessageModal] = useState(false);
-  
-  // Action menu state
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null);
-  
-  // Edit user data
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  
-  // Sort state
-  const [sortBy] = useState<'name' | 'joinDate' | 'lastActive'>('joinDate');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Fetch users from API
   useEffect(() => {
-    // Debounce search query to avoid too many API calls
     const timeoutId = setTimeout(() => {
-      const fetchUsers = async () => {
-        setLoading(true);
-        setError(null);
-        
-        try {
-          const response = await userService.getUsers({
-            q: searchQuery || undefined,
-            page: currentPage,
-            pageSize: pageSize,
-          });
-
-          if (response.success && response.data) {
-            const mappedUsers = response.data.items.map(mapUserDtoToUser);
-            setUsers(mappedUsers);
-            setTotalItems(response.data.totalItems);
-            setTotalPages(response.data.totalPages);
-          } else {
-            setError(response.message || 'Không thể tải danh sách người dùng');
-            setUsers([]);
-          }
-        } catch (err) {
-          setError('Đã xảy ra lỗi khi tải danh sách người dùng');
-          setUsers([]);
-          console.error('Error fetching users:', err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
       fetchUsers();
-    }, 500); // 500ms debounce
+    }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [currentPage, pageSize, searchQuery]);
+  }, [currentPage, searchQuery]);
 
-  // Filter users based on role and status (client-side filtering on already fetched data)
-  const filteredUsers = users.filter(user => {
-    const matchesRole = selectedRole === 'Tất cả' || user.role.toLowerCase() === selectedRole.toLowerCase();
-    const matchesStatus = selectedStatus === 'Tất cả' || user.status.toLowerCase() === selectedStatus.toLowerCase();
-    return matchesRole && matchesStatus;
-  }).sort((a, b) => {
-    const order = sortOrder === 'asc' ? 1 : -1;
-    switch (sortBy) {
-      case 'name':
-        return order * a.name.localeCompare(b.name);
-      case 'joinDate':
-        return order * (new Date(a.joinDate.split('/').reverse().join('-')).getTime() - 
-                       new Date(b.joinDate.split('/').reverse().join('-')).getTime());
-      default:
-        return 0;
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await userService.getUsers({
+        q: searchQuery || undefined,
+        page: currentPage,
+        pageSize: pageSize,
+      });
+
+      if (response.success && response.data) {
+        const mappedUsers = response.data.items.map(mapUserDtoToUser);
+        setUsers(mappedUsers);
+        setTotalItems(response.data.totalItems);
+        setTotalPages(response.data.totalPages);
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    } finally {
+      setLoading(false);
     }
-  });
+  };
 
-  const toggleUserSelection = (id: string) => {
-    setSelectedUsers(prev => 
-      prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  };
+
+  const getRoleBadge = (role: string) => {
+    const r = role.toUpperCase();
+    return <span className={`lm-role-badge lm-role-${r.toLowerCase()}`}>{r}</span>;
+  };
+
+  const getStatusBadge = (isActive: boolean) => {
+    return (
+      <span className={`lm-status-badge ${isActive ? 'active' : 'inactive'}`}>
+        <span className={`lm-status-dot ${isActive ? 'active' : 'inactive'}`}></span>
+        {isActive ? 'Active' : 'Inactive'}
+      </span>
     );
   };
 
-  const handleEdit = (user: User) => {
-    setEditingUser(user);
-    setShowEditModal(true);
-    setActiveActionMenu(null);
-  };
-
-  const handleView = (user: User) => {
-    setEditingUser(user);
-    setShowViewModal(true);
-    setActiveActionMenu(null);
-  };
-
-  const handleBan = (user: User) => {
-    setEditingUser(user);
-    setShowBanModal(true);
-    setActiveActionMenu(null);
-  };
-
-  const handleDelete = (userId: string) => {
-    setSelectedUsers([userId]);
-    setShowDeleteModal(true);
-    setActiveActionMenu(null);
-  };
-
-  const handleBulkDelete = () => {
-    setShowDeleteModal(true);
-  };
-
-  const handleChangeRole = (user: User) => {
-    setEditingUser(user);
-    setShowRoleModal(true);
-    setActiveActionMenu(null);
-  };
-
-  const handleSendMessage = () => {
-    setShowMessageModal(true);
-  };
-
-  const handleExport = () => {
-    const csvContent = filteredUsers
-      .filter(u => selectedUsers.length === 0 || selectedUsers.includes(u.id))
-      .map(u => `${u.name},${u.email},${u.role},${u.status},${u.joinDate},${u.lastActive}`)
-      .join('\n');
-    
-    const blob = new Blob([`Name,Email,Role,Status,Join Date,Last Active\n${csvContent}`], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'users-export.csv';
-    a.click();
-  };
+  // Calculate stats from actual data
+  const activeUsers = users.filter(u => u.isActive).length;
+  const inactiveUsers = users.filter(u => !u.isActive).length;
 
   return (
-    <div className="music-catalog-container">
+    <div className="lm-page">
       {/* Header */}
-      <div className="music-catalog-header">
-        <div className="music-catalog-header-content">
-          <div>
-            <h2 className="music-catalog-title">User Management</h2>
-            <p className="music-catalog-subtitle">
-              Quản lý người dùng, phân quyền và hoạt động
-            </p>
-          </div>
-          <div className="music-catalog-header-actions">
-            <button 
-              onClick={() => setShowImportModal(true)}
-              className="btn btn-secondary"
-            >
-              <Upload size={16} />
-              Import Users
-            </button>
-            <button 
-              onClick={() => setShowAddUserModal(true)}
-              className="btn btn-primary"
-            >
-              <Plus size={16} />
-              Thêm User
-            </button>
-          </div>
+      <div className="lm-header">
+        <div className="lm-header-left">
+          <h1>Quản lý người dùng</h1>
+          <p>Quản lý người dùng, phân quyền và hoạt động</p>
+        </div>
+        <div className="lm-header-actions">
+          <button className="lm-btn lm-btn--outline" onClick={fetchUsers}>
+            <RefreshCw size={15} />
+            Làm mới
+          </button>
+          <button className="lm-btn lm-btn--primary">
+            <Plus size={15} />
+            Thêm User
+          </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="stats-card-grid">
+      <div className="lm-stats-grid">
         <StatCard
-          icon={<Users size={20} style={{ color: '#55c5f1' }} />}
+          icon={<Users size={20} />}
           label="Tổng Users"
-          value="12,847"
-          trend={{ value: '+12.5%', positive: true }}
-          colorClass="primary"
+          value={totalItems.toLocaleString()}
         />
         <StatCard
-          icon={<UserCheck size={20} style={{ color: '#22C55E' }} />}
+          icon={<UserCheck size={20} />}
           label="Active Users"
-          value="9,234"
-          trend={{ value: '+8.2%', positive: true }}
-          colorClass="success"
+          value={activeUsers.toLocaleString()}
         />
         <StatCard
-          icon={<Clock size={20} style={{ color: '#F59E0B' }} />}
-          label="Pending"
-          value="156"
-          trend={{ value: '-2.4%', positive: false }}
-          colorClass="warning"
+          icon={<Clock size={20} />}
+          label="Inactive Users"
+          value={inactiveUsers.toLocaleString()}
         />
         <StatCard
-          icon={<UserX size={20} style={{ color: '#FB2C36' }} />}
-          label="Banned"
-          value="89"
-          trend={{ value: '+3.1%', positive: false }}
-          colorClass="danger"
+          icon={<UserX size={20} />}
+          label="Trang hiện tại"
+          value={`${currentPage}/${totalPages}`}
         />
       </div>
 
-      {/* Users Table/Grid */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">Danh Sách Users</h3>
-          <div className="view-toggle">
-            <button 
-              onClick={() => setViewMode('list')}
-              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-            >
-              <List size={16} />
-            </button>
-            <button 
-              onClick={() => setViewMode('grid')}
-              className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-            >
-              <Grid size={16} />
-            </button>
-          </div>
+      {/* Users Table */}
+      <div className="lm-card">
+        <div className="lm-card-header">
+          <h3 className="lm-card-title">Danh Sách Users</h3>
         </div>
 
-        {/* Search and Filters */}
-        <div className="search-filters-bar">
-          <div className="search-input-wrapper">
-            <Search size={18} className="search-icon" />
+        {/* Search */}
+        <div className="lm-search-bar">
+          <div className="lm-search-wrapper">
+            <Search size={18} className="lm-search-icon" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên, email..."
+              placeholder="Tìm kiếm theo tên, email, username..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-          </div>
-          <button className="btn btn-secondary">
-            <Filter size={16} />
-            Lọc Nâng Cao
-          </button>
-          <button 
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="btn btn-secondary"
-          >
-            <ArrowUpDown size={16} />
-            Sắp Xếp
-          </button>
-        </div>
-
-        {/* Role and Status Filters */}
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-          <div style={{ flex: 1 }}>
-            <label className="form-label">Vai Trò</label>
-            <div className="genre-filters">
-              {roles.map((role) => (
-                <button
-                  key={role}
-                  onClick={() => setSelectedRole(role)}
-                  className={`genre-filter-btn ${selectedRole === role ? 'active' : ''}`}
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label className="form-label">Trạng Thái</label>
-            <div className="genre-filters">
-              {statuses.map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setSelectedStatus(status)}
-                  className={`genre-filter-btn ${selectedStatus === status ? 'active' : ''}`}
-                >
-                  {status}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Selected Actions */}
-        {selectedUsers.length > 0 && (
-          <div className="bulk-action-panel">
-            <span className="bulk-action-count">
-              Đã chọn {selectedUsers.length} users
-            </span>
-            <div className="bulk-action-buttons">
-              <button 
-                onClick={handleSendMessage}
-                className="bulk-action-btn light"
-              >
-                <Mail size={14} />
-                Gửi Tin Nhắn
-              </button>
-              <button 
-                onClick={handleExport}
-                className="bulk-action-btn light"
-              >
-                <Download size={14} />
-                Xuất
-              </button>
-              <button 
-                onClick={handleBulkDelete}
-                className="bulk-action-btn danger"
-              >
-                <Trash2 size={14} />
-                Xóa
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <div style={{ padding: '80px 40px', textAlign: 'center' }}>
-            <Loading size="large" text="Đang tải danh sách người dùng..." />
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && !loading && (
-          <div style={{ padding: '40px', textAlign: 'center' }}>
-            <p style={{ color: 'var(--color-danger)' }}>{error}</p>
-            <button 
-              onClick={() => {
-                setError(null);
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="btn btn-primary"
-              style={{ marginTop: '16px' }}
-            >
-              Thử Lại
-            </button>
+              className="lm-search-input"
+            />
+          </div>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div className="lm-loading">
+            <RefreshCw size={28} className="lm-spin" />
+            <p>Đang tải danh sách người dùng...</p>
           </div>
         )}
 
-        {/* Empty State */}
-        {!loading && !error && filteredUsers.length === 0 && (
-          <div style={{ padding: '40px', textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-secondary)' }}>Không tìm thấy người dùng nào</p>
+        {/* Empty */}
+        {!loading && users.length === 0 && (
+          <div className="lm-empty">
+            <Users size={48} />
+            <p>Không tìm thấy người dùng nào</p>
           </div>
         )}
 
-        {/* Users List/Grid */}
-        {!loading && !error && filteredUsers.length > 0 && (viewMode === 'list' ? (
-          <div className="music-table-wrapper">
-            <table className="music-table">
+        {/* Table */}
+        {!loading && users.length > 0 && (
+          <div className="lm-table-wrapper">
+            <table className="lm-table">
               <thead>
                 <tr>
-                  <th style={{ width: '48px' }}>
-                    <input 
-                      type="checkbox" 
-                      className="form-checkbox"
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedUsers(filteredUsers.map(u => u.id));
-                        } else {
-                          setSelectedUsers([]);
-                        }
-                      }}
-                      checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                    />
-                  </th>
                   <th>User</th>
                   <th className="center">Vai Trò</th>
                   <th className="center">Trạng Thái</th>
                   <th className="center">Ngày Tham Gia</th>
-                  <th className="center">Hoạt Động Cuối</th>
-                  <th className="center">Lượt Nghe</th>
-                  <th className="center">Followers</th>
+                  <th className="center">Cập Nhật Cuối</th>
                   <th style={{ width: '48px' }}></th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user) => (
+                {users.map((user) => (
                   <tr key={user.id}>
                     <td>
-                      <input 
-                        type="checkbox" 
-                        checked={selectedUsers.includes(user.id)}
-                        onChange={() => toggleUserSelection(user.id)}
-                        className="form-checkbox"
-                      />
-                    </td>
-                    <td>
-                      <div className="user-info-cell">
-                        <div className="user-avatar">
-                          {user.avatar ? (
-                            <img src={user.avatar} alt={user.name} />
-                          ) : (
-                            getInitials(user.name)
-                          )}
+                      <div className="lm-user-cell">
+                        <div className="lm-user-avatar">
+                          {user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                         </div>
-                        <div className="user-info-details">
-                          <p className="user-info-name">{user.name}</p>
-                          <p className="user-info-email">{user.email}</p>
+                        <div className="lm-user-info">
+                          <p className="lm-user-name">{user.name}</p>
+                          <p className="lm-user-email">{user.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="center">
-                      <span className={`role-badge ${user.role}`}>
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </span>
+                      {getRoleBadge(user.roleName)}
                     </td>
                     <td className="center">
-                      <span className={`status-badge ${user.status}`}>
-                        <span className={`status-dot ${user.status}`}></span>
-                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                      </span>
+                      {getStatusBadge(user.isActive)}
                     </td>
                     <td className="center">
-                      <span className="track-text-small">{user.joinDate}</span>
+                      <span className="lm-text-small">{formatDate(user.createdAt)}</span>
                     </td>
                     <td className="center">
-                      <span className="track-text-small">{user.lastActive}</span>
-                    </td>
-                    <td className="center">
-                      <span className="stat-cell-value">{user.totalListens.toLocaleString()}</span>
-                    </td>
-                    <td className="center">
-                      <span className="stat-cell-value">{user.followers.toLocaleString()}</span>
+                      <span className="lm-text-small">{formatDate(user.updatedAt)}</span>
                     </td>
                     <td>
-                      <div className="action-menu-wrapper">
+                      <div className="lm-action-menu-wrapper">
                         <button 
                           onClick={() => setActiveActionMenu(activeActionMenu === user.id ? null : user.id)}
-                          className="btn-icon btn-secondary"
+                          className="lm-action-btn"
                         >
                           <MoreVertical size={16} />
                         </button>
                         
                         {activeActionMenu === user.id && (
-                          <div className="action-menu-dropdown">
-                            <button onClick={() => handleView(user)} className="action-menu-item">
-                              <Eye size={16} className="action-menu-item-icon" />
-                              <span className="action-menu-item-text">Xem Chi Tiết</span>
+                          <div className="lm-action-dropdown">
+                            <button className="lm-action-item">
+                              <Eye size={16} />
+                              <span>Xem Chi Tiết</span>
                             </button>
-                            <button onClick={() => handleEdit(user)} className="action-menu-item">
-                              <Edit size={16} className="action-menu-item-icon" />
-                              <span className="action-menu-item-text">Chỉnh sửa</span>
+                            <button className="lm-action-item">
+                              <Edit size={16} />
+                              <span>Chỉnh sửa</span>
                             </button>
-                            <button onClick={() => handleChangeRole(user)} className="action-menu-item">
-                              <Shield size={16} className="action-menu-item-icon" />
-                              <span className="action-menu-item-text">Đổi Vai Trò</span>
+                            <button className="lm-action-item">
+                              <Shield size={16} />
+                              <span>Đổi Vai Trò</span>
                             </button>
-                            <button
-                              onClick={() => {
-                                setEditingUser(user);
-                                handleSendMessage();
-                              }}
-                              className="action-menu-item"
-                            >
-                              <Mail size={16} className="action-menu-item-icon" />
-                              <span className="action-menu-item-text">Gửi Tin Nhắn</span>
-                            </button>
-                            <div className="action-menu-divider"></div>
-                            {user.status !== 'banned' && (
-                              <button onClick={() => handleBan(user)} className="action-menu-item">
-                                <Ban size={16} className="action-menu-item-icon" />
-                                <span className="action-menu-item-text">Ban User</span>
-                              </button>
-                            )}
-                            <button onClick={() => handleDelete(user.id)} className="action-menu-item danger">
-                              <Trash2 size={16} className="action-menu-item-icon" />
-                              <span className="action-menu-item-text">Xóa</span>
+                            <div className="lm-action-divider"></div>
+                            <button className="lm-action-item danger">
+                              <Trash2 size={16} />
+                              <span>Xóa</span>
                             </button>
                           </div>
                         )}
@@ -605,213 +295,55 @@ export function UserManagementScreen() {
               </tbody>
             </table>
           </div>
-        ) : (
-          <div className="users-grid">
-            {filteredUsers.map((user) => (
-              <div key={user.id} className="user-card">
-                <div className="user-card-header">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedUsers.includes(user.id)}
-                    onChange={() => toggleUserSelection(user.id)}
-                    className="user-card-checkbox"
-                  />
-                  <div className="user-avatar large user-card-avatar">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} />
-                    ) : (
-                      getInitials(user.name)
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setActiveActionMenu(activeActionMenu === user.id ? null : user.id)}
-                    className="user-card-menu-btn"
-                  >
-                    <MoreHorizontal size={14} />
-                  </button>
-                </div>
-                
-                <h4 className="user-card-name">{user.name}</h4>
-                <p className="user-card-email">{user.email}</p>
-                
-                <div className="user-card-badges">
-                  <span className={`role-badge ${user.role}`}>
-                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                  </span>
-                  <span className={`status-badge ${user.status}`}>
-                    <span className={`status-dot ${user.status}`}></span>
-                    {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                  </span>
-                </div>
-                
-                <div className="user-card-stats">
-                  <div className="user-card-stat">
-                    <div className="user-card-stat-value">{user.totalListens}</div>
-                    <div className="user-card-stat-label">Lượt Nghe</div>
-                  </div>
-                  <div className="user-card-stat">
-                    <div className="user-card-stat-value">{user.totalBroadcasts}</div>
-                    <div className="user-card-stat-label">Phát Sóng</div>
-                  </div>
-                  <div className="user-card-stat">
-                    <div className="user-card-stat-value">{user.followers}</div>
-                    <div className="user-card-stat-label">Followers</div>
-                  </div>
-                </div>
-                
-                {activeActionMenu === user.id && (
-                  <div className="action-menu-dropdown">
-                    <button onClick={() => handleView(user)} className="action-menu-item">
-                      <Eye size={16} className="action-menu-item-icon" />
-                      <span className="action-menu-item-text">Xem Chi Tiết</span>
-                    </button>
-                    <button onClick={() => handleEdit(user)} className="action-menu-item">
-                      <Edit size={16} className="action-menu-item-icon" />
-                      <span className="action-menu-item-text">Chỉnh sửa</span>
-                    </button>
-                    <button onClick={() => handleChangeRole(user)} className="action-menu-item">
-                      <Shield size={16} className="action-menu-item-icon" />
-                      <span className="action-menu-item-text">Đổi Vai Trò</span>
-                    </button>
-                    <div className="action-menu-divider"></div>
-                    {user.status !== 'banned' && (
-                      <button onClick={() => handleBan(user)} className="action-menu-item">
-                        <Ban size={16} className="action-menu-item-icon" />
-                        <span className="action-menu-item-text">Ban User</span>
-                      </button>
-                    )}
-                    <button onClick={() => handleDelete(user.id)} className="action-menu-item danger">
-                      <Trash2 size={16} className="action-menu-item-icon" />
-                      <span className="action-menu-item-text">Xóa</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ))}
+        )}
 
         {/* Pagination */}
-        {!loading && !error && filteredUsers.length > 0 && (
-        <div className="pagination-wrapper">
-          <p className="pagination-info">
-            Hiển thị {filteredUsers.length} trên tổng {totalItems.toLocaleString()} users
-          </p>
-          <div className="pagination-buttons">
-            <button 
-              className="pagination-btn"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1 || loading}
-            >
-              Trước
-            </button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              // Show current page and 2 pages before and after
-              let pageNum: number;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-              
-              return (
-                <button 
-                  key={pageNum}
-                  className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(pageNum)}
-                  disabled={loading}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-            <button 
-              className="pagination-btn"
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages || loading}
-            >
-              Sau
-            </button>
+        {!loading && users.length > 0 && (
+          <div className="lm-pagination">
+            <p className="lm-pagination-info">
+              Hiển thị {users.length} trên tổng {totalItems.toLocaleString()} users
+            </p>
+            <div className="lm-pagination-buttons">
+              <button 
+                className="lm-pagination-btn"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                Trước
+              </button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button 
+                    key={pageNum}
+                    className={`lm-pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              <button 
+                className="lm-pagination-btn"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Sau
+              </button>
+            </div>
           </div>
-        </div>
         )}
       </div>
-
-      {/* Modals */}
-      <AddUserModal 
-        isOpen={showAddUserModal} 
-        onClose={() => setShowAddUserModal(false)} 
-      />
-      
-      <EditUserModal 
-        isOpen={showEditModal} 
-        onClose={() => {
-          setShowEditModal(false);
-          setEditingUser(null);
-        }}
-        user={editingUser}
-      />
-      
-      <DeleteUserModal 
-        isOpen={showDeleteModal} 
-        onClose={() => {
-          setShowDeleteModal(false);
-          if (selectedUsers.length === 1) setSelectedUsers([]);
-        }}
-        count={selectedUsers.length}
-        onConfirm={() => {
-          setShowDeleteModal(false);
-          setSelectedUsers([]);
-        }}
-      />
-      
-      <BanUserModal 
-        isOpen={showBanModal} 
-        onClose={() => {
-          setShowBanModal(false);
-          setEditingUser(null);
-        }}
-        user={editingUser}
-      />
-      
-      <ViewUserModal 
-        isOpen={showViewModal} 
-        onClose={() => {
-          setShowViewModal(false);
-          setEditingUser(null);
-        }}
-        user={editingUser}
-      />
-      
-      <RoleManagementModal 
-        isOpen={showRoleModal} 
-        onClose={() => {
-          setShowRoleModal(false);
-          setEditingUser(null);
-        }}
-        user={editingUser}
-      />
-      
-      <ImportUsersModal 
-        isOpen={showImportModal} 
-        onClose={() => setShowImportModal(false)} 
-      />
-      
-      <SendMessageModal 
-        isOpen={showMessageModal} 
-        onClose={() => {
-          setShowMessageModal(false);
-          setEditingUser(null);
-        }}
-        users={selectedUsers.length > 0 
-          ? filteredUsers.filter(u => selectedUsers.includes(u.id)) 
-          : editingUser ? [editingUser] : []
-        }
-      />
     </div>
   );
 }

@@ -27,9 +27,9 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="footer-section-title">Về chúng tôi</h4>
             <ul className="footer-links">
-              <li><a href="#">Trang chủ</a></li>
+              <li><a href="/">Trang chủ</a></li>
+              <li><a href="#about-us">Giới thiệu</a></li>
               <li><a href="#">Chính sách</a></li>
-              <li><a href="#">Ứng dụng điện thoại</a></li>
             </ul>
           </div>
 
@@ -65,10 +65,10 @@ const Footer: React.FC = () => {
             </div>
             <p className="footer-app-title">Tải ứng dụng SoundMates</p>
             <div className="footer-app-buttons">
-              <a href="#" className="app-store-link">
+              <a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" className="app-store-link">
                 <img src={chPlayImg} alt="Tải trên Google Play" />
               </a>
-              <a href="#" className="app-store-link">
+              <a href="https://www.apple.com/app-store/" target="_blank" rel="noopener noreferrer" className="app-store-link">
                 <img src={appStoreImg} alt="Tải trên App Store" />
               </a>
             </div>

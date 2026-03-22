@@ -3,15 +3,12 @@ import {
   SquarePen,
   Play,
   Heart,
-  MessageCircle,
-  Share2,
   Music2,
   MoreHorizontal,
   ChartBar,
   AudioLines,
   Plus,
-  Trash2,
-  Pencil,
+  Sparkles,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -25,6 +22,8 @@ import CreatePostModal from "./modals/CreatePostModal";
 import EditPostModal from "./modals/EditPostModal";
 import favoriteService from "../../services/favoriteService";
 import type { FavoriteItem } from "../../services/favoriteService";
+import BlogPostCard from "../../components/blog/BlogPostCard";
+import ShareMusicModal from "../../components/blog/ShareMusicModal";
 
 /* ── Types ── */
 type Tab = "overview" | "songs" | "playlists" | "podcasts" | "community";

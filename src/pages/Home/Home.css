@@ -1,1402 +1,868 @@
 /* ============================================
-   SoundMates Home Page Styles
-   Primary Color: #55C5F1
-   TRAE-inspired Sleek Modern Theme
+   SoundMates Home Page — Premium Consistent Styles
+   Primary: #55C5F1 | Font: Inter
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Ephesis&family=Pacifico&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ============================================
-   CSS Variables - Home Page Theme
-   ============================================ */
+/* ─── CSS Variables ─── */
 :root {
-    --home-primary: #55C5F1;
-    --home-primary-light: #8ED8F6;
-    --home-primary-lighter: #D6F2FC;
-    --home-primary-dark: #3AA8D4;
-    --home-primary-darker: #2E8AB0;
+    --sm-primary: #55C5F1;
+    --sm-primary-light: #8ED8F6;
+    --sm-primary-dark: #3AA8D4;
+    --sm-primary-deeper: #2E8AB0;
+    --sm-primary-muted: rgba(85, 197, 241, 0.08);
 
-    --home-gradient-start: #55C5F1;
-    --home-gradient-end: #8ED8F6;
-    --home-gradient-pink: #F9A8D4;
+    --sm-text: #1E293B;
+    --sm-text-secondary: #64748b;
+    --sm-text-muted: #94a3b8;
 
-    --home-bg-hero: linear-gradient(180deg, #D6F2FC 0%, #FFFFFF 100%);
-    --home-bg-section: #FAFAFA;
+    --sm-bg: #f8fafc;
+    --sm-card-bg: #ffffff;
+    --sm-card-border: rgba(0, 0, 0, 0.05);
+    --sm-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    --sm-card-hover-shadow: 0 12px 40px rgba(85, 197, 241, 0.15);
+    --sm-glow: rgba(85, 197, 241, 0.12);
 
-    --home-text-dark: #1E293B;
-    --home-text-secondary: #64748b;
-    --home-text-light: #94a3b8;
-
-    --home-card-shadow: 0 4px 20px rgba(85, 197, 241, 0.15);
-    --home-card-hover-shadow: 0 8px 30px rgba(85, 197, 241, 0.25);
-
-    --home-card-bg: #ffffff;
-    --home-card-border: #f1f5f9;
-    --home-nav-bg: #ffffff;
-    --home-nav-color: var(--home-text-dark);
-    --home-subscription-bg: linear-gradient(135deg, #f7fcff 0%, #ecf7ff 100%);
-    --home-subscription-border: rgba(85, 197, 241, 0.3);
-    --home-subscription-shadow: 0 20px 60px rgba(85, 197, 241, 0.22);
-    --home-subscription-glow: radial-gradient(circle, rgba(85, 197, 241, 0.18) 0%, transparent 70%);
-    --home-subscription-desc: #1e293b;
-    --home-subscription-price: #2e8ab0;
+    --sm-container: 1400px;
+    --sm-padding: 24px;
+    --sm-radius: 18px;
+    --sm-radius-lg: 24px;
 }
 
 [data-theme='dark'] {
-    --home-primary: #55C5F1;
-    --home-primary-light: #8ED8F6;
-    --home-primary-lighter: #1A2235;
-    --home-primary-dark: #3AA8D4;
-    --home-primary-darker: #2E8AB0;
+    --sm-text: #f1f5f9;
+    --sm-text-secondary: #94A3B8;
+    --sm-text-muted: #64748B;
 
-    --home-gradient-start: #55C5F1;
-    --home-gradient-end: #8ED8F6;
-    --home-gradient-pink: #D6F2FC;
-
-    --home-bg-hero: linear-gradient(180deg, #0A0F1A 0%, #050810 100%);
-    --home-bg-section: #050810;
-
-    --home-text-dark: #FFFFFF;
-    --home-text-secondary: #94A3B8;
-    --home-text-light: #64748B;
-
-    --home-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-    --home-card-hover-shadow: 0 12px 40px rgba(255, 215, 0, 0.2);
-
-    --home-card-bg: rgba(20, 20, 30, 0.6);
-    --home-card-border: rgba(255, 255, 255, 0.05);
-    --home-nav-bg: rgba(30, 30, 40, 0.8);
-    --home-nav-color: #ffffff;
-    --home-subscription-bg: linear-gradient(135deg, #1A1A2E 0%, #101018 100%);
-    --home-subscription-border: rgba(255, 255, 255, 0.05);
-    --home-subscription-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    --home-subscription-glow: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-    --home-subscription-desc: #e2e8f0;
-    --home-subscription-price: #55C5F1;
+    --sm-bg: #050810;
+    --sm-card-bg: rgba(20, 22, 35, 0.7);
+    --sm-card-border: rgba(255, 255, 255, 0.06);
+    --sm-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --sm-card-hover-shadow: 0 12px 40px rgba(85, 197, 241, 0.12);
+    --sm-glow: rgba(85, 197, 241, 0.08);
 }
 
-/* ============================================
-   Home Page Container
-   ============================================ */
+/* ─── Page container ─── */
 .home-page {
     min-height: 100vh;
-    background: var(--home-bg-section);
-    overflow: auto;
-    color: var(--home-text-dark);
+    background: var(--sm-bg);
+    color: var(--sm-text);
+    overflow-x: hidden;
 }
 
 /* ============================================
-   Hero Section
+   CONSISTENT LAYOUT SYSTEM
    ============================================ */
-.hero-section {
-    background: var(--home-bg-hero);
-    padding: 60px 32px 0px;
-    position: relative;
-    overflow: hidden;
+.sm-section {
+    padding: 60px 0;
+    will-change: transform, opacity;
 }
 
-.hero-section::before {
+.sm-container {
+    max-width: var(--sm-container);
+    margin: 0 auto;
+    padding: 0 var(--sm-padding);
+}
+
+/* ─── Section header ─── */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+
+.section-title {
+    font-family: 'Ephesis', cursive;
+    font-size: 2rem;
+    color: var(--sm-primary);
+}
+
+.section-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.section-tab {
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--sm-text-secondary);
+    background: var(--sm-primary-muted);
+    border: 1px solid var(--sm-card-border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.section-tab:hover,
+.section-tab.active {
+    background: var(--sm-primary);
+    color: #fff;
+    border-color: var(--sm-primary);
+    box-shadow: 0 0 16px var(--sm-glow);
+}
+
+.section-link {
+    color: var(--sm-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.3s ease;
+}
+
+.section-link:hover {
+    color: var(--sm-primary-dark);
+}
+
+/* ============================================
+   PLAYLIST CAROUSEL
+   ============================================ */
+.playlist-carousel {
+    position: relative;
+}
+
+.playlist-carousel-inner {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: 10px 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+.playlist-carousel-inner::-webkit-scrollbar {
+    display: none;
+}
+
+/* Gradient fade edges */
+.playlist-carousel::before,
+.playlist-carousel::after {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 50% 30%, rgba(85, 197, 241, 0.1) 0%, transparent 60%);
-    opacity: 0.8;
+    width: 60px;
+    z-index: 5;
+    pointer-events: none;
 }
 
-    .hero-container {
-        max-width: 100%;
-        margin: 0;
-        display: grid;
-        align-items: center;
-        gap: 60px;
-        position: relative;
-        z-index: 1;
-    }
+.playlist-carousel::before {
+    left: 0;
+    background: linear-gradient(to right, var(--sm-bg), transparent);
+}
 
-    .hero-content {
-        flex: 1;
-        text-align: center;
-        margin-bottom: 100px;
-        position: relative;
-        z-index: 3;
-    }
+.playlist-carousel::after {
+    right: 0;
+    background: linear-gradient(to left, var(--sm-bg), transparent);
+}
 
-    .hero-title {
-        font-family: 'Ephesis', cursive;
-        font-size: 10rem;
-        color: var(--home-text-dark);
-        margin-bottom: 20px;
-        line-height: 1.2;
-        animation: fadeInUp 0.8s ease-out;
-        font-weight: 400;
-    }
+.playlist-card {
+    flex: 0 0 200px;
+    scroll-snap-align: start;
+    background: var(--sm-card-bg);
+    border-radius: var(--sm-radius);
+    overflow: hidden;
+    box-shadow: var(--sm-card-shadow);
+    border: 1px solid var(--sm-card-border);
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, box-shadow;
+}
 
-    .hero-title .gradient-text {
-        font-size: 10rem;
-        font-family: 'Ephesis', cursive;
-    }
+.playlist-card:hover {
+    box-shadow: var(--sm-card-hover-shadow);
+    border-color: rgba(85, 197, 241, 0.2);
+}
 
-    .hero-title .gradient-text {
-        background: linear-gradient(90deg, #55C5F1 0%, #8ED8F6 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
+.playlist-card-image {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
 
-    .hero-title span {
-        background: linear-gradient(135deg, var(--home-primary), var(--home-gradient-end));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
+.playlist-card-content {
+    padding: 14px;
+}
 
-    .hero-subtitle {
-        font-size: 1.8rem;
-        background: linear-gradient(180deg, #55C5F1, var(--home-primary));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 32px;
-        animation: fadeInUp 0.8s ease-out 0.1s both;
-    }
+.playlist-card-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--sm-text);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
 
-    .hero-cta {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        background: linear-gradient(135deg, var(--home-primary), var(--home-primary-dark));
-        color: white;
-        padding: 14px 32px;
-        border-radius: 30px;
-        font-size: 1rem;
-        font-weight: 600;
-        text-decoration: none;
-        box-shadow: 0 4px 20px rgba(85, 197, 241, 0.4);
-        transition: all 0.3s ease;
-        animation: fadeInUp 0.8s ease-out 0.2s both;
-    }
+.playlist-card-subtitle {
+    font-size: 0.78rem;
+    color: var(--sm-text-muted);
+}
 
-    .hero-cta:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 30px rgba(85, 197, 241, 0.5);
-    }
+.carousel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--sm-card-bg);
+    border: 1px solid var(--sm-card-border);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sm-text);
+    transition: all 0.3s ease;
+    z-index: 10;
+}
 
-    .hero-illustration {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        animation: fadeInRight 1s ease-out;
-        position: relative;
-        height: 310px;
-        z-index: 1;
-        margin-top: 60px;
-        /* overflow: hidden; */
-    }
+.carousel-nav:hover {
+    background: var(--sm-primary);
+    color: #fff;
+    border-color: var(--sm-primary);
+}
 
-    /* Hero image - Background cyan */
-    .hero-illustration::before {
-        content: '';
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: var(--home-primary);
-        border-radius: 30px;
-        z-index: 0;
-    }
+.carousel-nav.prev { left: -22px; }
+.carousel-nav.next { right: -22px; }
 
-    /* Inner screen - Image inside the frame */
-    .hero-illustration img {
-        position: relative;
-        width: 58%;
-        /* max-width: 510px; */
-        /* height: auto; */
-        border: #000 solid 20px;
-        border-radius: 16px;
-        z-index: 2;
-        box-shadow: none;
-    }
-
-    /* ============================================
-   Section Styles
+/* ============================================
+   LIVE ROOM
    ============================================ */
-    .section {
-        padding: 60px 32px;
-        max-width: 100%;
-        margin: 0;
-    }
+.live-room-card {
+    position: relative;
+    border-radius: var(--sm-radius-lg);
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--sm-primary-muted), rgba(249, 168, 212, 0.06));
+    padding: 32px;
+    border: 1px solid var(--sm-card-border);
+    box-shadow: var(--sm-card-shadow);
+    transition: box-shadow 0.3s ease;
+}
 
-    .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 24px;
-    }
+.live-room-card:hover {
+    box-shadow: var(--sm-card-hover-shadow);
+}
 
-    .section-title {
-        font-family: 'ephesis', cursive;
-        font-size: 2rem;
-        color: var(--home-primary);
-        position: relative;
-    }
+.live-room-badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ef4444;
+}
 
-    /* .section-title::after {
+[data-theme='dark'] .live-room-badge {
+    background: rgba(30, 30, 40, 0.9);
+}
+
+.live-room-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: pulse-dot 1.5s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.live-room-content {
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+}
+
+.live-room-info { flex: 1; }
+
+.live-room-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--sm-text);
+    margin-bottom: 8px;
+}
+
+.live-room-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--sm-text-secondary);
+    font-size: 0.85rem;
+}
+
+.live-room-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.live-room-cta {
+    background: linear-gradient(135deg, var(--sm-primary), var(--sm-primary-dark));
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(85, 197, 241, 0.3);
+}
+
+.live-room-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(85, 197, 241, 0.4);
+}
+
+.live-room-link {
+    color: var(--sm-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ============================================
+   SCHEDULE LIST
+   ============================================ */
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--sm-card-bg);
+    border-radius: var(--sm-radius);
+    border: 1px solid var(--sm-card-border);
+    box-shadow: var(--sm-card-shadow);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+.schedule-item:hover {
+    border-color: rgba(85, 197, 241, 0.2);
+    box-shadow: var(--sm-card-hover-shadow);
+}
+
+.schedule-item-time {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+}
+
+.schedule-item-time-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--sm-primary);
+}
+
+.schedule-item-time-period {
+    font-size: 0.75rem;
+    color: var(--sm-text-muted);
+}
+
+.schedule-item-content { flex: 1; }
+
+.schedule-item-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sm-text);
+    margin-bottom: 4px;
+}
+
+.schedule-item-subtitle {
+    font-size: 0.85rem;
+    color: var(--sm-text-secondary);
+}
+
+.schedule-item-action {
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.schedule-item-action.live {
+    background: var(--sm-primary);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(85, 197, 241, 0.3);
+}
+
+.schedule-item-action.upcoming {
+    background: var(--sm-primary-muted);
+    color: var(--sm-text-secondary);
+    border: 1px solid var(--sm-card-border);
+}
+
+.schedule-item-action:hover {
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   FORUM LIST
+   ============================================ */
+.forum-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.forum-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: var(--sm-card-bg);
+    border-radius: var(--sm-radius);
+    border: 1px solid var(--sm-card-border);
+    box-shadow: var(--sm-card-shadow);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+.forum-item:hover {
+    border-color: rgba(85, 197, 241, 0.2);
+    box-shadow: var(--sm-card-hover-shadow);
+}
+
+.forum-item-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.forum-item-content { flex: 1; }
+
+.forum-item-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.forum-item-author {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--sm-text);
+}
+
+.forum-item-badge {
+    background: var(--sm-primary-muted);
+    color: var(--sm-primary-dark);
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.forum-item-title {
+    font-size: 1rem;
+    color: var(--sm-text);
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.forum-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 0.8rem;
+    color: var(--sm-text-muted);
+}
+
+.forum-item-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.forum-item-action {
+    background: var(--sm-primary);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    align-self: center;
+}
+
+.forum-item-action:hover {
+    background: var(--sm-primary-dark);
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   PODCAST GRID & CAROUSEL (Spotify Style)
+   ============================================ */
+.podcast-card {
+    flex: 0 0 200px;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    cursor: pointer;
+    background: var(--sm-card-bg);
+    border-radius: var(--sm-radius);
+    padding: 16px;
+    border: 1px solid var(--sm-card-border);
+    box-shadow: var(--sm-card-shadow);
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, box-shadow;
+}
+
+.podcast-card:hover {
+    background: rgba(85, 197, 241, 0.04);
+}
+
+[data-theme='dark'] .podcast-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.podcast-card-image-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.podcast-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.podcast-card-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 12px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.4) 0%, transparent 40%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.podcast-play-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--sm-primary);
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    pointer-events: auto;
+    cursor: pointer;
+    transform: translateY(12px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.podcast-play-btn:hover {
+    transform: translateY(0) scale(1.08) !important;
+    background: var(--sm-primary-dark);
+}
+
+.podcast-card:hover .podcast-card-overlay {
+    opacity: 1;
+}
+
+.podcast-card:hover .podcast-play-btn {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.podcast-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.podcast-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--sm-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.podcast-card-subtitle {
+    font-size: 0.85rem;
+    color: var(--sm-text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ============================================
+   SUBSCRIPTION
+   ============================================ */
+.subscription-section {
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+.subscription-container {
+    position: relative;
+    border-radius: var(--sm-radius-lg);
+    padding: 60px;
+    text-align: center;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(85, 197, 241, 0.06) 0%, rgba(85, 197, 241, 0.02) 100%);
+    border: 1px solid rgba(85, 197, 241, 0.15);
+    box-shadow: 0 20px 60px rgba(85, 197, 241, 0.08);
+}
+
+[data-theme='dark'] .subscription-container {
+    background: linear-gradient(135deg, rgba(20, 20, 30, 0.8), rgba(10, 15, 26, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.subscription-container::before {
     content: '';
     position: absolute;
-    bottom: -8px;
-    left: 0;
-    width: 185px;
-    height: 3px;
-    background: linear-gradient(90deg, var(--home-primary), var(--home-gradient-end));
-    border-radius: 3px;
-} */
+    top: 50%;
+    left: 50%;
+    width: 400px;
+    height: 400px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, var(--sm-glow), transparent 70%);
+    pointer-events: none;
+}
 
-    .section-tabs {
-        display: flex;
-        gap: 12px;
-    }
+.subscription-content {
+    position: relative;
+    z-index: 1;
+}
 
-    .section-tab {
-        padding: 8px 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: var(--home-text-secondary);
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
+.subscription-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--sm-primary), var(--sm-primary-dark));
+    color: #fff;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+}
 
-    .section-tab:hover,
-    .section-tab.active {
-        background: var(--home-primary);
-        color: white;
-        border-color: var(--home-primary);
-        box-shadow: 0 0 15px rgba(85, 197, 241, 0.3);
-    }
+.subscription-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--sm-text);
+    margin-bottom: 16px;
+}
 
-    .section-link {
-        color: var(--home-primary);
-        font-size: 0.9rem;
-        font-weight: 500;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        transition: color 0.3s ease;
-    }
+.subscription-description {
+    font-size: 1.05rem;
+    color: var(--sm-text-secondary);
+    margin-bottom: 32px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.7;
+}
 
-    .section-link:hover {
-        color: var(--home-primary-dark);
-    }
+.subscription-description .price {
+    color: var(--sm-primary);
+    font-weight: 700;
+}
 
-    /* ============================================
-   Playlist Carousel
+.subscription-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--sm-primary), var(--sm-primary-dark));
+    color: #fff;
+    padding: 14px 32px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(85, 197, 241, 0.35);
+    transition: all 0.3s ease;
+}
+
+.subscription-cta:hover {
+    box-shadow: 0 8px 30px rgba(85, 197, 241, 0.5);
+    color: #fff;
+}
+
+/* ============================================
+   ABOUT SECTION
    ============================================ */
-    .playlist-carousel {
-        position: relative;
-    }
+.about-section {
+    padding-top: 20px;
+    padding-bottom: 80px;
+}
 
-    .playlist-carousel-inner {
-        display: flex;
-        gap: 20px;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: none;
-        /* -ms-overflow-style: none; */
-        padding: 10px 0;
-    }
+.about-container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 60px 40px;
+    border-radius: var(--sm-radius-lg);
+    background: var(--sm-primary-muted);
+    border: 1px solid rgba(85, 197, 241, 0.12);
+}
 
-    .playlist-carousel-inner::-webkit-scrollbar {
-        display: none;
-    }
+[data-theme='dark'] .about-container {
+    background: rgba(20, 22, 35, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
 
-    .playlist-card {
-        flex: 0 0 180px;
-        scroll-snap-align: start;
-        background: white;
-        border-radius: 16px;
-        overflow: auto;
-        box-shadow: var(--home-card-shadow);
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
+.about-title {
+    font-size: 2rem;
+    color: var(--sm-text);
+    margin-bottom: 20px;
+    font-weight: 700;
+}
 
-    .playlist-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--home-card-hover-shadow);
-    }
+.about-title .gradient-text {
+    background: linear-gradient(90deg, #55C5F1, #3AA8D4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
 
-    .playlist-card-image {
-        width: 100%;
-        aspect-ratio: 1;
-        object-fit: cover;
-        background: linear-gradient(135deg, var(--home-primary-lighter), #f8fafc);
-    }
+[data-theme='dark'] .about-title .gradient-text {
+    background: linear-gradient(90deg, #55C5F1, #8ED8F6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
 
-    .playlist-card-content {
-        padding: 12px;
-    }
+.about-description {
+    font-size: 1.1rem;
+    color: var(--sm-text-secondary);
+    line-height: 1.8;
+    max-width: 650px;
+    margin: 0 auto;
+}
 
-    .playlist-card-title {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--home-text-dark);
-        white-space: nowrap;
-        /* overflow: auto; */
-        text-overflow: ellipsis;
-        margin-bottom: 4px;
-    }
-
-    .playlist-card-subtitle {
-        font-size: 0.75rem;
-        color: var(--home-text-light);
-    }
-
-    .carousel-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: white;
-        border: none;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--home-text-dark);
-        transition: all 0.3s ease;
-        z-index: 10;
-    }
-
-    .carousel-nav:hover {
-        background: var(--home-primary);
-        color: white;
-    }
-
-    .carousel-nav.prev {
-        left: -22px;
-    }
-
-    .carousel-nav.next {
-        right: -22px;
-    }
-
-    /* ============================================
-   Live Room Section
+/* ============================================
+   MUSIC WAVE ANIMATION
    ============================================ */
-    .live-room-card {
-        position: relative;
-        border-radius: 24px;
-        overflow: hidden;
-        background: linear-gradient(135deg, var(--home-primary-lighter), #fce7f3);
-        padding: 32px;
-        box-shadow: var(--home-card-shadow);
-    }
+.music-wave {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+}
 
-    .live-room-badge {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #ef4444;
-    }
+.music-wave span {
+    display: block;
+    width: 4px;
+    background: var(--sm-primary);
+    border-radius: 2px;
+    animation: wave 1.2s ease-in-out infinite;
+}
 
-    .live-room-badge::before {
-        content: '';
-        width: 8px;
-        height: 8px;
-        background: #ef4444;
-        border-radius: 50%;
-        animation: pulse-dot 1.5s infinite;
-    }
+.music-wave span:nth-child(1) { animation-delay: 0s; height: 10px; }
+.music-wave span:nth-child(2) { animation-delay: 0.1s; height: 20px; }
+.music-wave span:nth-child(3) { animation-delay: 0.2s; height: 14px; }
+.music-wave span:nth-child(4) { animation-delay: 0.3s; height: 18px; }
+.music-wave span:nth-child(5) { animation-delay: 0.4s; height: 12px; }
 
-    @keyframes pulse-dot {
+@keyframes wave {
+    0%, 100% { transform: scaleY(0.5); }
+    50% { transform: scaleY(1.5); }
+}
 
-        0%,
-        100% {
-            opacity: 1;
-        }
-
-        50% {
-            opacity: 0.5;
-        }
-    }
-
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
     .live-room-content {
-        display: flex;
-        align-items: flex-end;
-        gap: 24px;
-    }
-
-    .live-room-info {
-        flex: 1;
-    }
-
-    .live-room-title {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: var(--home-text-dark);
-        margin-bottom: 8px;
-    }
-
-    .live-room-meta {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        color: var(--home-text-secondary);
-        font-size: 0.85rem;
-    }
-
-    .live-room-meta span {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .live-room-cta {
-        background: linear-gradient(135deg, var(--home-primary), var(--home-primary-dark));
-        color: white;
-        padding: 12px 28px;
-        border-radius: 25px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.3s ease;
-    }
-
-    .live-room-cta:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(85, 197, 241, 0.4);
-    }
-
-    .live-room-link {
-        color: var(--home-primary);
-        font-size: 0.9rem;
-        font-weight: 500;
-        text-decoration: none;
-        margin-top: 12px;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    /* ============================================
-   Schedule Section
-   ============================================ */
-    .schedule-list {
-        display: flex;
         flex-direction: column;
-        gap: 12px;
-    }
-
-    .schedule-item {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 20px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        border: 1px solid #f1f5f9;
-        transition: all 0.3s ease;
-    }
-
-    .schedule-item:hover {
-        border-color: var(--home-primary-lighter);
-        box-shadow: var(--home-card-shadow);
-    }
-
-    .schedule-item-time {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-width: 80px;
-    }
-
-    .schedule-item-time-value {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--home-primary);
-    }
-
-    .schedule-item-time-period {
-        font-size: 0.75rem;
-        color: var(--home-text-light);
-    }
-
-    .schedule-item-image {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
-        object-fit: cover;
-        background: var(--home-primary-lighter);
-    }
-
-    .schedule-item-content {
-        flex: 1;
-    }
-
-    .schedule-item-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--home-text-dark);
-        margin-bottom: 4px;
-    }
-
-    .schedule-item-subtitle {
-        font-size: 0.85rem;
-        color: var(--home-text-secondary);
-    }
-
-    .schedule-item-action {
-        padding: 10px 24px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: none;
-    }
-
-    .schedule-item-action.live {
-        background: var(--home-primary);
-        color: white;
-    }
-
-    .schedule-item-action.upcoming {
-        background: #f8fafc;
-        color: var(--home-text-secondary);
-        border: 1px solid #e2e8f0;
-    }
-
-    .schedule-item-action:hover {
-        transform: translateY(-2px);
-    }
-
-    /* ============================================
-   Forum Section
-   ============================================ */
-    .forum-list {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .forum-item {
-        display: flex;
         align-items: flex-start;
-        gap: 16px;
-        padding: 20px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        border: 1px solid #f1f5f9;
-        transition: all 0.3s ease;
     }
-
-    .forum-item:hover {
-        border-color: var(--home-primary-lighter);
-        box-shadow: var(--home-card-shadow);
+    .schedule-item {
+        flex-wrap: wrap;
     }
+}
 
-    .forum-item-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        object-fit: cover;
-        background: linear-gradient(135deg, var(--home-primary), var(--home-gradient-end));
-    }
+@media (max-width: 768px) {
+    .sm-section { padding: 40px 0; }
 
-    .forum-item-content {
-        flex: 1;
-    }
-
-    .forum-item-header {
-        display: flex;
-        align-items: center;
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
         gap: 12px;
-        margin-bottom: 8px;
     }
 
-    .forum-item-author {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--home-text-dark);
-    }
+    .section-tabs { flex-wrap: wrap; }
 
-    .forum-item-badge {
-        background: var(--home-primary-lighter);
-        color: var(--home-primary-dark);
-        font-size: 0.7rem;
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-weight: 600;
-    }
-
-    .forum-item-title {
-        font-size: 1rem;
-        color: var(--home-text-dark);
-        margin-bottom: 12px;
-        line-height: 1.5;
-    }
-
-    .forum-item-meta {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        font-size: 0.8rem;
-        color: var(--home-text-light);
-    }
-
-    .forum-item-meta span {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .forum-item-action {
-        background: var(--home-primary);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-        align-self: center;
-    }
-
-    .forum-item-action:hover {
-        background: var(--home-primary-dark);
-    }
-
-    /* ============================================
-   Podcast Section
-   ============================================ */
-    .podcast-section {
-        margin-top: 40px;
-    }
+    .section-title { font-size: 1.6rem; }
 
     .podcast-grid {
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 16px;
-        padding: 4px 0 10px;
-    }
-
-    .podcast-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 20px 12px 16px;
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 2px 10px rgba(85, 197, 241, 0.08);
-    }
-
-    .podcast-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 28px rgba(85, 197, 241, 0.2);
-        border-color: rgba(85, 197, 241, 0.3);
-    }
-
-    .podcast-card-image-wrapper {
-        width: 100%;
-        aspect-ratio: 1;
-        border-radius: 50%;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(85, 197, 241, 0.2);
-        transition: all 0.3s ease;
-        position: relative;
-        max-width: 120px;
-    }
-
-    .podcast-card:hover .podcast-card-image-wrapper {
-        box-shadow: 0 8px 25px rgba(85, 197, 241, 0.35);
-        transform: scale(1.05);
-    }
-
-    .podcast-card-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s ease;
-    }
-
-    .podcast-card:hover .podcast-card-image {
-        transform: scale(1.1);
-    }
-
-    .podcast-card-content {
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        width: 100%;
-    }
-
-    .podcast-card-title {
-        font-size: 0.88rem;
-        font-weight: 600;
-        color: var(--home-text-dark);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .podcast-card-subtitle {
-        font-size: 0.72rem;
-        color: var(--home-text-secondary);
-        font-weight: 400;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    @media (max-width: 1280px) {
-        .podcast-grid {
-            grid-template-columns: repeat(4, 1fr);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .podcast-grid {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-    }
-
-    /* ============================================
-   Subscription Section (Group 30)
-   ============================================ */
-    .subscription-section {
-        margin: 60px 0;
-        padding: 0 32px;
-    }
-
-    .subscription-container {
-        background: #F3F4F6;
-        border-radius: 30px;
-        padding: 60px 40px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .playlist-card {
-        flex: 0 0 180px;
-        scroll-snap-align: start;
-        background: var(--home-card-bg);
-        border: 1px solid var(--home-card-border);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        overflow: auto;
-        box-shadow: var(--home-card-shadow);
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .subscription-content {
-        max-width: 800px;
-        margin: 0 auto;
-        text-align: center;
-        position: relative;
-        z-index: 1;
-    }
-
-    .subscription-tag {
-        display: inline-block;
-        font-size: 0.9rem;
-        color: var(--home-primary-darker);
-        font-weight: 600;
-        margin-bottom: 16px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .subscription-title {
-        font-family: 'Be Vietnam Pro', sans-serif;
-        font-size: 3.5rem;
-        color: var(--home-primary);
-        margin-bottom: 24px;
-        line-height: 1.2;
-        font-weight: 400;
-    }
-
-    .subscription-description {
-        font-size: 1.1rem;
-        color: var(--home-text-dark);
-        line-height: 1.6;
-        margin-bottom: 32px;
-    }
-
-    .subscription-description .price {
-        color: var(--home-primary-darker);
-        font-weight: 700;
-    }
-
-    .playlist-card-title {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--home-text-dark);
-        white-space: nowrap;
-        /* overflow: auto; */
-        text-overflow: ellipsis;
-        margin-bottom: 4px;
-    }
-
-    .playlist-card-subtitle {
-        font-size: 0.75rem;
-        color: var(--home-text-light);
-    }
-
-    .carousel-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: rgba(30, 30, 40, 0.8);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        transition: all 0.3s ease;
-        z-index: 10;
-    }
-
-    .carousel-nav:hover {
-        background: var(--home-primary);
-        color: white;
-    }
-
-    .carousel-nav.prev {
-        left: -22px;
-    }
-
-    .carousel-nav.next {
-        right: -22px;
-    }
-
-    /* ============================================
-   Live Room Section
-   ============================================ */
-    .live-room-card {
-        position: relative;
-        border-radius: 24px;
-        overflow: hidden;
-        background: linear-gradient(135deg, rgba(85, 197, 241, 0.1), rgba(249, 168, 212, 0.1));
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        padding: 32px;
-        box-shadow: var(--home-card-shadow);
-        backdrop-filter: blur(10px);
-    }
-
-    .live-room-badge {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #ef4444;
-    }
-
-    .live-room-badge::before {
-        content: '';
-        width: 8px;
-        height: 8px;
-        background: #ef4444;
-        border-radius: 50%;
-        animation: pulse-dot 1.5s infinite;
-    }
-
-    @keyframes pulse-dot {
-
-        0%,
-        100% {
-            opacity: 1;
-        }
-
-        50% {
-            opacity: 0.5;
-        }
-    }
-
-    .subscription-cta:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(85, 197, 241, 0.5);
-    }
-
-    .schedule-item {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 20px;
-        background: var(--home-card-bg);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        box-shadow: var(--home-card-shadow);
-        border: 1px solid var(--home-card-border);
-        transition: all 0.3s ease;
-    }
-
-    .schedule-item:hover {
-        border-color: rgba(85, 197, 241, 0.3);
-        box-shadow: var(--home-card-hover-shadow);
-    }
-
-    .schedule-item-time {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-width: 80px;
-    }
-
-    .schedule-item-time-value {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--home-primary);
-    }
-
-    .schedule-item-time-period {
-        font-size: 0.75rem;
-        color: var(--home-text-light);
-    }
-
-    .schedule-item-image {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
-        object-fit: cover;
-        background: var(--home-primary-lighter);
-    }
-
-    .schedule-item-content {
-        flex: 1;
-    }
-
-    .schedule-item-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--home-text-dark);
-        margin-bottom: 4px;
-    }
-
-    .schedule-item-subtitle {
-        font-size: 0.85rem;
-        color: var(--home-text-secondary);
-    }
-
-    .schedule-item-action {
-        padding: 10px 24px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: none;
-    }
-
-    .schedule-item-action.live {
-        background: var(--home-primary);
-        color: white;
-    }
-
-    .schedule-item-action.upcoming {
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--home-text-secondary);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .schedule-item-action:hover {
-        transform: translateY(-2px);
-    }
-
-    /* ============================================
-   Forum Section
-   ============================================ */
-    .forum-list {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 14px;
     }
 
     .forum-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 16px;
-        padding: 20px;
-        background: var(--home-card-bg);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        box-shadow: var(--home-card-shadow);
-        border: 1px solid var(--home-card-border);
-        transition: all 0.3s ease;
-    }
-
-    .forum-item:hover {
-        border-color: rgba(85, 197, 241, 0.3);
-        box-shadow: var(--home-card-hover-shadow);
-    }
-
-    .forum-item-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        object-fit: cover;
-        background: linear-gradient(135deg, var(--home-primary), var(--home-gradient-end));
-    }
-
-    .forum-item-content {
-        flex: 1;
-    }
-
-    .forum-item-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 8px;
-    }
-
-    .forum-item-author {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--home-text-dark);
-    }
-
-    .forum-item-badge {
-        background: var(--home-primary-lighter);
-        color: var(--home-primary-dark);
-        font-size: 0.7rem;
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-weight: 600;
-    }
-
-    .forum-item-title {
-        font-size: 1rem;
-        color: var(--home-text-dark);
-        margin-bottom: 12px;
-        line-height: 1.5;
-    }
-
-    .forum-item-meta {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        font-size: 0.8rem;
-        color: var(--home-text-light);
-    }
-
-    .forum-item-meta span {
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        flex-direction: column;
     }
 
     .forum-item-action {
-        background: var(--home-primary);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-        align-self: center;
-    }
-
-    .forum-item-action:hover {
-        background: var(--home-primary-dark);
-    }
-
-    /* ============================================
-   Subscription Section (Group 30)
-   ============================================ */
-    .subscription-section {
-        margin: 60px 0;
-        padding: 0 32px;
+        align-self: flex-start;
     }
 
     .subscription-container {
-        background: var(--home-subscription-bg);
-        border: 1px solid var(--home-subscription-border);
-        box-shadow: var(--home-subscription-shadow);
-        border-radius: 30px;
-        padding: 60px 40px;
-        position: relative;
-        overflow: hidden;
+        padding: 40px 24px;
     }
 
-    .subscription-container::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 500px;
-        height: 500px;
-        background: var(--home-subscription-glow);
-        border-radius: 50%;
-    }
-
-    .subscription-content {
-        max-width: 800px;
-        margin: 0 auto;
-        text-align: center;
-        position: relative;
-        z-index: 1;
-    }
-
-    .subscription-tag {
-        display: inline-block;
-        font-size: 0.9rem;
-        color: var(--home-primary-darker);
-        font-weight: 600;
-        margin-bottom: 16px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .subscription-title {
-        font-family: 'Be Vietnam Pro', sans-serif;
-        font-size: 3.5rem;
-        color: var(--home-primary);
-        margin-bottom: 24px;
-        line-height: 1.2;
-        font-weight: 400;
-    }
-
-    .subscription-description {
-        font-size: 1.1rem;
-        color: var(--home-subscription-desc);
-        line-height: 1.6;
-        margin-bottom: 32px;
-    }
-
-    .subscription-description .price {
-        color: var(--home-subscription-price);
-        font-weight: 700;
-    }
-
-    .subscription-cta {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        background: linear-gradient(135deg, var(--home-primary), var(--home-primary-dark));
-        color: white;
-        padding: 16px 40px;
-        border-radius: 30px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        text-decoration: none;
-        box-shadow: 0 8px 25px rgba(85, 197, 241, 0.4);
-        transition: all 0.3s ease;
-    }
-
-    .subscription-cta:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(85, 197, 241, 0.5);
-    }
-
-
-
-    /* ============================================
-   Animations
-   ============================================ */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes fadeInRight {
-        from {
-            opacity: 0;
-            transform: translateX(30px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    /* ============================================
-   Responsive Design
-   ============================================ */
-    @media (max-width: 1024px) {
-        .hero-container {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .hero-title {
-            font-size: 3rem;
-        }
-
-        .hero-illustration img {
-            max-width: 300px;
-        }
-
-        .footer-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .header-nav {
-            display: none;
-        }
-
-        .header-search {
-            display: none;
-        }
-
-        .hero-title {
-            font-size: 2.5rem;
-        }
-
-        .hero-subtitle {
-            font-size: 1.1rem;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-        }
-
-        .section-tabs {
-            flex-wrap: wrap;
-        }
-
-        .live-room-content {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .schedule-item {
-            flex-wrap: wrap;
-        }
-
-        .forum-item {
-            flex-direction: column;
-        }
-
-    }
-
-    /* ============================================
-   Light Glassmorphism Effects
-   ============================================ */
-    .glass-card {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-    }
-
-    /* ============================================
-   Hover Animations
-   ============================================ */
-    .hover-lift {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .hover-lift:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(85, 197, 241, 0.2);
-    }
-
-    /* ============================================
-   Music Wave Animation
-   ============================================ */
-    .music-wave {
-        display: flex;
-        align-items: flex-end;
-        gap: 2px;
-        height: 20px;
-    }
-
-    .music-wave span {
-        width: 3px;
-        background: var(--home-primary);
-        border-radius: 2px;
-        animation: wave 1s ease-in-out infinite;
-    }
-
-    .music-wave span:nth-child(1) {
-        animation-delay: 0s;
-        height: 8px;
-    }
-
-    .music-wave span:nth-child(2) {
-        animation-delay: 0.1s;
-        height: 15px;
-    }
-
-    .music-wave span:nth-child(3) {
-        animation-delay: 0.2s;
-        height: 10px;
-    }
-
-    .music-wave span:nth-child(4) {
-        animation-delay: 0.3s;
-        height: 18px;
-    }
-
-    .music-wave span:nth-child(5) {
-        animation-delay: 0.4s;
-        height: 12px;
-    }
-
-    @keyframes wave {
-
-        0%,
-        100% {
-            transform: scaleY(0.5);
-        }
-
-        50% {
-            transform: scaleY(1.5);
-        }
-    }
+    .subscription-title { font-size: 1.5rem; }
+}

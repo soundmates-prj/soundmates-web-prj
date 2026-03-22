@@ -48,31 +48,29 @@ export interface SongRequestItem {
   art: string;
 }
 
-// The station UUID from the backend
-const STATION_UUID = "98fa2e44-e332-4325-836a-91e18025d62c";
-
-// AzuraCast direct API for requests
-const AZURACAST_BASE = "http://localhost:8081/api";
-const STATION_ID = 1;
+// AzuraCast direct API base — no more hardcoded station IDs
+const AZURACAST_BASE = "http://localhost:5000/api";
 
 export const livestreamService = {
   /**
    * Get now-playing data from the backend API
+   * @param stationUuid - The station UUID (from the Station entity)
    */
-  async getNowPlaying(): Promise<NowPlayingData> {
+  async getNowPlaying(stationUuid: string): Promise<NowPlayingData> {
     const response = await api.get<ApiResponse<NowPlayingData>>(
-      `station/${STATION_UUID}/now-playing`,
+      `station/${stationUuid}/now-playing`,
     );
     return response.data.data;
   },
 
   /**
    * Get requestable songs from AzuraCast
+   * @param externalStationId - The AzuraCast external station ID (number)
    */
-  async getRequestableSongs(): Promise<SongRequestItem[]> {
+  async getRequestableSongs(externalStationId: number): Promise<SongRequestItem[]> {
     try {
       const response = await fetch(
-        `${AZURACAST_BASE}/station/${STATION_ID}/requests`,
+        `${AZURACAST_BASE}/station/${externalStationId}/requests`,
       );
       const data = await response.json();
       return data || [];
@@ -83,11 +81,13 @@ export const livestreamService = {
 
   /**
    * Submit a song request to AzuraCast
+   * @param externalStationId - The AzuraCast external station ID (number)
+   * @param requestId - The song request ID
    */
-  async requestSong(requestId: string): Promise<boolean> {
+  async requestSong(externalStationId: number, requestId: string): Promise<boolean> {
     try {
       const response = await fetch(
-        `${AZURACAST_BASE}/station/${STATION_ID}/request/${requestId}`,
+        `${AZURACAST_BASE}/station/${externalStationId}/request/${requestId}`,
         {
           method: "POST",
         },
@@ -100,15 +100,14 @@ export const livestreamService = {
 
   /**
    * Get the listen URL for the stream.
-   * If a nowPlaying listenUrl is provided it is preferred;
-   * otherwise falls back to the default station shortcode.
+   * If a listenUrl is provided it is preferred;
+   * otherwise falls back to a default path.
    * Returns a root-relative path so the Vite dev-server proxy
    * can forward the request to AzuraCast without CORS issues.
    */
   getListenUrl(listenUrl?: string): string {
-    const raw = listenUrl || "http://localhost/listen/my_fav_station/radio.mp3";
-    // Strip the host part so the URL is root-relative (proxied by Vite)
-    return raw.replace(/^https?:\/\/[^\/]+/, "");
+    if (!listenUrl) return "";
+    return listenUrl.replace(/^https?:\/\/[^\/]+/, "");
   },
 };
 
