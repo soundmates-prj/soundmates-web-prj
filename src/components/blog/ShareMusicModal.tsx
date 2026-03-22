@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Music2, Search, X } from "lucide-react";
 import favoriteService, { type FavoriteItem } from "../../services/favoriteService";
 import shareMusicService from "../../services/shareMusicService";
@@ -20,6 +20,7 @@ export default function ShareMusicModal({ open, onClose, onShared }: ShareMusicM
   const [template, setTemplate] = useState<ShareCardTemplate>("gradient");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initializedForOpen, setInitializedForOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
 
   const visibleTracks = useMemo(() => {
@@ -55,11 +56,24 @@ export default function ShareMusicModal({ open, onClose, onShared }: ShareMusicM
     }
   };
 
-  if (!open) return null;
+  useEffect(() => {
+    if (!open || initializedForOpen || loading) {
+      return;
+    }
 
-  if (tracks.length === 0 && !loading) {
+    setInitializedForOpen(true);
     void loadTracks();
-  }
+  }, [open, initializedForOpen, loading]);
+
+  useEffect(() => {
+    if (open) {
+      return;
+    }
+
+    setInitializedForOpen(false);
+  }, [open]);
+
+  if (!open) return null;
 
   const handleShare = async () => {
     if (!selected) return;
@@ -102,7 +116,14 @@ export default function ShareMusicModal({ open, onClose, onShared }: ShareMusicM
             </div>
 
             <div className="sm-track-list">
-              {loading ? <p className="sm-hint">Đang tải bài hát...</p> : null}
+              {loading ? (
+                <>
+                  <div className="sm-track-skeleton" />
+                  <div className="sm-track-skeleton" />
+                  <div className="sm-track-skeleton" />
+                  <div className="sm-track-skeleton" />
+                </>
+              ) : null}
               {!loading && visibleTracks.length === 0 ? (
                 <p className="sm-hint">Chưa có bài hát yêu thích để chia sẻ.</p>
               ) : null}

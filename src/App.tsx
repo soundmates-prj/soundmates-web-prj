@@ -6,12 +6,10 @@ import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
-import { AdminDashboard } from "./pages/Admin/Dashboard/Dashboard";
 import { AnalyticsScreen } from "./pages/Admin/Analytics/AnalyticsScreen";
 import { ToastProvider } from "./components/common/Toast";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
 import ForgetPassword from "./pages/Auth/ForgetPassword";
-import { MusicCatalogScreen } from "./pages/Admin/MusicCatalog/MusicCatalog";
 import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
 import LivestreamPage from "./pages/Livestream/Livestream";
 import { LiveSessionsPage } from "./pages/Livestream/LiveSessionsPage";
@@ -29,6 +27,17 @@ import { ScheduleScreen } from "./pages/Staff/Schedule/ScheduleScreen";
 import { MusicRequestsScreen } from "./pages/Staff/MusicRequests/MusicRequestsScreen";
 import { PodcastRequestsScreen } from "./pages/Staff/PodcastRequests/PodcastRequestsScreen";
 import PaymentResult from "./pages/Payment/PaymentResult";
+import DashboardPage from "./pages/Admin/LiveOps/DashboardPage";
+import StationPage from "./pages/Admin/LiveOps/StationPage";
+import MusicCatalogPage from "./pages/Admin/LiveOps/MusicCatalogPage";
+import PlaylistPage from "./pages/Admin/LiveOps/PlaylistPage";
+import PlaylistDetailPage from "./pages/Admin/LiveOps/PlaylistDetailPage";
+import LiveSessionPage from "./pages/Admin/LiveOps/LiveSessionPage";
+import LiveSessionDetailPage from "./pages/Admin/LiveOps/LiveSessionDetailPage";
+import PodcastPage from "./pages/Admin/LiveOps/PodcastPage";
+import PodcastEditor from "./pages/Admin/LiveOps/PodcastEditor";
+import AzuraCastPage from "./pages/Admin/LiveOps/AzuraCastPage";
+import { PodcastCreatorPage } from "./pages/PodcastCreator/PodcastCreatorPage";
 
 function App() {
   return (
@@ -50,10 +59,19 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="analytics" element={<AnalyticsScreen />} />
-          <Route path="music" element={<MusicCatalogScreen />} />
+          <Route path="music" element={<MusicCatalogPage />} />
           <Route path="users" element={<UserManagementScreen />} />
+          <Route path="stations" element={<StationPage />} />
+          <Route path="playlists" element={<PlaylistPage />} />
+          <Route path="playlists/:playlistId" element={<PlaylistDetailPage />} />
+          <Route path="sessions" element={<LiveSessionPage />} />
+          <Route path="sessions/:sessionId" element={<LiveSessionDetailPage />} />
+          <Route path="podcasts" element={<PodcastPage />} />
+          <Route path="podcasts/new" element={<PodcastEditor />} />
+          <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
+          <Route path="azuracast" element={<AzuraCastPage />} />
         </Route>
 
         {/* Staff Routes with Sidebar Layout - Protected for STAFF role */}
@@ -70,6 +88,7 @@ function App() {
           <Route path="schedule" element={<ScheduleScreen />} />
           <Route path="music-requests" element={<MusicRequestsScreen />} />
           <Route path="podcast-requests" element={<PodcastRequestsScreen />} />
+          <Route path="podcast-creator" element={<PodcastCreatorPage />} />
           <Route path="playlists" element={<PlaylistsScreen />} />
           <Route path="stations" element={<StationsScreen />} />
         </Route>
@@ -84,6 +103,14 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/payment/result" element={<PaymentResult />} />
+          <Route 
+            path="/podcast-creator" 
+            element={
+              <ProtectedRoute>
+                <PodcastCreatorPage />
+              </ProtectedRoute>
+            } 
+          />
         </Route>
       </Routes>
       </PlayerProvider>

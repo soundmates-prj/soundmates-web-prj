@@ -18,7 +18,14 @@ interface ShareCardProps {
 }
 
 export default function ShareCard({ data, compact = false }: ShareCardProps) {
-  const template = data.template || "gradient";
+  const normalizedTemplate = (data.template || "gradient").toLowerCase();
+  const template: ShareCardTemplate =
+    normalizedTemplate === "dark" ||
+    normalizedTemplate === "light" ||
+    normalizedTemplate === "gradient" ||
+    normalizedTemplate === "minimal"
+      ? normalizedTemplate
+      : "gradient";
 
   return (
     <div className={`sm-share-card sm-share-card--${template} ${compact ? "sm-share-card--compact" : ""}`}>

@@ -1,0 +1,238 @@
+/* Podcast Creator Page Styles */
+
+:root {
+  --page-bg: #f8fafc;
+  --page-text: #1e293b;
+  --page-subtitle: #64748b;
+  --tab-bg: #ffffff;
+  --tab-border: #e2e8f0;
+  --tab-text: #64748b;
+  --tab-active-bg: #55C5F1;
+  --tab-active-text: #ffffff;
+  --tab-hover-bg: #f1f5f9;
+  --placeholder-bg: #ffffff;
+  --placeholder-border: #e2e8f0;
+}
+
+[data-theme='dark'] {
+  --page-bg: #0d1117;
+  --page-text: #f0f6ff;
+  --page-subtitle: rgba(255, 255, 255, 0.6);
+  --tab-bg: #1a1f2e;
+  --tab-border: rgba(255, 255, 255, 0.1);
+  --tab-text: rgba(255, 255, 255, 0.6);
+  --tab-active-bg: #55C5F1;
+  --tab-active-text: #ffffff;
+  --tab-hover-bg: rgba(255, 255, 255, 0.05);
+  --placeholder-bg: #1a1f2e;
+  --placeholder-border: rgba(255, 255, 255, 0.1);
+}
+
+.podcast-creator-page {
+  min-height: 100vh;
+  background-color: var(--page-bg);
+  padding: 32px 20px 100px;
+  transition: background-color 0.3s ease;
+}
+
+.podcast-creator-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.podcast-creator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 20px;
+}
+
+.page-title {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--page-text);
+  margin: 0 0 8px 0;
+  transition: color 0.3s ease;
+}
+
+.page-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: var(--page-subtitle);
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+/* Dev Tools Toggle */
+.dev-tools-toggle {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dev-tools-toggle:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+[data-theme='dark'] .dev-tools-toggle {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+[data-theme='dark'] .dev-tools-toggle:hover {
+  background: rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.5);
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: 8px;
+  background-color: var(--tab-bg);
+  border: 1px solid var(--tab-border);
+  border-radius: 12px;
+  padding: 6px;
+  margin-bottom: 32px;
+  transition: all 0.3s ease;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 12px 20px;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tab-text);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-button:hover {
+  background-color: var(--tab-hover-bg);
+}
+
+.tab-button-active {
+  background-color: var(--tab-active-bg);
+  color: var(--tab-active-text);
+  box-shadow: 0 2px 8px rgba(85, 197, 241, 0.2);
+}
+
+.tab-button-active:hover {
+  background-color: var(--tab-active-bg);
+}
+
+/* Dev Tab Button */
+.tab-button-dev {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.tab-button-dev:hover {
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.tab-button-dev.tab-button-active {
+  background-color: #f59e0b;
+  color: white;
+  border-color: #f59e0b;
+}
+
+[data-theme='dark'] .tab-button-dev {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+[data-theme='dark'] .tab-button-dev:hover {
+  background: rgba(251, 191, 36, 0.2);
+}
+
+[data-theme='dark'] .tab-button-dev.tab-button-active {
+  background-color: #fbbf24;
+  color: #1a1f2e;
+}
+
+/* Tab Content */
+.tab-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Placeholder */
+.tab-placeholder {
+  background-color: var(--placeholder-bg);
+  border: 1px solid var(--placeholder-border);
+  border-radius: 12px;
+  padding: 48px 32px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.tab-placeholder h3 {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--page-text);
+  margin: 0 0 12px 0;
+  transition: color 0.3s ease;
+}
+
+.tab-placeholder p {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: var(--page-subtitle);
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .podcast-creator-page {
+    padding: 20px 16px 100px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+  }
+
+  .tab-navigation {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tab-button {
+    width: 100%;
+  }
+
+  .tab-placeholder {
+    padding: 32px 20px;
+  }
+}

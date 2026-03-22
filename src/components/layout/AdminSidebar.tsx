@@ -2,13 +2,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
     LayoutDashboard,
     Users,
-    Crown,
-    FileText,
+    Headphones,
     Radio,
     BarChart3,
     Settings,
     LogOut,
-    Music2
+    Music2,
+    ListMusic,
+    Podcast,
+    ActivitySquare
 } from 'lucide-react';
 import logoLight from "../../assets/light_logo.png";
 import logoDark from "../../assets/dark_logo.png";
@@ -26,10 +28,12 @@ interface MenuItem {
 const sidebarMenuItems: MenuItem[] = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/admin/dashboard' },
     { id: 'users', icon: <Users size={20} />, label: 'Users', path: '/admin/users' },
-    { id: 'subscriptions', icon: <Crown size={20} />, label: 'Subscriptions', path: '/admin/subscriptions' },
-    { id: 'posts', icon: <FileText size={20} />, label: 'Posts', path: '/admin/posts' },
+    { id: 'music', icon: <Headphones size={20} />, label: 'Music Catalog', path: '/admin/music' },
     { id: 'stations', icon: <Music2 size={20} />, label: 'Stations', path: '/admin/stations' },
+    { id: 'playlists', icon: <ListMusic size={20} />, label: 'Playlists', path: '/admin/playlists' },
     { id: 'sessions', icon: <Radio size={20} />, label: 'Live Sessions', path: '/admin/sessions' },
+    { id: 'podcasts', icon: <Podcast size={20} />, label: 'Podcast', path: '/admin/podcasts' },
+    { id: 'azuracast', icon: <ActivitySquare size={20} />, label: 'AzuraCast', path: '/admin/azuracast' },
     { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Reports', path: '/admin/analytics' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Settings', path: '/admin/settings' },
 ];

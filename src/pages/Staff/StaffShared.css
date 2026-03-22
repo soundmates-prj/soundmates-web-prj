@@ -1,0 +1,192 @@
+/* ============================================
+   Shared Staff Styles
+   ============================================ */
+
+/* ── Page Layout ── */
+.staff-dashboard {
+    max-width: 1600px;
+}
+
+.staff-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    gap: 20px;
+}
+
+.staff-page-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--neutral-900);
+    margin: 0 0 8px 0;
+}
+
+[data-theme="dark"] .staff-page-title {
+    color: #ffffff;
+}
+
+.staff-page-subtitle {
+    font-size: 16px;
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+[data-theme="dark"] .staff-page-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Buttons ── */
+.staff-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.staff-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.staff-btn--primary {
+    background: linear-gradient(135deg, var(--secondary-500), var(--primary-500));
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(116, 129, 248, 0.2);
+}
+
+.staff-btn--primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(116, 129, 248, 0.3);
+}
+
+.staff-btn--outline {
+    background: #ffffff;
+    border: 1.5px solid var(--neutral-200);
+    color: var(--neutral-700);
+}
+
+[data-theme="dark"] .staff-btn--outline {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.staff-btn--outline:hover:not(:disabled) {
+    background: var(--neutral-50);
+    border-color: var(--secondary-300);
+    color: var(--secondary-600);
+}
+
+[data-theme="dark"] .staff-btn--outline:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--secondary-400);
+    color: var(--secondary-400);
+}
+
+/* ── Cards ── */
+.staff-card {
+    background: #ffffff;
+    border: 1px solid var(--neutral-200);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+[data-theme="dark"] .staff-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.staff-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+[data-theme="dark"] .staff-card-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.staff-card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--neutral-900);
+    margin: 0;
+}
+
+[data-theme="dark"] .staff-card-title {
+    color: #ffffff;
+}
+
+.staff-card-body {
+    padding: 24px;
+}
+
+/* ── Badges ── */
+.staff-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.staff-badge--live {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success-600);
+}
+
+.staff-badge--scheduled {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-600);
+}
+
+.staff-badge--ended {
+    background: rgba(100, 116, 139, 0.1);
+    color: var(--neutral-600);
+}
+
+/* ── Loading ── */
+.staff-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 200px;
+    color: var(--neutral-500);
+}
+
+[data-theme="dark"] .staff-loading {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.staff-spin {
+    animation: staff-spin 1s linear infinite;
+}
+
+@keyframes staff-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ── Empty State ── */
+.staff-empty {
+    color: var(--neutral-500);
+    font-size: 14px;
+    text-align: center;
+}
+
+[data-theme="dark"] .staff-empty {
+    color: rgba(255, 255, 255, 0.5);
+}

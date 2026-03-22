@@ -8,16 +8,29 @@ import {
   ArrowDownToLine,
   ExternalLink,
   Calendar,
+  Plus,
+  X,
 } from "lucide-react";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import type { StationResult } from "../../../services/liveSessionApiService";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
+import "../StaffShared.css";
 import "./StationsScreen.css";
 
 export function StationsScreen() {
   const [stations, setStations] = useState<StationResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newStation, setNewStation] = useState({
+    stationName: "",
+    description: "",
+    shortCode: "",
+  });
+
+  // Check if user is Admin
+  const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+  const isAdmin = userInfo?.roleName?.toUpperCase() === "ADMIN";
 
   useEffect(() => {
     loadStations();
@@ -40,12 +53,12 @@ export function StationsScreen() {
     try {
       const result = await liveSessionApiService.syncStations();
       showSuccess(
-        "Sync thành công!",
+        "Đồng bộ thành công!",
         `${result.createdStations} tạo mới, ${result.updatedStations} cập nhật`
       );
       await loadStations();
     } catch {
-      showError("Sync thất bại", "Không thể kết nối AzuraCast");
+      showError("Đồng bộ thất bại", "Không thể kết nối hệ thống");
     } finally {
       setSyncing(false);
     }
@@ -71,6 +84,24 @@ export function StationsScreen() {
     window.open(target, "_blank", "noopener,noreferrer");
   };
 
+  const handleCreateStation = async () => {
+    if (!newStation.stationName.trim()) {
+      showError("Lỗi", "Vui lòng nhập tên station");
+      return;
+    }
+
+    try {
+      await liveSessionApiService.createStation(newStation);
+      showSuccess("Tạo thành công!", `Station "${newStation.stationName}" đã được tạo`);
+      setShowCreateModal(false);
+      setNewStation({ stationName: "", description: "", shortCode: "" });
+      await loadStations();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Không thể tạo station";
+      showError("Lỗi", errorMessage);
+    }
+  };
+
   return (
     <div className="staff-dashboard">
       {/* Header */}
@@ -78,7 +109,7 @@ export function StationsScreen() {
         <div>
           <h1 className="staff-page-title">Stations</h1>
           <p className="staff-page-subtitle">
-            Quản lý các stations phát sóng từ AzuraCast
+            Quản lý các kênh phát sóng radio
           </p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -86,9 +117,18 @@ export function StationsScreen() {
             <RefreshCw size={16} className={loading ? "staff-spin" : ""} />
             Làm mới
           </button>
+          {isAdmin && (
+            <button
+              className="staff-btn staff-btn--outline"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus size={16} />
+              Tạo Station
+            </button>
+          )}
           <button className="staff-btn staff-btn--primary" onClick={handleSync} disabled={syncing}>
             <ArrowDownToLine size={16} className={syncing ? "staff-spin" : ""} />
-            {syncing ? "Đang sync..." : "Sync AzuraCast"}
+            {syncing ? "Đang sync..." : "Đồng bộ"}
           </button>
         </div>
       </div>
@@ -104,7 +144,7 @@ export function StationsScreen() {
           <div className="staff-card-body" style={{ textAlign: "center", padding: "48px 24px" }}>
             <Radio size={40} style={{ color: "#94a3b8", marginBottom: 12 }} />
             <p className="staff-empty" style={{ fontSize: 15 }}>
-              Chưa có station nào. Nhấn <strong>Sync AzuraCast</strong> để đồng bộ.
+              Chưa có station nào. Nhấn <strong>Đồng bộ</strong> để tải danh sách.
             </p>
           </div>
         </div>
@@ -149,11 +189,10 @@ export function StationsScreen() {
 
               <div className="station-footer">
                 <span
-                  className={`staff-badge ${
-                    station.syncStatus === "Synced"
+                  className={`staff-badge ${station.syncStatus === "Synced"
                       ? "staff-badge--live"
                       : "staff-badge--scheduled"
-                  }`}
+                    }`}
                 >
                   {station.syncStatus}
                 </span>
@@ -170,8 +209,76 @@ export function StationsScreen() {
           ))}
         </div>
       )}
+
+      {/* Create Station Modal */}
+      {showCreateModal && (
+        <div className="staff-modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="staff-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="staff-modal-header">
+              <h3>Tạo Station mới</h3>
+              <button className="staff-modal-close" onClick={() => setShowCreateModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="staff-modal-body">
+              <label className="staff-label">Tên station *</label>
+              <input
+                className="staff-input"
+                value={newStation.stationName}
+                onChange={(e) => setNewStation({ ...newStation, stationName: e.target.value })}
+                placeholder="Nhập tên station..."
+                autoFocus
+              />
+
+              <label className="staff-label" style={{ marginTop: 12 }}>
+                Short code (tuỳ chọn)
+              </label>
+              <input
+                className="staff-input"
+                value={newStation.shortCode}
+                onChange={(e) => setNewStation({ ...newStation, shortCode: e.target.value })}
+                placeholder="vd: jazz-fm, chill-radio..."
+                pattern="^[a-z0-9_-]+$"
+              />
+              <p className="staff-input-hint">
+                Chỉ dùng chữ thường, số, gạch ngang và gạch dưới
+              </p>
+
+              <label className="staff-label" style={{ marginTop: 12 }}>
+                Mô tả (tuỳ chọn)
+              </label>
+              <textarea
+                className="staff-input staff-textarea"
+                value={newStation.description}
+                onChange={(e) => setNewStation({ ...newStation, description: e.target.value })}
+                placeholder="Mô tả ngắn về station..."
+                rows={3}
+              />
+
+              <div className="staff-info-box">
+                <strong>Lưu ý:</strong> Station sẽ được tạo trong local database. 
+                Để có stream URL thực, vui lòng đồng bộ với AzuraCast sau khi tạo.
+              </div>
+            </div>
+            <div className="staff-modal-footer">
+              <button
+                className="staff-btn staff-btn--outline"
+                onClick={() => setShowCreateModal(false)}
+              >
+                Huỷ
+              </button>
+              <button
+                className="staff-btn staff-btn--primary"
+                onClick={handleCreateStation}
+                disabled={!newStation.stationName.trim()}
+              >
+                Tạo
+              </button>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default StationsScreen;

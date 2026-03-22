@@ -37,11 +37,11 @@
 .admin-logo-text {
     font-size: 20px;
     font-weight: 700;
-    color: var(--primary-500);
+    color: #55c5f1;
 }
 
 [data-theme="dark"] .admin-logo-text {
-    color: #ffffff;
+    color: #55c5f1;
 }
 
 .admin-sidebar-nav {

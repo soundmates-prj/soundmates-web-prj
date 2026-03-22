@@ -60,6 +60,9 @@ export interface PlaylistResult {
   totalTracks: number;
   totalDuration: number;
   createdAt: string;
+  includeInRequests?: boolean;
+  includeInOnDemand?: boolean;
+  isEnabled?: boolean;
 }
 
 export interface SyncPlaylistsResult {
@@ -82,6 +85,7 @@ export interface PlaylistMediaResult {
 
 export interface MusicResult {
   id: string;
+  sourceType: "system" | "station";
   stationId: string;
   title: string;
   artist: string;
@@ -99,6 +103,23 @@ export interface SyncMediaFilesResult {
   created: number;
   updated: number;
   failed: number;
+}
+
+export interface ImportedSystemMediaItemResult {
+  mediaFileId: string;
+  title: string;
+  stationMediaUniqueId: string;
+}
+
+export interface ImportSystemMediaBatchResult {
+  stationId: string;
+  stationName: string;
+  requestedCount: number;
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  importedItems: ImportedSystemMediaItemResult[];
+  errors: string[];
 }
 
 export interface LiveSessionResult {
@@ -126,6 +147,33 @@ export interface ListenerStatsResult {
   currentListeners: number;
   peakListeners: number;
   totalListeners: number;
+}
+
+export interface SessionScheduleResult {
+  id: string;
+  liveSessionId: string;
+  title: string | null;
+  startTime: string;
+  endTime: string;
+  createdAt: string;
+}
+
+export interface AzuraCastHealthResult {
+  isHealthy: boolean;
+  baseUrl: string;
+  stationCount: number;
+  responseTimeMs: number;
+  message: string;
+  timestamp: string;
+}
+
+export interface ApiKeyTestResult {
+  isValid: boolean;
+  apiKey: string;
+  baseUrl: string;
+  stationCount: number;
+  message: string;
+  timestamp: string;
 }
 
 export interface SongRequestResult {
@@ -190,6 +238,15 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async createStation(data: {
+    stationName: string;
+    description?: string;
+    shortCode?: string;
+  }): Promise<StationResult> {
+    const res = await api.post<ApiResponse<StationResult>>("/station", data);
+    return res.data.data;
+  }
+
   async getStationNowPlaying(stationId: string) {
     const res = await api.get<ApiResponse<any>>(`/station/${stationId}/now-playing`);
     return res.data.data;
@@ -248,12 +305,39 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
-  async uploadMusic(stationId: string, file: File): Promise<MusicResult> {
+  async importSystemMediaBatch(stationId: string, mediaFileIds: string[]): Promise<ImportSystemMediaBatchResult> {
+    const res = await api.post<ApiResponse<ImportSystemMediaBatchResult>>(
+      `/musiccatalog/station/${stationId}/import-system-media`,
+      { mediaFileIds }
+    );
+    return res.data.data;
+  }
+
+  async uploadMusic(
+    stationId: string | undefined,
+    file: File,
+    metadata?: { title?: string; artist?: string; album?: string },
+    onUploadProgress?: (percent: number) => void
+  ): Promise<MusicResult> {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("stationId", stationId);
+    if (stationId) {
+      formData.append("stationId", stationId);
+    }
+
+    if (metadata?.title) formData.append("title", metadata.title);
+    if (metadata?.artist) formData.append("artist", metadata.artist);
+    if (metadata?.album) formData.append("album", metadata.album);
+
     const res = await api.post<ApiResponse<MusicResult>>("/musiccatalog/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (evt) => {
+        if (!onUploadProgress || !evt.total) {
+          return;
+        }
+        const percent = Math.round((evt.loaded * 100) / evt.total);
+        onUploadProgress(percent);
+      },
     });
     return res.data.data;
   }
@@ -299,6 +383,16 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async pauseSession(id: string): Promise<LiveSessionResult> {
+    const res = await api.post<ApiResponse<LiveSessionResult>>(`/livesession/${id}/pause`);
+    return res.data.data;
+  }
+
+  async resumeSession(id: string): Promise<LiveSessionResult> {
+    const res = await api.post<ApiResponse<LiveSessionResult>>(`/livesession/${id}/resume`);
+    return res.data.data;
+  }
+
   async stopSession(id: string): Promise<LiveSessionResult> {
     const res = await api.post<ApiResponse<LiveSessionResult>>(`/livesession/${id}/stop`);
     return res.data.data;
@@ -306,6 +400,19 @@ class LiveSessionApiService {
 
   async getListenerStats(id: string): Promise<ListenerStatsResult> {
     const res = await api.get<ApiResponse<ListenerStatsResult>>(`/livesession/${id}/listeners`);
+    return res.data.data;
+  }
+
+  async createSchedule(
+    id: string,
+    data: { startTime: string; endTime: string; title?: string }
+  ): Promise<LiveSessionResult> {
+    const res = await api.post<ApiResponse<LiveSessionResult>>(`/livesession/${id}/schedules`, data);
+    return res.data.data;
+  }
+
+  async getSchedules(id: string): Promise<SessionScheduleResult[]> {
+    const res = await api.get<ApiResponse<SessionScheduleResult[]>>(`/livesession/${id}/schedules`);
     return res.data.data;
   }
 
@@ -322,6 +429,14 @@ class LiveSessionApiService {
     const res = await api.get<ApiResponse<SongRequestResult[]>>(`/livesession/${sessionId}/song-requests`, {
       params: status ? { status } : undefined,
     });
+    return res.data.data;
+  }
+
+  async createSongRequest(
+    sessionId: string,
+    data: { mediaFileId: string; message?: string }
+  ): Promise<SongRequestResult> {
+    const res = await api.post<ApiResponse<SongRequestResult>>(`/livesession/${sessionId}/song-requests`, data);
     return res.data.data;
   }
 
@@ -367,6 +482,36 @@ class LiveSessionApiService {
 
   async deletePodcast(id: string): Promise<void> {
     await api.delete(`/podcast/${id}`);
+  }
+
+  /* ── Playlist Update ── */
+
+  async updatePlaylist(
+    playlistId: string,
+    data: {
+      playlistName?: string;
+      isAutoPlay?: boolean;
+      includeInRequests?: boolean;
+      includeInOnDemand?: boolean;
+      isEnabled?: boolean;
+    }
+  ): Promise<PlaylistResult> {
+    const res = await api.put<ApiResponse<PlaylistResult>>(`/playlist/${playlistId}`, data);
+    return res.data.data;
+  }
+
+  /* ── AzuraCast ── */
+
+  async getAzuraHealth(): Promise<AzuraCastHealthResult> {
+    const res = await api.get<ApiResponse<AzuraCastHealthResult>>("/azuracast/health");
+    return res.data.data;
+  }
+
+  async testAzuraApiKey(apiKey: string): Promise<ApiKeyTestResult> {
+    const res = await api.post<ApiResponse<ApiKeyTestResult>>("/azuracast/test-apikey", null, {
+      params: { apiKey },
+    });
+    return res.data.data;
   }
 }
 

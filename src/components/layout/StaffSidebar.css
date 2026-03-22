@@ -37,22 +37,11 @@
 .staff-logo-text {
     font-size: 20px;
     font-weight: 700;
-    color: var(--primary-500);
+    color: #55c5f1;
 }
 
 [data-theme="dark"] .staff-logo-text {
-    color: #ffffff;
-}
-
-.staff-logo-badge {
-    margin-left: auto;
-    padding: 4px 8px;
-    background: var(--secondary-500);
-    color: #ffffff;
-    font-size: 10px;
-    font-weight: 700;
-    border-radius: 6px;
-    text-transform: uppercase;
+    color: #55c5f1;
 }
 
 .staff-sidebar-nav {
@@ -86,12 +75,12 @@
 
 .staff-nav-item:hover {
     background: var(--neutral-100);
-    color: var(--secondary-500);
+    color: var(--neutral-900);
 }
 
 [data-theme="dark"] .staff-nav-item:hover {
     background: rgba(255, 255, 255, 0.05);
-    color: var(--secondary-400);
+    color: #ffffff;
 }
 
 .staff-nav-item.active {
@@ -123,11 +112,16 @@
 
 [data-theme="dark"] .staff-logout-btn {
     border-color: rgba(255, 255, 255, 0.1);
+    color: #ef4444;
 }
 
 .staff-logout-btn:hover {
     background: rgba(239, 68, 68, 0.05);
     border-color: var(--error-500);
+}
+
+[data-theme="dark"] .staff-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
 }
 
 @media (max-width: 1024px) {

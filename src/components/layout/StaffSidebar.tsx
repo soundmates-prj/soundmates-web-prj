@@ -5,9 +5,11 @@ import {
     Calendar,
     Music,
     Mic,
-    List,
+    ListMusic,
+    Antenna,
     Settings,
-    LogOut
+    LogOut,
+    Podcast
 } from 'lucide-react';
 import logoLight from "../../assets/light_logo.png";
 import logoDark from "../../assets/dark_logo.png";
@@ -26,9 +28,11 @@ const sidebarMenuItems: MenuItem[] = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/staff/dashboard' },
     { id: 'sessions', icon: <Radio size={20} />, label: 'Live Sessions', path: '/staff/sessions' },
     { id: 'schedule', icon: <Calendar size={20} />, label: 'Schedule', path: '/staff/schedule' },
+    { id: 'stations', icon: <Antenna size={20} />, label: 'Stations', path: '/staff/stations' },
+    { id: 'playlists', icon: <ListMusic size={20} />, label: 'Playlists', path: '/staff/playlists' },
     { id: 'music-requests', icon: <Music size={20} />, label: 'Music Requests', path: '/staff/music-requests' },
     { id: 'podcast-requests', icon: <Mic size={20} />, label: 'Podcast Requests', path: '/staff/podcast-requests' },
-    { id: 'playlists', icon: <List size={20} />, label: 'Playlists', path: '/staff/playlists' },
+    { id: 'podcast-creator', icon: <Podcast size={20} />, label: 'Podcast Creator', path: '/staff/podcast-creator' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Settings', path: '/staff/settings' },
 ];
 
@@ -54,7 +58,6 @@ export default function StaffSidebar() {
             <div className="staff-sidebar-logo" onClick={() => navigate('/staff/dashboard')}>
                 <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
                 <span className="staff-logo-text">SoundMates</span>
-                <span className="staff-logo-badge">Staff</span>
             </div>
 
             <nav className="staff-sidebar-nav">
