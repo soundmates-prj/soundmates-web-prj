@@ -13,7 +13,7 @@ import {
   Trash2,
   Pencil,
 } from "lucide-react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
@@ -26,6 +26,7 @@ import EditPostModal from "./modals/EditPostModal";
 import favoriteService from "../../services/favoriteService";
 import type { FavoriteItem } from "../../services/favoriteService";
 
+/* ── Types ── */
 type Tab = "overview" | "songs" | "playlists" | "podcasts" | "community";
 
 const TABS: { key: Tab; label: string }[] = [
@@ -36,13 +37,22 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "community", label: "Cộng đồng" },
 ];
 
+/* ── Helpers ── */
 const formatDuration = (ms: number) => {
-  const totalSec = Math.floor(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
+const formatDate = (d?: string | null) =>
+  d
+    ? new Date(d).toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : null;
+
+/* ── Mock data (thay bằng API sau) ── */
 const PODCASTS = [
   {
     id: 1,
@@ -60,18 +70,43 @@ const PODCASTS = [
   },
 ];
 
-const formatDate = (d?: string | null) =>
-  d
-    ? new Date(d).toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
-    : null;
+/* ================================================================
+   TRACK ITEM  (dùng chung overview & songs tab)
+================================================================ */
+function TrackItem({ track, index }: { track: FavoriteItem; index: number }) {
+  const fallbackImg =
+    "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1";
+  return (
+    <div className="track">
+      <span className="track-n">{String(index + 1).padStart(2, "0")}</span>
+      <img
+        className="track-img"
+        src={track.imgUrl || fallbackImg}
+        alt={track.name}
+      />
+      <div className="track-info">
+        <p className="track-title">{track.name}</p>
+        <p className="track-artist">
+          {track.artistName}
+          {track.albumName ? ` · ${track.albumName}` : ""}
+        </p>
+      </div>
+      <span className="track-dur">
+        {track.durationMs ? formatDuration(track.durationMs) : "--:--"}
+      </span>
+      <span className="track-likes">
+        <Heart size={12} />
+      </span>
+      <button className="track-more">
+        <MoreHorizontal size={15} />
+      </button>
+    </div>
+  );
+}
 
-/* ──────────────────────────────────────────
+/* ================================================================
    POST CARD  (with 3-dot action menu)
-────────────────────────────────────────── */
+================================================================ */
 interface PostCardProps {
   post: Post;
   user: User;
@@ -95,13 +130,12 @@ function PostCard({
 
   useEffect(() => {
     if (!menuOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+    const handle = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
         setMenuOpen(false);
-      }
     };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
   }, [menuOpen]);
 
   const handleDelete = async () => {
@@ -118,7 +152,7 @@ function PostCard({
   };
 
   return (
-    <div className={"post-card" + (deleting ? " post-card--deleting" : "")}>
+    <div className={`post-card${deleting ? " post-card--deleting" : ""}`}>
       {/* Header */}
       <div className="post-header">
         <Avatar src={user.profileImageUrl || defaultAv} name={name} size="sm" />
@@ -157,8 +191,7 @@ function PostCard({
                   onEdit(post);
                 }}
               >
-                <Pencil size={14} />
-                Chỉnh sửa
+                <Pencil size={14} /> Chỉnh sửa
               </button>
               <div className="post-menu-divider" />
               <button
@@ -168,8 +201,7 @@ function PostCard({
                   handleDelete();
                 }}
               >
-                <Trash2 size={14} />
-                Xoá bài
+                <Trash2 size={14} /> Xoá bài
               </button>
             </div>
           )}
@@ -210,9 +242,84 @@ function PostCard({
   );
 }
 
-/* ──────────────────────────────────────────
-   PROFILE
-────────────────────────────────────────── */
+/* ================================================================
+   COMPOSE BAR
+================================================================ */
+function ComposeBar({
+  user,
+  defaultAv,
+  name,
+  onClick,
+}: {
+  user: User;
+  defaultAv: string;
+  name: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="pf-compose-bar" onClick={onClick}>
+      <Avatar src={user.profileImageUrl || defaultAv} name={name} size="sm" />
+      <span className="pf-compose-placeholder">
+        Bạn đang nghĩ gì về âm nhạc hôm nay?
+      </span>
+      <div className="pf-compose-actions">
+        <span className="pf-compose-action-btn" title="Thêm ảnh">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+        </span>
+        <span className="pf-compose-action-btn" title="Thêm audio">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="22" />
+          </svg>
+        </span>
+        <span className="pf-compose-action-btn" title="Tâm trạng">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+            <line x1="9" y1="9" x2="9.01" y2="9" />
+            <line x1="15" y1="9" x2="15.01" y2="9" />
+          </svg>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================
+   PROFILE PAGE
+================================================================ */
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -224,9 +331,7 @@ export default function Profile() {
   const loadFavorites = useCallback(async () => {
     try {
       const res = await favoriteService.getFavorites("track");
-      if (res.success && res.data) {
-        setFavTracks(res.data);
-      }
+      if (res.success && res.data) setFavTracks(res.data);
     } catch (err) {
       console.error("Load favorites failed", err);
     }
@@ -243,7 +348,6 @@ export default function Profile() {
       .then((r) => setPosts(r.data?.data?.items ?? []))
       .catch((e) => console.error("Load posts failed", e));
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFavorites();
   }, [loadFavorites]);
 
@@ -256,16 +360,18 @@ export default function Profile() {
   const defaultAv =
     "https://i.pinimg.com/736x/3f/94/70/3f9470b34a8e3f526dbdb022f9f19cf7.jpg";
 
-  const handlePostCreated = (post: Post) => {
-    setPosts((prev) => [post, ...prev]);
-  };
-
-  const handlePostUpdated = (updated: Post) => {
+  const handlePostCreated = (post: Post) => setPosts((prev) => [post, ...prev]);
+  const handlePostUpdated = (updated: Post) =>
     setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-  };
-
-  const handlePostDeleted = (postId: string) => {
+  const handlePostDeleted = (postId: string) =>
     setPosts((prev) => prev.filter((p) => p.id !== postId));
+
+  const postListProps = {
+    user,
+    name,
+    defaultAv,
+    onEdit: setEditPost,
+    onDelete: handlePostDeleted,
   };
 
   return (
@@ -278,7 +384,6 @@ export default function Profile() {
       {/* PROFILE BAR */}
       <div className="pf-bar">
         <div className="pf-bar-inner">
-          {/* Avatar + info */}
           <div className="pf-left">
             <Avatar
               src={user.profileImageUrl || defaultAv}
@@ -300,12 +405,9 @@ export default function Profile() {
               )}
             </div>
           </div>
-
-          {/* Stats + edit */}
           <div className="pf-right">
             <Link to="/settings" className="pf-edit-btn">
-              <SquarePen size={14} />
-              Chỉnh sửa
+              <SquarePen size={14} /> Chỉnh sửa
             </Link>
           </div>
         </div>
@@ -328,9 +430,9 @@ export default function Profile() {
 
       {/* CONTENT */}
       <div className="pf-content" key={tab}>
+        {/* ── OVERVIEW ── */}
         {tab === "overview" && (
           <div className="pf-grid">
-            {/* Left */}
             <div className="pf-col">
               {/* Top Tracks */}
               <div className="pf-card">
@@ -341,47 +443,11 @@ export default function Profile() {
                   <button className="pf-link">Xem tất cả</button>
                 </div>
                 {favTracks.length > 0 ? (
-                  favTracks.slice(0, 5).map((t, idx) => (
-                    <div key={t.id} className="track">
-                      <span className="track-n">
-                        {String(idx + 1).padStart(2, "0")}
-                      </span>
-                      <img
-                        className="track-img"
-                        src={
-                          t.imgUrl ||
-                          "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1"
-                        }
-                        alt={t.name}
-                      />
-                      <div className="track-info">
-                        <p className="track-title">{t.name}</p>
-                        <p className="track-artist">
-                          {t.artistName}
-                          {t.albumName ? ` · ${t.albumName}` : ""}
-                        </p>
-                      </div>
-                      <span className="track-dur">
-                        {t.durationMs ? formatDuration(t.durationMs) : "--:--"}
-                      </span>
-                      <span className="track-likes">
-                        <Heart size={12} />
-                      </span>
-                      <button className="track-more">
-                        <MoreHorizontal size={15} />
-                      </button>
-                    </div>
-                  ))
+                  favTracks
+                    .slice(0, 5)
+                    .map((t, i) => <TrackItem key={t.id} track={t} index={i} />)
                 ) : (
-                  <p
-                    className="music-empty"
-                    style={{
-                      textAlign: "center",
-                      padding: "16px 0",
-                      color: "var(--neutral-400, #a3a3a3)",
-                      fontSize: 13,
-                    }}
-                  >
+                  <p className="pf-empty-inline">
                     Chưa có bài hát yêu thích nào
                   </p>
                 )}
@@ -393,103 +459,32 @@ export default function Profile() {
                   <h3>
                     <ChartBar size={18} /> Cộng đồng
                   </h3>
-                  {/* ── CREATE POST BUTTON ── */}
                   <button
                     className="pf-create-post-btn"
                     onClick={() => setShowCreatePost(true)}
                   >
-                    <Plus size={13} />
-                    Tạo bài đăng
+                    <Plus size={13} /> Tạo bài đăng
                   </button>
                 </div>
-
-                {/* Quick compose bar */}
-                <div
-                  className="pf-compose-bar"
+                <ComposeBar
+                  user={user}
+                  defaultAv={defaultAv}
+                  name={name}
                   onClick={() => setShowCreatePost(true)}
-                >
-                  <Avatar
-                    src={user.profileImageUrl || defaultAv}
-                    name={name}
-                    size="sm"
-                  />
-                  <span className="pf-compose-placeholder">
-                    Bạn đang nghĩ gì về âm nhạc hôm nay?
-                  </span>
-                  <div className="pf-compose-actions">
-                    <span className="pf-compose-action-btn" title="Thêm ảnh">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <polyline points="21 15 16 10 5 21" />
-                      </svg>
-                    </span>
-                    <span className="pf-compose-action-btn" title="Thêm audio">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="12" y1="19" x2="12" y2="22" />
-                      </svg>
-                    </span>
-                    <span className="pf-compose-action-btn" title="Tâm trạng">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                        <line x1="9" y1="9" x2="9.01" y2="9" />
-                        <line x1="15" y1="9" x2="15.01" y2="9" />
-                      </svg>
-                    </span>
-                  </div>
-                </div>
-
+                />
                 {posts.length === 0 ? (
                   <p className="post-empty">Chưa có bài đăng nào.</p>
                 ) : (
                   <div className="post-list">
-                    {posts.map((post) => (
-                      <PostCard
-                        key={post.id}
-                        post={post}
-                        user={user}
-                        name={name}
-                        defaultAv={defaultAv}
-                        onEdit={setEditPost}
-                        onDelete={handlePostDeleted}
-                      />
+                    {posts.map((p) => (
+                      <PostCard key={p.id} post={p} {...postListProps} />
                     ))}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right */}
+            {/* Right sidebar */}
             <div className="pf-col">
               <div className="pf-card">
                 <div className="pf-card-top">
@@ -512,64 +507,7 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Community tab — full view */}
-        {tab === "community" && (
-          <div className="pf-community-full">
-            <div className="pf-community-header">
-              <h2 className="pf-community-title">Bài đăng của tôi</h2>
-              <button
-                className="pf-create-post-btn"
-                onClick={() => setShowCreatePost(true)}
-              >
-                <Plus size={14} />
-                Tạo bài đăng
-              </button>
-            </div>
-
-            {/* Quick compose bar */}
-            <div
-              className="pf-compose-bar pf-compose-bar--full"
-              onClick={() => setShowCreatePost(true)}
-            >
-              <Avatar
-                src={user.profileImageUrl || defaultAv}
-                name={name}
-                size="sm"
-              />
-              <span className="pf-compose-placeholder">
-                Bạn đang nghĩ gì về âm nhạc hôm nay?
-              </span>
-            </div>
-
-            {posts.length === 0 ? (
-              <div className="pf-empty">
-                <Music2 size={28} />
-                <p>Chưa có bài đăng nào</p>
-                <button
-                  className="pf-create-post-btn"
-                  onClick={() => setShowCreatePost(true)}
-                >
-                  <Plus size={14} /> Tạo bài đăng đầu tiên
-                </button>
-              </div>
-            ) : (
-              <div className="post-list">
-                {posts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    user={user}
-                    name={name}
-                    defaultAv={defaultAv}
-                    onEdit={setEditPost}
-                    onDelete={handlePostDeleted}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
+        {/* ── SONGS ── */}
         {tab === "songs" && (
           <div className="pf-card">
             <div className="pf-card-top">
@@ -578,36 +516,8 @@ export default function Profile() {
               </h3>
             </div>
             {favTracks.length > 0 ? (
-              favTracks.map((t, idx) => (
-                <div key={t.id} className="track">
-                  <span className="track-n">
-                    {String(idx + 1).padStart(2, "0")}
-                  </span>
-                  <img
-                    className="track-img"
-                    src={
-                      t.imgUrl ||
-                      "https://i.scdn.co/image/ab67616d00004851b0cc2e9c4480df7de2c9f0b1"
-                    }
-                    alt={t.name}
-                  />
-                  <div className="track-info">
-                    <p className="track-title">{t.name}</p>
-                    <p className="track-artist">
-                      {t.artistName}
-                      {t.albumName ? ` · ${t.albumName}` : ""}
-                    </p>
-                  </div>
-                  <span className="track-dur">
-                    {t.durationMs ? formatDuration(t.durationMs) : "--:--"}
-                  </span>
-                  <span className="track-likes">
-                    <Heart size={12} />
-                  </span>
-                  <button className="track-more">
-                    <MoreHorizontal size={15} />
-                  </button>
-                </div>
+              favTracks.map((t, i) => (
+                <TrackItem key={t.id} track={t} index={i} />
               ))
             ) : (
               <div className="pf-empty">
@@ -621,7 +531,8 @@ export default function Profile() {
           </div>
         )}
 
-        {tab !== "overview" && tab !== "community" && tab !== "songs" && (
+        {/* ── OTHER TABS ── */}
+        {tab !== "overview" && tab !== "songs" && tab !== "community" && (
           <div className="pf-empty">
             <Music2 size={28} />
             <p>Chưa có nội dung nào</p>
@@ -629,7 +540,6 @@ export default function Profile() {
         )}
       </div>
 
-      {/* CREATE POST MODAL */}
       <CreatePostModal
         open={showCreatePost}
         onClose={() => setShowCreatePost(false)}
@@ -638,8 +548,6 @@ export default function Profile() {
         defaultAv={defaultAv}
         onCreated={handlePostCreated}
       />
-
-      {/* EDIT POST MODAL */}
       <EditPostModal
         open={editPost !== null}
         post={editPost}
