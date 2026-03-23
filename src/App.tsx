@@ -26,6 +26,7 @@ import { LiveSessionsScreen } from "./pages/Staff/LiveSessions/LiveSessionsScree
 import { ScheduleScreen } from "./pages/Staff/Schedule/ScheduleScreen";
 import { MusicRequestsScreen } from "./pages/Staff/MusicRequests/MusicRequestsScreen";
 import { PodcastRequestsScreen } from "./pages/Staff/PodcastRequests/PodcastRequestsScreen";
+import TransactionHistory from "./pages/Profile/TransactionHistory";
 import PaymentResult from "./pages/Payment/PaymentResult";
 import DashboardPage from "./pages/Admin/LiveOps/DashboardPage";
 import StationPage from "./pages/Admin/LiveOps/StationPage";
@@ -103,6 +104,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/payment/result" element={<PaymentResult />} />
+          <Route path="/profile/transactions" element={<TransactionHistory />} />
           <Route 
             path="/podcast-creator" 
             element={
