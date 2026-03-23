@@ -280,6 +280,16 @@ const Header: React.FC = () => {
                         className="dropdown-item"
                         onClick={() => {
                           setShowDropdown(false);
+                          navigate("/profile/transactions");
+                        }}
+                      >
+                        <Icon name="clock" size={18} />
+                        <span>Lịch sử giao dịch</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setShowDropdown(false);
                           navigate("/settings");
                         }}
                       >
