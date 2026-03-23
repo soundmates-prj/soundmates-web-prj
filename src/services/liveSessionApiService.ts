@@ -234,7 +234,8 @@ class LiveSessionApiService {
   }
 
   async syncStations(): Promise<SyncStationsResult> {
-    const res = await api.post<ApiResponse<SyncStationsResult>>("/station/sync");
+    const res =
+      await api.post<ApiResponse<SyncStationsResult>>("/station/sync");
     return res.data.data;
   }
 
@@ -248,19 +249,25 @@ class LiveSessionApiService {
   }
 
   async getStationNowPlaying(stationId: string) {
-    const res = await api.get<ApiResponse<any>>(`/station/${stationId}/now-playing`);
+    const res = await api.get<ApiResponse<any>>(
+      `/station/${stationId}/now-playing`,
+    );
     return res.data.data;
   }
 
   /* ── Playlists ── */
 
   async getStationPlaylists(stationId: string): Promise<PlaylistResult[]> {
-    const res = await api.get<ApiResponse<PlaylistResult[]>>(`/playlist/station/${stationId}`);
+    const res = await api.get<ApiResponse<PlaylistResult[]>>(
+      `/playlist/station/${stationId}`,
+    );
     return res.data.data;
   }
 
   async syncStationPlaylists(stationId: string): Promise<SyncPlaylistsResult> {
-    const res = await api.post<ApiResponse<SyncPlaylistsResult>>(`/playlist/station/${stationId}/sync`);
+    const res = await api.post<ApiResponse<SyncPlaylistsResult>>(
+      `/playlist/station/${stationId}/sync`,
+    );
     return res.data.data;
   }
 
@@ -275,16 +282,27 @@ class LiveSessionApiService {
   }
 
   async getPlaylistTracks(playlistId: string): Promise<PlaylistMediaResult[]> {
-    const res = await api.get<ApiResponse<PlaylistMediaResult[]>>(`/playlist/${playlistId}/tracks`);
+    const res = await api.get<ApiResponse<PlaylistMediaResult[]>>(
+      `/playlist/${playlistId}/tracks`,
+    );
     return res.data.data;
   }
 
-  async addTracksToPlaylist(playlistId: string, musicIds: string[]): Promise<PlaylistMediaResult[]> {
-    const res = await api.post<ApiResponse<PlaylistMediaResult[]>>(`/playlist/${playlistId}/tracks`, { musicIds });
+  async addTracksToPlaylist(
+    playlistId: string,
+    musicIds: string[],
+  ): Promise<PlaylistMediaResult[]> {
+    const res = await api.post<ApiResponse<PlaylistMediaResult[]>>(
+      `/playlist/${playlistId}/tracks`,
+      { musicIds },
+    );
     return res.data.data;
   }
 
-  async removeTracksFromPlaylist(playlistId: string, musicIds: string[]): Promise<void> {
+  async removeTracksFromPlaylist(
+    playlistId: string,
+    musicIds: string[],
+  ): Promise<void> {
     await api.delete(`/playlist/${playlistId}/tracks`, { data: { musicIds } });
   }
 
@@ -296,19 +314,26 @@ class LiveSessionApiService {
   }
 
   async getStationMusic(stationId: string): Promise<MusicResult[]> {
-    const res = await api.get<ApiResponse<MusicResult[]>>(`/musiccatalog/station/${stationId}`);
+    const res = await api.get<ApiResponse<MusicResult[]>>(
+      `/musiccatalog/station/${stationId}`,
+    );
     return res.data.data;
   }
 
   async syncStationMusic(stationId: string): Promise<SyncMediaFilesResult> {
-    const res = await api.post<ApiResponse<SyncMediaFilesResult>>(`/musiccatalog/station/${stationId}/sync`);
+    const res = await api.post<ApiResponse<SyncMediaFilesResult>>(
+      `/musiccatalog/station/${stationId}/sync`,
+    );
     return res.data.data;
   }
 
-  async importSystemMediaBatch(stationId: string, mediaFileIds: string[]): Promise<ImportSystemMediaBatchResult> {
+  async importSystemMediaBatch(
+    stationId: string,
+    mediaFileIds: string[],
+  ): Promise<ImportSystemMediaBatchResult> {
     const res = await api.post<ApiResponse<ImportSystemMediaBatchResult>>(
       `/musiccatalog/station/${stationId}/import-system-media`,
-      { mediaFileIds }
+      { mediaFileIds },
     );
     return res.data.data;
   }
@@ -317,7 +342,7 @@ class LiveSessionApiService {
     stationId: string | undefined,
     file: File,
     metadata?: { title?: string; artist?: string; album?: string },
-    onUploadProgress?: (percent: number) => void
+    onUploadProgress?: (percent: number) => void,
   ): Promise<MusicResult> {
     const formData = new FormData();
     formData.append("file", file);
@@ -329,16 +354,20 @@ class LiveSessionApiService {
     if (metadata?.artist) formData.append("artist", metadata.artist);
     if (metadata?.album) formData.append("album", metadata.album);
 
-    const res = await api.post<ApiResponse<MusicResult>>("/musiccatalog/upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      onUploadProgress: (evt) => {
-        if (!onUploadProgress || !evt.total) {
-          return;
-        }
-        const percent = Math.round((evt.loaded * 100) / evt.total);
-        onUploadProgress(percent);
+    const res = await api.post<ApiResponse<MusicResult>>(
+      "/musiccatalog/upload",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (evt) => {
+          if (!onUploadProgress || !evt.total) {
+            return;
+          }
+          const percent = Math.round((evt.loaded * 100) / evt.total);
+          onUploadProgress(percent);
+        },
       },
-    });
+    );
     return res.data.data;
   }
 
@@ -354,17 +383,24 @@ class LiveSessionApiService {
     pageNumber?: number;
     pageSize?: number;
   }): Promise<PagedResult<LiveSessionResult>> {
-    const res = await api.get<ApiResponse<PagedResult<LiveSessionResult>>>("/livesession", { params });
+    const res = await api.get<ApiResponse<PagedResult<LiveSessionResult>>>(
+      "/livesession",
+      { params },
+    );
     return res.data.data;
   }
 
   async getActiveSessions(): Promise<LiveSessionResult[]> {
-    const res = await api.get<ApiResponse<LiveSessionResult[]>>("/livesession/active");
+    const res = await api.get<ApiResponse<LiveSessionResult[]>>(
+      "/livesession/active",
+    );
     return res.data.data;
   }
 
   async getLiveSession(id: string): Promise<LiveSessionResult> {
-    const res = await api.get<ApiResponse<LiveSessionResult>>(`/livesession/${id}`);
+    const res = await api.get<ApiResponse<LiveSessionResult>>(
+      `/livesession/${id}`,
+    );
     return res.data.data;
   }
 
@@ -374,84 +410,146 @@ class LiveSessionApiService {
     sessionName: string;
     description?: string;
   }): Promise<LiveSessionResult> {
-    const res = await api.post<ApiResponse<LiveSessionResult>>("/livesession", data);
+    const res = await api.post<ApiResponse<LiveSessionResult>>(
+      "/livesession",
+      data,
+    );
     return res.data.data;
   }
 
   async startSession(id: string): Promise<LiveSessionResult> {
-    const res = await api.post<ApiResponse<LiveSessionResult>>(`/livesession/${id}/start`);
+    const res = await api.post<ApiResponse<LiveSessionResult>>(
+      `/livesession/${id}/start`,
+    );
     return res.data.data;
   }
 
   async pauseSession(id: string): Promise<LiveSessionResult> {
-    const res = await api.post<ApiResponse<LiveSessionResult>>(`/livesession/${id}/pause`);
+    const res = await api.post<ApiResponse<LiveSessionResult>>(
+      `/livesession/${id}/pause`,
+    );
     return res.data.data;
   }
 
   async resumeSession(id: string): Promise<LiveSessionResult> {
-    const res = await api.post<ApiResponse<LiveSessionResult>>(`/livesession/${id}/resume`);
+    const res = await api.post<ApiResponse<LiveSessionResult>>(
+      `/livesession/${id}/resume`,
+    );
     return res.data.data;
   }
 
   async stopSession(id: string): Promise<LiveSessionResult> {
-    const res = await api.post<ApiResponse<LiveSessionResult>>(`/livesession/${id}/stop`);
+    const res = await api.post<ApiResponse<LiveSessionResult>>(
+      `/livesession/${id}/stop`,
+    );
     return res.data.data;
   }
 
   async getListenerStats(id: string): Promise<ListenerStatsResult> {
-    const res = await api.get<ApiResponse<ListenerStatsResult>>(`/livesession/${id}/listeners`);
+    const res = await api.get<ApiResponse<ListenerStatsResult>>(
+      `/livesession/${id}/listeners`,
+    );
     return res.data.data;
   }
 
   async createSchedule(
     id: string,
-    data: { startTime: string; endTime: string; title?: string }
-  ): Promise<LiveSessionResult> {
-    const res = await api.post<ApiResponse<LiveSessionResult>>(`/livesession/${id}/schedules`, data);
+    data: { startTime: string; endTime: string; title?: string },
+  ): Promise<SessionScheduleResult> {
+    // POST /api/v1/schedule/live-session/{liveSessionId}
+    const res = await api.post<ApiResponse<SessionScheduleResult>>(
+      `/schedule/live-session/${id}`,
+      data,
+    );
     return res.data.data;
   }
 
-  async getSchedules(id: string): Promise<SessionScheduleResult[]> {
-    const res = await api.get<ApiResponse<SessionScheduleResult[]>>(`/livesession/${id}/schedules`);
+  async getSchedules(): Promise<SessionScheduleResult[]> {
+    // GET /api/v1/schedule — Get all session schedules
+    const res =
+      await api.get<ApiResponse<SessionScheduleResult[]>>(`/schedule`);
     return res.data.data;
   }
 
-  async getStaffDashboardOverview(days = 7): Promise<StaffDashboardOverviewResult> {
-    const res = await api.get<ApiResponse<StaffDashboardOverviewResult>>(`/livesession/dashboard/overview`, {
-      params: { days },
-    });
+  async updateSchedule(
+    scheduleId: string,
+    data: { startTime?: string; endTime?: string; title?: string },
+  ): Promise<SessionScheduleResult> {
+    // PUT /api/v1/schedule/{scheduleId}
+    const res = await api.put<ApiResponse<SessionScheduleResult>>(
+      `/schedule/${scheduleId}`,
+      data,
+    );
+    return res.data.data;
+  }
+
+  async deleteSchedule(scheduleId: string): Promise<void> {
+    // DELETE /api/v1/schedule/{scheduleId}
+    await api.delete(`/schedule/${scheduleId}`);
+  }
+
+  async getStaffDashboardOverview(
+    days = 7,
+  ): Promise<StaffDashboardOverviewResult> {
+    const res = await api.get<ApiResponse<StaffDashboardOverviewResult>>(
+      `/livesession/dashboard/overview`,
+      {
+        params: { days },
+      },
+    );
     return res.data.data;
   }
 
   /* ── Song Requests ── */
 
-  async getSongRequests(sessionId: string, status?: string): Promise<SongRequestResult[]> {
-    const res = await api.get<ApiResponse<SongRequestResult[]>>(`/livesession/${sessionId}/song-requests`, {
-      params: status ? { status } : undefined,
-    });
+  async getSongRequests(
+    sessionId: string,
+    status?: string,
+  ): Promise<SongRequestResult[]> {
+    const res = await api.get<ApiResponse<SongRequestResult[]>>(
+      `/livesession/${sessionId}/song-requests`,
+      {
+        params: status ? { status } : undefined,
+      },
+    );
     return res.data.data;
   }
 
   async createSongRequest(
     sessionId: string,
-    data: { mediaFileId: string; message?: string }
+    data: { mediaFileId: string; message?: string },
   ): Promise<SongRequestResult> {
-    const res = await api.post<ApiResponse<SongRequestResult>>(`/livesession/${sessionId}/song-requests`, data);
+    const res = await api.post<ApiResponse<SongRequestResult>>(
+      `/livesession/${sessionId}/song-requests`,
+      data,
+    );
     return res.data.data;
   }
 
   async reviewSongRequest(
     songRequestId: string,
-    data: { reviewedByUserId: string; action: "approve" | "reject"; rejectReason?: string }
+    data: {
+      reviewedByUserId: string;
+      action: "approve" | "reject";
+      rejectReason?: string;
+    },
   ): Promise<SongRequestResult> {
-    const res = await api.post<ApiResponse<SongRequestResult>>(`/livesession/song-requests/${songRequestId}/review`, data);
+    const res = await api.post<ApiResponse<SongRequestResult>>(
+      `/livesession/song-requests/${songRequestId}/review`,
+      data,
+    );
     return res.data.data;
   }
 
   /* ── Podcasts ── */
 
-  async getPodcasts(params?: { createdBy?: string; status?: string }): Promise<PodcastResult[]> {
-    const res = await api.get<ApiResponse<PodcastResult[]>>("/podcast", { params });
+  async getPodcasts(params?: {
+    createdBy?: string;
+    status?: string;
+  }): Promise<PodcastResult[]> {
+    const res = await api.get<ApiResponse<PodcastResult[]>>("/podcast", {
+      params,
+    });
     return res.data.data;
   }
 
@@ -474,9 +572,19 @@ class LiveSessionApiService {
 
   async updatePodcast(
     id: string,
-    data: { title?: string; description?: string; author?: string; type?: string; banner?: string; status?: string }
+    data: {
+      title?: string;
+      description?: string;
+      author?: string;
+      type?: string;
+      banner?: string;
+      status?: string;
+    },
   ): Promise<PodcastResult> {
-    const res = await api.put<ApiResponse<PodcastResult>>(`/podcast/${id}`, data);
+    const res = await api.put<ApiResponse<PodcastResult>>(
+      `/podcast/${id}`,
+      data,
+    );
     return res.data.data;
   }
 
@@ -494,23 +602,31 @@ class LiveSessionApiService {
       includeInRequests?: boolean;
       includeInOnDemand?: boolean;
       isEnabled?: boolean;
-    }
+    },
   ): Promise<PlaylistResult> {
-    const res = await api.put<ApiResponse<PlaylistResult>>(`/playlist/${playlistId}`, data);
+    const res = await api.put<ApiResponse<PlaylistResult>>(
+      `/playlist/${playlistId}`,
+      data,
+    );
     return res.data.data;
   }
 
   /* ── AzuraCast ── */
 
   async getAzuraHealth(): Promise<AzuraCastHealthResult> {
-    const res = await api.get<ApiResponse<AzuraCastHealthResult>>("/azuracast/health");
+    const res =
+      await api.get<ApiResponse<AzuraCastHealthResult>>("/azuracast/health");
     return res.data.data;
   }
 
   async testAzuraApiKey(apiKey: string): Promise<ApiKeyTestResult> {
-    const res = await api.post<ApiResponse<ApiKeyTestResult>>("/azuracast/test-apikey", null, {
-      params: { apiKey },
-    });
+    const res = await api.post<ApiResponse<ApiKeyTestResult>>(
+      "/azuracast/test-apikey",
+      null,
+      {
+        params: { apiKey },
+      },
+    );
     return res.data.data;
   }
 }

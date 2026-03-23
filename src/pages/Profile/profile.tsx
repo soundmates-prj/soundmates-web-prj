@@ -194,9 +194,7 @@ export default function Profile() {
               {/* Top Tracks */}
               <div className="pf-card">
                 <div className="pf-card-top">
-                  <h3>
-                    Bài Hát Yêu Thích Nhất
-                  </h3>
+                  <h3>Bài Hát Yêu Thích Nhất</h3>
                   <button className="pf-link">Xem tất cả</button>
                 </div>
                 {favTracks.length > 0 ? (
