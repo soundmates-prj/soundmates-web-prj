@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { 
-  CreditCard, 
-  Search, 
-  Filter, 
+import {
+  CreditCard,
+  Search,
+  Filter,
   Download,
   CheckCircle2,
   XCircle,
@@ -11,7 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
-  CreditCard as CardIcon
+  CreditCard as CardIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../services/axios";
@@ -60,33 +60,35 @@ const TransactionHistory: React.FC = () => {
   };
 
   const filteredTransactions = transactions.filter((t) => {
-    const matchesSearch = t.paymentId.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         t.paymentProvider.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === "all" || t.transactionStatus.toLowerCase() === filterStatus.toLowerCase();
+    const matchesSearch =
+      t.paymentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.paymentProvider.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter =
+      filterStatus === "all" ||
+      t.transactionStatus.toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesFilter;
   });
 
   const totalAmount = transactions
-    .filter(t => t.transactionStatus.toLowerCase() === 'success')
+    .filter((t) => t.transactionStatus.toLowerCase() === "success")
     .reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <div className="transaction-history-container">
       <div className="transaction-header-section">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="transaction-title-area"
         >
           <h1 className="transaction-title">Lịch sử giao dịch</h1>
-          <p className="transaction-subtitle">Quản lý và theo dõi các giao dịch thanh toán của bạn</p>
+          <p className="transaction-subtitle">
+            Quản lý và theo dõi các giao dịch thanh toán của bạn
+          </p>
         </motion.div>
 
         <div className="transaction-stats-grid">
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="stat-card total-spent"
-          >
+          <motion.div whileHover={{ y: -5 }} className="stat-card total-spent">
             <div className="stat-icon-wrapper">
               <TrendingUp size={24} />
             </div>
@@ -96,10 +98,7 @@ const TransactionHistory: React.FC = () => {
             </div>
           </motion.div>
 
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="stat-card active-plan"
-          >
+          <motion.div whileHover={{ y: -5 }} className="stat-card active-plan">
             <div className="stat-icon-wrapper blue">
               <CardIcon size={24} />
             </div>
@@ -116,9 +115,9 @@ const TransactionHistory: React.FC = () => {
       <div className="transaction-table-controls">
         <div className="search-box">
           <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm mã giao dịch hoặc nhà cung cấp..." 
+          <input
+            type="text"
+            placeholder="Tìm kiếm mã giao dịch hoặc nhà cung cấp..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -127,8 +126,8 @@ const TransactionHistory: React.FC = () => {
         <div className="filter-group">
           <div className="filter-item">
             <Filter size={16} />
-            <select 
-              value={filterStatus} 
+            <select
+              value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
               <option value="all">Tất cả trạng thái</option>
@@ -163,7 +162,7 @@ const TransactionHistory: React.FC = () => {
 
             <AnimatePresence>
               {filteredTransactions.map((t, index) => (
-                <motion.div 
+                <motion.div
                   key={t.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -171,12 +170,21 @@ const TransactionHistory: React.FC = () => {
                   className="table-row"
                 >
                   <div className="col col-id">
-                    <span className="id-text">#{t.paymentId.split('-')[0]}</span>
+                    <span className="id-text">
+                      #{t.paymentId.split("-")[0]}
+                    </span>
                     <span className="method-tag">{t.paymentMethod}</span>
                   </div>
                   <div className="col col-date">
-                    <div className="date-main">{new Date(t.paymentAt).toLocaleDateString("vi-VN")}</div>
-                    <div className="date-sub">{new Date(t.paymentAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div className="date-main">
+                      {new Date(t.paymentAt).toLocaleDateString("vi-VN")}
+                    </div>
+                    <div className="date-sub">
+                      {new Date(t.paymentAt).toLocaleTimeString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
                   </div>
                   <div className="col col-provider">
                     <div className="provider-badge">
@@ -188,8 +196,14 @@ const TransactionHistory: React.FC = () => {
                     {formatCurrency(t.amount)}
                   </div>
                   <div className="col col-status">
-                    <span className={`status-badge ${t.transactionStatus.toLowerCase()}`}>
-                      {t.transactionStatus.toLowerCase() === 'success' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                    <span
+                      className={`status-badge ${t.transactionStatus.toLowerCase()}`}
+                    >
+                      {t.transactionStatus.toLowerCase() === "success" ? (
+                        <CheckCircle2 size={12} />
+                      ) : (
+                        <XCircle size={12} />
+                      )}
                       {t.transactionStatus}
                     </span>
                   </div>
@@ -212,11 +226,18 @@ const TransactionHistory: React.FC = () => {
       </div>
 
       <div className="pagination-area">
-        <p className="pagination-info">Hiển thị 1 - {filteredTransactions.length} của {transactions.length} giao dịch</p>
+        <p className="pagination-info">
+          Hiển thị 1 - {filteredTransactions.length} của {transactions.length}{" "}
+          giao dịch
+        </p>
         <div className="pagination-btns">
-          <button disabled className="page-btn"><ChevronLeft size={18} /></button>
+          <button disabled className="page-btn">
+            <ChevronLeft size={18} />
+          </button>
           <button className="page-btn active">1</button>
-          <button disabled className="page-btn"><ChevronRight size={18} /></button>
+          <button disabled className="page-btn">
+            <ChevronRight size={18} />
+          </button>
         </div>
       </div>
     </div>

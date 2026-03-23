@@ -29,7 +29,7 @@ const uploadToCloudinary = async (file: File): Promise<string> => {
   fd.append("upload_preset", uploadPreset);
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    { method: "POST", body: fd }
+    { method: "POST", body: fd },
   );
   if (!res.ok) throw new Error("Upload ảnh thất bại");
   const data = await res.json();
@@ -134,7 +134,7 @@ const CropModal: React.FC<CropModalProps> = ({
     // Initial scale: fit height to canvas
     const initScale = Math.max(
       CANVAS_W / img.naturalWidth,
-      CANVAS_H / img.naturalHeight
+      CANVAS_H / img.naturalHeight,
     );
     setScale(initScale);
     setOffset({ x: 0, y: 0 });
@@ -181,7 +181,7 @@ const CropModal: React.FC<CropModalProps> = ({
     setScale((prev) => {
       const minScale = Math.max(
         CANVAS_W / imgNaturalSize.w,
-        CANVAS_H / imgNaturalSize.h
+        CANVAS_H / imgNaturalSize.h,
       );
       return Math.max(minScale, Math.min(4, prev + delta));
     });
@@ -190,7 +190,7 @@ const CropModal: React.FC<CropModalProps> = ({
   const handleReset = () => {
     const minScale = Math.max(
       CANVAS_W / imgNaturalSize.w,
-      CANVAS_H / imgNaturalSize.h
+      CANVAS_H / imgNaturalSize.h,
     );
     setScale(minScale);
     setOffset({ x: 0, y: 0 });
@@ -214,16 +214,22 @@ const CropModal: React.FC<CropModalProps> = ({
     const scaledH = imgNaturalSize.h * scale * (CANVAS_W / imgNaturalSize.w);
     const clampedX = Math.max(
       Math.min(0, CANVAS_W - scaledW),
-      Math.min(0, offset.x)
+      Math.min(0, offset.x),
     );
     const clampedY = Math.max(
       Math.min(0, CANVAS_H - scaledH),
-      Math.min(0, offset.y)
+      Math.min(0, offset.y),
     );
 
     // Scale up to output resolution
     const ratio = outW / CANVAS_W;
-    ctx.drawImage(img, clampedX * ratio, clampedY * ratio, scaledW * ratio, scaledH * ratio);
+    ctx.drawImage(
+      img,
+      clampedX * ratio,
+      clampedY * ratio,
+      scaledW * ratio,
+      scaledH * ratio,
+    );
 
     exportCanvas.toBlob(
       (blob) => {
@@ -233,16 +239,13 @@ const CropModal: React.FC<CropModalProps> = ({
         onDone(dataUrl, file);
       },
       "image/jpeg",
-      0.92
+      0.92,
     );
   };
 
   return (
     <div className="crop-overlay" onClick={onClose}>
-      <div
-        className="crop-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="crop-modal" onClick={(e) => e.stopPropagation()}>
         <div className="crop-modal-header">
           <span>{title}</span>
           <button className="crop-close" onClick={onClose}>
@@ -279,7 +282,9 @@ const CropModal: React.FC<CropModalProps> = ({
           />
         </div>
 
-        <p className="crop-hint">Kéo để di chuyển • Dùng thanh zoom để phóng to/thu nhỏ</p>
+        <p className="crop-hint">
+          Kéo để di chuyển • Dùng thanh zoom để phóng to/thu nhỏ
+        </p>
 
         <div className="crop-controls">
           <div className="crop-zoom-row">
@@ -298,7 +303,11 @@ const CropModal: React.FC<CropModalProps> = ({
             <button className="crop-ctrl-btn" onClick={() => handleZoom(0.1)}>
               <ZoomIn size={16} />
             </button>
-            <button className="crop-ctrl-btn" onClick={handleReset} title="Reset">
+            <button
+              className="crop-ctrl-btn"
+              onClick={handleReset}
+              title="Reset"
+            >
               <RotateCcw size={15} />
             </button>
           </div>
@@ -325,7 +334,9 @@ const ProfileSection: React.FC = () => {
   const [form, setForm] = useState<Partial<User>>({});
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null);
+  const [backgroundPreview, setBackgroundPreview] = useState<string | null>(
+    null,
+  );
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
@@ -335,7 +346,9 @@ const ProfileSection: React.FC = () => {
 
   // Crop modal state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
-  const [cropType, setCropType] = useState<"avatar" | "background" | null>(null);
+  const [cropType, setCropType] = useState<"avatar" | "background" | null>(
+    null,
+  );
 
   const avatarInput = useRef<HTMLInputElement>(null);
   const backgroundInput = useRef<HTMLInputElement>(null);
@@ -366,16 +379,37 @@ const ProfileSection: React.FC = () => {
     fetchProfile();
   }, []);
 
+  /* ── Check if form has unsaved changes ── */
+  const hasChanges = (): boolean => {
+    if (!user) return false;
+    return (
+      form.firstName !== user.firstName ||
+      form.lastName !== user.lastName ||
+      form.bio !== (user.bio || "") ||
+      form.phone !== (user.phone || "") ||
+      form.gender !== (user.gender || "") ||
+      form.dateOfBirth !==
+        (user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "") ||
+      avatarFile !== null ||
+      backgroundFile !== null
+    );
+  };
+
   /* ── Handle input ── */
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value } = e.target;
     if (name === "phone") {
       if (value === "") setPhoneError("");
-      else if (!/^[0-9]*$/.test(value)) setPhoneError("Số điện thoại chỉ được chứa chữ số");
-      else if (value.length > 10) setPhoneError("Số điện thoại không được quá 10 số");
-      else if (value.length === 10 && !isValidVietnamPhone(value)) setPhoneError("Số điện thoại không hợp lệ (VD: 0912345678)");
+      else if (!/^[0-9]*$/.test(value))
+        setPhoneError("Số điện thoại chỉ được chứa chữ số");
+      else if (value.length > 10)
+        setPhoneError("Số điện thoại không được quá 10 số");
+      else if (value.length === 10 && !isValidVietnamPhone(value))
+        setPhoneError("Số điện thoại không hợp lệ (VD: 0912345678)");
       else setPhoneError("");
     }
     setForm({ ...form, [name]: value });
@@ -428,10 +462,13 @@ const ProfileSection: React.FC = () => {
     }
     try {
       setLoading(true);
-      let profileImageUrl: string | undefined = user?.profileImageUrl ?? undefined;
-      let backgroundImageUrl: string | undefined = user?.backgroundImageUrl ?? undefined;
+      let profileImageUrl: string | undefined =
+        user?.profileImageUrl ?? undefined;
+      let backgroundImageUrl: string | undefined =
+        user?.backgroundImageUrl ?? undefined;
       if (avatarFile) profileImageUrl = await uploadToCloudinary(avatarFile);
-      if (backgroundFile) backgroundImageUrl = await uploadToCloudinary(backgroundFile);
+      if (backgroundFile)
+        backgroundImageUrl = await uploadToCloudinary(backgroundFile);
       const cleanProfileImageUrl = validateImageUrl(profileImageUrl);
       const cleanBackgroundImageUrl = validateImageUrl(backgroundImageUrl);
       const payload = {
@@ -440,9 +477,12 @@ const ProfileSection: React.FC = () => {
         bio: form.bio || null,
         phone: form.phone || null,
         gender: form.gender
-          ? form.gender.charAt(0).toUpperCase() + form.gender.slice(1).toLowerCase()
+          ? form.gender.charAt(0).toUpperCase() +
+            form.gender.slice(1).toLowerCase()
           : null,
-        dateOfBirth: form.dateOfBirth ? new Date(form.dateOfBirth).toISOString() : null,
+        dateOfBirth: form.dateOfBirth
+          ? new Date(form.dateOfBirth).toISOString()
+          : null,
         profileImageUrl: cleanProfileImageUrl || null,
         backgroundImageUrl: cleanBackgroundImageUrl || null,
       };
@@ -459,7 +499,8 @@ const ProfileSection: React.FC = () => {
         window.dispatchEvent(new Event("authChange"));
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra";
+      const errorMessage =
+        error.response?.data?.message || error.message || "Có lỗi xảy ra";
       showError("Lỗi", errorMessage);
     } finally {
       setLoading(false);
@@ -495,7 +536,10 @@ const ProfileSection: React.FC = () => {
           aspect={cropType === "avatar" ? 1 : 16 / 5}
           title={cropType === "avatar" ? "Cắt ảnh đại diện" : "Cắt ảnh bìa"}
           onDone={handleCropDone}
-          onClose={() => { setCropSrc(null); setCropType(null); }}
+          onClose={() => {
+            setCropSrc(null);
+            setCropType(null);
+          }}
         />
       )}
 
@@ -505,7 +549,9 @@ const ProfileSection: React.FC = () => {
           <div
             className="profile-banner"
             style={{
-              backgroundImage: backgroundPreview ? `url(${backgroundPreview})` : undefined,
+              backgroundImage: backgroundPreview
+                ? `url(${backgroundPreview})`
+                : undefined,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -535,7 +581,9 @@ const ProfileSection: React.FC = () => {
 
             <div className="avatar-wrapper">
               <img
-                src={avatarPreview || "https://via.placeholder.com/150?text=Avatar"}
+                src={
+                  avatarPreview || "https://via.placeholder.com/150?text=Avatar"
+                }
                 className="avatar"
                 alt="Profile avatar"
               />
@@ -561,11 +609,19 @@ const ProfileSection: React.FC = () => {
             <div className="form-grid">
               <div className="form-group">
                 <label>Họ</label>
-                <input name="firstName" value={form.firstName || ""} onChange={handleChange} />
+                <input
+                  name="firstName"
+                  value={form.firstName || ""}
+                  onChange={handleChange}
+                />
               </div>
               <div className="form-group">
                 <label>Tên</label>
-                <input name="lastName" value={form.lastName || ""} onChange={handleChange} />
+                <input
+                  name="lastName"
+                  value={form.lastName || ""}
+                  onChange={handleChange}
+                />
               </div>
             </div>
 
@@ -583,7 +639,9 @@ const ProfileSection: React.FC = () => {
             <div className="form-grid">
               <div className="form-group">
                 <label>Số điện thoại</label>
-                <div className={`input-icon ${phoneError ? "input-error" : ""}`}>
+                <div
+                  className={`input-icon ${phoneError ? "input-error" : ""}`}
+                >
                   <Phone size={15} />
                   <input
                     name="phone"
@@ -600,11 +658,15 @@ const ProfileSection: React.FC = () => {
                 <label>Giới tính</label>
                 <div className="input-icon select">
                   <VenusAndMars size={15} />
-                  <select name="gender" value={form.gender || ""} onChange={handleChange}>
+                  <select
+                    name="gender"
+                    value={form.gender || ""}
+                    onChange={handleChange}
+                  >
                     <option value="">Chọn</option>
-                    <option value="male">Nam</option>
-                    <option value="female">Nữ</option>
-                    <option value="other">Khác</option>
+                    <option value="Male">Nam</option>
+                    <option value="Female">Nữ</option>
+                    <option value="Other">Khác</option>
                   </select>
                   <ChevronDown size={15} className="chevron" />
                 </div>
@@ -625,9 +687,11 @@ const ProfileSection: React.FC = () => {
             </div>
 
             <div className="form-actions">
-              <button className="btn ghost" onClick={handleCancel}>Huỷ</button>
+              <button className="btn ghost" onClick={handleCancel}>
+                Huỷ
+              </button>
               <button
-                className="btn primary"
+                className={`btn primary ${hasChanges() ? "active" : ""}`}
                 onClick={handleSave}
                 disabled={loading || !!phoneError}
               >
@@ -637,7 +701,10 @@ const ProfileSection: React.FC = () => {
 
             <div className="privacy-box">
               <span>ℹ️</span>
-              <p>Thông tin của bạn được bảo mật và chỉ dùng để cải thiện trải nghiệm cá nhân.</p>
+              <p>
+                Thông tin của bạn được bảo mật và chỉ dùng để cải thiện trải
+                nghiệm cá nhân.
+              </p>
             </div>
           </div>
         </div>

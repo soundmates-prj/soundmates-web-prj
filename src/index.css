@@ -344,11 +344,6 @@ a:hover {
   cursor: not-allowed;
 }
 
-.btn-primary {
-  background: var(--primary-300);
-  color: var(--text-inverse);
-  border-color: var(--primary-300);
-}
 
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-300);
