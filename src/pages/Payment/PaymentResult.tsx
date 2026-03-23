@@ -56,24 +56,35 @@ export default function PaymentResult() {
       api
         .get("/payments/vnpay/callback", { params: vnpParams })
         .then((res) => {
-          const data = res.data;
-          setState({
-            status: data.status === "success" ? "success" : "failed",
-            transactionId: data.transactionId,
-            paymentId: data.paymentId,
-            amount: data.amount,
-            provider: data.provider,
-            transactionNo: data.vnp_TransactionNo ?? vnpParams["vnp_TransactionNo"],
-            message: VNP_RESPONSE_MESSAGES[responseCode] ?? "Giao dịch hoàn tất",
-          });
+          const apiResponse = res.data;
+          const data = apiResponse.data;
+          
+          if (apiResponse.success && data) {
+            setState({
+              status: data.status === "success" ? "success" : "failed",
+              transactionId: data.transactionId,
+              paymentId: data.paymentId,
+              amount: data.amount?.toString(),
+              provider: data.provider,
+              transactionNo: data.vnp_TransactionNo ?? vnpParams["vnp_TransactionNo"],
+              message: VNP_RESPONSE_MESSAGES[responseCode] ?? "Giao dịch hoàn tất",
+            });
+          } else {
+            throw new Error(apiResponse.message || "Giao dịch không thành công");
+          }
         })
         .catch((err) => {
+          const errorData = err?.response?.data;
+          const displayMessage = 
+            errorData?.errors || 
+            errorData?.message || 
+            err.message || 
+            VNP_RESPONSE_MESSAGES[responseCode] || 
+            "Có lỗi xảy ra khi xử lý thanh toán.";
+
           setState({
             status: "failed",
-            message:
-              err?.response?.data?.message ??
-              VNP_RESPONSE_MESSAGES[responseCode] ??
-              "Có lỗi xảy ra khi xử lý thanh toán.",
+            message: typeof displayMessage === 'string' ? displayMessage : JSON.stringify(displayMessage),
           });
         });
       return;
@@ -109,57 +120,61 @@ export default function PaymentResult() {
     <div className="payment-result-page">
       <div className="payment-result-card">
         {/* Icon */}
-        <div className={`result-icon ${state.status}`}>
-          {isLoading ? (
-            <Loader2 size={36} className="result-spinner" />
-          ) : isSuccess ? (
-            <CheckCircle size={36} />
-          ) : (
-            <XCircle size={36} />
-          )}
+        <div className="result-icon-container">
+          <div className={`result-icon ${state.status}`}>
+            {isLoading ? (
+              <Loader2 className="result-spinner" />
+            ) : isSuccess ? (
+              <CheckCircle />
+            ) : (
+              <XCircle />
+            )}
+          </div>
         </div>
 
         {/* Title */}
         <h1 className="result-title">
           {isLoading
-            ? "Đang xử lý..."
+            ? "Đang xử lý giao dịch..."
             : isSuccess
-            ? "Thanh toán thành công"
+            ? "Thanh toán thành công!"
             : "Thanh toán thất bại"}
         </h1>
 
         <p className="result-subtitle">
           {isLoading
-            ? "Vui lòng chờ trong giây lát..."
+            ? "Hệ thống đang kiểm tra trạng thái thanh toán, vui lòng không đóng trang này."
             : state.message}
         </p>
 
         {/* Details */}
         {!isLoading && (
-          <div className="result-details">
-            {state.transactionNo && (
+          <div className="result-details-wrapper">
+            <div className="result-details">
+              {state.transactionNo && (
+                <div className="result-row">
+                  <span className="result-row-label">Mã giao dịch</span>
+                  <span className="result-row-value">{state.transactionNo}</span>
+                </div>
+              )}
+              {state.amount && (
+                <div className="result-row">
+                  <span className="result-row-label">Số tiền</span>
+                  <span className="result-row-value">{formatAmount(state.amount)}</span>
+                </div>
+              )}
+              {state.provider && (
+                <div className="result-row">
+                  <span className="result-row-label">Cổng thanh toán</span>
+                  <span className="result-row-value">{state.provider}</span>
+                </div>
+              )}
               <div className="result-row">
-                <span className="result-row-label">Mã giao dịch</span>
-                <span className="result-row-value">{state.transactionNo}</span>
+                <span className="result-row-label">Trạng thái</span>
+                <span className={`result-row-value ${state.status}`}>
+                  {isSuccess ? "Thành công" : "Thất bại"}
+                </span>
               </div>
-            )}
-            {state.amount && (
-              <div className="result-row">
-                <span className="result-row-label">Số tiền</span>
-                <span className="result-row-value">{formatAmount(state.amount)}</span>
-              </div>
-            )}
-            {state.provider && (
-              <div className="result-row">
-                <span className="result-row-label">Cổng thanh toán</span>
-                <span className="result-row-value">{state.provider}</span>
-              </div>
-            )}
-            <div className="result-row">
-              <span className="result-row-label">Trạng thái</span>
-              <span className={`result-row-value ${state.status}`}>
-                {isSuccess ? "Thành công" : "Thất bại"}
-              </span>
             </div>
           </div>
         )}
