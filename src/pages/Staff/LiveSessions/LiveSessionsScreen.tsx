@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Disc3,
   RefreshCw,
   Plus,
-  Play,
-  Square,
   Users,
   Clock,
   X,
   Radio,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import staffService, { type HostUser } from "../../../services/staffService";
@@ -19,48 +19,114 @@ import type {
 import { showSuccess, showError } from "../../../components/common/toastUtils";
 import "./LiveSessionsScreen.css";
 
-type FilterStatus = "all" | "Created" | "Scheduled" | "Live" | "Paused" | "Ended" | "Cancelled";
+type FilterStatus =
+  | "all"
+  | "Created"
+  | "Scheduled"
+  | "Live"
+  | "Paused"
+  | "Ended"
+  | "Cancelled";
+
+const PAGE_SIZE = 12;
 
 export function LiveSessionsScreen() {
+  // ── Station state ──
   const [stations, setStations] = useState<StationResult[]>([]);
+  const [loadingStations, setLoadingStations] = useState(true);
+
+  // ── Session list state ──
   const [sessions, setSessions] = useState<LiveSessionResult[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // ── Filter ──
   const [filter, setFilter] = useState<FilterStatus>("all");
+
+  // ── Create modal ──
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [hostUsers, setHostUsers] = useState<HostUser[]>([]);
-
+  const [loadingHosts, setLoadingHosts] = useState(false);
   const [formStationId, setFormStationId] = useState("");
   const [formHostUserId, setFormHostUserId] = useState("");
   const [formName, setFormName] = useState("");
   const [formDesc, setFormDesc] = useState("");
   const [creating, setCreating] = useState(false);
 
+  // ── Khởi tạo: load stations một lần ──
   useEffect(() => {
-    loadData();
+    loadStations();
   }, []);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadStations = async () => {
+    setLoadingStations(true);
     try {
-      const [stationsData, sessionsData] = await Promise.allSettled([
-        liveSessionApiService.getStations(),
-        liveSessionApiService.getLiveSessions({ pageSize: 50 }),
-      ]);
-      if (stationsData.status === "fulfilled") {
-        setStations(stationsData.value);
-        if (stationsData.value.length > 0 && !formStationId) {
-          setFormStationId(stationsData.value[0].id);
-        }
+      const data = await liveSessionApiService.getStations();
+      setStations(data);
+      if (data.length > 0) {
+        setFormStationId((prev) => prev || data[0].id);
       }
-      if (sessionsData.status === "fulfilled") setSessions(sessionsData.value.items);
     } catch {
-      showError("L\u1ed7i", "Kh\u00f4ng th\u1ec3 t\u1ea3i d\u1eef li\u1ec7u");
+      showError("Lỗi", "Không thể tải danh sách station");
     } finally {
-      setLoading(false);
+      setLoadingStations(false);
     }
   };
 
+  // ── GET /livesession với server-side filter + pagination ──
+  const loadSessions = useCallback(
+    async (status: FilterStatus, page: number) => {
+      setLoadingSessions(true);
+      try {
+        const params: Parameters<
+          typeof liveSessionApiService.getLiveSessions
+        >[0] = {
+          pageNumber: page,
+          pageSize: PAGE_SIZE,
+        };
+        if (status !== "all") params.status = status;
+
+        const result = await liveSessionApiService.getLiveSessions(params);
+        setSessions(result.items);
+        setTotalCount(result.totalCount);
+        setTotalPages(result.totalPages);
+        setCurrentPage(result.pageNumber);
+      } catch {
+        showError("Lỗi", "Không thể tải danh sách phiên phát sóng");
+        setSessions([]);
+      } finally {
+        setLoadingSessions(false);
+      }
+    },
+    [],
+  );
+
+  // Tải lại khi filter hoặc page thay đổi
+  useEffect(() => {
+    loadSessions(filter, currentPage);
+  }, [filter, loadSessions]); // currentPage được điều khiển qua handlePageChange
+
+  // Đổi filter → reset về trang 1
+  const handleFilterChange = (newFilter: FilterStatus) => {
+    setFilter(newFilter);
+    setCurrentPage(1);
+  };
+
+  // Phân trang
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    loadSessions(filter, page);
+  };
+
+  // Làm mới thủ công
+  const handleRefresh = () => {
+    loadSessions(filter, currentPage);
+  };
+
   const loadHostUsers = async () => {
+    setLoadingHosts(true);
     try {
       const res = await staffService.user.getHosts({ page: 1, pageSize: 100 });
       const hosts = res.items.filter((u) => u.isActive);
@@ -73,6 +139,9 @@ export function LiveSessionsScreen() {
     } catch {
       setHostUsers([]);
       setFormHostUserId("");
+      showError("Lỗi", "Không thể tải danh sách host");
+    } finally {
+      setLoadingHosts(false);
     }
   };
 
@@ -82,55 +151,45 @@ export function LiveSessionsScreen() {
     }
   }, [showCreateModal]);
 
+  const resetCreateForm = () => {
+    setFormName("");
+    setFormDesc("");
+    // Reset host về item đầu tiên (nếu có), không để trống
+    setFormHostUserId(hostUsers[0]?.id || "");
+    // Giữ nguyên formStationId để UX thuận tiện hơn
+  };
+
   const handleCreate = async () => {
     if (!formStationId || !formHostUserId || !formName.trim()) return;
+
     setCreating(true);
     try {
+      // Gọi POST /api/v1/livesession
       await liveSessionApiService.createLiveSession({
         stationId: formStationId,
         hostUserId: formHostUserId,
         sessionName: formName.trim(),
         description: formDesc.trim() || undefined,
       });
+
       showSuccess("Tạo thành công!", `Phiên "${formName}" đã được tạo`);
       setShowCreateModal(false);
-      setFormName("");
-      setFormDesc("");
-      setFormHostUserId("");
-      await loadData();
+      resetCreateForm();
+      // Reload trang hiện tại để thấy session mới
+      await loadSessions(filter, 1);
+      setCurrentPage(1);
     } catch (error: any) {
-      const message = error?.response?.data?.message || "Không thể tạo phiên phát sóng";
+      const message =
+        error?.response?.data?.message || "Không thể tạo phiên phát sóng";
       showError("Lỗi", message);
     } finally {
       setCreating(false);
     }
   };
 
-  const handleStart = async (id: string) => {
-    try {
-      await liveSessionApiService.startSession(id);
-      showSuccess("Bắt đầu!", "Phiên phát sóng đang hoạt động");
-      await loadData();
-    } catch {
-      showError("Lỗi", "Không thể bắt đầu phiên phát sóng");
-    }
-  };
-
-  const handleStop = async (id: string) => {
-    try {
-      await liveSessionApiService.stopSession(id);
-      showSuccess("Đã dừng", "Phiên phát sóng đã kết thúc");
-      await loadData();
-    } catch {
-      showError("Lỗi", "Không thể dừng phiên phát sóng");
-    }
-  };
-
-  const filteredSessions =
-    filter === "all" ? sessions : sessions.filter((s) => s.status === filter);
-
+  // ── Helpers ──
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "\u2014";
+    if (!dateStr) return "—";
     return new Date(dateStr).toLocaleDateString("vi-VN", {
       day: "2-digit",
       month: "2-digit",
@@ -141,11 +200,10 @@ export function LiveSessionsScreen() {
   };
 
   const formatDuration = (seconds: number) => {
-    if (!seconds) return "\u2014";
+    if (!seconds) return "—";
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 
   const getStatusBadge = (status: string) => {
@@ -165,9 +223,6 @@ export function LiveSessionsScreen() {
     );
   };
 
-  const canStart = (status: string) => ["Created", "Scheduled", "Paused"].includes(status);
-  const canStop = (status: string) => ["Live", "Paused"].includes(status);
-
   const filterTabs: { label: string; value: FilterStatus }[] = [
     { label: "Tất cả", value: "all" },
     { label: "Chờ phát", value: "Created" },
@@ -175,7 +230,7 @@ export function LiveSessionsScreen() {
     { label: "Đã kết thúc", value: "Ended" },
   ];
 
-  if (loading) {
+  if (loadingStations) {
     return (
       <div className="lm-loading">
         <RefreshCw size={28} className="lm-spin" />
@@ -192,137 +247,227 @@ export function LiveSessionsScreen() {
           <p>Tạo và điều khiển các phiên phát sóng trực tiếp</p>
         </div>
         <div className="lm-header-actions">
-          <button className="lm-btn lm-btn--outline" onClick={loadData}>
-            <RefreshCw size={15} />
+          <button
+            className="lm-btn lm-btn--outline"
+            onClick={handleRefresh}
+            disabled={loadingSessions}
+          >
+            <RefreshCw size={15} className={loadingSessions ? "lm-spin" : ""} />
             Làm mới
           </button>
-          <button className="lm-btn lm-btn--primary" onClick={() => setShowCreateModal(true)}>
+          <button
+            className="lm-btn lm-btn--primary"
+            onClick={() => setShowCreateModal(true)}
+          >
             <Plus size={15} />
             Tạo phiên mới
           </button>
         </div>
       </div>
 
+      {/* Filter tabs — mỗi lần click gọi API server-side */}
       <div className="lm-filter-tabs">
         {filterTabs.map((tab) => (
           <button
             key={tab.value}
             className={`lm-tab ${filter === tab.value ? "active" : ""}`}
-            onClick={() => setFilter(tab.value)}
+            onClick={() => handleFilterChange(tab.value)}
+            disabled={loadingSessions}
           >
             {tab.label}
-            {tab.value !== "all" && (
-              <span className="lm-tab-count">
-                {sessions.filter((s) => s.status === tab.value).length}
-              </span>
+            {/* Chỉ hiện tổng count khi tab đang active (lấy từ API) */}
+            {filter === tab.value && totalCount > 0 && (
+              <span className="lm-tab-count">{totalCount}</span>
             )}
           </button>
         ))}
       </div>
 
-      {filteredSessions.length === 0 ? (
-        <div className="lm-empty">
-          <Disc3 size={48} />
-          <p>Không có phiên phát sóng nào</p>
-        </div>
-      ) : (
-        <div className="lm-grid">
-          {filteredSessions.map((session) => (
-            <div className="lm-card" key={session.id}>
-              <div className="lm-card-top">
-                {getStatusBadge(session.status)}
-                <div className="lm-card-actions">
-                  {canStart(session.status) && (
-                    <button
-                      className="lm-action-btn lm-action-btn--start"
-                      onClick={() => handleStart(session.id)}
-                      title="Bắt đầu phát sóng"
-                    >
-                      <Play size={15} />
-                    </button>
-                  )}
-                  {canStop(session.status) && (
-                    <button
-                      className="lm-action-btn lm-action-btn--stop"
-                      onClick={() => handleStop(session.id)}
-                      title="Dừng phát sóng"
-                    >
-                      <Square size={15} />
-                    </button>
-                  )}
-                </div>
-              </div>
+      {/* Session list — loading overlay thay vì block toàn trang */}
+      <div style={{ position: "relative", minHeight: 200 }}>
+        {loadingSessions && (
+          <div
+            className="lm-loading"
+            style={{ position: "absolute", inset: 0, zIndex: 1 }}
+          >
+            <RefreshCw size={24} className="lm-spin" />
+            <p>Đang tải...</p>
+          </div>
+        )}
 
-              <h3 className="lm-card-name">{session.sessionName}</h3>
-              {session.description && (
-                <p className="lm-card-desc">{session.description}</p>
-              )}
+        {!loadingSessions && sessions.length === 0 ? (
+          <div className="lm-empty">
+            <Disc3 size={48} />
+            <p>Không có phiên phát sóng nào</p>
+          </div>
+        ) : (
+          <div
+            className="lm-grid"
+            style={{ opacity: loadingSessions ? 0.4 : 1 }}
+          >
+            {sessions.map((session) => (
+              <div className="lm-card" key={session.id}>
+                <div className="lm-card-top">
+                  {getStatusBadge(session.status)}
+                </div>
 
-              <div className="lm-card-meta">
-                <div className="lm-meta-item">
-                  <Radio size={13} />
-                  <span>{session.stationName || "Chưa rõ"}</span>
-                </div>
-                <div className="lm-meta-item">
-                  <Clock size={13} />
-                  <span>{formatDate(session.startedAt || session.createdAt)}</span>
-                </div>
-                <div className="lm-meta-item">
-                  <Users size={13} />
-                  <span>{session.listenersCount} đang nghe</span>
-                </div>
-                {session.totalDuration > 0 && (
-                  <div className="lm-meta-item">
-                    <Disc3 size={13} />
-                    <span>{formatDuration(session.totalDuration)}</span>
-                  </div>
+                <h3 className="lm-card-name">{session.sessionName}</h3>
+                {session.description && (
+                  <p className="lm-card-desc">{session.description}</p>
                 )}
+
+                <div className="lm-card-meta">
+                  <div className="lm-meta-item">
+                    <Radio size={13} />
+                    <span>{session.stationName || "Chưa rõ"}</span>
+                  </div>
+                  <div className="lm-meta-item">
+                    <Clock size={13} />
+                    <span>
+                      {formatDate(session.startedAt || session.createdAt)}
+                    </span>
+                  </div>
+                  <div className="lm-meta-item">
+                    <Users size={13} />
+                    <span>{session.listenersCount} đang nghe</span>
+                  </div>
+                  {session.totalDuration > 0 && (
+                    <div className="lm-meta-item">
+                      <Disc3 size={13} />
+                      <span>{formatDuration(session.totalDuration)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="lm-pagination">
+          <span className="lm-pagination-info">
+            Trang {currentPage} / {totalPages} &nbsp;·&nbsp; {totalCount} phiên
+          </span>
+          <div className="lm-pagination-controls">
+            <button
+              className="lm-page-btn"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1 || loadingSessions}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(
+                (p) =>
+                  p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1,
+              )
+              .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1)
+                  acc.push("...");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) =>
+                p === "..." ? (
+                  <span key={`ellipsis-${i}`} className="lm-page-ellipsis">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    className={`lm-page-btn ${currentPage === p ? "active" : ""}`}
+                    onClick={() => handlePageChange(p as number)}
+                    disabled={loadingSessions}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
+            <button
+              className="lm-page-btn"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages || loadingSessions}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       )}
 
       {showCreateModal && (
-        <div className="lm-modal-overlay" onClick={() => setShowCreateModal(false)}>
+        <div
+          className="lm-modal-overlay"
+          onClick={() => setShowCreateModal(false)}
+        >
           <div className="lm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="lm-modal-header">
               <h3>Tạo phiên phát sóng mới</h3>
-              <button className="lm-modal-close" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="lm-modal-close"
+                onClick={() => setShowCreateModal(false)}
+              >
                 <X size={18} />
               </button>
             </div>
             <div className="lm-modal-body">
-              <label className="lm-label">Trạm phát sóng</label>
-              <select
-                className="lm-select"
-                value={formStationId}
-                onChange={(e) => setFormStationId(e.target.value)}
-              >
-                {stations.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.stationName}
-                  </option>
-                ))}
-              </select>
+              {/* ── Station ── */}
+              <label className="lm-label">Trạm phát sóng *</label>
+              {stations.length === 0 ? (
+                <p style={{ fontSize: 13, color: "#ef4444", marginBottom: 4 }}>
+                  Chưa có station nào. Vui lòng đồng bộ trước.
+                </p>
+              ) : (
+                <select
+                  className="lm-select"
+                  value={formStationId}
+                  onChange={(e) => setFormStationId(e.target.value)}
+                >
+                  {stations.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.stationName}
+                    </option>
+                  ))}
+                </select>
+              )}
 
-              <label className="lm-label" style={{ marginTop: 16 }}>Host</label>
+              {/* ── Host ── */}
+              <label className="lm-label" style={{ marginTop: 16 }}>
+                Host *
+              </label>
               <select
                 className="lm-select"
                 value={formHostUserId}
                 onChange={(e) => setFormHostUserId(e.target.value)}
+                disabled={loadingHosts}
               >
-                <option value="">Chọn host</option>
-                {hostUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.firstName || u.lastName
-                      ? `${u.firstName || ""} ${u.lastName || ""}`.trim()
-                      : u.username} ({u.email})
-                  </option>
-                ))}
+                {loadingHosts ? (
+                  <option value="">Đang tải danh sách host...</option>
+                ) : (
+                  <>
+                    <option value="">-- Chọn host --</option>
+                    {hostUsers.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.firstName || u.lastName
+                          ? `${u.firstName || ""} ${u.lastName || ""}`.trim()
+                          : u.username}{" "}
+                        ({u.email})
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
+              {!loadingHosts && hostUsers.length === 0 && (
+                <p style={{ fontSize: 12, color: "#f59e0b", marginTop: 4 }}>
+                  Không tìm thấy host nào đang hoạt động.
+                </p>
+              )}
 
-              <label className="lm-label" style={{ marginTop: 16 }}>Tên phiên</label>
+              {/* ── Tên phiên ── */}
+              <label className="lm-label" style={{ marginTop: 16 }}>
+                Tên phiên *
+              </label>
               <input
                 className="lm-input"
                 value={formName}
@@ -331,7 +476,10 @@ export function LiveSessionsScreen() {
                 autoFocus
               />
 
-              <label className="lm-label" style={{ marginTop: 16 }}>Mô tả (tuỳ chọn)</label>
+              {/* ── Mô tả ── */}
+              <label className="lm-label" style={{ marginTop: 16 }}>
+                Mô tả (tuỳ chọn)
+              </label>
               <textarea
                 className="lm-textarea"
                 value={formDesc}
@@ -341,15 +489,36 @@ export function LiveSessionsScreen() {
               />
             </div>
             <div className="lm-modal-footer">
-              <button className="lm-btn lm-btn--outline" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="lm-btn lm-btn--outline"
+                onClick={() => setShowCreateModal(false)}
+                disabled={creating}
+              >
                 Huỷ
               </button>
               <button
                 className="lm-btn lm-btn--primary"
                 onClick={handleCreate}
-                disabled={!formName.trim() || !formStationId || !formHostUserId || creating}
+                disabled={
+                  !formName.trim() ||
+                  !formStationId ||
+                  !formHostUserId ||
+                  creating ||
+                  loadingHosts
+                }
               >
-                {creating ? "Đang tạo..." : "Tạo phiên"}
+                {creating ? (
+                  <>
+                    <RefreshCw
+                      size={14}
+                      className="lm-spin"
+                      style={{ marginRight: 6 }}
+                    />
+                    Đang tạo...
+                  </>
+                ) : (
+                  "Tạo phiên"
+                )}
               </button>
             </div>
           </div>
