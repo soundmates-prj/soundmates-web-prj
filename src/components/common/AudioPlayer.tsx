@@ -18,6 +18,68 @@ export function AudioPlayer({ audioUrl, title, autoPlay = false, downloadUrl }: 
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const resolveFileName = (headerValue: string | null, fallbackUrl: string): string => {
+    if (headerValue) {
+      const utf8Match = headerValue.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match?.[1]) {
+        try {
+          return decodeURIComponent(utf8Match[1]);
+        } catch {
+          return utf8Match[1];
+        }
+      }
+
+      const standardMatch = headerValue.match(/filename="?([^";]+)"?/i);
+      if (standardMatch?.[1]) {
+        return standardMatch[1];
+      }
+    }
+
+    try {
+      const parsed = new URL(fallbackUrl);
+      const last = parsed.pathname.split('/').pop();
+      return last || 'audio.wav';
+    } catch {
+      return 'audio.wav';
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!downloadUrl || isDownloading) {
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(downloadUrl, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Download failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const fileName = resolveFileName(response.headers.get('content-disposition'), downloadUrl);
+
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error('Audio download failed:', err);
+      setError('Không thể tải xuống audio. Vui lòng thử lại.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Load audio when URL changes
   useEffect(() => {
@@ -138,9 +200,14 @@ export function AudioPlayer({ audioUrl, title, autoPlay = false, downloadUrl }: 
         <div className="audio-player-error">
           <span>{error}</span>
           {downloadUrl && (
-            <a href={downloadUrl} download className="audio-player-download-link">
-              Tải xuống
-            </a>
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="audio-player-download-link"
+              disabled={isDownloading}
+            >
+              {isDownloading ? 'Đang tải...' : 'Tải xuống'}
+            </button>
           )}
         </div>
       )}
@@ -212,14 +279,15 @@ export function AudioPlayer({ audioUrl, title, autoPlay = false, downloadUrl }: 
 
             {/* Download Button */}
             {downloadUrl && (
-              <a
-                href={downloadUrl}
-                download
+              <button
+                type="button"
+                onClick={handleDownload}
                 className="audio-player-download-btn"
                 title="Tải xuống"
+                disabled={isDownloading}
               >
                 <Download size={18} strokeWidth={1.8} />
-              </a>
+              </button>
             )}
           </div>
         </>

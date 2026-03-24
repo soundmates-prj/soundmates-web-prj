@@ -30,6 +30,7 @@ export function ScriptGenerateForm() {
   const [generatedAudio, setGeneratedAudio] = useState<ScriptAudio | null>(null);
   const [audioSpeed, setAudioSpeed] = useState(1.0);
   const [audioPitch, setAudioPitch] = useState(1.0);
+  const [isDownloadingAudio, setIsDownloadingAudio] = useState(false);
 
   useEffect(() => {
     const loadVoices = async () => {
@@ -38,7 +39,7 @@ export function ScriptGenerateForm() {
         setVoices(v);
         // select demo voice if it is Demo Voice 1, else select first
         if (v.length > 0) {
-          const demo = v.find(voice => voice.displayName?.includes('Demo'));
+          const demo = v.find(voice => String(voice.displayName ?? '').includes('Demo'));
           setSelectedVoice(demo ? demo.id : v[0].id);
         }
       } catch (err) {
@@ -48,8 +49,14 @@ export function ScriptGenerateForm() {
     loadVoices();
   }, []);
 
-  const formatScriptContent = (content: string) => {
-    const paragraphs = content.split('\n\n');
+  const formatScriptContent = (content: unknown) => {
+    const safeContent = typeof content === 'string' ? content : '';
+    const paragraphs = safeContent.split('\n\n').filter(Boolean);
+
+    if (paragraphs.length === 0) {
+      return <p className="script-paragraph">Script chưa có nội dung hiển thị.</p>;
+    }
+
     return paragraphs.map((p, idx) => {
       const lines = p.split('\n');
       return (
@@ -89,6 +96,23 @@ export function ScriptGenerateForm() {
       showError(error.message || 'Lỗi khi tạo audio');
     } finally {
       setIsGeneratingAudio(false);
+    }
+  };
+
+  const handleDownloadAudio = async () => {
+    if (!generatedAudio) {
+      return;
+    }
+
+    setIsDownloadingAudio(true);
+    try {
+      await audioService.downloadAudioFile(generatedAudio.id, generatedAudio.fileName);
+      showSuccess('Đang tải file audio...');
+    } catch (error: any) {
+      console.error('Error downloading audio:', error);
+      showError(error.message || 'Lỗi khi tải file âm thanh');
+    } finally {
+      setIsDownloadingAudio(false);
     }
   };
 
@@ -439,7 +463,7 @@ export function ScriptGenerateForm() {
                     onChange={(e) => setSelectedVoice(e.target.value)}
                     disabled={isGeneratingAudio || voices.length === 0}
                   >
-                    {voices.map(v => (
+                    {(Array.isArray(voices) ? voices : []).map(v => (
                       <option key={v.id} value={v.id}>{v.displayName} ({v.region})</option>
                     ))}
                     {voices.length === 0 && <option value="">Đang tải giọng đọc...</option>}
@@ -496,15 +520,19 @@ export function ScriptGenerateForm() {
                       src={audioService.getAudioFileUrl(generatedAudio.id)} 
                       style={{ width: '100%', marginTop: '0.5rem' }} 
                     />
-                    <a 
-                      href={audioService.getAudioDownloadUrl(generatedAudio.id)} 
-                      target="_blank" 
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={handleDownloadAudio}
+                      disabled={isDownloadingAudio}
                       className="btn btn-outline"
-                      style={{ width: '100%', marginTop: '1rem', fontSize: '0.85rem', padding: '0.5rem' }}
+                      style={{ width: '100%', marginTop: '1rem', fontSize: '0.85rem', padding: '0.5rem', justifyContent: 'center' }}
                     >
-                      <Download size={14} /> Tải file âm thanh
-                    </a>
+                      {isDownloadingAudio ? (
+                        <><Loader2 size={14} className="spinner" /> Đang tải...</>
+                      ) : (
+                        <><Download size={14} /> Tải file âm thanh</>
+                      )}
+                    </button>
                   </div>
                 )}
               </div>

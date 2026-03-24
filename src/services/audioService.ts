@@ -15,6 +15,24 @@ interface ApiResponse<T> {
  * Audio Service - handles audio generation and retrieval
  */
 class AudioService {
+  private extractFileNameFromDisposition(contentDisposition?: string): string | null {
+    if (!contentDisposition) {
+      return null;
+    }
+
+    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match?.[1]) {
+      try {
+        return decodeURIComponent(utf8Match[1]);
+      } catch {
+        return utf8Match[1];
+      }
+    }
+
+    const standardMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+    return standardMatch?.[1] ?? null;
+  }
+
   /**
    * Generate audio from an existing script
    * @param scriptId Script ID (UUID)
@@ -86,6 +104,42 @@ class AudioService {
   getAudioDownloadUrl(audioId: string): string {
     return `${api.defaults.baseURL}audios/${audioId}/download`;
   }
+
+  /**
+   * Download audio file with authenticated request
+   * @param audioId Audio ID (UUID)
+   * @param preferredFileName Optional preferred file name
+   */
+  async downloadAudioFile(audioId: string, preferredFileName?: string): Promise<void> {
+    try {
+      const response = await api.get(`/audios/${audioId}/download`, {
+        responseType: 'blob'
+      });
+
+      const contentDisposition = response.headers['content-disposition'] as string | undefined;
+      const resolvedFileName =
+        preferredFileName ||
+        this.extractFileNameFromDisposition(contentDisposition) ||
+        `${audioId}.wav`;
+
+      const blobUrl = window.URL.createObjectURL(response.data);
+      const anchor = document.createElement('a');
+      anchor.href = blobUrl;
+      anchor.download = resolvedFileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error: any) {
+      console.error('Error downloading audio:', error);
+      throw new Error(
+        error.response?.data?.message ||
+        error.message ||
+        'Lỗi khi tải file audio'
+      );
+    }
+  }
+
   /**
    * Get available TTS voices
    * @returns List of available voices

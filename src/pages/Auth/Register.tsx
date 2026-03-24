@@ -100,7 +100,8 @@ const Register: React.FC = () => {
 
       navigate("/verify-otp", { state: { email, firstName: firstName.trim(), lastName: lastName.trim(), username: username.trim() } });
     } catch (error: any) {
-      showError("Đăng ký thất bại", "Địa chỉ email hoặc tên người dùng đã tồn tại");
+      const message = error.response?.data?.message || "Địa chỉ email hoặc tên người dùng đã tồn tại";
+      showError("Đăng ký thất bại", message);
     } finally {
       setLoading(false);
     }
