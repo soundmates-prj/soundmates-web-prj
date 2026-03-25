@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Radio,
   Send,
@@ -21,15 +21,14 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import {
   livestreamService,
+  type LiveSessionResult,
   type NowPlayingData,
   type TrackInfo,
 } from "../../services/livestreamService";
+import { liveSessionApiService } from "../../services/liveSessionApiService";
 import { usePlayer } from "../../context/PlayerContext";
 import html2canvas from "html2canvas";
 
-// Legacy default station for the old Livestream page
-const DEFAULT_STATION_UUID = "62cc221f-063b-4522-8401-2b5fe9614aee";
-const DEFAULT_EXTERNAL_STATION_ID = 1;
 import {
   showInfo,
   showSuccess,
@@ -197,10 +196,12 @@ const LivestreamPage: React.FC = () => {
   const [requestSearch, setRequestSearch] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [activeSession, setActiveSession] = useState<LiveSessionResult | null>(null);
 
   // Refs
   const chatEndRef = useRef<HTMLDivElement>(null);
   const reactionIdRef = useRef(0);
+  const hasLoadedLiveSessionRef = useRef(false);
 
   // Theme persistence
   useEffect(() => {
@@ -214,37 +215,55 @@ const LivestreamPage: React.FC = () => {
     window.localStorage.setItem("livestreamTheme", theme);
   }, [theme]);
 
-  // ===== DATA FETCHING =====
-  const fetchNowPlaying = useCallback(async () => {
-    try {
-      const data = await livestreamService.getNowPlaying(DEFAULT_STATION_UUID);
-      setNowPlaying(data);
-      setElapsed(data.currentTrack.elapsed);
-      // Push track info to global player context
-      player.setTrack({
-        title: data.currentTrack.title,
-        artist: data.currentTrack.artist,
-        album: data.currentTrack.album,
-        artUrl: data.currentTrack.artUrl.replace(
-          "host.docker.internal",
-          "localhost",
-        ),
-        duration: data.currentTrack.duration,
-        elapsed: data.currentTrack.elapsed,
-        listenUrl: data.listenUrl,
-      });
-      setLoading(false);
-    } catch (err) {
-      console.error("Failed to fetch now playing:", err);
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchNowPlaying();
-    const interval = setInterval(fetchNowPlaying, 10000); // refresh every 10s
-    return () => clearInterval(interval);
-  }, [fetchNowPlaying]);
+    if (hasLoadedLiveSessionRef.current) {
+      return;
+    }
+
+    hasLoadedLiveSessionRef.current = true;
+
+    const loadLiveSession = async () => {
+      try {
+        const activeSessions = await livestreamService.getActiveSessions();
+        const liveSession = activeSessions.find(
+          (session) => session.status?.toLowerCase() === "live",
+        );
+
+        if (!liveSession) {
+          setNowPlaying(null);
+          setActiveSession(null);
+          setLoading(false);
+          return;
+        }
+
+        const session = await livestreamService.getLiveSession(liveSession.id);
+        setActiveSession(session);
+
+        const data = livestreamService.toNowPlaying(session);
+        setNowPlaying(data);
+        setElapsed(data.currentTrack.elapsed);
+        // Push track info to global player context
+        player.setTrack({
+          title: data.currentTrack.title,
+          artist: data.currentTrack.artist,
+          album: data.currentTrack.album,
+          artUrl: data.currentTrack.artUrl.replace(
+            "host.docker.internal",
+            "localhost",
+          ),
+          duration: data.currentTrack.duration,
+          elapsed: data.currentTrack.elapsed,
+          listenUrl: livestreamService.getListenUrl(session.streamUrl || data.listenUrl),
+        });
+      } catch (err) {
+        console.error("Failed to fetch now playing:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadLiveSession();
+  }, [player]);
 
   // Elapsed timer
   useEffect(() => {
@@ -375,11 +394,12 @@ const LivestreamPage: React.FC = () => {
     currentTrack,
     playingNext,
     songHistory,
-    stationName,
     totalListeners,
     isLive,
     isOnline,
   } = nowPlaying;
+
+  const stationName = activeSession?.stationName || nowPlaying.stationName;
 
   return (
     <div className={`livestream-page livestream-theme-${theme}`}>
@@ -930,6 +950,8 @@ const LivestreamPage: React.FC = () => {
             requestSearch={requestSearch}
             setRequestSearch={setRequestSearch}
             songHistory={songHistory}
+            liveSessionId={activeSession?.id}
+            stationId={activeSession?.stationId}
             onRequest={(song) => {
               const newMsg: ChatMessage = {
                 id: Date.now().toString(),
@@ -996,7 +1018,18 @@ interface RequestMusicModalProps {
   requestSearch: string;
   setRequestSearch: (v: string) => void;
   songHistory: TrackInfo[];
+  liveSessionId?: string;
+  stationId?: string;
   onRequest: (songTitle: string) => void;
+}
+
+interface RequestableSong {
+  id: string;
+  mediaFileId: string;
+  title: string;
+  artist: string;
+  album?: string;
+  artUrl?: string;
 }
 
 const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
@@ -1004,24 +1037,66 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
   requestSearch,
   setRequestSearch,
   songHistory,
+  liveSessionId,
+  stationId,
   onRequest,
 }) => {
-  const [requestableLibrary, setRequestableLibrary] = useState<TrackInfo[]>([]);
+  const [requestableLibrary, setRequestableLibrary] = useState<RequestableSong[]>([]);
   const [loading, setLoading] = useState(false);
-  const [requestedIds, setRequestedIds] = useState<Set<number>>(new Set());
+  const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    // Use songHistory as a demo library (unique by title)
-    const seen = new Set<string>();
-    const unique: TrackInfo[] = [];
-    for (const t of songHistory) {
-      if (!seen.has(t.title)) {
-        seen.add(t.title);
-        unique.push(t);
+    let ignore = false;
+
+    const loadRequestableSongs = async () => {
+      if (!stationId) {
+        if (!ignore) {
+          setRequestableLibrary([]);
+        }
+        return;
       }
-    }
-    setRequestableLibrary(unique);
-  }, [songHistory]);
+
+      setLoading(true);
+      try {
+        const stationSongs = await liveSessionApiService.getStationMusic(stationId);
+        const mapped = stationSongs.map((song) => ({
+          id: song.id,
+          mediaFileId: song.id,
+          title: song.title,
+          artist: song.artist,
+          album: song.album || "",
+          artUrl: song.artworkUrl || "",
+        }));
+
+        if (!ignore) {
+          setRequestableLibrary(mapped);
+        }
+      } catch {
+        // Fallback to song history only for display; cannot submit without mediaFileId.
+        const fallback = songHistory.map((track) => ({
+          id: `history-${track.shId}`,
+          mediaFileId: "",
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          artUrl: track.artUrl,
+        }));
+        if (!ignore) {
+          setRequestableLibrary(fallback);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadRequestableSongs();
+
+    return () => {
+      ignore = true;
+    };
+  }, [songHistory, stationId]);
 
   const filteredSongs = requestableLibrary.filter(
     (s) =>
@@ -1029,17 +1104,30 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
       s.artist.toLowerCase().includes(requestSearch.toLowerCase()),
   );
 
-  const handleRequest = async (song: TrackInfo) => {
-    setLoading(true);
-    // Try to request via AzuraCast API
-    try {
-      await livestreamService.requestSong(DEFAULT_EXTERNAL_STATION_ID, song.shId.toString());
-    } catch {
-      // demo fallback - still show in chat
+  const handleRequest = async (song: RequestableSong) => {
+    if (!liveSessionId) {
+      showError("Không tìm thấy phiên live", "Vui lòng tải lại trang và thử lại");
+      return;
     }
-    setRequestedIds((prev) => new Set(prev).add(song.shId));
-    onRequest(song.title);
-    setLoading(false);
+
+    if (!song.mediaFileId) {
+      showInfo("Bài hát chưa sẵn sàng", "Chưa đồng bộ được mediaFileId để gửi request");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await liveSessionApiService.createSongRequest(liveSessionId, {
+        mediaFileId: song.mediaFileId,
+      });
+      setRequestedIds((prev) => new Set(prev).add(song.mediaFileId));
+      onRequest(song.title);
+      showSuccess("Đã gửi request", `Đã gửi bài \"${song.title}\"`);
+    } catch {
+      showError("Gửi request thất bại", "Vui lòng thử lại sau");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -1092,10 +1180,10 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
             </div>
           ) : (
             filteredSongs.map((song) => (
-              <div key={song.shId} className="request-song-item">
+              <div key={song.id} className="request-song-item">
                 <img
                   className="request-song-art"
-                  src={proxyArtUrl(song.artUrl)}
+                  src={proxyArtUrl(song.artUrl || "")}
                   alt={song.title}
                 />
                 <div className="request-song-info">
@@ -1106,10 +1194,14 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
                 </div>
                 <button
                   className="request-song-btn"
-                  disabled={loading || requestedIds.has(song.shId)}
+                  disabled={loading || !song.mediaFileId || requestedIds.has(song.mediaFileId)}
                   onClick={() => handleRequest(song)}
                 >
-                  {requestedIds.has(song.shId) ? "✓ Đã gửi" : "Request"}
+                  {requestedIds.has(song.mediaFileId)
+                    ? "✓ Đã gửi"
+                    : !song.mediaFileId
+                    ? "Chưa sync"
+                    : "Request"}
                 </button>
               </div>
             ))
