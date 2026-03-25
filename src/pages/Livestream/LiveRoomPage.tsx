@@ -45,6 +45,29 @@ export function LiveRoomPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
+  const playStream = useCallback(async (streamUrl: string) => {
+    if (!audioRef.current) return;
+
+    const audio = audioRef.current;
+    audio.src = streamUrl;
+    audio.volume = isMuted ? 0 : volume;
+
+    try {
+      await audio.play();
+      setIsPlaying(true);
+    } catch {
+      // Retry muted to satisfy browser autoplay policies.
+      try {
+        audio.muted = true;
+        await audio.play();
+        setIsMuted(true);
+        setIsPlaying(true);
+      } catch {
+        setIsPlaying(false);
+      }
+    }
+  }, [isMuted, volume]);
+
   const getCurrentUserId = (): string | null => {
     try {
       const raw = localStorage.getItem("userInfo");
@@ -173,6 +196,12 @@ export function LiveRoomPage() {
     scrollToBottom();
   }, [chats, scrollToBottom]);
 
+  // Auto start stream when user joins room with a valid stream URL.
+  useEffect(() => {
+    if (!session?.streamUrl || ended) return;
+    void playStream(session.streamUrl);
+  }, [session?.streamUrl, ended, playStream]);
+
   // Audio controls
   const togglePlay = () => {
     if (!audioRef.current || !session?.streamUrl) return;
@@ -180,10 +209,7 @@ export function LiveRoomPage() {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.src = session.streamUrl;
-      audioRef.current.volume = isMuted ? 0 : volume;
-      audioRef.current.play().catch(() => {});
-      setIsPlaying(true);
+      void playStream(session.streamUrl);
     }
   };
 
@@ -199,6 +225,7 @@ export function LiveRoomPage() {
     const next = !isMuted;
     setIsMuted(next);
     if (audioRef.current) {
+      audioRef.current.muted = next;
       audioRef.current.volume = next ? 0 : volume;
     }
   };
