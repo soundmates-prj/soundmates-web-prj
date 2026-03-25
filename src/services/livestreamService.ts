@@ -33,81 +33,141 @@ export interface NowPlayingData {
   songHistory: TrackInfo[];
 }
 
-export interface ApiResponse<T> {
+interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
   errorCode: string | null;
 }
 
-export interface SongRequestItem {
-  song_id: string;
-  title: string;
-  artist: string;
-  album: string;
-  art: string;
+interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
 }
 
-// AzuraCast direct API base — no more hardcoded station IDs
-const AZURACAST_BASE = "http://localhost:5000/api";
+export interface LiveSessionResult {
+  id: string;
+  userId: string;
+  stationId: string;
+  stationName: string | null;
+  sessionName: string;
+  description: string | null;
+  status: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  totalListeners: number;
+  peakListeners: number;
+  totalDuration: number;
+  createdAt: string;
+  streamUrl: string | null;
+  thumbnailUrl: string | null;
+  genre: string | null;
+  listenersCount: number;
+}
+
+const FALLBACK_ART_URL = "https://placehold.co/600x600/111827/FFFFFF?text=LIVE";
+
+const normalizeStreamUrl = (streamUrl?: string | null): string => {
+  if (!streamUrl) return "";
+  const browserHost = window.location.hostname;
+  if (!browserHost) return streamUrl;
+  return streamUrl.replace(/host\.docker\.internal/gi, browserHost);
+};
+
+const mapSessionToNowPlaying = (session: LiveSessionResult): NowPlayingData => {
+  const listenUrl = normalizeStreamUrl(session.streamUrl);
+  const currentTrack: TrackInfo = {
+    shId: 0,
+    text: session.description || session.sessionName,
+    title: session.sessionName || "Live Session",
+    artist: session.stationName || "SoundMates",
+    album: session.description || "Live",
+    genre: session.genre || "Live",
+    artUrl: session.thumbnailUrl || FALLBACK_ART_URL,
+    lyrics: null,
+    playedAt: Date.now() / 1000,
+    duration: 0,
+    elapsed: 0,
+    remaining: 0,
+    isRequest: false,
+  };
+
+  return {
+    externalStationId: 0,
+    stationName: session.stationName || "Live",
+    stationShortcode: "",
+    listenUrl,
+    publicPlayerUrl: listenUrl,
+    isOnline: session.status?.toLowerCase() === "live",
+    isLive: session.status?.toLowerCase() === "live",
+    streamerName: null,
+    totalListeners: session.listenersCount ?? session.totalListeners ?? 0,
+    uniqueListeners: session.totalListeners ?? session.listenersCount ?? 0,
+    currentTrack,
+    playingNext: {
+      ...currentTrack,
+      shId: -1,
+      title: "Đang chờ bài tiếp theo",
+      text: "Đang chờ bài tiếp theo",
+    },
+    songHistory: [currentTrack],
+  };
+};
 
 export const livestreamService = {
-  /**
-   * Get now-playing data from the backend API
-   * @param stationUuid - The station UUID (from the Station entity)
-   */
-  async getNowPlaying(stationUuid: string): Promise<NowPlayingData> {
-    const response = await api.get<ApiResponse<NowPlayingData>>(
-      `station/${stationUuid}/now-playing`,
+  async getLiveSessions(params?: {
+    userId?: string;
+    status?: string;
+    pageNumber?: number;
+    pageSize?: number;
+  }): Promise<PagedResult<LiveSessionResult>> {
+    const response = await api.get<ApiResponse<PagedResult<LiveSessionResult>>>(
+      "/livesession",
+      { params },
     );
     return response.data.data;
   },
 
-  /**
-   * Get requestable songs from AzuraCast
-   * @param externalStationId - The AzuraCast external station ID (number)
-   */
-  async getRequestableSongs(externalStationId: number): Promise<SongRequestItem[]> {
-    try {
-      const response = await fetch(
-        `${AZURACAST_BASE}/station/${externalStationId}/requests`,
-      );
-      const data = await response.json();
-      return data || [];
-    } catch {
-      return [];
-    }
+  async getActiveSessions(): Promise<LiveSessionResult[]> {
+    const response = await api.get<ApiResponse<LiveSessionResult[]>>(
+      "/livesession/active",
+    );
+    return response.data.data;
   },
 
-  /**
-   * Submit a song request to AzuraCast
-   * @param externalStationId - The AzuraCast external station ID (number)
-   * @param requestId - The song request ID
-   */
-  async requestSong(externalStationId: number, requestId: string): Promise<boolean> {
-    try {
-      const response = await fetch(
-        `${AZURACAST_BASE}/station/${externalStationId}/request/${requestId}`,
-        {
-          method: "POST",
-        },
-      );
-      return response.ok;
-    } catch {
-      return false;
-    }
+  async getLiveSession(id: string): Promise<LiveSessionResult> {
+    const response = await api.get<ApiResponse<LiveSessionResult>>(
+      `/livesession/${id}`,
+    );
+    return response.data.data;
   },
 
-  /**
-   * Get the listen URL for the stream.
-   * If a listenUrl is provided it is preferred;
-   * otherwise falls back to a default path.
-   * Returns a root-relative path so the Vite dev-server proxy
-   * can forward the request to AzuraCast without CORS issues.
-   */
+  async getNowPlaying(sessionId?: string): Promise<NowPlayingData> {
+    if (sessionId) {
+      const session = await this.getLiveSession(sessionId);
+      return mapSessionToNowPlaying(session);
+    }
+
+    const activeSessions = await this.getActiveSessions();
+    if (!activeSessions.length) {
+      throw new Error("No active live session");
+    }
+
+    const session = await this.getLiveSession(activeSessions[0].id);
+    return mapSessionToNowPlaying(session);
+  },
+
+  toNowPlaying(session: LiveSessionResult): NowPlayingData {
+    return mapSessionToNowPlaying(session);
+  },
+
+  normalizeStreamUrl,
+
   getListenUrl(listenUrl?: string): string {
-    if (!listenUrl) return "";
-    return listenUrl.replace(/^https?:\/\/[^\/]+/, "");
+    return normalizeStreamUrl(listenUrl);
   },
 };
 

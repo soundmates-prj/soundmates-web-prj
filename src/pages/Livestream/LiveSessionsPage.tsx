@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Radio, Users, Clock, Disc3, RefreshCw, Headphones } from "lucide-react";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
 import type { LiveSessionResult } from "../../services/liveSessionApiService";
-import liveHubService from "../../services/liveHubService";
 import "./LiveSessionsPage.css";
 
 export function LiveSessionsPage() {
@@ -24,21 +23,6 @@ export function LiveSessionsPage() {
 
   useEffect(() => {
     loadActiveSessions();
-
-    // Connect SignalR and listen for session lifecycle events
-    liveHubService.start();
-
-    liveHubService.onSessionStarted(() => {
-      loadActiveSessions();
-    });
-
-    liveHubService.onSessionEnded(() => {
-      loadActiveSessions();
-    });
-
-    return () => {
-      liveHubService.offAll();
-    };
   }, [loadActiveSessions]);
 
   const formatTime = (dateStr: string | null) => {
