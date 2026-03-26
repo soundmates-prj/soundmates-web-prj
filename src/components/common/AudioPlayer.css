@@ -77,6 +77,11 @@
   opacity: 0.8;
 }
 
+.audio-player-download-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Progress Section */
 .audio-player-progress-section {
   display: flex;
@@ -274,6 +279,11 @@
 
 .audio-player-download-btn:hover {
   background: var(--audio-btn-hover);
+}
+
+.audio-player-download-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Responsive */
