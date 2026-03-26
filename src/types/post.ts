@@ -13,6 +13,8 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;
+  reactionCount?: number;
+  commentCount?: number;
   postType?: "share-music" | string | null;
   shareMusic?: {
     trackId: string;
