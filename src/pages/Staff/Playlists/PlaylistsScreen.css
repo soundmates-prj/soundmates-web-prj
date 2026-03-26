@@ -2,6 +2,44 @@
    Playlists Screen
    ============================================ */
 
+/* ── Page Header (gradient title) ── */
+.staff-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    gap: 20px;
+}
+
+.staff-page-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0c4a6e;
+    margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .staff-page-title {
+    background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 50%, #bae6fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+.staff-page-subtitle {
+    font-size: 16px;
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+[data-theme="dark"] .staff-page-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+}
+
 /* ── Station Tabs ── */
 .pl-station-tabs {
     display: flex;
@@ -543,6 +581,41 @@
     background: #1e1e23;
     border-color: #3f3f46;
     color: #f3f4f6;
+}
+
+[data-theme='dark'] .pl-media-tabs {
+    border-bottom-color: #2e2e35;
+}
+
+[data-theme='dark'] .pl-media-tab {
+    background: #18181b;
+    border-color: #2e2e35;
+    color: #9ca3af;
+}
+
+[data-theme='dark'] .pl-media-tab:hover {
+    border-color: #7C5CFC;
+    color: #A78BFA;
+}
+
+[data-theme='dark'] .pl-media-tab.active {
+    background: rgba(124, 92, 252, 0.1);
+    border-color: rgba(124, 92, 252, 0.4);
+    color: #A78BFA;
+}
+
+[data-theme='dark'] .pl-source-badge.system {
+    background: rgba(67, 56, 202, 0.2);
+    color: #a5b4fc;
+}
+
+[data-theme='dark'] .pl-source-badge.added {
+    background: rgba(100, 116, 139, 0.15);
+    color: #94a3b8;
+}
+
+[data-theme='dark'] .staff-modal--wide {
+    width: 700px;
 }
 
 /* ── Responsive ── */

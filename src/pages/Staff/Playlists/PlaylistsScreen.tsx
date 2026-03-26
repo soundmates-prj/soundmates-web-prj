@@ -237,7 +237,12 @@ export function PlaylistsScreen() {
       {/* Header */}
       <div className="staff-page-header">
         <div>
-          <h1 className="staff-page-title">Playlists</h1>
+          <h1 className="staff-page-title" style={{
+            background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>Playlists</h1>
           <p className="staff-page-subtitle">Quản lý playlist cho từng station</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>

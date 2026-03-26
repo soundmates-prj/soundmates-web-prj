@@ -107,7 +107,12 @@ export function StationsScreen() {
       {/* Header */}
       <div className="staff-page-header">
         <div>
-          <h1 className="staff-page-title">Stations</h1>
+          <h1 className="staff-page-title" style={{
+            background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>Stations</h1>
           <p className="staff-page-subtitle">
             Quản lý các kênh phát sóng radio
           </p>

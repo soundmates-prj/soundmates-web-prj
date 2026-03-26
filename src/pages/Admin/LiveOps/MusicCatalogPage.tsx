@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CloudUpload, Music, RefreshCw, Trash2, Upload } from "lucide-react";
-import { liveSessionApiService, type MusicResult } from "../../../services/liveSessionApiService";
+import { CloudUpload, Music, RefreshCw, Trash2, Upload, X, Check, AlertCircle } from "lucide-react";
+import { liveSessionApiService, type MusicResult, type BulkUploadMusicResult } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import {
   ALLOWED_AUDIO_EXTENSIONS,
@@ -14,12 +14,10 @@ export default function MusicCatalogPage() {
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
 
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [album, setAlbum] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [bulkResult, setBulkResult] = useState<BulkUploadMusicResult | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isMountedRef = useRef(true);
@@ -89,43 +87,100 @@ export default function MusicCatalogPage() {
   }, []);
 
   const handleFileSelect = useCallback((input: File | null) => {
-    if (!input) {
-      return;
-    }
-    if (!validateFile(input)) {
-      return;
-    }
-    setFile(input);
+    if (!input) return;
+    if (!validateFile(input)) return;
+    setFiles((prev) => {
+      if (prev.some((f) => f.name === input.name)) return prev;
+      return [...prev, input];
+    });
   }, [validateFile]);
 
+  const handleMultiFileSelect = useCallback((inputFiles: FileList | null) => {
+    if (!inputFiles || inputFiles.length === 0) return;
+    const validFiles: File[] = [];
+    for (const file of Array.from(inputFiles)) {
+      if (validateFile(file)) {
+        validFiles.push(file);
+      }
+    }
+    if (validFiles.length === 0) return;
+    setFiles((prev) => {
+      const existing = new Set(prev.map((f) => f.name));
+      const newFiles = validFiles.filter((f) => !existing.has(f.name));
+      return [...prev, ...newFiles];
+    });
+  }, [validateFile]);
+
+  const removeFile = useCallback((fileName: string) => {
+    setFiles((prev) => prev.filter((f) => f.name !== fileName));
+  }, []);
+
+  const clearAllFiles = useCallback(() => {
+    setFiles([]);
+    setBulkResult(null);
+    setUploadProgress({});
+  }, []);
+
   const handleUpload = useCallback(async () => {
-    if (!file) {
-      showError("Thiếu dữ liệu", "Vui lòng chọn file nhạc");
+    if (files.length === 0) {
+      showError("Thiếu dữ liệu", "Vui lòng chọn ít nhất 1 file nhạc");
       return;
     }
 
+    // Initialize progress for all files
+    const initialProgress: Record<string, number> = {};
+    for (const f of files) initialProgress[f.name] = 0;
+    setUploadProgress(initialProgress);
     setUploading(true);
-    setUploadProgress(0);
+
+    // Simulate per-file progress
+    const intervals: Record<string, ReturnType<typeof setInterval>> = {};
+    for (const f of files) {
+      let progress = 0;
+      intervals[f.name] = setInterval(() => {
+        progress = Math.min(progress + Math.floor(Math.random() * 15) + 5, 90);
+        setUploadProgress((prev) => ({ ...prev, [f.name]: progress }));
+      }, 300);
+    }
+
     try {
-      await liveSessionApiService.uploadMusic(
-        undefined,
-        file,
-        { title: title || undefined, artist: artist || undefined, album: album || undefined },
-        setUploadProgress
-      );
-      showSuccess("Upload thành công", "Media file đã được thêm vào catalog");
-      setShowUpload(false);
-      setFile(null);
-      setTitle("");
-      setArtist("");
-      setAlbum("");
+      const result = await liveSessionApiService.bulkUploadMusic(undefined, files);
+
+      // Mark all as 100%
+      setUploadProgress((prev) => {
+        const done: Record<string, number> = {};
+        for (const f of files) done[f.name] = 100;
+        return done;
+      });
+
+      setBulkResult(result);
+
+      if (result.isSuccess) {
+        showSuccess("Upload thành công", `${result.successCount} file đã được thêm vào catalog`);
+      } else {
+        showError("Upload hoàn tất (một phần)", `${result.successCount}/${result.totalFiles} file thành công`);
+      }
+
       await loadTracks();
     } catch {
       showError("Upload thất bại", "Không thể upload file lên server");
+      setUploadProgress((prev) => {
+        const failed: Record<string, number> = {};
+        for (const f of files) failed[f.name] = -1;
+        return failed;
+      });
     } finally {
+      Object.values(intervals).forEach(clearInterval);
       setUploading(false);
     }
-  }, [album, artist, file, loadTracks, title]);
+  }, [files, loadTracks]);
+
+  const handleCloseUpload = useCallback(() => {
+    setShowUpload(false);
+    setFiles([]);
+    setBulkResult(null);
+    setUploadProgress({});
+  }, []);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -145,7 +200,7 @@ export default function MusicCatalogPage() {
     <div className="ops-page">
       <div className="ops-header">
         <div>
-          <h1 className="ops-title">MusicCatalog Page</h1>
+          <h1 className="ops-title">Kho Nhạc Hệ Thống</h1>
           <p className="ops-subtitle">Admin quản lý System Media (kho nhạc hệ thống), không gắn trực tiếp station</p>
         </div>
         <div className="ops-actions">
@@ -177,11 +232,11 @@ export default function MusicCatalogPage() {
             <table className="ops-table">
               <thead>
                 <tr>
-                  <th>Artwork</th>
-                  <th>Title</th>
-                  <th>Artist</th>
-                  <th>Duration</th>
-                  <th>File size</th>
+                  <th>Ảnh bìa</th>
+                  <th>Tiêu đề</th>
+                  <th>Nghệ sĩ</th>
+                  <th>Thời lượng</th>
+                  <th>Kích thước</th>
                   <th />
                 </tr>
               </thead>
@@ -192,7 +247,7 @@ export default function MusicCatalogPage() {
                       {track.artworkUrl ? (
                         <img src={track.artworkUrl} alt={track.title} width={40} height={40} style={{ borderRadius: 8, objectFit: "cover" }} />
                       ) : (
-                        <span className="ops-badge"><Music size={12} /> No art</span>
+                        <span className="ops-badge"><Music size={12} /> Không có ảnh</span>
                       )}
                     </td>
                     <td>{track.title}</td>
@@ -214,66 +269,225 @@ export default function MusicCatalogPage() {
       </div>
 
       {showUpload ? (
-        <div className="ops-modal-overlay" onClick={() => setShowUpload(false)}>
-          <div className="ops-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="ops-modal-overlay" onClick={() => !uploading && handleCloseUpload()}>
+          <div className="ops-modal" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
             <div className="ops-modal-head">
-              <h3 style={{ margin: 0 }}>Upload media file</h3>
+              <h3 style={{ margin: 0 }}>Tải Lên Nhiều File Nhạc</h3>
             </div>
             <div className="ops-modal-body">
-              <div
-                className="ops-dropzone"
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  handleFileSelect(e.dataTransfer.files?.[0] || null);
-                }}
-              >
-                <div>
-                  <CloudUpload size={30} style={{ marginBottom: 8 }} />
-                  <p style={{ margin: 0, fontWeight: 700 }}>Kéo & thả file hoặc click để chọn</p>
-                  <p style={{ margin: "6px 0 0", fontSize: 12 }}>Hỗ trợ MP3/FLAC/WAV/OGG, tối đa 100MB</p>
-                  {file ? <p style={{ marginTop: 10, fontWeight: 600 }}>{file.name}</p> : null}
+              {/* Drop Zone */}
+              {!uploading && !bulkResult && (
+                <div
+                  className="ops-dropzone"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleMultiFileSelect(e.dataTransfer.files);
+                  }}
+                >
+                  <div>
+                    <CloudUpload size={36} style={{ marginBottom: 8, color: "#1a9fd4" }} />
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>
+                      Chọn nhiều file nhạc cùng lúc
+                    </p>
+                    <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8" }}>
+                      MP3, FLAC, WAV, OGG, M4A • Tối đa 100 file • Mỗi file tối đa 100MB
+                    </p>
+
+                    {/* Primary button to open file picker */}
+                    <button
+                      type="button"
+                      style={{
+                        marginTop: 14,
+                        padding: "10px 24px",
+                        background: "linear-gradient(135deg, #1a9fd4, #55c5f1)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 10,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        boxShadow: "0 4px 16px rgba(124, 58, 237, 0.35)",
+                      }}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={16} />
+                      Chọn file nhạc
+                    </button>
+                    <p style={{ marginTop: 8, fontSize: 12, color: "#94a3b8" }}>
+                      ✨ Giữ <strong style={{ color: "#1a9fd4" }}>Shift</strong> hoặc{" "}
+                      <strong style={{ color: "#1a9fd4" }}>Ctrl</strong> để chọn nhiều file cùng lúc
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <input
                 ref={fileInputRef}
                 type="file"
                 style={{ display: "none" }}
-                accept=".mp3,.flac,.wav,.ogg,audio/*"
-                onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
+                accept=".mp3,.flac,.wav,.ogg,.m4a,audio/*"
+                multiple
+                onChange={(e) => handleMultiFileSelect(e.target.files)}
               />
 
-              {file ? (
-                <div className="ops-stack" style={{ marginTop: 12 }}>
-                  <div className="ops-inline-row">
-                    <span style={{ fontWeight: 700 }}>File preview:</span>
-                    <span>{file.name}</span>
-                    <span className="ops-badge">{formatFileSize(file.size)}</span>
+              {/* File List */}
+              {files.length > 0 && !bulkResult && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#1a9fd4" }}>
+                      {files.length} file(s) • {formatFileSize(files.reduce((s, f) => s + f.size, 0))}
+                    </span>
+                    <button
+                      type="button"
+                      style={{ fontSize: 12, color: "#94a3b8", background: "none", border: "none", cursor: "pointer" }}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      + Thêm file
+                    </button>
+                  </div>
+
+                  <div style={{ maxHeight: 240, overflowY: "auto", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10 }}>
+                    {files.map((f, i) => {
+                      const progress = uploadProgress[f.name] ?? 0;
+                      const isFailed = progress === -1;
+                      const isDone = progress === 100;
+                      return (
+                        <div
+                          key={f.name + i}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            padding: "8px 12px",
+                            borderBottom: i < files.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                            background: isFailed ? "rgba(239,68,68,0.06)" : isDone ? "rgba(16,185,129,0.04)" : "transparent",
+                          }}
+                        >
+                          <div style={{ color: "#1a9fd4" }}>
+                            <Music size={18} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {f.name}
+                            </div>
+                            <div style={{ display: "flex", gap: 8, fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+                              <span>{formatFileSize(f.size)}</span>
+                              {isFailed && <span style={{ color: "#ef4444", fontWeight: 600 }}>Thất bại</span>}
+                              {isDone && <span style={{ color: "#10b981", fontWeight: 600 }}>Hoàn tất</span>}
+                              {!isFailed && !isDone && progress > 0 && (
+                                <span style={{ color: "#1a9fd4", fontWeight: 600 }}>{progress}%</span>
+                              )}
+                            </div>
+                            {!isFailed && !isDone && progress >= 0 && (
+                              <div style={{ height: 4, background: "rgba(124,58,237,0.15)", borderRadius: 2, marginTop: 4 }}>
+                                <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #1a9fd4, #55c5f1)", borderRadius: 2, transition: "width 0.3s" }} />
+                              </div>
+                            )}
+                          </div>
+                          {!uploading && (
+                            <button
+                              type="button"
+                              style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 4 }}
+                              onClick={() => removeFile(f.name)}
+                            >
+                              <X size={16} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ) : null}
+              )}
 
-              {uploading ? (
-                <div className="ops-progress">
-                  <div className="ops-progress-bar" style={{ width: `${uploadProgress}%` }} />
+              {/* Upload Result */}
+              {bulkResult && (
+                <div style={{ marginTop: 12 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: 16,
+                      borderRadius: 10,
+                      background: bulkResult.isSuccess ? "rgba(16,185,129,0.1)" : "rgba(234,179,8,0.1)",
+                      border: `1px solid ${bulkResult.isSuccess ? "rgba(16,185,129,0.2)" : "rgba(234,179,8,0.2)"}`,
+                      color: bulkResult.isSuccess ? "#10b981" : "#eab308",
+                      marginBottom: 12,
+                    }}
+                  >
+                    {bulkResult.isSuccess ? <Check size={28} /> : <AlertCircle size={28} />}
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700 }}>
+                        {bulkResult.isSuccess ? "Tải lên thành công!" : "Upload hoàn tất (một phần)"}
+                      </div>
+                      <div style={{ fontSize: 12, opacity: 0.85 }}>
+                        {bulkResult.successCount}/{bulkResult.totalFiles} file thành công
+                        {bulkResult.failedCount > 0 && ` • ${bulkResult.failedCount} file thất bại`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {bulkResult.uploadedFiles.length > 0 && (
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#10b981", display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                        <Check size={14} /> Đã upload ({bulkResult.uploadedFiles.length})
+                      </div>
+                      <div style={{ maxHeight: 120, overflowY: "auto" }}>
+                        {bulkResult.uploadedFiles.map((f) => (
+                          <div key={f.id} style={{ fontSize: 12, color: "#10b981", padding: "3px 0", display: "flex", gap: 6 }}>
+                            <Music size={12} style={{ marginTop: 2 }} />
+                            <span style={{ fontWeight: 500 }}>{f.title}</span>
+                            <span style={{ opacity: 0.7 }}>— {f.artist}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {bulkResult.failedFiles.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                        <X size={14} /> Thất bại ({bulkResult.failedFiles.length})
+                      </div>
+                      {bulkResult.failedFiles.map((f) => (
+                        <div key={f.fileName} style={{ fontSize: 12, color: "#ef4444", padding: "3px 0" }}>
+                          • {f.fileName}: {f.errorMessage}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : null}
-
-              <div className="ops-stack" style={{ marginTop: 14 }}>
-                <input className="ops-input" placeholder="Title (optional)" value={title} onChange={(e) => setTitle(e.target.value)} />
-                <input className="ops-input" placeholder="Artist (optional)" value={artist} onChange={(e) => setArtist(e.target.value)} />
-                <input className="ops-input" placeholder="Album (optional)" value={album} onChange={(e) => setAlbum(e.target.value)} />
-              </div>
+              )}
             </div>
             <div className="ops-modal-foot">
-              <button className="ops-btn ops-btn--ghost" onClick={() => setShowUpload(false)} disabled={uploading}>
-                Hủy
+              <button
+                className="ops-btn ops-btn--ghost"
+                onClick={handleCloseUpload}
+                disabled={uploading}
+              >
+                {bulkResult ? "Đóng" : "Hủy"}
               </button>
-              <button className="ops-btn ops-btn--primary" onClick={() => void handleUpload()} disabled={!file || uploading}>
-                {uploading ? `Đang upload ${uploadProgress}%` : "Upload"}
-              </button>
+              {!bulkResult && (
+                <button
+                  className="ops-btn ops-btn--primary"
+                  onClick={() => void handleUpload()}
+                  disabled={files.length === 0 || uploading}
+                >
+                  {uploading ? (
+                    <>Đang tải lên...</>
+                  ) : (
+                    <>
+                      <Upload size={15} />
+                      Tải lên {files.length > 0 ? `(${files.length})` : ""}
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

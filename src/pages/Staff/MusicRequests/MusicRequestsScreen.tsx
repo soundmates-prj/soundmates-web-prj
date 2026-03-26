@@ -33,7 +33,12 @@ export function MusicRequestsScreen() {
     <div className="music-requests-screen">
       <div className="requests-header">
         <div>
-          <h1 className="requests-title">Music Requests</h1>
+          <h1 className="requests-title" style={{
+            background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>Music Requests</h1>
           <p className="requests-subtitle">Review and manage music requests from users</p>
         </div>
       </div>

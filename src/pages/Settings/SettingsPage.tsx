@@ -22,6 +22,8 @@ const TABS = [
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
 
+  const visibleTabs = TABS;
+
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = "/login";
@@ -56,7 +58,7 @@ export default function SettingsPage() {
           </div>
 
           <nav className="settings-nav-list">
-            {TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button

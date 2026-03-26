@@ -7,6 +7,7 @@ import Register from "./pages/Auth/Register";
 import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import { AnalyticsScreen } from "./pages/Admin/Analytics/AnalyticsScreen";
+import AdminSettingsPage from "./pages/Admin/AdminSettingsPage";
 import { ToastProvider } from "./components/common/Toast";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
 import ForgetPassword from "./pages/Auth/ForgetPassword";
@@ -20,9 +21,10 @@ import Profile from "./pages/Profile/profile";
 import SettingsPage from "./pages/Settings/SettingsPage";
 import StaffLayout from "./components/layout/StaffLayout";
 import { StaffDashboard } from "./pages/Staff/Dashboard/StaffDashboard";
+import StaffSettingsPage from "./pages/Staff/Settings/StaffSettingsPage";
 import { StationsScreen } from "./pages/Staff/Stations/StationsScreen";
 import { PlaylistsScreen } from "./pages/Staff/Playlists/PlaylistsScreen";
-import { LiveSessionsScreen } from "./pages/Staff/LiveSessions/LiveSessionsScreen";
+import { LiveSessionsScreen as StaffLiveSessionsScreen } from "./pages/Staff/LiveSessions/LiveSessionsScreen";
 import { ScheduleScreen } from "./pages/Staff/Schedule/ScheduleScreen";
 import { MusicRequestsScreen } from "./pages/Staff/MusicRequests/MusicRequestsScreen";
 import { PodcastRequestsScreen } from "./pages/Staff/PodcastRequests/PodcastRequestsScreen";
@@ -37,10 +39,10 @@ import LiveSessionPage from "./pages/Admin/LiveOps/LiveSessionPage";
 import LiveSessionDetailPage from "./pages/Admin/LiveOps/LiveSessionDetailPage";
 import PodcastPage from "./pages/Admin/LiveOps/PodcastPage";
 import PodcastEditor from "./pages/Admin/LiveOps/PodcastEditor";
-import AzuraCastPage from "./pages/Admin/LiveOps/AzuraCastPage";
 import { PodcastCreatorPage } from "./pages/PodcastCreator/PodcastCreatorPage";
 import ForumPage from "./pages/Forum/ForumPage";
 import SchedulePublicPage from "./pages/SchedulePublic/Schedulepublicpage";
+import TransactionsPage from "./pages/Admin/LiveOps/TransactionsPage";
 
 function App() {
   return (
@@ -48,12 +50,13 @@ function App() {
       <PlayerProvider>
         <ToastProvider />
         <Routes>
+          {/* ── Auth Routes (no layout) ── */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
           <Route path="/forget-password" element={<ForgetPassword />} />
 
-          {/* Admin Routes with Sidebar Layout - Protected for ADMIN role only */}
+          {/* ── Admin Routes ── */}
           <Route
             path="/admin"
             element={
@@ -68,22 +71,17 @@ function App() {
             <Route path="users" element={<UserManagementScreen />} />
             <Route path="stations" element={<StationPage />} />
             <Route path="playlists" element={<PlaylistPage />} />
-            <Route
-              path="playlists/:playlistId"
-              element={<PlaylistDetailPage />}
-            />
+            <Route path="playlists/:playlistId" element={<PlaylistDetailPage />} />
             <Route path="sessions" element={<LiveSessionPage />} />
-            <Route
-              path="sessions/:sessionId"
-              element={<LiveSessionDetailPage />}
-            />
+            <Route path="sessions/:sessionId" element={<LiveSessionDetailPage />} />
             <Route path="podcasts" element={<PodcastPage />} />
             <Route path="podcasts/new" element={<PodcastEditor />} />
             <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
-            <Route path="azuracast" element={<AzuraCastPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
+            <Route path="transactions" element={<TransactionsPage />} />
           </Route>
 
-          {/* Staff Routes with Sidebar Layout - Protected for STAFF role */}
+          {/* ── Staff Routes ── */}
           <Route
             path="/staff"
             element={
@@ -93,34 +91,29 @@ function App() {
             }
           >
             <Route path="dashboard" element={<StaffDashboard />} />
-            <Route path="sessions" element={<LiveSessionsScreen />} />
+            <Route path="sessions" element={<StaffLiveSessionsScreen />} />
             <Route path="schedule" element={<ScheduleScreen />} />
             <Route path="music-requests" element={<MusicRequestsScreen />} />
-            <Route
-              path="podcast-requests"
-              element={<PodcastRequestsScreen />}
-            />
+            <Route path="podcast-requests" element={<PodcastRequestsScreen />} />
             <Route path="podcast-creator" element={<PodcastCreatorPage />} />
             <Route path="playlists" element={<PlaylistsScreen />} />
             <Route path="stations" element={<StationsScreen />} />
+            <Route path="settings" element={<StaffSettingsPage />} />
           </Route>
 
-          {/* Public Routes with Main Layout */}
+          {/* ── Public Routes ── */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/livestream" element={<LivestreamPage />} />
-            <Route path="/schedule-public" element={<SchedulePublicPage />} />
             <Route path="/live" element={<LiveSessionsPage />} />
             <Route path="/live/:sessionId" element={<LiveRoomPage />} />
             <Route path="/subscription" element={<Subscription />} />
             <Route path="/forum" element={<ForumPage />} />
+            <Route path="/schedule-public" element={<SchedulePublicPage />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/payment/result" element={<PaymentResult />} />
-            <Route
-              path="/profile/transactions"
-              element={<TransactionHistory />}
-            />
+            <Route path="/profile/transactions" element={<TransactionHistory />} />
             <Route
               path="/podcast-creator"
               element={

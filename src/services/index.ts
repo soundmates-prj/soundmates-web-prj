@@ -19,6 +19,17 @@ export type {
   RemoveFavoriteRequest,
 } from './favoriteService';
 
+// Export AzuraCast config service
+export type {
+  AzuraCastConfigResponse,
+  UpsertAzuraCastConfigRequest,
+} from './azuracastConfigService';
+export {
+  getAzuraCastConfig,
+  upsertAzuraCastConfig,
+  deleteAzuraCastConfig,
+} from './azuracastConfigService';
+
 // Export default instances for easy use
 export { default as musicCatalogApi } from './azuracastApi';
 export { default as musicCatalogService } from './musicCatalogService';

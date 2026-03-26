@@ -16,7 +16,7 @@
 .lsp-header h1 {
     font-size: 28px;
     font-weight: 800;
-    background: linear-gradient(135deg, #a78bfa 0%, #ec4899 50%, #f97316 100%);
+    background: linear-gradient(135deg, #a78bfa 0%, #a0e4ff 50%, #f97316 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -197,7 +197,7 @@
     font-weight: 700;
     border: none;
     cursor: pointer;
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    background: linear-gradient(135deg, #1a9fd4, #55c5f1);
     color: #fff;
     transition: all 0.2s;
     box-shadow: 0 2px 12px rgba(124, 58, 237, 0.3);
@@ -247,7 +247,7 @@
 }
 
 .lsp-empty-icon svg {
-    color: #7c3aed;
+    color: #1a9fd4;
     opacity: 0.5;
 }
 

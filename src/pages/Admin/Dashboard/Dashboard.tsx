@@ -15,25 +15,25 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import './Dashboard.css';
 
 const revenueData = [
-  { month: 'Jan', revenue: 45000, subscriptions: 120 },
-  { month: 'Feb', revenue: 52000, subscriptions: 145 },
-  { month: 'Mar', revenue: 48000, subscriptions: 135 },
-  { month: 'Apr', revenue: 61000, subscriptions: 168 },
-  { month: 'May', revenue: 55000, subscriptions: 152 },
-  { month: 'Jun', revenue: 67000, subscriptions: 189 },
+  { month: 'T1', revenue: 45000, subscriptions: 120 },
+  { month: 'T2', revenue: 52000, subscriptions: 145 },
+  { month: 'T3', revenue: 48000, subscriptions: 135 },
+  { month: 'T4', revenue: 61000, subscriptions: 168 },
+  { month: 'T5', revenue: 55000, subscriptions: 152 },
+  { month: 'T6', revenue: 67000, subscriptions: 189 },
 ];
 
 const userGrowthData = [
-  { month: 'Jan', users: 1200 },
-  { month: 'Feb', users: 1450 },
-  { month: 'Mar', users: 1680 },
-  { month: 'Apr', users: 1920 },
-  { month: 'May', users: 2340 },
-  { month: 'Jun', users: 2847 },
+  { month: 'T1', users: 1200 },
+  { month: 'T2', users: 1450 },
+  { month: 'T3', users: 1680 },
+  { month: 'T4', users: 1920 },
+  { month: 'T5', users: 2340 },
+  { month: 'T6', users: 2847 },
 ];
 
 const subscriptionDistribution = [
-  { name: 'Free', value: 1847, color: '#94a3b8' },
+  { name: 'Miễn phí', value: 1847, color: '#94a3b8' },
   { name: 'Premium', value: 680, color: '#7481F8' },
   { name: 'Elite', value: 320, color: '#004395' },
 ];
@@ -74,7 +74,7 @@ interface GoalCardProps {
 
 function GoalCard({ title, current, target, unit, icon }: GoalCardProps) {
   const percentage = Math.min((current / target) * 100, 100);
-  
+
   return (
     <div className="admin-goal-card">
       <div className="admin-goal-header">
@@ -88,7 +88,7 @@ function GoalCard({ title, current, target, unit, icon }: GoalCardProps) {
       <div className="admin-goal-progress">
         <div className="admin-goal-progress-bar" style={{ width: `${percentage}%` }}></div>
       </div>
-      <span className="admin-goal-percentage">{percentage.toFixed(0)}% achieved</span>
+      <span className="admin-goal-percentage">{percentage.toFixed(0)}% đã đạt</span>
     </div>
   );
 }
@@ -98,22 +98,27 @@ export function AdminDashboard() {
     <div className="admin-dashboard">
       <div className="admin-dashboard-header">
         <div>
-          <h1 className="admin-dashboard-title">Dashboard</h1>
-          <p className="admin-dashboard-subtitle">Welcome back! Here's what's happening today.</p>
+          <h1 className="admin-dashboard-title" style={{
+            background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>Bảng điều khiển</h1>
+          <p className="admin-dashboard-subtitle">Chào mừng trở lại! Có gì đang xảy ra hôm nay.</p>
         </div>
       </div>
 
       <div className="admin-stats-grid">
         <StatCard
-          title="Total Users"
+          title="Tổng người dùng"
           value="2,847"
           change="+12.5%"
           isPositive={true}
           icon={<Users size={24} />}
-          subtitle="vs last month"
+          subtitle="so với tháng trước"
         />
         <StatCard
-          title="Active Subscriptions"
+          title="Đăng ký đang hoạt động"
           value="1,000"
           change="+8.2%"
           isPositive={true}
@@ -121,74 +126,74 @@ export function AdminDashboard() {
           subtitle="680 Premium, 320 Elite"
         />
         <StatCard
-          title="Monthly Revenue"
-          value="$67,000"
+          title="Doanh thu hàng tháng"
+          value="67,000 VNĐ"
           change="+15.3%"
           isPositive={true}
           icon={<DollarSign size={24} />}
-          subtitle="vs last month"
+          subtitle="so với tháng trước"
         />
         <StatCard
-          title="Total Posts"
+          title="Tổng bài viết"
           value="1,234"
           change="+5.7%"
           isPositive={true}
           icon={<FileText size={24} />}
-          subtitle="Published content"
+          subtitle="Nội dung đã xuất bản"
         />
         <StatCard
-          title="Live Sessions"
+          title="Phiên phát sóng"
           value="145"
           change="+18.4%"
           isPositive={true}
           icon={<Radio size={24} />}
-          subtitle="This month"
+          subtitle="Tháng này"
         />
         <StatCard
-          title="Stations"
+          title="Đài phát"
           value="12"
           change="0%"
           isPositive={true}
           icon={<Music2 size={24} />}
-          subtitle="Active stations"
+          subtitle="Đài đang hoạt động"
         />
         <StatCard
-          title="Users Online"
+          title="Người dùng online"
           value="234"
           change="-3.2%"
           isPositive={false}
           icon={<Activity size={24} />}
-          subtitle="Right now"
+          subtitle="Ngay lúc này"
         />
         <StatCard
-          title="Avg. Session Time"
+          title="Thời gian phiên TB"
           value="24m"
           change="+7.1%"
           isPositive={true}
           icon={<TrendingUp size={24} />}
-          subtitle="Per user"
+          subtitle="Mỗi người dùng"
         />
       </div>
 
       <div className="admin-goals-section">
-        <h2 className="admin-section-title">Monthly Goals</h2>
+        <h2 className="admin-section-title">Mục tiêu hàng tháng</h2>
         <div className="admin-goals-grid">
           <GoalCard
-            title="Revenue Goal"
+            title="Mục tiêu doanh thu"
             current={67000}
             target={80000}
-            unit="$"
+            unit="VNĐ"
             icon={<Target size={20} />}
           />
           <GoalCard
-            title="Subscription Goal"
+            title="Mục tiêu đăng ký"
             current={1000}
             target={1200}
             unit="subs"
             icon={<Crown size={20} />}
           />
           <GoalCard
-            title="Active Users Goal"
+            title="Mục tiêu người dùng hoạt động"
             current={2847}
             target={3000}
             unit="users"
@@ -199,7 +204,7 @@ export function AdminDashboard() {
 
       <div className="admin-charts-grid">
         <div className="admin-chart-card">
-          <h3 className="admin-chart-title">Revenue & Subscriptions</h3>
+          <h3 className="admin-chart-title">Doanh thu & Đăng ký</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={revenueData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
@@ -213,7 +218,7 @@ export function AdminDashboard() {
         </div>
 
         <div className="admin-chart-card">
-          <h3 className="admin-chart-title">User Growth</h3>
+          <h3 className="admin-chart-title">Tăng trưởng người dùng</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={userGrowthData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
@@ -226,7 +231,7 @@ export function AdminDashboard() {
         </div>
 
         <div className="admin-chart-card">
-          <h3 className="admin-chart-title">Subscription Distribution</h3>
+          <h3 className="admin-chart-title">Phân bổ đăng ký</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie

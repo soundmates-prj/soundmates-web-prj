@@ -101,7 +101,7 @@ export default function LiveSessionPage() {
     <div className="ops-page">
       <div className="ops-header">
         <div>
-          <h1 className="ops-title">LiveSession Page</h1>
+          <h1 className="ops-title">Trang Phiên Phát Sóng</h1>
           <p className="ops-subtitle">Tạo phiên và mở trang chi tiết để start/pause/resume/stop</p>
         </div>
         <div className="ops-actions">
@@ -151,9 +151,9 @@ export default function LiveSessionPage() {
               <thead>
                 <tr>
                   <th>Tên phiên</th>
-                  <th>Station</th>
-                  <th>Status</th>
-                  <th>Listeners</th>
+                  <th>Đài phát</th>
+                  <th>Trạng thái</th>
+                  <th>Người nghe</th>
                   <th />
                 </tr>
               </thead>

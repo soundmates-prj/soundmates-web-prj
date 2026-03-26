@@ -214,6 +214,22 @@ export interface PagedResult<T> {
   totalPages: number;
 }
 
+export interface BulkUploadFailedItem {
+  fileName: string;
+  errorMessage: string;
+  fileIndex: number;
+}
+
+export interface BulkUploadMusicResult {
+  totalFiles: number;
+  successCount: number;
+  failedCount: number;
+  isSuccess: boolean;
+  message: string;
+  uploadedFiles: MusicResult[];
+  failedFiles: BulkUploadFailedItem[];
+}
+
 interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -369,6 +385,49 @@ class LiveSessionApiService {
       },
     );
     return res.data.data;
+  }
+
+  /* ── Bulk Upload ── */
+
+  async bulkUploadMusic(
+    stationId: string | undefined,
+    files: File[],
+    onFileProgress?: (fileName: string, progress: number) => void,
+  ): Promise<BulkUploadMusicResult> {
+    const formData = new FormData();
+    if (stationId) {
+      formData.append("stationId", stationId);
+    }
+
+    // Append all files with the same field name "Files"
+    for (const file of files) {
+      formData.append("Files", file);
+    }
+
+    // Simulate per-file progress by polling a mock progress
+    // (Real per-file progress requires custom axios interceptors)
+    const progressInterval = setInterval(() => {
+      if (onFileProgress) {
+        const fakeProgress = Math.floor(Math.random() * 40) + 60;
+        for (const file of files) {
+          onFileProgress(file.name, fakeProgress);
+        }
+      }
+    }, 500);
+
+    try {
+      const res = await api.post<ApiResponse<BulkUploadMusicResult>>(
+        "/musiccatalog/bulk-upload",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 600_000, // 10 minutes for large uploads
+        },
+      );
+      return res.data.data;
+    } finally {
+      clearInterval(progressInterval);
+    }
   }
 
   async deleteMusic(id: string): Promise<void> {

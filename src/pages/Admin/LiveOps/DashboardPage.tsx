@@ -77,7 +77,7 @@ export default function DashboardPage() {
     <div className="ops-page">
       <div className="ops-header">
         <div>
-          <h1 className="ops-title">Dashboard Overview</h1>
+          <h1 className="ops-title">Tổng quan Dashboard</h1>
           <p className="ops-subtitle">Tổng quan vận hành realtime từ Live Session Service</p>
         </div>
         <div className="ops-actions">
@@ -90,17 +90,17 @@ export default function DashboardPage() {
 
       <div className="ops-grid" style={{ marginBottom: 14 }}>
         <div className="ops-card">
-          <p className="ops-card-title">Active Sessions</p>
+          <p className="ops-card-title">Phiên đang hoạt động</p>
           <div className="ops-stat-value">{stats.activeSessions}</div>
           <span className="ops-badge"><Radio size={12} /> Đang hoạt động</span>
         </div>
         <div className="ops-card">
-          <p className="ops-card-title">Listeners Today</p>
+          <p className="ops-card-title">Người nghe hôm nay</p>
           <div className="ops-stat-value">{stats.listeners}</div>
           <span className="ops-badge"><Activity size={12} /> Theo ngày</span>
         </div>
         <div className="ops-card">
-          <p className="ops-card-title">Stations</p>
+          <p className="ops-card-title">Đài phát</p>
           <div className="ops-stat-value">{stats.stations}</div>
           <span className="ops-badge"><TowerControl size={12} /> Kênh phát</span>
         </div>
@@ -110,7 +110,7 @@ export default function DashboardPage() {
           <span className="ops-badge"><ListMusic size={12} /> Tổng playlist</span>
         </div>
         <div className="ops-card">
-          <p className="ops-card-title">Media Count</p>
+          <p className="ops-card-title">Số lượng media</p>
           <div className="ops-stat-value">{stats.media}</div>
           <span className="ops-badge"><Signal size={12} /> File nhạc</span>
         </div>

@@ -37,7 +37,7 @@ const TransactionHistory: React.FC = () => {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/transaction");
+      const response = await api.get("/me/transaction/history");
       if (response.data?.success) {
         setTransactions(response.data.data.items || []);
       }

@@ -1,5 +1,6 @@
 /* ============================================
    Shared Staff Styles
+   Accent: Sky Blue (#1a9fd4 → #55c5f1)
    ============================================ */
 
 /* ── Page Layout ── */
@@ -17,13 +18,21 @@
 
 .staff-page-title {
     font-size: 32px;
-    font-weight: 700;
-    color: var(--neutral-900);
+    font-weight: 800;
+    color: #0c4a6e;
     margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 [data-theme="dark"] .staff-page-title {
-    color: #ffffff;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
 }
 
 .staff-page-subtitle {
@@ -58,14 +67,14 @@
 }
 
 .staff-btn--primary {
-    background: linear-gradient(135deg, var(--secondary-500), var(--primary-500));
+    background: linear-gradient(135deg, #1a9fd4, #55c5f1);
     color: #ffffff;
-    box-shadow: 0 2px 8px rgba(116, 129, 248, 0.2);
+    box-shadow: 0 2px 8px rgba(85, 197, 241, 0.2);
 }
 
 .staff-btn--primary:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(116, 129, 248, 0.3);
+    box-shadow: 0 4px 12px rgba(85, 197, 241, 0.3);
 }
 
 .staff-btn--outline {
@@ -82,14 +91,14 @@
 
 .staff-btn--outline:hover:not(:disabled) {
     background: var(--neutral-50);
-    border-color: var(--secondary-300);
-    color: var(--secondary-600);
+    border-color: rgba(26, 159, 212, 0.3);
+    color: #1a9fd4;
 }
 
 [data-theme="dark"] .staff-btn--outline:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--secondary-400);
-    color: var(--secondary-400);
+    background: rgba(85, 197, 241, 0.08);
+    border-color: rgba(85, 197, 241, 0.3);
+    color: #7dd3fc;
 }
 
 /* ── Cards ── */
@@ -147,8 +156,8 @@
 }
 
 .staff-badge--scheduled {
-    background: rgba(245, 158, 11, 0.1);
-    color: var(--warning-600);
+    background: rgba(26, 159, 212, 0.1);
+    color: #1a9fd4;
 }
 
 .staff-badge--ended {
@@ -173,6 +182,7 @@
 
 .staff-spin {
     animation: staff-spin 1s linear infinite;
+    color: #1a9fd4;
 }
 
 @keyframes staff-spin {
@@ -189,4 +199,38 @@
 
 [data-theme="dark"] .staff-empty {
     color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Requests Header (MusicRequests, PodcastRequests) ── */
+.requests-header {
+    margin-bottom: 32px;
+}
+
+.requests-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0c4a6e;
+    margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .requests-title {
+    background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 50%, #bae6fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+.requests-subtitle {
+    font-size: 16px;
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+[data-theme="dark"] .requests-subtitle {
+    color: rgba(255, 255, 255, 0.6);
 }

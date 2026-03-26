@@ -1,0 +1,173 @@
+/* ============================================
+   Admin Transactions Page Styles
+   Accent: Sky Blue (#1a9fd4 → #55c5f1)
+   ============================================ */
+
+/* ── Table ── */
+.tx-table-wrap {
+  overflow-x: auto;
+}
+
+.tx-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tx-table thead tr {
+  border-bottom: 2px solid rgba(26, 159, 212, 0.1);
+}
+
+.tx-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #1a9fd4;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .tx-table th {
+  color: #7dd3fc;
+}
+
+.tx-table td {
+  padding: 14px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  vertical-align: middle;
+}
+
+[data-theme="dark"] .tx-table td {
+  border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.tx-table tbody tr:hover {
+  background: rgba(26, 159, 212, 0.03);
+}
+
+[data-theme="dark"] .tx-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Status Badges ── */
+.tx-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.tx-status--success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.tx-status--failed {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.tx-status--pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.tx-status--processing {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* ── Pagination ── */
+.tx-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+[data-theme="dark"] .tx-pagination {
+  border-top-color: rgba(255, 255, 255, 0.04);
+}
+
+.tx-pagination-info {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.tx-pagination-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.tx-page-btn {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(26, 159, 212, 0.15);
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0 8px;
+}
+
+.tx-page-btn:hover:not(:disabled) {
+  background: rgba(26, 159, 212, 0.08);
+  border-color: #1a9fd4;
+  color: #1a9fd4;
+}
+
+.tx-page-btn.active {
+  background: linear-gradient(135deg, #1a9fd4, #55c5f1);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(85, 197, 241, 0.3);
+}
+
+.tx-page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .tx-table th:nth-child(5),
+  .tx-table td:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .tx-table th:nth-child(4),
+  .tx-table td:nth-child(4),
+  .tx-table th:nth-child(6),
+  .tx-table td:nth-child(6) {
+    display: none;
+  }
+
+  .tx-pagination {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
