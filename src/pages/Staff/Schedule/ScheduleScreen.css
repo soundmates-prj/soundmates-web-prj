@@ -1,5 +1,5 @@
 /* ============================================================
-   ScheduleScreen.css  — Accent #55c5f1 (Sky Blue)
+   ScheduleScreen.css  — System Accent (#1a9fd4 → #55c5f1)
    ============================================================ */
 
 /* ── Page ── */
@@ -23,7 +23,7 @@
   margin: 0 0 5px;
   font-size: 25px;
   font-weight: 800;
-  background: linear-gradient(120deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+  background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -103,7 +103,7 @@
 }
 
 .sc-loading svg {
-  color: #55c5f1;
+  color: #1a9fd4;
 }
 
 .sc-spin {
@@ -129,7 +129,7 @@
 }
 
 .sc-empty svg {
-  color: #55c5f1;
+  color: #1a9fd4;
   opacity: 0.45;
 }
 
@@ -290,7 +290,7 @@
 }
 
 .sc-delete-btn:hover:not(:disabled) {
-  border-color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
   color: #dc2626;
   background: rgba(239, 68, 68, 0.07);
 }
@@ -389,7 +389,7 @@
 }
 
 .sc-modal-title svg {
-  color: #55c5f1;
+  color: #1a9fd4;
   flex-shrink: 0;
 }
 
@@ -556,7 +556,7 @@
 }
 
 .sc-action-btn--delete:hover:not(:disabled) {
-  border-color: #f87171;
+  border-color: rgba(239, 68, 68, 0.5);
   color: #dc2626;
   background: rgba(239, 68, 68, 0.07);
 }
@@ -564,4 +564,202 @@
 .sc-action-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ============================================
+   Dark Theme
+   ============================================ */
+[data-theme="dark"] .sc-page {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .sc-header-left h1 {
+  background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 50%, #bae6fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme="dark"] .sc-header-left p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .sc-btn--outline {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .sc-btn--outline:hover:not(:disabled) {
+  border-color: #55c5f1;
+  color: #7dd3fc;
+  background: rgba(85, 197, 241, 0.06);
+}
+
+[data-theme="dark"] .sc-loading {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .sc-loading svg {
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .sc-empty {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(85, 197, 241, 0.2);
+}
+
+[data-theme="dark"] .sc-empty svg {
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .sc-empty p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .sc-day-label {
+  background: rgba(85, 197, 241, 0.12);
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .sc-day-count {
+  background: rgba(85, 197, 241, 0.2);
+}
+
+[data-theme="dark"] .sc-items {
+  border-left-color: rgba(85, 197, 241, 0.2);
+}
+
+[data-theme="dark"] .sc-item {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .sc-item:hover {
+  border-color: rgba(85, 197, 241, 0.3);
+}
+
+[data-theme="dark"] .sc-item::before {
+  background: linear-gradient(180deg, #38bdf8, #7dd3fc);
+}
+
+[data-theme="dark"] .sc-item-title {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .sc-time-start {
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .sc-time-line {
+  background: linear-gradient(180deg, #55c5f1, rgba(85, 197, 241, 0.1));
+}
+
+[data-theme="dark"] .sc-time-end {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .sc-item-created {
+  color: #64748b;
+}
+
+[data-theme="dark"] .sc-delete-btn {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .sc-delete-btn:hover:not(:disabled) {
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+[data-theme="dark"] .sc-meta-chip {
+  background: rgba(85, 197, 241, 0.1);
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .sc-meta-chip--session {
+  background: rgba(85, 197, 241, 0.15);
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .sc-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .sc-modal {
+  background: #1e293b;
+  border-color: rgba(85, 197, 241, 0.2);
+}
+
+[data-theme="dark"] .sc-modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(85, 197, 241, 0.08), transparent);
+}
+
+[data-theme="dark"] .sc-modal-title svg {
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .sc-modal-title h3 {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .sc-modal-close {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .sc-modal-close:hover {
+  border-color: #55c5f1;
+  color: #7dd3fc;
+  background: rgba(85, 197, 241, 0.08);
+}
+
+[data-theme="dark"] .sc-modal-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .sc-label {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .sc-input,
+[data-theme="dark"] .sc-select {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .sc-input::placeholder {
+  color: #64748b;
+}
+
+[data-theme="dark"] .sc-input:focus,
+[data-theme="dark"] .sc-select:focus {
+  border-color: rgba(85, 197, 241, 0.7);
+  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.15);
+}
+
+[data-theme="dark"] .sc-action-btn--edit {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .sc-action-btn--edit:hover {
+  border-color: #55c5f1;
+  color: #7dd3fc;
+  background: rgba(85, 197, 241, 0.08);
+}
+
+[data-theme="dark"] .sc-action-btn--delete {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .sc-action-btn--delete:hover:not(:disabled) {
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
 }

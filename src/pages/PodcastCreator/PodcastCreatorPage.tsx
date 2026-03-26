@@ -56,7 +56,12 @@ export function PodcastCreatorPage() {
         {/* Header */}
         <div className="podcast-creator-header">
           <div>
-            <h1 className="page-title">Podcast Creator</h1>
+            <h1 className="page-title" style={{
+              background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>Podcast Creator</h1>
             <p className="page-subtitle">
               Tạo nội dung podcast chuyên nghiệp với AI
             </p>

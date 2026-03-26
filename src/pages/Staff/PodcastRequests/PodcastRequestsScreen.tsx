@@ -33,7 +33,12 @@ export function PodcastRequestsScreen() {
     <div className="podcast-requests-screen">
       <div className="requests-header">
         <div>
-          <h1 className="requests-title">Podcast Requests</h1>
+          <h1 className="requests-title" style={{
+            background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>Podcast Requests</h1>
           <p className="requests-subtitle">Review and manage podcast submissions from creators</p>
         </div>
       </div>

@@ -8,13 +8,21 @@
 
 .requests-title {
     font-size: 32px;
-    font-weight: 700;
-    color: var(--neutral-900);
+    font-weight: 800;
+    color: #0c4a6e;
     margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 [data-theme="dark"] .requests-title {
-    color: #ffffff;
+    background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 50%, #bae6fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
 }
 
 .requests-subtitle {
@@ -161,7 +169,7 @@
 }
 
 .filter-tab.active {
-    background: linear-gradient(135deg, var(--secondary-500), var(--primary-500));
+    background: linear-gradient(135deg, #1a9fd4, #55c5f1);
     border-color: transparent;
     color: #ffffff;
 }
@@ -220,7 +228,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--secondary-500), var(--primary-500));
+    background: linear-gradient(135deg, #1a9fd4, #55c5f1);
     color: #ffffff;
     border-radius: 8px;
 }

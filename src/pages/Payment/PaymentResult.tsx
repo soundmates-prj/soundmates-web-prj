@@ -30,6 +30,14 @@ const VNP_RESPONSE_MESSAGES: Record<string, string> = {
   "99": "Lỗi không xác định.",
 };
 
+const PAYOS_RESPONSE_MESSAGES: Record<string, string> = {
+  "00": "Giao dịch thành công",
+  "-01": "Giao dịch bị hủy bởi người dùng",
+  "-02": "Giao dịch thất bại",
+  "-03": "Giao dịch đang xử lý",
+  "-04": "Giao dịch hết hạn",
+};
+
 function formatAmount(amount?: string) {
   if (!amount) return "—";
   const num = parseFloat(amount);
@@ -44,73 +52,62 @@ export default function PaymentResult() {
 
   useEffect(() => {
     const status = params.get("status");
-    const responseCode = params.get("vnp_ResponseCode") ?? "";
+    const provider = params.get("provider");
+    const responseCode = params.get("vnp_ResponseCode") ?? params.get("code") ?? "";
 
-    // If VNPay redirected directly to frontend (Option B flow)
-    // We need to call backend callback API to process the payment
-    const vnpParams = Object.fromEntries(params.entries());
-    const isVNPayRedirect = !!vnpParams["vnp_SecureHash"];
-
-    if (isVNPayRedirect) {
-      // Call backend callback to process payment
-      api
-        .get("/payments/vnpay/callback", { params: vnpParams })
-        .then((res) => {
-          const apiResponse = res.data;
-          const data = apiResponse.data;
-          
-          if (apiResponse.success && data) {
-            setState({
-              status: data.status === "success" ? "success" : "failed",
-              transactionId: data.transactionId,
-              paymentId: data.paymentId,
-              amount: data.amount?.toString(),
-              provider: data.provider,
-              transactionNo: data.vnp_TransactionNo ?? vnpParams["vnp_TransactionNo"],
-              message: VNP_RESPONSE_MESSAGES[responseCode] ?? "Giao dịch hoàn tất",
-            });
-          } else {
-            throw new Error(apiResponse.message || "Giao dịch không thành công");
-          }
-        })
-        .catch((err) => {
-          const errorData = err?.response?.data;
-          const displayMessage = 
-            errorData?.errors || 
-            errorData?.message || 
-            err.message || 
-            VNP_RESPONSE_MESSAGES[responseCode] || 
-            "Có lỗi xảy ra khi xử lý thanh toán.";
-
-          setState({
-            status: "failed",
-            message: typeof displayMessage === 'string' ? displayMessage : JSON.stringify(displayMessage),
-          });
+    // VNPay redirect: BE callback đã xử lý → redirect về FE với kết quả trong query params
+    // FE chỉ hiển thị kết quả, KHÔNG gọi callback lại (tránh double-processing)
+    if (provider?.toLowerCase() === "vnpay") {
+      if (status === "success") {
+        setState({
+          status: "success",
+          transactionId: params.get("transactionId") ?? undefined,
+          paymentId: params.get("paymentId") ?? undefined,
+          amount: params.get("amount") ?? undefined,
+          provider: provider,
+          transactionNo: params.get("vnp_TransactionNo") ?? undefined,
+          message: VNP_RESPONSE_MESSAGES[responseCode] ?? "Giao dịch thành công",
         });
+      } else {
+        setState({
+          status: "failed",
+          message:
+            params.get("message") ??
+            VNP_RESPONSE_MESSAGES[responseCode] ??
+            "Giao dịch thất bại hoặc bị hủy.",
+          transactionNo: params.get("vnp_TransactionNo") ?? undefined,
+        });
+      }
       return;
     }
 
-    // Backend already processed and redirected here with result params
-    if (status === "success") {
-      setState({
-        status: "success",
-        transactionId: params.get("transactionId") ?? undefined,
-        paymentId: params.get("paymentId") ?? undefined,
-        amount: params.get("amount") ?? undefined,
-        provider: params.get("provider") ?? undefined,
-        transactionNo: params.get("vnp_TransactionNo") ?? undefined,
-        message: VNP_RESPONSE_MESSAGES[responseCode] ?? "Giao dịch thành công",
-      });
-    } else {
-      setState({
-        status: "failed",
-        message:
-          params.get("message") ??
-          VNP_RESPONSE_MESSAGES[responseCode] ??
-          "Giao dịch thất bại hoặc bị hủy.",
-        transactionNo: params.get("vnp_TransactionNo") ?? undefined,
-      });
+    // PayOS redirect: BE đã xử lý → redirect về FE với kết quả trong query params
+    if (provider?.toLowerCase() === "payos") {
+      if (status === "success") {
+        setState({
+          status: "success",
+          transactionId: params.get("transactionId") ?? undefined,
+          paymentId: params.get("paymentId") ?? undefined,
+          amount: params.get("amount") ?? undefined,
+          provider: provider,
+          transactionNo: params.get("payos_TransactionNo") ?? undefined,
+          message: PAYOS_RESPONSE_MESSAGES[responseCode] ?? "Giao dịch thành công",
+        });
+      } else {
+        setState({
+          status: "failed",
+          message:
+            params.get("message") ??
+            PAYOS_RESPONSE_MESSAGES[responseCode] ??
+            "Giao dịch thất bại hoặc bị hủy.",
+          transactionNo: params.get("payos_TransactionNo") ?? undefined,
+        });
+      }
+      return;
     }
+
+    // Fallback: không có provider → hiển thị loading
+    setState({ status: "loading" });
   }, [params]);
 
   const isSuccess = state.status === "success";

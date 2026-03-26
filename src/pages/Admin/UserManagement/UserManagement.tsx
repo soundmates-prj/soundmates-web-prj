@@ -126,7 +126,7 @@ export function UserManagementScreen() {
     return (
       <span className={`lm-status-badge ${isActive ? 'active' : 'inactive'}`}>
         <span className={`lm-status-dot ${isActive ? 'active' : 'inactive'}`}></span>
-        {isActive ? 'Active' : 'Inactive'}
+        {isActive ? 'Hoạt động' : 'Không hoạt động'}
       </span>
     );
   };
@@ -150,7 +150,7 @@ export function UserManagementScreen() {
           </button>
           <button className="lm-btn lm-btn--primary">
             <Plus size={15} />
-            Thêm User
+            Thêm người dùng
           </button>
         </div>
       </div>
@@ -164,12 +164,12 @@ export function UserManagementScreen() {
         />
         <StatCard
           icon={<UserCheck size={20} />}
-          label="Active Users"
+          label="Người dùng hoạt động"
           value={activeUsers.toLocaleString()}
         />
         <StatCard
           icon={<Clock size={20} />}
-          label="Inactive Users"
+          label="Người dùng không hoạt động"
           value={inactiveUsers.toLocaleString()}
         />
         <StatCard
@@ -182,7 +182,7 @@ export function UserManagementScreen() {
       {/* Users Table */}
       <div className="lm-card">
         <div className="lm-card-header">
-          <h3 className="lm-card-title">Danh Sách Users</h3>
+          <h3 className="lm-card-title">Danh sách người dùng</h3>
         </div>
 
         {/* Search */}
@@ -224,7 +224,7 @@ export function UserManagementScreen() {
             <table className="lm-table">
               <thead>
                 <tr>
-                  <th>User</th>
+                  <th>Người dùng</th>
                   <th className="center">Vai Trò</th>
                   <th className="center">Trạng Thái</th>
                   <th className="center">Ngày Tham Gia</th>
@@ -301,7 +301,7 @@ export function UserManagementScreen() {
         {!loading && users.length > 0 && (
           <div className="lm-pagination">
             <p className="lm-pagination-info">
-              Hiển thị {users.length} trên tổng {totalItems.toLocaleString()} users
+              Hiển thị {users.length} trên tổng {totalItems.toLocaleString()} người dùng
             </p>
             <div className="lm-pagination-buttons">
               <button 

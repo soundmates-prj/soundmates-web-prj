@@ -8,13 +8,21 @@
 
 .admin-dashboard-title {
     font-size: 32px;
-    font-weight: 700;
-    color: var(--neutral-900);
+    font-weight: 800;
+    color: #0c4a6e;
     margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 [data-theme="dark"] .admin-dashboard-title {
-    color: #ffffff;
+    background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 50%, #bae6fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
 }
 
 .admin-dashboard-subtitle {
@@ -69,14 +77,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--primary-50), var(--secondary-50));
-    color: var(--primary-600);
+    background: linear-gradient(135deg, rgba(26, 159, 212, 0.15), rgba(85, 197, 241, 0.15));
+    color: #1a9fd4;
     border-radius: 12px;
 }
 
 [data-theme="dark"] .admin-stat-icon {
-    background: linear-gradient(135deg, rgba(0, 67, 149, 0.2), rgba(116, 129, 248, 0.2));
-    color: var(--secondary-400);
+    background: linear-gradient(135deg, rgba(26, 159, 212, 0.2), rgba(85, 197, 241, 0.2));
+    color: #7dd3fc;
 }
 
 .admin-stat-change {
@@ -177,14 +185,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--primary-50);
-    color: var(--primary-600);
+    background: rgba(26, 159, 212, 0.15);
+    color: #1a9fd4;
     border-radius: 10px;
 }
 
 [data-theme="dark"] .admin-goal-icon {
-    background: rgba(116, 129, 248, 0.15);
-    color: var(--secondary-400);
+    background: rgba(85, 197, 241, 0.15);
+    color: #7dd3fc;
 }
 
 .admin-goal-title {
@@ -207,11 +215,11 @@
 .admin-goal-current {
     font-size: 24px;
     font-weight: 700;
-    color: var(--primary-600);
+    color: #1a9fd4;
 }
 
 [data-theme="dark"] .admin-goal-current {
-    color: var(--secondary-400);
+    color: #7dd3fc;
 }
 
 .admin-goal-target {
@@ -237,7 +245,7 @@
 
 .admin-goal-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+    background: linear-gradient(90deg, #1a9fd4, #55c5f1);
     border-radius: 4px;
     transition: width 0.3s;
 }

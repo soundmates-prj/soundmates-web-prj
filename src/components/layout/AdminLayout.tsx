@@ -1,15 +1,15 @@
 import { Outlet } from "react-router-dom";
-import AdminSidebar from "./AdminSidebar";
-import AdminHeader from "./AdminHeader";
-import "./AdminLayout.css";
+import SharedSidebar from "./SharedSidebar";
+import SharedHeader from "./SharedHeader";
+import "./SharedLayout.css";
 
 export default function AdminLayout() {
     return (
-        <div className="admin-layout">
-            <AdminSidebar />
-            <div className="admin-content-wrapper">
-                <AdminHeader />
-                <main className="admin-main">
+        <div className="shared-layout">
+            <SharedSidebar role="ADMIN" />
+            <div className="shared-content-wrapper">
+                <SharedHeader role="ADMIN" />
+                <main className="shared-main">
                     <Outlet />
                 </main>
             </div>

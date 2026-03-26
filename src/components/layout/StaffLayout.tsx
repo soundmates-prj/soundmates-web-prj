@@ -1,15 +1,15 @@
 import { Outlet } from "react-router-dom";
-import StaffSidebar from "./StaffSidebar";
-import StaffHeader from "./StaffHeader";
-import "./StaffLayout.css";
+import SharedSidebar from "./SharedSidebar";
+import SharedHeader from "./SharedHeader";
+import "./SharedLayout.css";
 
 export default function StaffLayout() {
     return (
-        <div className="staff-layout">
-            <StaffSidebar />
-            <div className="staff-content-wrapper">
-                <StaffHeader />
-                <main className="staff-main">
+        <div className="shared-layout">
+            <SharedSidebar role="STAFF" />
+            <div className="shared-content-wrapper">
+                <SharedHeader role="STAFF" />
+                <main className="shared-main">
                     <Outlet />
                 </main>
             </div>

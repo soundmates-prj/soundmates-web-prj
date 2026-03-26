@@ -2,6 +2,45 @@
    Stations Screen
    ============================================ */
 
+/* ── Page Header (gradient title) ── */
+.staff-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    gap: 20px;
+}
+
+.staff-page-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0c4a6e;
+    margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .staff-page-title {
+    background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 50%, #bae6fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+.staff-page-subtitle {
+    font-size: 16px;
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+[data-theme="dark"] .staff-page-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Grid ── */
 .stations-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

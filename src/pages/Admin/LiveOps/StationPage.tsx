@@ -53,7 +53,7 @@ export default function StationPage() {
     <div className="ops-page">
       <div className="ops-header">
         <div>
-          <h1 className="ops-title">Station Page</h1>
+          <h1 className="ops-title">Trang Đài Phát</h1>
           <p className="ops-subtitle">Danh sách station, trạng thái và now playing</p>
         </div>
         <div className="ops-actions">

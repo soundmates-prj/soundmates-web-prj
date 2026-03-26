@@ -613,3 +613,206 @@
         overflow-y: visible;
     }
 }
+
+/* ============================================
+   Payment Method Modal
+   ============================================ */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.payment-method-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    background: #ffffff;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 440px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+[data-theme='dark'] .payment-method-modal {
+    background: #1e1e2e;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+[data-theme='dark'] .modal-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+}
+
+[data-theme='dark'] .modal-header h3 {
+    color: #ffffff;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: #0f172a;
+}
+
+[data-theme='dark'] .modal-close:hover {
+    color: #ffffff;
+}
+
+.modal-body {
+    padding: 20px 24px 24px;
+}
+
+.modal-plan-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(85, 197, 241, 0.08);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+}
+
+[data-theme='dark'] .modal-plan-info {
+    background: rgba(85, 197, 241, 0.1);
+}
+
+.modal-plan-name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.95rem;
+}
+
+[data-theme='dark'] .modal-plan-name {
+    color: #ffffff;
+}
+
+.modal-plan-price {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    color: #55C5F1;
+    font-size: 0.95rem;
+}
+
+.payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.payment-method-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(248, 250, 252, 0.8);
+    border: 1.5px solid rgba(226, 232, 240, 0.6);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    text-align: left;
+}
+
+[data-theme='dark'] .payment-method-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.payment-method-btn:hover {
+    border-color: #55C5F1;
+    background: rgba(85, 197, 241, 0.08);
+    box-shadow: 0 4px 16px rgba(85, 197, 241, 0.15);
+}
+
+[data-theme='dark'] .payment-method-btn:hover {
+    background: rgba(85, 197, 241, 0.12);
+}
+
+.payment-method-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.payment-method-icon.vnpay {
+    background: linear-gradient(135deg, #1a9fd9 0%, #0d6ea8 100%);
+    color: #ffffff;
+}
+
+.payment-method-icon.payos {
+    background: linear-gradient(135deg, #55C5F1 0%, #3B9FD8 100%);
+    color: #ffffff;
+}
+
+.payment-method-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-grow: 1;
+}
+
+.payment-method-name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+[data-theme='dark'] .payment-method-name {
+    color: #ffffff;
+}
+
+.payment-method-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #64748b;
+}
+
+[data-theme='dark'] .payment-method-desc {
+    color: #9ca3af;
+}
+
+.payment-method-arrow {
+    font-size: 1.2rem;
+    color: #94a3b8;
+    font-weight: 300;
+    line-height: 1;
+}

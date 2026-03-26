@@ -52,10 +52,22 @@
 .page-title {
   font-family: 'Be Vietnam Pro', sans-serif;
   font-size: 32px;
-  font-weight: 700;
-  color: var(--page-text);
+  font-weight: 800;
+  background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: #0c4a6e; /* fallback */
   margin: 0 0 8px 0;
-  transition: color 0.3s ease;
+  transition: background 0.3s ease;
+}
+
+[data-theme='dark'] .page-title {
+  background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 50%, #bae6fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
 }
 
 .page-subtitle {

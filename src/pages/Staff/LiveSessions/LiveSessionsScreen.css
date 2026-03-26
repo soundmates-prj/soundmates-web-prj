@@ -1,5 +1,5 @@
 /* ============================================================
-   LiveSessionsScreen.css  — Accent #55c5f1 (Sky Blue)
+   LiveSessionsScreen.css  — Accent #1a9fd4 (Sky Blue)
    ============================================================ */
 
 /* ── Page ── */
@@ -23,7 +23,7 @@
   margin: 0 0 6px;
   font-size: 26px;
   font-weight: 800;
-  background: linear-gradient(120deg, #1a9fd4 0%, #55c5f1 45%, #a0e4ff 100%);
+  background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 45%, #a0e4ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -572,6 +572,163 @@
 .lm-textarea {
   resize: vertical;
   min-height: 76px;
+}
+
+/* ── Dark Theme ── */
+[data-theme="dark"] .lm-page {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .lm-header-left h1 {
+  background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 45%, #bae6fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme="dark"] .lm-header-left p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-btn--outline {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .lm-btn--outline:hover:not(:disabled) {
+  border-color: #55c5f1;
+  color: #7dd3fc;
+  background: rgba(85, 197, 241, 0.08);
+}
+
+[data-theme="dark"] .lm-tab {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-tab:hover:not(:disabled) {
+  border-color: #55c5f1;
+  color: #7dd3fc;
+  background: rgba(85, 197, 241, 0.08);
+}
+
+[data-theme="dark"] .lm-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .lm-card-name {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .lm-card-desc {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-card-meta {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .lm-meta-item {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-badge--ended {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-badge--paused {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .lm-badge--cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+[data-theme="dark"] .lm-pagination {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .lm-pagination-info {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-page-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-page-btn:hover:not(:disabled) {
+  border-color: #55c5f1;
+  color: #7dd3fc;
+  background: rgba(85, 197, 241, 0.08);
+}
+
+[data-theme="dark"] .lm-page-ellipsis {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .lm-modal {
+  background: #1e293b;
+  border-color: rgba(85, 197, 241, 0.2);
+}
+
+[data-theme="dark"] .lm-modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .lm-modal-header h3 {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .lm-modal-close {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-modal-close:hover {
+  border-color: #55c5f1;
+  color: #7dd3fc;
+  background: rgba(85, 197, 241, 0.08);
+}
+
+[data-theme="dark"] .lm-modal-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .lm-label {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-input,
+[data-theme="dark"] .lm-select,
+[data-theme="dark"] .lm-textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .lm-input::placeholder,
+[data-theme="dark"] .lm-textarea::placeholder {
+  color: #64748b;
+}
+
+[data-theme="dark"] .lm-input:focus,
+[data-theme="dark"] .lm-select:focus,
+[data-theme="dark"] .lm-textarea:focus {
+  border-color: rgba(85, 197, 241, 0.7);
+  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.15);
 }
 
 /* ── Responsive ── */

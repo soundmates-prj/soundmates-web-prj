@@ -75,7 +75,7 @@ export default function PlaylistPage() {
     <div className="ops-page">
       <div className="ops-header">
         <div>
-          <h1 className="ops-title">Playlist Page</h1>
+          <h1 className="ops-title">Trang Playlist</h1>
           <p className="ops-subtitle">Tạo playlist, đồng bộ và truy cập trang chi tiết playlist</p>
         </div>
         <div className="ops-actions">
@@ -122,9 +122,9 @@ export default function PlaylistPage() {
               <thead>
                 <tr>
                   <th>Tên</th>
-                  <th>Tracks</th>
-                  <th>Duration</th>
-                  <th>Tạo lúc</th>
+                  <th>Bài hát</th>
+                  <th>Thời lượng</th>
+                  <th>Ngày tạo</th>
                   <th />
                 </tr>
               </thead>

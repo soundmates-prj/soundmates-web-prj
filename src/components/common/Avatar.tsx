@@ -28,7 +28,7 @@ const Avatar: React.FC<AvatarProps> = ({
 
     const getBackgroundColor = (name: string): string => {
         const colors = [
-            '#3b82f6', '#8b5cf6', '#ec4899', '#f97316',
+            '#3b82f6', '#1a9fd4', '#55c5f1', '#0ea5e9',
             '#22c55e', '#06b6d4', '#f59e0b', '#ef4444'
         ];
         let hash = 0;

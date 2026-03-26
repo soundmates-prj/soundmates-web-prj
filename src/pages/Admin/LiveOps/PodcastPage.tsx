@@ -40,7 +40,7 @@ export default function PodcastPage() {
     <div className="ops-page">
       <div className="ops-header">
         <div>
-          <h1 className="ops-title">Podcast Page</h1>
+          <h1 className="ops-title">Trang Podcast</h1>
           <p className="ops-subtitle">Tạo, sửa, xóa podcast theo API /api/v1/podcast</p>
         </div>
         <div className="ops-actions">
@@ -68,10 +68,10 @@ export default function PodcastPage() {
             <table className="ops-table">
               <thead>
                 <tr>
-                  <th>Title</th>
-                  <th>Author</th>
-                  <th>Status</th>
-                  <th>Episodes</th>
+                  <th>Tiêu đề</th>
+                  <th>Tác giả</th>
+                  <th>Trạng thái</th>
+                  <th>Tập</th>
                   <th />
                 </tr>
               </thead>
@@ -79,7 +79,7 @@ export default function PodcastPage() {
                 {podcasts.map((podcast) => (
                   <tr key={podcast.id}>
                     <td>{podcast.title}</td>
-                    <td>{podcast.author || "Unknown"}</td>
+                    <td>{podcast.author || "Không rõ"}</td>
                     <td>{podcast.status}</td>
                     <td>{podcast.episodeCount}</td>
                     <td>

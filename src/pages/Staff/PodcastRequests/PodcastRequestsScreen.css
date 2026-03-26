@@ -2,7 +2,42 @@
     max-width: 1600px;
 }
 
-.podcast-grid {
+/* ── Page Title (gradient header) ── */
+.requests-header {
+    margin-bottom: 32px;
+}
+
+.requests-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0c4a6e;
+    margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .requests-title {
+    background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 50%, #bae6fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+.requests-subtitle {
+    font-size: 16px;
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+[data-theme="dark"] .requests-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Stats ── */
+.requests-stats {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 20px;
@@ -39,7 +74,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--secondary-500), var(--primary-500));
+    background: linear-gradient(135deg, #1a9fd4, #55c5f1);
     color: #ffffff;
     border-radius: 12px;
 }
@@ -137,9 +172,9 @@
 }
 
 .preview-btn:hover {
-    background: var(--secondary-50);
-    border-color: var(--secondary-300);
-    color: var(--secondary-600);
+    background: rgba(85, 197, 241, 0.1);
+    border-color: rgba(85, 197, 241, 0.4);
+    color: #1a9fd4;
 }
 
 .preview-modal-overlay {
@@ -239,6 +274,24 @@
     color: #ffffff;
 }
 
+[data-theme="dark"] .podcast-meta {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="dark"] .podcast-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .preview-btn:hover {
+    background: rgba(85, 197, 241, 0.12);
+    border-color: rgba(85, 197, 241, 0.4);
+    color: #7dd3fc;
+}
+
+[data-theme="dark"] .preview-modal-overlay {
+    background: rgba(0, 0, 0, 0.7);
+}
+
 .audio-player {
     display: flex;
     flex-direction: column;
@@ -255,7 +308,7 @@
 }
 
 .audio-player svg {
-    color: var(--secondary-500);
+    color: #55c5f1;
 }
 
 .preview-modal-footer {

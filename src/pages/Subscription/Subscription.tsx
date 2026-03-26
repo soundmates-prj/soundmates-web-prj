@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../services/axios";
 import { showToast } from "../../utils/toast";
 import "./Subscription.css";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Plan {
   id?: string;
@@ -15,11 +15,18 @@ interface Plan {
   description: string;
 }
 
+type PaymentMethod = "VNPay" | "PayOS";
+
 export default function Subscription() {
   const navigate = useNavigate();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Payment method selector state
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [showMethodModal, setShowMethodModal] = useState(false);
+  const [processingMethod, setProcessingMethod] = useState<PaymentMethod | null>(null);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -45,24 +52,30 @@ export default function Subscription() {
     fetchPlans();
   }, []);
 
-  const handleSubscribe = async (plan: Plan) => {
-    // Nếu là gói free, redirect về trang đăng ký
+  const openPaymentMethodModal = (plan: Plan) => {
     if (plan.price === 0) {
       navigate("/register");
       return;
     }
+    setSelectedPlan(plan);
+    setShowMethodModal(true);
+  };
+
+  const handleSubscribe = async (plan: Plan, method: PaymentMethod) => {
+    setProcessingMethod(method);
+    setShowMethodModal(false);
 
     const toastId = showToast.loading("Đang xử lý thanh toán...");
     try {
       const response = await api.post("/payments", {
         targetType: "Subscription",
         targetId: plan.id ?? plan.planName,
-        method: "VNPay",
+        method: method,
         totalAmount: plan.price,
       });
 
       showToast.dismiss(toastId);
-      
+
       if (response.data && response.data.paymentUrl) {
         showToast.success("Đang chuyển hướng đến cổng thanh toán...");
         window.location.href = response.data.paymentUrl;
@@ -73,6 +86,9 @@ export default function Subscription() {
       showToast.dismiss(toastId);
       console.error("Payment error:", err);
       showToast.error(err.response?.data?.message || "Có lỗi xảy ra khi tạo thanh toán.");
+    } finally {
+      setProcessingMethod(null);
+      setSelectedPlan(null);
     }
   };
 
@@ -108,7 +124,7 @@ export default function Subscription() {
   return (
     <div className="subscription-page">
       {/* Page Title */}
-      <motion.div 
+      <motion.div
         className="subscription-header"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -122,7 +138,6 @@ export default function Subscription() {
       <div className="subscription-plans">
         {plans
           .sort((a, b) => {
-            // Sort: Free (0), Elite (2), Premium (1)
             const getOrder = (plan: Plan) => {
               const name = plan.planName.toLowerCase();
               if (name.includes("free") || plan.price === 0) return 0;
@@ -133,83 +148,173 @@ export default function Subscription() {
             return getOrder(a) - getOrder(b);
           })
           .map((plan, index) => {
-          const tierName = plan.planName.toLowerCase();
-          const isElite = tierName.includes("elite");
-          const isPremium = tierName.includes("premium");
-          const isCurrentPlan = false; // TODO: Fetch current user plan
-          
-          let cardClass = "free";
-          if (isElite) cardClass = "elite";
-          else if (isPremium) cardClass = "premium";
+            const tierName = plan.planName.toLowerCase();
+            const isElite = tierName.includes("elite");
+            const isPremium = tierName.includes("premium");
+            const isCurrentPlan = false;
 
-          return (
-            <motion.div
-              key={plan.id ?? `${plan.planName}-${index}`}
-              className={`subscription-card ${cardClass} ${
-                isCurrentPlan ? "current" : ""
-              }`}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.15 }}
-              whileHover={{ y: -10, transition: { duration: 0.2 } }}
-            >
-              {/* Most Popular Badge for Premium */}
-              {isElite && (
-                <div className="popular-badge">Elite</div>
-              )}
+            let cardClass = "free";
+            if (isElite) cardClass = "elite";
+            else if (isPremium) cardClass = "premium";
 
-              {/* Plan Header */}
-              <div className="plan-header">
-                <h2 className="plan-name">{plan.planName}</h2>
-                <div className="plan-pricing">
-                  {plan.price > 0 && <span className="currency">đ</span>}
-                  <span className="price">
-                    {plan.price === 0 ? "Miễn Phí" : plan.price.toLocaleString("vi-VN")}
-                  </span>
-                  {plan.price > 0 && plan.durationDays > 0 && (
-                    <span className="period">/{plan.durationDays} Ngày</span>
-                  )}
-                </div>
-                <p className="plan-description">{plan.description}</p>
-              </div>
-
-              {/* Subscribe Button */}
-              <motion.button 
-                className="plan-button" 
-                onClick={() => handleSubscribe(plan)}
-                disabled={isCurrentPlan}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+            return (
+              <motion.div
+                key={plan.id ?? `${plan.planName}-${index}`}
+                className={`subscription-card ${cardClass} ${isCurrentPlan ? "current" : ""
+                  }`}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.15 }}
+                whileHover={{ y: -10, transition: { duration: 0.2 } }}
               >
-                {isCurrentPlan ? "Đang sử dụng" : plan.price === 0 ? "Đăng ký" : "Mua Ngay"}
-              </motion.button>
+                {isElite && (
+                  <div className="popular-badge">Elite</div>
+                )}
 
-              {/* Features List */}
-              <div className="plan-features">
-                <h3 className="features-title">Đặc quyền:</h3>
-                <ul className="features-list">
-                  {getFeatures(plan).map((feature, idx) => (
-                    <li
-                      key={idx}
-                      dangerouslySetInnerHTML={{ __html: feature }}
-                    />
-                  ))}
-                </ul>
+                <div className="plan-header">
+                  <h2 className="plan-name">{plan.planName}</h2>
+                  <div className="plan-pricing">
+                    {plan.price > 0 && <span className="currency">đ</span>}
+                    <span className="price">
+                      {plan.price === 0 ? "Miễn Phí" : plan.price.toLocaleString("vi-VN")}
+                    </span>
+                    {plan.price > 0 && plan.durationDays > 0 && (
+                      <span className="period">/{plan.durationDays} Ngày</span>
+                    )}
+                  </div>
+                  <p className="plan-description">{plan.description}</p>
+                </div>
+
+                <motion.button
+                  className="plan-button"
+                  onClick={() => openPaymentMethodModal(plan)}
+                  disabled={isCurrentPlan || processingMethod !== null}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {isCurrentPlan
+                    ? "Đang sử dụng"
+                    : plan.price === 0
+                      ? "Đăng ký"
+                      : processingMethod !== null && selectedPlan?.id === plan.id
+                        ? "Đang xử lý..."
+                        : "Mua Ngay"}
+                </motion.button>
+
+                <div className="plan-features">
+                  <h3 className="features-title">Đặc quyền:</h3>
+                  <ul className="features-list">
+                    {getFeatures(plan).map((feature, idx) => (
+                      <li
+                        key={idx}
+                        dangerouslySetInnerHTML={{ __html: feature }}
+                      />
+                    ))}
+                  </ul>
+                </div>
+
+                {plan.price > 0 && (
+                  <p className="included-features">Đã bao gồm tất cả các tính năng miễn phí</p>
+                )}
+
+                {isCurrentPlan && (
+                  <div className="current-plan-badge">Gói hiện tại của bạn</div>
+                )}
+              </motion.div>
+            );
+          })}
+      </div>
+
+      {/* Payment Method Modal */}
+      <AnimatePresence>
+        {showMethodModal && selectedPlan && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setShowMethodModal(false);
+                setSelectedPlan(null);
+              }}
+            />
+
+            {/* Modal */}
+            <motion.div
+              className="payment-method-modal"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            >
+              <div className="modal-header">
+                <h3>Chọn phương thức thanh toán</h3>
+                <button
+                  className="modal-close"
+                  onClick={() => {
+                    setShowMethodModal(false);
+                    setSelectedPlan(null);
+                  }}
+                >
+                  &times;
+                </button>
               </div>
 
-              {/* Included Features Note */}
-              {plan.price > 0 && (
-                <p className="included-features">Đã bao gồm tất cả các tính năng miễn phí</p>
-              )}
+              <div className="modal-body">
+                <div className="modal-plan-info">
+                  <span className="modal-plan-name">{selectedPlan.planName}</span>
+                  <span className="modal-plan-price">
+                    {selectedPlan.price.toLocaleString("vi-VN")} đ
+                  </span>
+                </div>
 
-              {/* Current Plan Badge */}
-              {isCurrentPlan && (
-                <div className="current-plan-badge">Gói hiện tại của bạn</div>
-              )}
+                <div className="payment-methods">
+                  {/* VNPay */}
+                  <motion.button
+                    className="payment-method-btn"
+                    onClick={() => handleSubscribe(selectedPlan, "VNPay")}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="payment-method-icon vnpay">
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
+                      </svg>
+                    </div>
+                    <div className="payment-method-info">
+                      <span className="payment-method-name">VNPay</span>
+                      <span className="payment-method-desc">Thanh toán qua VNPay QR</span>
+                    </div>
+                    <div className="payment-method-arrow">›</div>
+                  </motion.button>
+
+                  {/* PayOS */}
+                  <motion.button
+                    className="payment-method-btn"
+                    onClick={() => handleSubscribe(selectedPlan, "PayOS")}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="payment-method-icon payos">
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+                        <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12z" />
+                        <path d="M7 10h2v4H7zm4-1h2v5h-2zm4 3h2v2h-2z" />
+                      </svg>
+                    </div>
+                    <div className="payment-method-info">
+                      <span className="payment-method-name">PayOS</span>
+                      <span className="payment-method-desc">Thanh toán qua PayOS - Ví điện tử</span>
+                    </div>
+                    <div className="payment-method-arrow">›</div>
+                  </motion.button>
+                </div>
+              </div>
             </motion.div>
-          );
-        })}
-      </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
