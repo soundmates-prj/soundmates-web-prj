@@ -5,7 +5,14 @@ import logoDark from "../../assets/dark_logo.png";
 import { useTheme } from "../../context/ThemeContext";
 import "./Header.css";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { UserCircle2, ChevronDown, Radio, Mic2, Calendar, Zap } from "lucide-react";
+import {
+  UserCircle2,
+  ChevronDown,
+  Radio,
+  Mic2,
+  Calendar,
+  Zap,
+} from "lucide-react";
 import { usePlayer } from "../../context/PlayerContext";
 import { showInfo } from "../common/toastUtils";
 import { validateImageUrl } from "../../utils/stringUtils";
@@ -52,7 +59,8 @@ const Header: React.FC = () => {
               const profileData = res.data.data;
               setUserInfo({
                 ...parsedUserInfo,
-                avatarUrl: validateImageUrl(profileData.profileImageUrl) || null,
+                avatarUrl:
+                  validateImageUrl(profileData.profileImageUrl) || null,
               });
             })
             .catch(() => {
@@ -91,10 +99,16 @@ const Header: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowDropdown(false);
       }
-      if (liveDropdownRef.current && !liveDropdownRef.current.contains(event.target as Node)) {
+      if (
+        liveDropdownRef.current &&
+        !liveDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowLiveDropdown(false);
       }
     };
@@ -130,12 +144,19 @@ const Header: React.FC = () => {
       <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
         <div className="header-container">
           <div className="header-left" onClick={() => navigate("/")}>
-            <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
+            <img
+              src={theme === "dark" ? logoDark : logoLight}
+              alt="SoundMates"
+            />
             <span className="header-brand">SoundMates</span>
           </div>
 
           <nav className="header-center">
-            <Link className={`nav-item${activeTab === "/" ? " active" : ""}`} to="/" onClick={() => setActiveTab("/")}>
+            <Link
+              className={`nav-item${activeTab === "/" ? " active" : ""}`}
+              to="/"
+              onClick={() => setActiveTab("/")}
+            >
               Trang Chủ
             </Link>
 
@@ -145,7 +166,10 @@ const Header: React.FC = () => {
                 onClick={() => setShowLiveDropdown((prev) => !prev)}
               >
                 Phiên Trực Tiếp
-                <ChevronDown size={14} className={`nav-chevron ${showLiveDropdown ? "open" : ""}`} />
+                <ChevronDown
+                  size={14}
+                  className={`nav-chevron ${showLiveDropdown ? "open" : ""}`}
+                />
               </button>
 
               {showLiveDropdown && (
@@ -186,7 +210,15 @@ const Header: React.FC = () => {
                       <span>Concert, showcase đang diễn ra</span>
                     </div>
                   </a>
-                  <a className="nav-live-item" href="#">
+                  <a
+                    className="nav-live-item"
+                    href="/schedule-public"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowLiveDropdown(false);
+                      navigate("/schedule-public");
+                    }}
+                  >
                     <span className="nav-live-icon">
                       <Calendar size={16} />
                     </span>
@@ -209,16 +241,13 @@ const Header: React.FC = () => {
             >
               Podcast
             </a>
-            <a
-              className={`nav-item${activeTab === "forum" ? " active" : ""}`}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveTab("forum");
-              }}
+            <Link
+              className={`nav-item${activeTab === "/forum" ? " active" : ""}`}
+              to="/forum"
+              onClick={() => setActiveTab("/forum")}
             >
               Diễn Đàn
-            </a>
+            </Link>
             <Link
               className={`nav-item${activeTab === "/subscription" ? " active" : ""}`}
               to="/subscription"
@@ -240,12 +269,22 @@ const Header: React.FC = () => {
                 <NotificationButton />
 
                 <div className="avatar-container" ref={dropdownRef}>
-                  <div className="avatar" onClick={() => setShowDropdown((prev) => !prev)}>
+                  <div
+                    className="avatar"
+                    onClick={() => setShowDropdown((prev) => !prev)}
+                  >
                     {validateImageUrl(userInfo?.avatarUrl) ? (
-                      <img src={validateImageUrl(userInfo?.avatarUrl)!} alt="User avatar" />
+                      <img
+                        src={validateImageUrl(userInfo?.avatarUrl)!}
+                        alt="User avatar"
+                      />
                     ) : (
                       <div className="avatar-default">
-                        <UserCircle2 size={40} color="#55C5F1" strokeWidth={1.5} />
+                        <UserCircle2
+                          size={40}
+                          color="#55C5F1"
+                          strokeWidth={1.5}
+                        />
                       </div>
                     )}
                   </div>
@@ -255,9 +294,16 @@ const Header: React.FC = () => {
                       <div className="avatar-dropdown-user">
                         <div className="avatar-dropdown-avatar">
                           {validateImageUrl(userInfo?.avatarUrl) ? (
-                            <img src={validateImageUrl(userInfo?.avatarUrl)!} alt="avatar" />
+                            <img
+                              src={validateImageUrl(userInfo?.avatarUrl)!}
+                              alt="avatar"
+                            />
                           ) : (
-                            <UserCircle2 size={32} color="#55C5F1" strokeWidth={1.5} />
+                            <UserCircle2
+                              size={32}
+                              color="#55C5F1"
+                              strokeWidth={1.5}
+                            />
                           )}
                         </div>
                         <div>
@@ -266,7 +312,9 @@ const Header: React.FC = () => {
                               ? `${userInfo.firstName} ${userInfo.lastName}`
                               : userInfo?.username || "Người dùng"}
                           </p>
-                          <p className="avatar-dropdown-email">{userInfo?.email || ""}</p>
+                          <p className="avatar-dropdown-email">
+                            {userInfo?.email || ""}
+                          </p>
                         </div>
                       </div>
 
@@ -299,7 +347,10 @@ const Header: React.FC = () => {
 
                       <div className="avatar-dropdown-divider" />
 
-                      <button className="dropdown-item logout" onClick={handleLogout}>
+                      <button
+                        className="dropdown-item logout"
+                        onClick={handleLogout}
+                      >
                         <Icon name="logout" size={18} />
                         <span>Đăng xuất</span>
                       </button>
