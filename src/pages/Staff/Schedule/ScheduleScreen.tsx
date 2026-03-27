@@ -10,6 +10,9 @@ import {
   CalendarDays,
   Disc3,
   Pencil,
+  Repeat,
+  Search,
+  Filter,
 } from "lucide-react";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import type {
@@ -18,6 +21,20 @@ import type {
 } from "../../../services/liveSessionApiService";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
 import "./ScheduleScreen.css";
+
+// DaysOfWeek flags enum — must match backend LiveSessionService.Domain.Enums.DaysOfWeek
+const DAYS_OF_WEEK = [
+  { label: "T2", value: 1, day: 1 },
+  { label: "T3", value: 2, day: 2 },
+  { label: "T4", value: 4, day: 3 },
+  { label: "T5", value: 8, day: 4 },
+  { label: "T6", value: 16, day: 5 },
+  { label: "T7", value: 32, day: 6 },
+  { label: "CN", value: 64, day: 0 },
+] as const;
+
+const toDaysOfWeekFlags = (selected: number[]) =>
+  selected.reduce((acc, v) => acc | v, 0);
 
 export function ScheduleScreen() {
   // ── Data ──
@@ -29,30 +46,37 @@ export function ScheduleScreen() {
   const [showModal, setShowModal] = useState(false);
   const [formSessionId, setFormSessionId] = useState("");
   const [formTitle, setFormTitle] = useState("");
-  const [formDate, setFormDate] = useState("");
-  const [formStartTime, setFormStartTime] = useState("");
-  const [formEndTime, setFormEndTime] = useState("");
+  const [formDate, setFormDate] = useState(""); // "yyyy-MM-dd"
+  const [formStartTime, setFormStartTime] = useState(""); // "HH:mm"
+  const [formEndTime, setFormEndTime] = useState(""); // "HH:mm"
+  const [formIsRecurring, setFormIsRecurring] = useState(false);
+  const [formDaysOfWeek, setFormDaysOfWeek] = useState<number[]>([]);
   const [creating, setCreating] = useState(false);
 
   // ── Edit modal ──
-  const [editTarget, setEditTarget] = useState<SessionScheduleResult | null>(
-    null,
-  );
+  const [editTarget, setEditTarget] = useState<SessionScheduleResult | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editStartTime, setEditStartTime] = useState("");
   const [editEndTime, setEditEndTime] = useState("");
+  const [editIsRecurring, setEditIsRecurring] = useState(false);
+  const [editDaysOfWeek, setEditDaysOfWeek] = useState<number[]>([]);
   const [updating, setUpdating] = useState(false);
 
   // ── Delete ──
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  /* ── Load all ── */
+  // ── Filters ──
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterSessionId, setFilterSessionId] = useState("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "upcoming" | "live" | "ended">("all");
+
+  /* ── Load schedules ── */
   useEffect(() => {
-    loadAll();
+    loadSchedules();
   }, []);
 
-  const loadAll = async () => {
+  const loadSchedules = async () => {
     setLoading(true);
     try {
       const [sessionsRes, schedulesRes] = await Promise.allSettled([
@@ -64,43 +88,49 @@ export function ScheduleScreen() {
         setSessions(list);
         if (list.length > 0) setFormSessionId(list[0].id);
       }
-      if (schedulesRes.status === "fulfilled") setSchedules(schedulesRes.value);
+      if (schedulesRes.status === "fulfilled") {
+        setSchedules(schedulesRes.value);
+      }
     } catch {
-      showError("Lỗi", "Không thể tải dữ liệu");
+      showError("Lỗi", "Không thể tải dữ liệu lịch");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const reloadSchedules = async () => {
-    try {
-      const data = await liveSessionApiService.getSchedules();
-      setSchedules(data);
-    } catch {
-      showError("Lỗi", "Không thể làm mới lịch");
     }
   };
 
   /* ── POST: Create ── */
   const handleCreate = async () => {
     if (!formSessionId || !formDate || !formStartTime || !formEndTime) return;
-    const startTime = new Date(`${formDate}T${formStartTime}:00`).toISOString();
-    const endTime = new Date(`${formDate}T${formEndTime}:00`).toISOString();
-    if (new Date(endTime) <= new Date(startTime)) {
+
+    // Backend expects: startTime "HH:mm:ss", startDate "yyyy-MM-dd"
+    const startTime = `${formStartTime}:00`;
+    const endTime = `${formEndTime}:00`;
+
+    if (formStartTime >= formEndTime) {
       showError("Lỗi", "Giờ kết thúc phải sau giờ bắt đầu");
       return;
     }
+
+    if (formIsRecurring && formDaysOfWeek.length === 0) {
+      showError("Lỗi", "Vui lòng chọn ít nhất một ngày trong tuần");
+      return;
+    }
+
     setCreating(true);
     try {
       await liveSessionApiService.createSchedule(formSessionId, {
+        startDate: formDate,
+        endDate: undefined,
         startTime,
         endTime,
         title: formTitle.trim() || undefined,
+        isRecurring: formIsRecurring,
+        daysOfWeek: toDaysOfWeekFlags(formDaysOfWeek),
       });
       showSuccess("Tạo thành công!", "Lịch phát sóng đã được tạo");
       setShowModal(false);
       resetCreateForm();
-      await reloadSchedules();
+      await loadSchedules();
     } catch (err: any) {
       showError("Lỗi", err?.response?.data?.message || "Không thể tạo lịch");
     } finally {
@@ -111,41 +141,55 @@ export function ScheduleScreen() {
   /* ── PUT: Open edit modal ── */
   const openEdit = (sch: SessionScheduleResult) => {
     setEditTarget(sch);
-    const start = new Date(sch.startTime);
-    const end = new Date(sch.endTime);
     setEditTitle(sch.title || "");
-    setEditDate(start.toISOString().slice(0, 10));
-    setEditStartTime(
-      `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
-    );
-    setEditEndTime(
-      `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
-    );
+
+    // Backend returns DateOnly "yyyy-MM-dd" and TimeOnly "HH:mm:ss"
+    setEditDate(sch.startDate);
+    // TimeOnly "HH:mm:ss" → display as "HH:mm"
+    setEditStartTime(sch.startTime.substring(0, 5));
+    setEditEndTime(sch.endTime.substring(0, 5));
+
+    setEditIsRecurring(sch.isRecurring);
+    // Parse DaysOfWeek flags
+    const selected: number[] = [];
+    for (const d of DAYS_OF_WEEK) {
+      if ((sch.daysOfWeek & d.value) !== 0) selected.push(d.value);
+    }
+    setEditDaysOfWeek(selected);
   };
 
   const handleUpdate = async () => {
     if (!editTarget || !editDate || !editStartTime || !editEndTime) return;
-    const startTime = new Date(`${editDate}T${editStartTime}:00`).toISOString();
-    const endTime = new Date(`${editDate}T${editEndTime}:00`).toISOString();
-    if (new Date(endTime) <= new Date(startTime)) {
+
+    const startTime = `${editStartTime}:00`;
+    const endTime = `${editEndTime}:00`;
+
+    if (editStartTime >= editEndTime) {
       showError("Lỗi", "Giờ kết thúc phải sau giờ bắt đầu");
       return;
     }
+
+    if (editIsRecurring && editDaysOfWeek.length === 0) {
+      showError("Lỗi", "Vui lòng chọn ít nhất một ngày trong tuần");
+      return;
+    }
+
     setUpdating(true);
     try {
       await liveSessionApiService.updateSchedule(editTarget.id, {
+        startDate: editDate,
+        endDate: undefined,
         startTime,
         endTime,
         title: editTitle.trim() || undefined,
+        isRecurring: editIsRecurring,
+        daysOfWeek: toDaysOfWeekFlags(editDaysOfWeek),
       });
       showSuccess("Cập nhật thành công!", "Lịch đã được cập nhật");
       setEditTarget(null);
-      await reloadSchedules();
+      await loadSchedules();
     } catch (err: any) {
-      showError(
-        "Lỗi",
-        err?.response?.data?.message || "Không thể cập nhật lịch",
-      );
+      showError("Lỗi", err?.response?.data?.message || "Không thể cập nhật lịch");
     } finally {
       setUpdating(false);
     }
@@ -174,58 +218,93 @@ export function ScheduleScreen() {
     setFormDate("");
     setFormStartTime("");
     setFormEndTime("");
-    setFormSessionId(sessions[0]?.id || "");
+    setFormIsRecurring(false);
+    setFormDaysOfWeek([]);
   };
 
-  const getSessionName = (id: string) =>
-    sessions.find((s) => s.id === id)?.sessionName ?? "—";
+  // formatTime: backend sends TimeOnly "HH:mm:ss" → display "HH:mm"
+  const formatTime = (timeOnly: string) =>
+    timeOnly.substring(0, 5);
 
-  const getSessionStation = (id: string) =>
-    sessions.find((s) => s.id === id)?.stationName ?? null;
-
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-  const formatDateLabel = (iso: string) =>
-    new Date(iso).toLocaleDateString("vi-VN", {
-      weekday: "long",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+  // formatDateLabel: backend sends DateOnly "yyyy-MM-dd" → "Thứ X, dd/MM/yyyy"
+  const formatDateLabel = (dateOnly: string) => {
+    const d = new Date(dateOnly + "T00:00:00");
+    const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+    return `${weekdays[d.getDay()]}, ${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  };
 
   const todayDate = new Date().toISOString().slice(0, 10);
 
-  const grouped = schedules.reduce<Record<string, SessionScheduleResult[]>>(
+  const getScheduleDateTime = (s: SessionScheduleResult, isEnd = false) =>
+    new Date(`${s.startDate}T${isEnd ? s.endTime : s.startTime}`);
+
+  const getScheduleStatus = (s: SessionScheduleResult): "upcoming" | "live" | "ended" => {
+    const now = new Date();
+    const start = getScheduleDateTime(s);
+    const end = getScheduleDateTime(s, true);
+    if (start <= now && now <= end) return "live";
+    if (start > now) return "upcoming";
+    return "ended";
+  };
+
+  const filteredSchedules = schedules.filter((s) => {
+    const matchSearch =
+      searchTerm.trim() === "" ||
+      `${s.title || ""} ${s.liveSession?.sessionName || ""} ${s.liveSession?.station?.stationName || ""}`
+        .toLowerCase()
+        .includes(searchTerm.trim().toLowerCase());
+
+    const matchSession =
+      filterSessionId === "all" || s.liveSessionId === filterSessionId;
+
+    const matchStatus =
+      filterStatus === "all" || getScheduleStatus(s) === filterStatus;
+
+    return matchSearch && matchSession && matchStatus;
+  });
+
+  // Group by startDate (DateOnly string)
+  const grouped = filteredSchedules.reduce<Record<string, SessionScheduleResult[]>>(
     (acc, s) => {
-      const day = new Date(s.startTime).toDateString();
-      if (!acc[day]) acc[day] = [];
-      acc[day].push(s);
+      if (!acc[s.startDate]) acc[s.startDate] = [];
+      acc[s.startDate].push(s);
       return acc;
     },
     {},
   );
 
-  const sortedDays = Object.keys(grouped).sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime(),
+  const totalLive = schedules.filter((s) => getScheduleStatus(s) === "live").length;
+  const totalUpcoming = schedules.filter((s) => getScheduleStatus(s) === "upcoming").length;
+  const totalEnded = schedules.filter((s) => getScheduleStatus(s) === "ended").length;
+
+  const sortedDays = Object.keys(grouped).sort((a, b) =>
+    a.localeCompare(b),
   );
 
-  /* ── Render ── */
+  const toggleDay = (
+    current: number[],
+    value: number,
+    setter: (v: number[]) => void,
+  ) => {
+    setter(
+      current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value],
+    );
+  };
+
   return (
     <div className="sc-page">
       {/* Header */}
       <div className="sc-header">
         <div className="sc-header-left">
           <h1>Lịch phát sóng</h1>
-          <p>Tổng hợp lịch trình tất cả các phiên live</p>
+          <p>Quản lý lịch trình tất cả các phiên phát sóng</p>
         </div>
         <div className="sc-header-actions">
           <button
             className="sc-btn sc-btn--outline"
-            onClick={loadAll}
+            onClick={loadSchedules}
             disabled={loading}
           >
             <RefreshCw size={15} className={loading ? "sc-spin" : ""} />
@@ -242,27 +321,83 @@ export function ScheduleScreen() {
         </div>
       </div>
 
+      {/* Summary + Filters */}
+      {/* Summary + Filters */}
+      <div className="sc-summary-row">
+        <div className="sc-summary-card">
+          <span className="sc-summary-label">Tổng lịch</span>
+          <span className="sc-summary-value">{schedules.length}</span>
+        </div>
+        <div className="sc-summary-card sc-summary-card--live">
+          <span className="sc-summary-label">Đang diễn ra</span>
+          <span className="sc-summary-value">{totalLive}</span>
+        </div>
+        <div className="sc-summary-card">
+          <span className="sc-summary-label">Sắp diễn ra</span>
+          <span className="sc-summary-value">{totalUpcoming}</span>
+        </div>
+        <div className="sc-summary-card sc-summary-card--muted">
+          <span className="sc-summary-label">Đã kết thúc</span>
+          <span className="sc-summary-value">{totalEnded}</span>
+        </div>
+      </div>
+
+      <div className="sc-filter-bar">
+        <div className="sc-filter-search">
+          <Search size={14} />
+          <input
+            className="sc-input"
+            placeholder="Tìm theo tiêu đề, phiên, station..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="sc-filter-controls">
+          <div className="sc-filter-item">
+            <Filter size={13} />
+            <select
+              className="sc-select"
+              value={filterSessionId}
+              onChange={(e) => setFilterSessionId(e.target.value)}
+            >
+              <option value="all">Tất cả phiên</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.sessionName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sc-filter-item">
+            <select
+              className="sc-select"
+              value={filterStatus}
+              onChange={(e) =>
+                setFilterStatus(e.target.value as "all" | "upcoming" | "live" | "ended")
+              }
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="live">Đang diễn ra</option>
+              <option value="upcoming">Sắp diễn ra</option>
+              <option value="ended">Đã kết thúc</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Body */}
       {loading ? (
         <div className="sc-loading">
           <RefreshCw size={26} className="sc-spin" />
           <p>Đang tải...</p>
         </div>
-      ) : sessions.length === 0 ? (
-        <div className="sc-empty">
-          <CalendarDays size={48} />
-          <p>Chưa có phiên phát sóng nào. Hãy tạo phiên trước.</p>
-        </div>
       ) : sortedDays.length === 0 ? (
         <div className="sc-empty">
           <CalendarDays size={48} />
-          <p>Chưa có lịch phát sóng nào</p>
-          <button
-            className="sc-btn sc-btn--primary"
-            onClick={() => setShowModal(true)}
-          >
-            <Plus size={14} /> Tạo lịch đầu tiên
-          </button>
+          <h3>Không có lịch phù hợp</h3>
+          <p>Thử đổi bộ lọc hoặc từ khóa tìm kiếm</p>
         </div>
       ) : (
         <div className="sc-timeline">
@@ -270,19 +405,17 @@ export function ScheduleScreen() {
             <div key={day} className="sc-day-group">
               <div className="sc-day-label">
                 <Calendar size={14} />
-                <span>{formatDateLabel(grouped[day][0].startTime)}</span>
+                <span>{formatDateLabel(day)}</span>
                 <span className="sc-day-count">{grouped[day].length} lịch</span>
               </div>
 
               <div className="sc-items">
                 {[...grouped[day]]
-                  .sort(
-                    (a, b) =>
-                      new Date(a.startTime).getTime() -
-                      new Date(b.startTime).getTime(),
-                  )
-                  .map((sch) => (
-                    <div className="sc-item" key={sch.id}>
+                  .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                  .map((sch) => {
+                    const status = getScheduleStatus(sch);
+                    return (
+                    <div className={`sc-item sc-item--${status}`} key={sch.id}>
                       <div className="sc-item-time">
                         <span className="sc-time-start">
                           {formatTime(sch.startTime)}
@@ -295,9 +428,16 @@ export function ScheduleScreen() {
 
                       <div className="sc-item-body">
                         <div className="sc-item-top">
-                          <h4 className="sc-item-title">
-                            {sch.title || getSessionName(sch.liveSessionId)}
-                          </h4>
+                          <div className="sc-item-title-wrap">
+                            <h4 className="sc-item-title">
+                              {sch.title ||
+                                sch.liveSession?.sessionName ||
+                                "Phiên phát sóng"}
+                            </h4>
+                            <span className={`sc-status-badge sc-status-badge--${status}`}>
+                              {status === "live" ? "Đang diễn ra" : status === "upcoming" ? "Sắp diễn ra" : "Đã kết thúc"}
+                            </span>
+                          </div>
                           <div className="sc-item-actions">
                             <button
                               className="sc-action-btn sc-action-btn--edit"
@@ -322,25 +462,33 @@ export function ScheduleScreen() {
                         </div>
 
                         <div className="sc-item-meta">
-                          <span className="sc-meta-chip sc-meta-chip--session">
-                            <Disc3 size={12} />
-                            {getSessionName(sch.liveSessionId)}
-                          </span>
-                          {getSessionStation(sch.liveSessionId) && (
+                          {sch.liveSession?.sessionName && (
+                            <span className="sc-meta-chip sc-meta-chip--session">
+                              <Disc3 size={12} />
+                              {sch.liveSession.sessionName}
+                            </span>
+                          )}
+                          {sch.liveSession?.station?.stationName && (
                             <span className="sc-meta-chip">
                               <Radio size={12} />
-                              {getSessionStation(sch.liveSessionId)}
+                              {sch.liveSession.station.stationName}
                             </span>
                           )}
                           <span className="sc-meta-chip">
                             <Clock size={12} />
-                            {formatTime(sch.startTime)} –{" "}
-                            {formatTime(sch.endTime)}
+                            {formatTime(sch.startTime)} – {formatTime(sch.endTime)}
                           </span>
+                          {sch.isRecurring && (
+                            <span className="sc-meta-chip sc-meta-chip--recurring">
+                              <Repeat size={12} />
+                              Lặp lại
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
               </div>
             </div>
           ))}
@@ -356,10 +504,7 @@ export function ScheduleScreen() {
                 <CalendarDays size={20} />
                 <h3>Tạo lịch phát sóng</h3>
               </div>
-              <button
-                className="sc-modal-close"
-                onClick={() => setShowModal(false)}
-              >
+              <button className="sc-modal-close" onClick={() => setShowModal(false)}>
                 <X size={18} />
               </button>
             </div>
@@ -382,17 +527,6 @@ export function ScheduleScreen() {
                       </option>
                     ))}
                 </select>
-              </div>
-
-              <div className="sc-field">
-                <label className="sc-label">Tiêu đề lịch (tuỳ chọn)</label>
-                <input
-                  className="sc-input"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="VD: Buổi sáng thứ 2..."
-                  autoFocus
-                />
               </div>
 
               <div className="sc-field">
@@ -426,6 +560,49 @@ export function ScheduleScreen() {
                   />
                 </div>
               </div>
+
+              <div className="sc-field">
+                <label className="sc-label">Tiêu đề lịch (tuỳ chọn)</label>
+                <input
+                  className="sc-input"
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  placeholder="VD: Buổi sáng thứ 2..."
+                  autoFocus
+                />
+              </div>
+
+              <div className="sc-field">
+                <label className="sc-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={formIsRecurring}
+                    onChange={(e) => setFormIsRecurring(e.target.checked)}
+                  />
+                  <Repeat size={14} />
+                  <span>Lặp lại hàng tuần</span>
+                </label>
+              </div>
+
+              {formIsRecurring && (
+                <div className="sc-field">
+                  <label className="sc-label">Ngày trong tuần</label>
+                  <div className="sc-days-grid">
+                    {DAYS_OF_WEEK.map((d) => (
+                      <button
+                        key={d.value}
+                        type="button"
+                        className={`sc-day-btn ${formDaysOfWeek.includes(d.value) ? "active" : ""}`}
+                        onClick={() =>
+                          toggleDay(formDaysOfWeek, d.value, setFormDaysOfWeek)
+                        }
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="sc-modal-footer">
@@ -440,21 +617,13 @@ export function ScheduleScreen() {
                 className="sc-btn sc-btn--primary"
                 onClick={handleCreate}
                 disabled={
-                  !formSessionId ||
-                  !formDate ||
-                  !formStartTime ||
-                  !formEndTime ||
-                  creating
+                  !formDate || !formStartTime || !formEndTime || creating
                 }
               >
                 {creating ? (
-                  <>
-                    <RefreshCw size={14} className="sc-spin" /> Đang tạo...
-                  </>
+                  <><RefreshCw size={14} className="sc-spin" /> Đang tạo...</>
                 ) : (
-                  <>
-                    <Disc3 size={14} /> Tạo lịch
-                  </>
+                  <><Disc3 size={14} /> Tạo lịch</>
                 )}
               </button>
             </div>
@@ -481,7 +650,7 @@ export function ScheduleScreen() {
 
             <div className="sc-modal-body">
               <div className="sc-field">
-                <label className="sc-label">Tiêu đề lịch (tuỳ chọn)</label>
+                <label className="sc-label">Tiêu đề lịch</label>
                 <input
                   className="sc-input"
                   value={editTitle}
@@ -497,6 +666,7 @@ export function ScheduleScreen() {
                   className="sc-input"
                   type="date"
                   value={editDate}
+                  min={todayDate}
                   onChange={(e) => setEditDate(e.target.value)}
                 />
               </div>
@@ -521,6 +691,39 @@ export function ScheduleScreen() {
                   />
                 </div>
               </div>
+
+              {/* Recurring toggle */}
+              <div className="sc-field">
+                <label className="sc-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={editIsRecurring}
+                    onChange={(e) => setEditIsRecurring(e.target.checked)}
+                  />
+                  <Repeat size={14} />
+                  <span>Lặp lại hàng tuần</span>
+                </label>
+              </div>
+
+              {editIsRecurring && (
+                <div className="sc-field">
+                  <label className="sc-label">Ngày trong tuần</label>
+                  <div className="sc-days-grid">
+                    {DAYS_OF_WEEK.map((d) => (
+                      <button
+                        key={d.value}
+                        type="button"
+                        className={`sc-day-btn ${editDaysOfWeek.includes(d.value) ? "active" : ""}`}
+                        onClick={() =>
+                          toggleDay(editDaysOfWeek, d.value, setEditDaysOfWeek)
+                        }
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="sc-modal-footer">

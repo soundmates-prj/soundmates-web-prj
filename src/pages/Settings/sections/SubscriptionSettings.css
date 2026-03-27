@@ -241,6 +241,34 @@
   line-height: 1.6;
 }
 
+.sub-features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.sub-feature-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+}
+
+.sub-feature-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.sub-feature-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 .sub-card-footer {
   padding: 24px 32px;
   background: var(--bg-secondary);

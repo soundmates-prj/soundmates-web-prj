@@ -201,7 +201,7 @@ export default function MusicCatalogPage() {
       <div className="ops-header">
         <div>
           <h1 className="ops-title">Kho Nhạc Hệ Thống</h1>
-          <p className="ops-subtitle">Admin quản lý System Media (kho nhạc hệ thống), không gắn trực tiếp station</p>
+          <p className="ops-subtitle">Quản lý System Media (kho nhạc hệ thống)</p>
         </div>
         <div className="ops-actions">
           <button className="ops-btn ops-btn--ghost" onClick={handleRefreshClick}>
