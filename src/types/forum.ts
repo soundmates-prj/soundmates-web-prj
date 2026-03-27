@@ -15,6 +15,7 @@ export interface ShareMusicData {
 
 /** Item trả về từ GET /api/v1/posts/published */
 export interface PublishedPost {
+  reactionCount: number;
   id: string;
   userId: string;
   /** Tên đầy đủ của tác giả — đã có sẵn trong response */

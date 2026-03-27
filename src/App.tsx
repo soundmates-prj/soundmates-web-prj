@@ -41,7 +41,7 @@ import PodcastPage from "./pages/Admin/LiveOps/PodcastPage";
 import PodcastEditor from "./pages/Admin/LiveOps/PodcastEditor";
 import { PodcastCreatorPage } from "./pages/PodcastCreator/PodcastCreatorPage";
 import ForumPage from "./pages/Forum/ForumPage";
-import SchedulePublicPage from "./pages/SchedulePublic/Schedulepublicpage";
+import SchedulePublicPage from "./pages/SchedulePublic/SchedulePublicPage";
 import TransactionsPage from "./pages/Admin/LiveOps/TransactionsPage";
 
 function App() {

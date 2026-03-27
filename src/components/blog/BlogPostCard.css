@@ -168,6 +168,7 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: flex-end;
 }
 
 .post-btn {
