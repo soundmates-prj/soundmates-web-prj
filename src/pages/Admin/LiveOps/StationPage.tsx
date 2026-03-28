@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, RefreshCw, Radio, TowerControl, Waves } from "lucide-react";
+import { ExternalLink, RefreshCw, Radio, TowerControl, Waves, Plus, X } from "lucide-react";
 import { liveSessionApiService, type StationResult } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import "./LiveOps.css";
@@ -7,14 +7,44 @@ import "./LiveOps.css";
 export default function StationPage() {
   const [stations, setStations] = useState<StationResult[]>([]);
   const [nowPlayingMap, setNowPlayingMap] = useState<Record<string, string>>({});
+  const [stationStatusMap, setStationStatusMap] = useState<Record<string, "active" | "idle" | "error">>({});
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newStation, setNewStation] = useState({
+    stationName: "",
+    description: "",
+    shortCode: "",
+  });
 
   const loadStations = async () => {
     setLoading(true);
     try {
       const data = await liveSessionApiService.getStations();
       setStations(data);
+
+      // Fetch now-playing for each station to check activity
+      const statusMap: Record<string, "active" | "idle" | "error"> = {};
+      await Promise.all(
+        data.map(async (station) => {
+          try {
+            const np = await liveSessionApiService.getStationNowPlaying(station.id);
+            // Station has active now-playing track → active
+            const title = np?.currentTrack?.title || np?.song?.title;
+            if (title) {
+              setNowPlayingMap((prev) => ({ ...prev, [station.id]: title }));
+              statusMap[station.id] = "active";
+            } else {
+              // Station has no playlist / no tracks → idle (not an error)
+              statusMap[station.id] = "idle";
+            }
+          } catch {
+            statusMap[station.id] = "error";
+          }
+        })
+      );
+      setStationStatusMap(statusMap);
     } catch {
       showError("Lỗi", "Không thể tải danh sách station");
     } finally {
@@ -42,10 +72,42 @@ export default function StationPage() {
   const loadNowPlaying = async (stationId: string) => {
     try {
       const data = await liveSessionApiService.getStationNowPlaying(stationId);
-      const title = data?.nowPlaying?.song?.title || data?.song?.title || "Không có bài đang phát";
-      setNowPlayingMap((prev) => ({ ...prev, [stationId]: title }));
+      const title = data?.currentTrack?.title || data?.song?.title;
+      if (title) {
+        setNowPlayingMap((prev) => ({ ...prev, [stationId]: title }));
+        setStationStatusMap((prev) => ({ ...prev, [stationId]: "active" }));
+      } else {
+        setStationStatusMap((prev) => ({ ...prev, [stationId]: "idle" }));
+        showError("Station chưa có playlist", "Station này chưa có track nào trong playlist.");
+      }
     } catch {
+      setStationStatusMap((prev) => ({ ...prev, [stationId]: "error" }));
       showError("Không lấy được now playing", "Kiểm tra lại cấu hình station");
+    }
+  };
+
+  const handleCreateStation = async () => {
+    if (!newStation.stationName.trim()) {
+      showError("Lỗi", "Vui lòng nhập tên station");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      await liveSessionApiService.createStation({
+        stationName: newStation.stationName.trim(),
+        description: newStation.description.trim() || undefined,
+        shortCode: newStation.shortCode.trim() || undefined,
+      });
+      showSuccess("Tạo thành công", `Station "${newStation.stationName.trim()}" đã được tạo`);
+      setShowCreateModal(false);
+      setNewStation({ stationName: "", description: "", shortCode: "" });
+      await loadStations();
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { message?: string } }; message?: string };
+      showError("Tạo station thất bại", errObj?.response?.data?.message || errObj?.message || "Không thể tạo station");
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -60,6 +122,10 @@ export default function StationPage() {
           <button className="ops-btn ops-btn--ghost" onClick={loadStations} disabled={loading}>
             <RefreshCw size={15} className={loading ? "staff-spin" : ""} />
             Làm mới
+          </button>
+          <button className="ops-btn ops-btn--ghost" onClick={() => setShowCreateModal(true)}>
+            <Plus size={15} />
+            Tạo Station
           </button>
           <button className="ops-btn ops-btn--primary" onClick={handleSync} disabled={syncing}>
             <TowerControl size={15} />
@@ -95,7 +161,22 @@ export default function StationPage() {
                 </div>
                 <div className="ops-inline-row">
                   <span style={{ fontWeight: 600 }}>Now playing:</span>
-                  <span>{nowPlayingMap[station.id] || "Chưa tải"}</span>
+                  <span>{nowPlayingMap[station.id] || "—"}</span>
+                  {stationStatusMap[station.id] === "active" && (
+                    <span className="ops-badge ops-badge--good" style={{ padding: "2px 6px", fontSize: 10 }}>
+                      Hoạt động
+                    </span>
+                  )}
+                  {stationStatusMap[station.id] === "idle" && (
+                    <span className="ops-badge ops-badge--warn" style={{ padding: "2px 6px", fontSize: 10 }}>
+                      Chưa có playlist
+                    </span>
+                  )}
+                  {stationStatusMap[station.id] === "error" && (
+                    <span className="ops-badge ops-badge--danger" style={{ padding: "2px 6px", fontSize: 10 }}>
+                      Lỗi
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="ops-actions" style={{ marginTop: 12 }}>
@@ -116,6 +197,86 @@ export default function StationPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {showCreateModal && (
+        <div className="ops-modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="ops-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ops-modal-head ops-inline-row" style={{ justifyContent: "space-between" }}>
+              <h3 className="ops-card-title" style={{ margin: 0 }}>Tạo Station mới</h3>
+              <button
+                type="button"
+                className="ops-btn ops-btn--ghost"
+                onClick={() => setShowCreateModal(false)}
+              >
+                <X size={14} />
+                Đóng
+              </button>
+            </div>
+
+            <div className="ops-modal-body ops-stack">
+              <div className="ops-stack" style={{ gap: 6 }}>
+                <label htmlFor="station-name" style={{ fontWeight: 600, fontSize: 13 }}>Tên station *</label>
+                <input
+                  id="station-name"
+                  className="ops-input"
+                  value={newStation.stationName}
+                  onChange={(e) => setNewStation((prev) => ({ ...prev, stationName: e.target.value }))}
+                  placeholder="Nhập tên station"
+                  autoFocus
+                />
+              </div>
+
+              <div className="ops-stack" style={{ gap: 6 }}>
+                <label htmlFor="station-shortcode" style={{ fontWeight: 600, fontSize: 13 }}>Short code</label>
+                <input
+                  id="station-shortcode"
+                  className="ops-input"
+                  value={newStation.shortCode}
+                  onChange={(e) => setNewStation((prev) => ({ ...prev, shortCode: e.target.value }))}
+                  placeholder="vd: jazz-fm"
+                />
+                <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
+                  Chỉ dùng chữ thường, số, gạch ngang và gạch dưới.
+                </span>
+              </div>
+
+              <div className="ops-stack" style={{ gap: 6 }}>
+                <label htmlFor="station-description" style={{ fontWeight: 600, fontSize: 13 }}>Mô tả</label>
+                <textarea
+                  id="station-description"
+                  className="ops-textarea"
+                  value={newStation.description}
+                  onChange={(e) => setNewStation((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Mô tả ngắn về station"
+                />
+              </div>
+
+              <div className="ops-badge ops-badge--warn" style={{ alignSelf: "flex-start" }}>
+                Station sẽ được tạo ở local database. Có thể cần sync sau đó để cập nhật dữ liệu từ AzuraCast.
+              </div>
+            </div>
+
+            <div className="ops-modal-foot">
+              <button
+                type="button"
+                className="ops-btn ops-btn--ghost"
+                onClick={() => setShowCreateModal(false)}
+                disabled={creating}
+              >
+                Huỷ
+              </button>
+              <button
+                type="button"
+                className="ops-btn ops-btn--primary"
+                onClick={handleCreateStation}
+                disabled={creating || !newStation.stationName.trim()}
+              >
+                {creating ? "Đang tạo..." : "Tạo station"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

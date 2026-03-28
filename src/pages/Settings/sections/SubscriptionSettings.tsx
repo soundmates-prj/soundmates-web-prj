@@ -18,7 +18,11 @@ interface SubscriptionPlan {
   planName: string;
   price: number;
   durationDays: number;
+  requestLimit: number;
   description: string;
+  voiceModelLimit: number;
+  ttsMinuteLimit: number;
+  podcastRequestLimit: number;
 }
 
 export default function SubscriptionSettings() {
@@ -184,6 +188,35 @@ export default function SubscriptionSettings() {
           {plan?.description && (
             <div className="sub-description">
               <p>{plan.description}</p>
+            </div>
+          )}
+
+          {plan && (
+            <div className="sub-features-grid">
+              <div className="sub-feature-item">
+                <span className="sub-feature-label">Giọng nói AI</span>
+                <span className="sub-feature-value">
+                  {plan.voiceModelLimit > 0 ? `${plan.voiceModelLimit} giọng` : "Không có"}
+                </span>
+              </div>
+              <div className="sub-feature-item">
+                <span className="sub-feature-label">Thời gian TTS</span>
+                <span className="sub-feature-value">
+                  {plan.ttsMinuteLimit > 0 ? `${plan.ttsMinuteLimit} phút/tháng` : "Không có"}
+                </span>
+              </div>
+              <div className="sub-feature-item">
+                <span className="sub-feature-label">Request podcast</span>
+                <span className="sub-feature-value">
+                  {plan.podcastRequestLimit > 0 ? `${plan.podcastRequestLimit} request/ngày` : "Không có"}
+                </span>
+              </div>
+              <div className="sub-feature-item">
+                <span className="sub-feature-label">Request nhạc</span>
+                <span className="sub-feature-value">
+                  {plan.requestLimit > 0 ? `${plan.requestLimit} request/ngày` : "Không có"}
+                </span>
+              </div>
             </div>
           )}
         </div>
