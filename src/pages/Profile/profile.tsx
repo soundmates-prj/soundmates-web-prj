@@ -423,7 +423,7 @@ export default function Profile() {
                   className="pf-create-post-btn"
                   onClick={() => setShowCreatePost(true)}
                 >
-                  <Plus size={14} /> Tạo bài đăng đầu tiên
+                  Tạo bài đăng đầu tiên
                 </button>
               </div>
             ) : (

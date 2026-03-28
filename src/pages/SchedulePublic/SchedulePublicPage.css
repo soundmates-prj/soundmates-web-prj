@@ -1,5 +1,5 @@
 /* ============================================================
-   SchedulePublicPage.css — tông #55c5f1 / #004395
+   SchedulePublicPage.css — tông #55c5f1 / #55C5F1
    ============================================================ */
 
 .sp-page {
@@ -18,7 +18,7 @@
 .sp-hero-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #003a7a 0%, #0056b3 55%, #55c5f1 100%);
+   background: linear-gradient(135deg, #003a7a 0%, #0056b3 55%, #55c5f1 100%);
   z-index: 0;
 }
 
@@ -125,7 +125,7 @@
 
 .sp-cal-btn:hover {
   border-color: #55c5f1;
-  color: #1a9fd4;
+  color: #55C5F1;
 }
 
 .sp-cal-grid {
@@ -156,8 +156,8 @@
 }
 
 .sp-cal-day.today {
-  background: rgba(0,67,149,0.1);
-  color: #004395;
+  background: rgba(85, 197, 241,0.1);
+  color: #55C5F1;
   font-weight: 800;
 }
 
@@ -216,7 +216,7 @@
 .sp-stat-num {
   font-size: 22px;
   font-weight: 900;
-  color: #004395;
+  color: #55C5F1;
   letter-spacing: -0.4px;
 }
 
@@ -270,7 +270,7 @@
 
 .sp-refresh-btn:hover:not(:disabled) {
   border-color: #55c5f1;
-  color: #1a9fd4;
+  color: #55C5F1;
 }
 
 .sp-refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -296,7 +296,7 @@
   font-size: 14px;
 }
 
-.sp-empty svg { color: #004395; opacity: 0.3; }
+.sp-empty svg { color: #55C5F1; opacity: 0.3; }
 .sp-empty h3  { margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary); }
 .sp-empty p   { margin: 0; }
 
@@ -314,8 +314,8 @@
   border-radius: 20px;
   font-size: 12.5px;
   font-weight: 700;
-  background: rgba(0,67,149,0.08);
-  color: #004395;
+  background: rgba(85, 197, 241,0.08);
+  color: #55C5F1;
   width: fit-content;
   text-transform: capitalize;
 }
@@ -325,7 +325,7 @@
   border-radius: 10px;
   font-size: 11px;
   font-weight: 700;
-  background: rgba(0,67,149,0.12);
+  background: rgba(85, 197, 241,0.12);
 }
 
 /* Items list */
@@ -335,7 +335,7 @@
   gap: 10px;
   padding-left: 16px;
   margin-left: 10px;
-  border-left: 2px solid rgba(0,67,149,0.15);
+  border-left: 2px solid rgba(85, 197, 241,0.15);
 }
 
 /* Single item */
@@ -363,12 +363,12 @@
 }
 
 .sp-item--live::before   { background: #dc2626; opacity: 1; }
-.sp-item--upcoming::before { background: linear-gradient(180deg, #004395, #55c5f1); }
+.sp-item--upcoming::before { background: linear-gradient(180deg, #55C5F1, #55c5f1); }
 .sp-item--ended::before  { background: var(--border-medium, #cbd5e1); }
 
 .sp-item:hover {
   transform: translateX(3px);
-  box-shadow: 0 4px 16px rgba(0,67,149,0.1);
+  box-shadow: 0 4px 16px rgba(85, 197, 241,0.1);
 }
 
 .sp-item--live {
@@ -392,7 +392,7 @@
 .sp-time-start {
   font-size: 14px;
   font-weight: 700;
-  color: #004395;
+  color: #55C5F1;
 }
 
 .sp-item--live .sp-time-start { color: #dc2626; }
@@ -429,8 +429,8 @@
   justify-content: center;
   width: 32px; height: 32px;
   border-radius: 9px;
-  background: rgba(0,67,149,0.08);
-  color: #004395;
+  background: rgba(85, 197, 241,0.08);
+  color: #55C5F1;
   flex-shrink: 0;
 }
 
@@ -476,8 +476,8 @@
 }
 
 .sp-status--upcoming {
-  background: rgba(0,67,149,0.1);
-  color: #004395;
+  background: rgba(85, 197, 241,0.1);
+  color: #55C5F1;
 }
 
 .sp-status--ended {
@@ -662,6 +662,60 @@
   }
 }
 
+/* ── Follow button ── */
+.sp-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sp-follow-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sp-follow-btn:hover {
+  border-color: #55C5F1;
+  color: #55C5F1;
+  background: rgba(85, 197, 241,0.06);
+  transform: translateY(-1px);
+}
+
+.sp-follow-btn--active {
+  background: rgba(85, 197, 241,0.1);
+  border-color: #55C5F1;
+  color: #55C5F1;
+}
+
+.sp-follow-btn--active:hover {
+  background: rgba(239,68,68,0.08);
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+/* Item đang quan tâm — border highlight nhẹ */
+.sp-item--followed {
+  box-shadow: 0 0 0 1.5px rgba(85, 197, 241,0.2), var(--shadow-sm);
+}
+
+/* Stat quan tâm */
+.sp-stat-num--followed {
+  color: #55C5F1;
 /* ============================================
    Dark Theme
    ============================================ */
