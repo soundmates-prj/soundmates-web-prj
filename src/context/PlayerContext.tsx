@@ -21,9 +21,12 @@ interface PlayerContextValue {
   isPlaying: boolean;
   volume: number;
   isMuted: boolean;
+  elapsed: number;
   setTrack: (track: PlayerTrack) => void;
-  toggle: () => void;
+  setIsPlaying: (playing: boolean) => void;
   setVolume: (v: number) => void;
+  setElapsed: (e: number) => void;
+  toggle: () => void;
   toggleMute: () => void;
   leaveSession: () => void;
   audioRef: React.MutableRefObject<HTMLAudioElement | null>;
@@ -35,9 +38,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [track, setTrackState] = useState<PlayerTrack | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlayingState] = useState(false);
   const [volume, setVolumeState] = useState(80);
   const [isMuted, setIsMuted] = useState(false);
+  const [elapsed, setElapsedState] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const setTrack = useCallback((newTrack: PlayerTrack) => {
@@ -52,6 +56,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const setIsPlaying = useCallback((playing: boolean) => {
+    setIsPlayingState(playing);
+  }, []);
+
+  const setElapsed = useCallback((e: number) => {
+    setElapsedState(e);
+  }, []);
+
   const toggle = useCallback(() => {
     if (!track?.listenUrl) return;
 
@@ -61,7 +73,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       audioRef.current = new Audio(src);
       audioRef.current.volume = volume / 100;
       audioRef.current.play().catch(console.error);
-      setIsPlaying(true);
+      setIsPlayingState(true);
       setIsMuted(false);
     } else {
       // Stream đang chạy — toggle mute
@@ -90,8 +102,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       audioRef.current.pause();
       audioRef.current = null;
     }
-    setIsPlaying(false);
+    setIsPlayingState(false);
     setIsMuted(false);
+    setElapsedState(0);
     setTrackState(null);
   }, []);
 
@@ -102,9 +115,12 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
         isPlaying,
         volume,
         isMuted,
+        elapsed,
         setTrack,
-        toggle,
+        setIsPlaying,
         setVolume,
+        setElapsed,
+        toggle,
         toggleMute,
         leaveSession,
         audioRef,

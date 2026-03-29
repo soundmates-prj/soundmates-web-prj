@@ -37,10 +37,11 @@ export function ScriptGenerateForm() {
       try {
         const v = await audioService.getVoices();
         setVoices(v);
-        // select demo voice if it is Demo Voice 1, else select first
+        // Auto-select first voice
         if (v.length > 0) {
-          const demo = v.find(voice => String(voice.displayName ?? '').includes('Demo'));
-          setSelectedVoice(demo ? demo.id : v[0].id);
+          // Support both voiceId (from VieNeu TTS) and id (from other services)
+          const firstVoice = v[0];
+          setSelectedVoice(firstVoice.voiceId || firstVoice.id || '');
         }
       } catch (err) {
         console.error('Failed to load voices', err);
@@ -87,22 +88,20 @@ export function ScriptGenerateForm() {
       const audio = await audioService.generateAudio(generatedScript.id, {
         voiceId: selectedVoice,
         speed: audioSpeed,
-        pitch: audioPitch
+        pitch: audioPitch,
       });
       setGeneratedAudio(audio);
       showSuccess('Tạo audio thành công!');
     } catch (error: any) {
       console.error('Error generating audio:', error);
-      showError(error.message || 'Lỗi khi tạo audio');
+      showError(error.response?.data?.message || error.message || 'Lỗi khi tạo audio');
     } finally {
       setIsGeneratingAudio(false);
     }
   };
 
   const handleDownloadAudio = async () => {
-    if (!generatedAudio) {
-      return;
-    }
+    if (!generatedAudio) return;
 
     setIsDownloadingAudio(true);
     try {
@@ -457,14 +456,16 @@ export function ScriptGenerateForm() {
                 
                 <div className="form-group">
                   <label className="form-label">Chọn giọng đọc</label>
-                  <select 
-                    className="form-select" 
-                    value={selectedVoice} 
+                  <select
+                    className="form-select"
+                    value={selectedVoice}
                     onChange={(e) => setSelectedVoice(e.target.value)}
                     disabled={isGeneratingAudio || voices.length === 0}
                   >
                     {(Array.isArray(voices) ? voices : []).map(v => (
-                      <option key={v.id} value={v.id}>{v.displayName} ({v.region})</option>
+                      <option key={v.voiceId || v.id} value={v.voiceId || v.id}>
+                        {v.displayName} {v.region ? `(${v.region})` : ''} {v.gender ? `- ${v.gender}` : ''}
+                      </option>
                     ))}
                     {voices.length === 0 && <option value="">Đang tải giọng đọc...</option>}
                   </select>
@@ -497,14 +498,14 @@ export function ScriptGenerateForm() {
                   />
                 </div>
 
-                <button 
-                  className="btn btn-primary" 
-                  onClick={handleGenerateAudio} 
+                <button
+                  className="btn btn-primary"
+                  onClick={handleGenerateAudio}
                   disabled={isGeneratingAudio || !selectedVoice}
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
                   {isGeneratingAudio ? (
-                    <><Loader2 size={18} className="spinner" /> Đang tạo...</>
+                    <><Loader2 size={18} className="spinner" /> Đang tạo audio...</>
                   ) : (
                     <><Volume2 size={18} /> Tạo Audio từ Script</>
                   )}
@@ -515,10 +516,10 @@ export function ScriptGenerateForm() {
                     <h5 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-600)' }}>
                       <Check size={16} /> Hoàn thành
                     </h5>
-                    <audio 
-                      controls 
-                      src={audioService.getAudioFileUrl(generatedAudio.id)} 
-                      style={{ width: '100%', marginTop: '0.5rem' }} 
+                    <audio
+                      controls
+                      src={audioService.getAudioFileUrl(generatedAudio.id)}
+                      style={{ width: '100%', marginTop: '0.5rem' }}
                     />
                     <button
                       type="button"

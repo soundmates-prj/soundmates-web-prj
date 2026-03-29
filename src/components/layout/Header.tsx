@@ -40,7 +40,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>(location.pathname);
-  const isLiveRoute = location.pathname === "/livestream";
+  const isLiveRoute = location.pathname === "/live" || location.pathname === "/livestream";
   const dropdownRef = useRef<HTMLDivElement>(null);
   const liveDropdownRef = useRef<HTMLDivElement>(null);
   const player = usePlayer();
@@ -58,9 +58,11 @@ const Header: React.FC = () => {
             .then((res) => {
               const profileData = res.data.data;
               setUserInfo({
-                ...parsedUserInfo,
-                avatarUrl:
-                  validateImageUrl(profileData.profileImageUrl) || null,
+                firstName: profileData.firstName,
+                lastName: profileData.lastName,
+                username: profileData.username,
+                email: profileData.email,
+                avatarUrl: validateImageUrl(profileData.profileImageUrl) || null,
               });
             })
             .catch(() => {
@@ -177,37 +179,19 @@ const Header: React.FC = () => {
                   <div className="nav-live-dropdown-header">Khám phá Live</div>
                   <a
                     className="nav-live-item"
-                    href="/livestream"
+                    href="/live"
                     onClick={(e) => {
                       e.preventDefault();
                       setShowLiveDropdown(false);
-                      navigate("/livestream");
+                      navigate("/live");
                     }}
                   >
                     <span className="nav-live-icon">
                       <Radio size={16} />
                     </span>
                     <div>
-                      <p>Live Stream âm nhạc</p>
-                      <span>Nghe nhạc trực tiếp từ nghệ sĩ</span>
-                    </div>
-                  </a>
-                  <a className="nav-live-item" href="#">
-                    <span className="nav-live-icon">
-                      <Mic2 size={16} />
-                    </span>
-                    <div>
-                      <p>Podcast Live</p>
-                      <span>Chương trình phát thanh trực tiếp</span>
-                    </div>
-                  </a>
-                  <a className="nav-live-item" href="#">
-                    <span className="nav-live-icon">
-                      <Zap size={16} />
-                    </span>
-                    <div>
-                      <p>Sự kiện nổi bật</p>
-                      <span>Concert, showcase đang diễn ra</span>
+                      <p>Live Sessions</p>
+                      <span>Xem tất cả phiên đang phát</span>
                     </div>
                   </a>
                   <a

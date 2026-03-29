@@ -249,9 +249,13 @@ export default function StreamingServicePage() {
                 className={`ops-badge ${config.isActive ? "ops-badge--good" : "ops-badge--warn"}`}
               >
                 {config.isActive ? (
-                  <CheckCircle2 size={11} /> <span>Đang bật</span>
+                  <>
+                    <CheckCircle2 size={11} /> <span>Đang bật</span>
+                  </>
                 ) : (
-                  <XCircle size={11} /> <span>Đang tắt</span>
+                  <>
+                    <XCircle size={11} /> <span>Đang tắt</span>
+                  </>
                 )}
               </span>
               <span style={{ color: "var(--text-muted)" }}>

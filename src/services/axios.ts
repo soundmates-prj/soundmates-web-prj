@@ -45,6 +45,15 @@ api.interceptors.response.use(
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Avoid refresh loop or logout for login/refresh requests
+      const isLoginRequest = originalRequest.url?.includes("auth/login") || 
+                            originalRequest.url?.includes("auth/google-login");
+      const isRefreshRequest = originalRequest.url?.includes("auth/refresh-token");
+
+      if (isLoginRequest || isRefreshRequest) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {

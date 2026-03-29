@@ -1,0 +1,249 @@
+/* Role Management Screen Styles */
+.role-mgmt-page { max-width: 1100px; }
+
+.role-mgmt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.role-mgmt-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+.role-mgmt-subtitle {
+    font-size: 14px;
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+/* Table */
+.role-mgmt-table-card {
+    background: #fff;
+    border: 1px solid var(--neutral-200);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+[data-theme="dark"] .role-mgmt-table-card {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.role-mgmt-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.role-mgmt-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--neutral-500);
+    text-transform: uppercase;
+    background: var(--neutral-50);
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+[data-theme="dark"] .role-mgmt-table th {
+    background: rgba(255,255,255,0.03);
+    border-bottom-color: rgba(255,255,255,0.1);
+}
+
+.role-mgmt-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--neutral-100);
+    font-size: 14px;
+    color: var(--neutral-700);
+}
+
+[data-theme="dark"] .role-mgmt-table td {
+    border-bottom-color: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.7);
+}
+
+.role-mgmt-table tr:last-child td { border-bottom: none; }
+
+.role-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--neutral-900);
+}
+
+[data-theme="dark"] .role-name-cell { color: #fff; }
+
+.role-icon { color: #1a9fd4; }
+
+.role-desc-cell { color: var(--neutral-500); max-width: 300px; }
+
+.role-user-count {
+    background: rgba(26,159,212,0.1);
+    color: #1a9fd4;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.role-actions { display: flex; gap: 6px; }
+
+.role-action-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--neutral-100);
+    border: none;
+    border-radius: 8px;
+    color: var(--neutral-600);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.role-action-btn:hover { background: var(--neutral-200); }
+
+.role-action-btn--delete { color: #dc2626; background: rgba(239,68,68,0.08); }
+.role-action-btn--delete:hover { background: rgba(239,68,68,0.15); }
+
+/* Modal */
+.role-mgmt-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+
+.role-mgmt-modal {
+    background: #fff; border-radius: 16px; width: 100%; max-width: 560px;
+    max-height: 90vh; display: flex; flex-direction: column;
+}
+
+[data-theme="dark"] .role-mgmt-modal { background: #1e293b; }
+
+.role-mgmt-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid var(--neutral-200);
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .role-mgmt-modal-header { border-bottom-color: rgba(255,255,255,0.1); }
+
+.role-mgmt-modal-header h3 { margin: 0; font-size: 16px; color: var(--neutral-900); }
+[data-theme="dark"] .role-mgmt-modal-header h3 { color: #fff; }
+
+.role-mgmt-modal-header button {
+    background: none; border: none; font-size: 20px;
+    color: var(--neutral-400); cursor: pointer; padding: 0;
+}
+
+.role-mgmt-modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+.role-mgmt-field { margin-bottom: 16px; }
+
+.role-mgmt-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--neutral-700);
+    margin-bottom: 6px;
+}
+
+[data-theme="dark"] .role-mgmt-field label { color: rgba(255,255,255,0.8); }
+
+.role-mgmt-field input {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--neutral-50);
+    border: 1.5px solid var(--neutral-200);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--neutral-800);
+    outline: none;
+}
+
+[data-theme="dark"] .role-mgmt-field input {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.9);
+}
+
+.role-mgmt-permissions { }
+
+.role-mgmt-permissions-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.role-mgmt-permissions-header label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--neutral-700);
+}
+
+.role-mgmt-select-all {
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: #1a9fd4;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.role-mgmt-permission-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.role-perm-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--neutral-200);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    color: var(--neutral-600);
+}
+
+[data-theme="dark"] .role-perm-item {
+    border-color: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.6);
+}
+
+.role-perm-item:hover { border-color: #1a9fd4; }
+
+.role-perm-item.checked {
+    background: rgba(26,159,212,0.08);
+    border-color: #1a9fd4;
+    color: #1a9fd4;
+}
+
+.role-perm-item input[type="checkbox"] { display: none; }
+
+.role-mgmt-modal-footer {
+    display: flex; gap: 10px; justify-content: flex-end;
+    padding: 16px 24px; border-top: 1px solid var(--neutral-200); flex-shrink: 0;
+}
+
+[data-theme="dark"] .role-mgmt-modal-footer { border-top-color: rgba(255,255,255,0.1); }

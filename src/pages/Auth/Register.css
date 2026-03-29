@@ -280,3 +280,99 @@
 [data-theme='dark'] .register-container .btn-primary:hover {
   background: linear-gradient(135deg, #3AA8D4 0%, #55C5F1 100%);
 }
+
+/* Anti-shift only (keep same UI): stabilize mount */
+.register-right {
+  min-height: 100vh;
+}
+
+.register-box {
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
+.brand {
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
+/* Responsive without changing visual style */
+.register-container,
+.register-left,
+.register-right {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+
+.register-box {
+  width: min(400px, calc(100vw - 32px));
+}
+
+@media (max-width: 1024px) {
+  .register-left {
+    display: none;
+  }
+
+  .register-right {
+    flex: 1;
+  }
+
+  .register-box {
+    width: min(440px, calc(100vw - 32px));
+    padding: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-box {
+    width: calc(100vw - 24px);
+    padding: 24px;
+    border-radius: 12px;
+  }
+
+  .name-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+/* Reduce perceived jump: keep animation as fade-only (no movement) */
+.register-box,
+.brand {
+  animation-name: registerFadeOnly !important;
+  animation-duration: 0.3s !important;
+  animation-timing-function: ease-out !important;
+}
+
+@keyframes registerFadeOnly {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .register-box,
+  .brand {
+    animation: none !important;
+  }
+}
+
+/* Reduce perceived jump: keep animation as fade-only (no movement) */
+.register-box,
+.brand {
+  animation-name: registerFadeOnly !important;
+  animation-duration: 0.3s !important;
+  animation-timing-function: ease-out !important;
+}
+
+@keyframes registerFadeOnly {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .register-box,
+  .brand {
+    animation: none !important;
+  }
+}
