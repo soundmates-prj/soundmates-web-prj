@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
-  Heart,
   MessageCircle,
   Share2,
   Search,
@@ -15,7 +14,6 @@ import {
 } from "lucide-react";
 import api from "../../services/axios";
 import ShareCard from "../../components/blog/ShareCard";
-import type { ShareCardData } from "../../components/blog/ShareCard";
 import {
   type PublishedPost,
   type PublishedPostsParams,
@@ -24,37 +22,23 @@ import {
   getMoodColor,
 } from "../../types/forum";
 import "./ForumPage.css";
+import CommentModal from "../../components/blog/CommentModal";
+import type { CommentModalPost } from "../../components/blog/CommentModal";
+import { parseShareMusic } from "../../components/blog/CommentModal";
+import ReactionButton, {
+  ReactionSummary,
+} from "../../components/blog/ReactionButton";
+import "./ForumPage.css";
 
 const PAGE_SIZE = 10;
 
-/* ─── Parse share-music JSON ─── */
-const parseShareMusic = (contentText: string): ShareCardData | null => {
-  try {
-    const raw = JSON.parse(contentText);
-    const id = raw.TrackId ?? raw.trackId;
-    if (!id) return null;
-    return {
-      trackId: id,
-      title: raw.Title ?? raw.title ?? "Unknown",
-      artist: raw.Artist ?? raw.artist ?? "Unknown",
-      albumImage: raw.AlbumImage ?? raw.albumImage ?? "",
-      previewUrl: raw.PreviewUrl ?? raw.previewUrl ?? null,
-      template: (raw.Template ??
-        raw.template ??
-        "dark") as ShareCardData["template"],
-    };
-  } catch {
-    return null;
-  }
-};
-
-/* ─── Single post card ─── */
+/* ─── Post card ─── */
 function PostCard({ post }: { post: PublishedPost }) {
+  const [showModal, setShowModal] = useState(false);
+
   const shareData =
     post.postType === "share-music" ? parseShareMusic(post.contentText) : null;
-
   const moodColor = getMoodColor(post.moodTag);
-
   const displayName = post.userFullName?.trim() || "Ẩn danh";
 
   const formatDate = (iso: string | null) => {
@@ -68,89 +52,108 @@ function PostCard({ post }: { post: PublishedPost }) {
     });
   };
 
+  // Convert PublishedPost → CommentModalPost
+  const modalPost: CommentModalPost = {
+    id: post.id,
+    userId: post.userId,
+    title: post.title,
+    contentText: post.contentText,
+    imageUrl: post.imageUrl,
+    postType: post.postType ?? null,
+    shareMusic: post.shareMusic ?? null,
+    moodTag: post.moodTag,
+    publishedAt: post.publishedAt,
+    createdAt: post.createdAt,
+    authorName: displayName,
+    authorAvatar: post.userAvatarUrl,
+  };
+
   return (
-    <article className="fp-card">
-      {/* ── Header ── */}
-      <div className="fp-card-header">
-        <div className="fp-avatar">
-          {post.userAvatarUrl ? (
-            <img src={post.userAvatarUrl} alt={displayName} />
-          ) : (
-            <User size={18} />
-          )}
-        </div>
-
-        <div className="fp-card-meta">
-          <span className="fp-card-name">{displayName}</span>
-          <span className="fp-card-time">
-            {formatDate(post.publishedAt ?? post.createdAt)}
-          </span>
-        </div>
-
-        <div className="fp-card-badges">
-          {post.isGenerated && (
-            <span className="fp-badge fp-badge--ai">✦ AI</span>
-          )}
-          {post.moodTag && (
-            <span
-              className="fp-badge fp-badge--mood"
-              style={{ background: `${moodColor}1a`, color: moodColor }}
-            >
-              {post.moodTag}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* ── Body ── */}
-      {shareData ? (
-        <div className="fp-share-wrap">
-          <ShareCard data={shareData} compact />
-        </div>
-      ) : (
-        <>
-          <div className="fp-card-body">
-            {post.title && <h3 className="fp-card-title">{post.title}</h3>}
-            <p className="fp-card-text">{post.contentText}</p>
+    <>
+      <article className="fp-card">
+        <div className="fp-card-header">
+          <div className="fp-avatar">
+            {post.userAvatarUrl ? (
+              <img src={post.userAvatarUrl} alt={displayName} />
+            ) : (
+              <User size={18} />
+            )}
           </div>
+          <div className="fp-card-meta">
+            <span className="fp-card-name">{displayName}</span>
+            <span className="fp-card-time">
+              {formatDate(post.publishedAt ?? post.createdAt)}
+            </span>
+          </div>
+          <div className="fp-card-badges">
+            {post.isGenerated && (
+              <span className="fp-badge fp-badge--ai">✦ AI</span>
+            )}
+            {post.moodTag && (
+              <span
+                className="fp-badge fp-badge--mood"
+                style={{ background: `${moodColor}1a`, color: moodColor }}
+              >
+                {post.moodTag}
+              </span>
+            )}
+          </div>
+        </div>
 
-          {post.imageUrl?.startsWith("http") && (
-            <div className="fp-card-img-wrap">
-              <img
-                src={post.imageUrl}
-                alt={post.title || "post"}
-                loading="lazy"
-              />
+        {shareData ? (
+          <div className="fp-share-wrap">
+            <ShareCard data={shareData} compact />
+          </div>
+        ) : (
+          <>
+            <div className="fp-card-body">
+              {post.title && <h3 className="fp-card-title">{post.title}</h3>}
+              <p className="fp-card-text">{post.contentText}</p>
             </div>
-          )}
+            {post.imageUrl?.startsWith("http") && (
+              <div className="fp-card-img-wrap">
+                <img
+                  src={post.imageUrl}
+                  alt={post.title || "post"}
+                  loading="lazy"
+                />
+              </div>
+            )}
+            {post.audioUrl?.startsWith("http") && (
+              <div className="fp-card-audio-wrap">
+                <Mic size={14} className="fp-audio-icon" />
+                <audio controls src={post.audioUrl} preload="none" />
+              </div>
+            )}
+          </>
+        )}
 
-          {post.audioUrl?.startsWith("http") && (
-            <div className="fp-card-audio-wrap">
-              <Mic size={14} className="fp-audio-icon" />
-              <audio controls src={post.audioUrl} preload="none" />
-            </div>
-          )}
-        </>
+        <ReactionSummary postId={post.id} />
+        <div className="fp-card-actions">
+          <ReactionButton
+            postId={post.id}
+            initialCount={post.reactionCount ?? 0}
+          />
+          <button className="fp-action-btn" onClick={() => setShowModal(true)}>
+            <MessageCircle size={15} /> Bình luận
+          </button>
+          <button className="fp-action-btn">
+            <Share2 size={15} /> Chia sẻ
+          </button>
+        </div>
+      </article>
+
+      {/* Comment modal */}
+      {showModal && (
+        <CommentModal post={modalPost} onClose={() => setShowModal(false)} />
       )}
-
-      {/* ── Actions ── */}
-      <div className="fp-card-actions">
-        <button className="fp-action-btn">
-          <Heart size={15} /> Thích
-        </button>
-        <button className="fp-action-btn">
-          <MessageCircle size={15} /> Bình luận
-        </button>
-        <button className="fp-action-btn">
-          <Share2 size={15} /> Chia sẻ
-        </button>
-      </div>
-    </article>
+    </>
   );
 }
 
 /* ─── Main page ─── */
 export default function ForumPage() {
+  const [allPosts, setAllPosts] = useState<PublishedPost[]>([]);
   const [posts, setPosts] = useState<PublishedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -158,58 +161,47 @@ export default function ForumPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* ─── Fetch ─── */
+  useEffect(() => {
+    const q = search.trim().toLowerCase();
+    setPosts(
+      q
+        ? allPosts.filter((p) =>
+            (p.userFullName ?? "").toLowerCase().includes(q),
+          )
+        : allPosts,
+    );
+  }, [search, allPosts]);
+
   const fetchPosts = useCallback(
-    async (p: number, isFirst = false) => {
-      if (isFirst) setLoading(true);
-      else setLoading(true);
-
+    async (p: number) => {
+      setLoading(true);
       try {
         const params: PublishedPostsParams = { page: p, pageSize: PAGE_SIZE };
-        if (search.trim()) params.search = search.trim();
         if (mood !== "all") params.moodTag = mood;
-
         const res = await api.get<PublishedPostsResponse>("/posts/published", {
           params,
         });
-
         if (res.data?.success) {
           const d = res.data.data;
-          setPosts(d.items);
+          setAllPosts(d.items);
           setPage(d.page);
           setTotalPages(d.totalPages);
           setTotalCount(d.totalCount);
         }
       } catch (err) {
-        console.error("Forum fetch error:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     },
-    [search, mood],
+    [mood],
   );
 
-  /* mood change → reset to page 1 */
   useEffect(() => {
     setPage(1);
-    fetchPosts(1, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mood]);
-
-  /* debounced search */
-  useEffect(() => {
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      setPage(1);
-      fetchPosts(1, true);
-    }, 400);
-    return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+    fetchPosts(1);
+  }, [mood]); // eslint-disable-line
 
   const handlePageChange = (p: number) => {
     setPage(p);
@@ -217,10 +209,8 @@ export default function ForumPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  /* ─── Render ─── */
   return (
     <div className="fp-page">
-      {/* Hero */}
       <div className="fp-hero">
         <div className="fp-hero-glow" />
         <div className="fp-hero-inner">
@@ -236,7 +226,7 @@ export default function ForumPage() {
             <input
               className="fp-search-input"
               type="text"
-              placeholder="Tìm kiếm bài viết, tác giả..."
+              placeholder="Tìm kiếm theo tên tác giả..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -244,9 +234,7 @@ export default function ForumPage() {
         </div>
       </div>
 
-      {/* Layout */}
       <div className="fp-layout">
-        {/* Sidebar */}
         <aside className="fp-sidebar">
           <div className="fp-sidebar-block">
             <p className="fp-sidebar-heading">Trạng thái</p>
@@ -262,7 +250,6 @@ export default function ForumPage() {
               ))}
             </div>
           </div>
-
           <div className="fp-sidebar-block fp-sidebar-stat">
             <Flame size={20} className="fp-stat-icon" />
             <span className="fp-stat-num">{totalCount}</span>
@@ -270,9 +257,7 @@ export default function ForumPage() {
           </div>
         </aside>
 
-        {/* Feed */}
         <main className="fp-feed">
-          {/* Toolbar */}
           <div className="fp-toolbar">
             <span className="fp-toolbar-info">
               {loading
@@ -281,14 +266,13 @@ export default function ForumPage() {
             </span>
             <button
               className="fp-refresh-btn"
-              onClick={() => fetchPosts(page, true)}
+              onClick={() => fetchPosts(page)}
               disabled={loading}
             >
               <RefreshCw size={14} className={loading ? "fp-spin" : ""} />
             </button>
           </div>
 
-          {/* Posts */}
           {loading ? (
             <div className="fp-skeletons">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -322,8 +306,6 @@ export default function ForumPage() {
                   <PostCard key={post.id} post={post} />
                 ))}
               </div>
-
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="fp-pagination">
                   <button
@@ -333,7 +315,6 @@ export default function ForumPage() {
                   >
                     <ChevronLeft size={16} />
                   </button>
-
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter(
                       (p) =>
@@ -360,7 +341,6 @@ export default function ForumPage() {
                         </button>
                       ),
                     )}
-
                   <button
                     className="fp-page-btn"
                     onClick={() => handlePageChange(page + 1)}

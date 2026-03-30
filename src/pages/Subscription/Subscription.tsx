@@ -11,6 +11,9 @@ interface Plan {
   price: number;
   durationDays: number;
   requestLimit: number;
+  voiceModelLimit: number;
+  ttsMinuteLimit: number;
+  podcastRequestLimit: number;
   isActive?: boolean;
   description: string;
 }
@@ -94,22 +97,33 @@ export default function Subscription() {
 
   const getFeatures = (plan: Plan) => {
     const tierName = plan.planName.toLowerCase();
+    const isFree = tierName.includes("free") || plan.price === 0;
+    const isPremium = tierName.includes("premium");
+    const isElite = tierName.includes("elite");
+
     const features = [
-      "Nghe podcast/music không giới hạn",
-      "Tham gia phiên live trực tuyến",
-      `Gửi request phát nhạc <strong>${plan.requestLimit} request/ngày</strong>`,
+      "Nghe podcast & nhạc không giới hạn",
+      "Tham gia phòng Live cùng cộng đồng",
     ];
-    if (tierName.includes("free") || plan.price === 0) {
+
+    if (isFree) {
+      features.push(`${plan.requestLimit} request phát nhạc mỗi ngày`);
       features.push("Chất lượng âm thanh tiêu chuẩn");
-    } else if (tierName.includes("premium")) {
-      features.push("Tạo giọng đọc AI dựa trên giọng thật của bạn <strong>(Giới hạn)</strong>");
-      features.push("Áp dụng các <strong>Theme</strong> cơ bản");
+    } else if (isPremium) {
+      features.push(`${plan.requestLimit} request phát nhạc mỗi ngày`);
+      features.push(`${plan.podcastRequestLimit} request podcast mỗi ngày`);
+      features.push(`Clone <strong>${plan.voiceModelLimit} giọng</strong> từ giọng thật của bạn`);
+      features.push(`${plan.ttsMinuteLimit} phút TTS/tháng`);
+      features.push("Giao diện theme cơ bản");
     } else {
-      features.push("Tạo giọng đọc AI dựa trên giọng thật của bạn <strong>(Không giới hạn)</strong>");
-      features.push("Ưu tiên request khi tham gia phòng live");
-      features.push("Áp dụng các <strong>Theme</strong> mới nhất của nền tảng");
-      features.push("Gửi thư podcast trực tuyến trong livestream");
+      features.push(`${plan.requestLimit} request phát nhạc mỗi ngày <strong>+ ưu tiên hàng đợi</strong>`);
+      features.push(`${plan.podcastRequestLimit} request podcast mỗi ngày`);
+      features.push(`Clone tới <strong>${plan.voiceModelLimit} giọng</strong> không giới hạn`);
+      features.push(`${plan.ttsMinuteLimit} phút TTS/tháng`);
+      features.push("Giao diện theme mới nhất");
+      features.push("Gửi tin nhắn podcast trong phòng Live");
     }
+
     return features;
   };
 
@@ -141,8 +155,8 @@ export default function Subscription() {
             const getOrder = (plan: Plan) => {
               const name = plan.planName.toLowerCase();
               if (name.includes("free") || plan.price === 0) return 0;
-              if (name.includes("elite")) return 1;
-              if (name.includes("premium")) return 2;
+              if (name.includes("premium")) return 1;
+              if (name.includes("elite")) return 2;
               return 3;
             };
             return getOrder(a) - getOrder(b);

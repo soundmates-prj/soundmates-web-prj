@@ -164,7 +164,7 @@ export default function TransactionsPage() {
       <div className="lm-header">
         <div className="lm-header-left">
           <h1>Tất Cả Giao Dịch</h1>
-          <p>Giám sát và quản lý giao dịch toàn hệ thống</p>
+          <p>Giám sát và quản lý giao dịch của toàn hệ thống</p>
         </div>
         <div className="lm-header-actions">
           <button className="lm-btn lm-btn--outline" onClick={handleRefresh}>

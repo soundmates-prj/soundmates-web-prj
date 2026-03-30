@@ -158,7 +158,7 @@ export default function AdminSystemSettings() {
     <div className="admin-system-settings">
       <div className="settings-section-header">
         <h1>Cấu hình hệ thống</h1>
-        <p>Quản lý các cấu hình API của dịch vụ bên thứ ba cho hệ thống</p>
+        <p>Quản lý các cấu hình Api-key cho hệ thống</p>
       </div>
 
       {/* ── Status cards ── */}
@@ -166,9 +166,8 @@ export default function AdminSystemSettings() {
         <div className="admin-system-card">
           <div className="admin-system-card-title">Trạng thái kết nối</div>
           <span
-            className={`ops-badge ${
-              health?.isHealthy ? "ops-badge--good" : "ops-badge--danger"
-            }`}
+            className={`ops-badge ${health?.isHealthy ? "ops-badge--good" : "ops-badge--danger"
+              }`}
           >
             <BadgeCheck size={12} />
             {health?.isHealthy ? "Đã kết nối" : "Chưa kết nối"}
@@ -181,9 +180,8 @@ export default function AdminSystemSettings() {
             <div className="ops-skeleton" style={{ width: "60%", height: 16 }} />
           ) : (
             <span
-              className={`ops-badge ${
-                config?.isConfigured ? "ops-badge--good" : "ops-badge--warn"
-              }`}
+              className={`ops-badge ${config?.isConfigured ? "ops-badge--good" : "ops-badge--warn"
+                }`}
             >
               {config?.isConfigured ? (
                 <><CheckCircle2 size={11} /> Đã cấu hình</>

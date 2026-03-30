@@ -55,7 +55,36 @@ export default function PaymentResult() {
     const provider = params.get("provider");
     const responseCode = params.get("vnp_ResponseCode") ?? params.get("code") ?? "";
 
-    // VNPay redirect: BE callback đã xử lý → redirect về FE với kết quả trong query params
+    // Direct VNPay callback: VNPay redirect directly to this page with vnp_ params (no "status" or "provider")
+    // In this case, vnp_ResponseCode=00 means success, anything else means failed
+    const isDirectVNPayCallback = !!params.get("vnp_ResponseCode");
+    if (isDirectVNPayCallback) {
+      const isSuccess = responseCode === "00";
+      if (isSuccess) {
+        setState({
+          status: "success",
+          transactionId: params.get("vnp_TxnRef") ?? undefined,
+          amount: params.get("vnp_Amount")
+            ? (parseInt(params.get("vnp_Amount")!) / 100).toString()
+            : undefined,
+          provider: "vnpay",
+          transactionNo: params.get("vnp_TransactionNo") ?? undefined,
+          message: VNP_RESPONSE_MESSAGES[responseCode] ?? "Giao dịch thành công",
+        });
+      } else {
+        setState({
+          status: "failed",
+          message:
+            params.get("message") ??
+            VNP_RESPONSE_MESSAGES[responseCode] ??
+            "Giao dịch thất bại hoặc bị hủy.",
+          transactionNo: params.get("vnp_TransactionNo") ?? undefined,
+        });
+      }
+      return;
+    }
+
+    // VNPay redirect via BE callback: BE callback đã xử lý → redirect về FE với kết quả trong query params
     // FE chỉ hiển thị kết quả, KHÔNG gọi callback lại (tránh double-processing)
     if (provider?.toLowerCase() === "vnpay") {
       if (status === "success") {
