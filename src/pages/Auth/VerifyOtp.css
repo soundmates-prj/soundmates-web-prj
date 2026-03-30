@@ -64,6 +64,30 @@
   align-items: center;
 }
 
+/* Primary button fix (light theme) */
+.verify-card .btn-primary {
+  width: 100%;
+  height: 48px;
+  background: #5cc3f0 !important;
+  color: #ffffff !important;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(92, 195, 240, 0.3);
+}
+
+.verify-card .btn-primary:hover {
+  background: #3aa8d4 !important;
+  box-shadow: 0 6px 16px rgba(92, 195, 240, 0.4);
+  transform: translateY(-1px);
+}
+
+.verify-card .btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
 .verify-card h2 {
   margin-bottom: 8px;
   color: #5cc3f0;
@@ -209,4 +233,13 @@
 [data-theme='dark'] .verify-container .otp-submit-btn {
   background: linear-gradient(135deg, #55C5F1 0%, #8ED8F6 100%);
   color: #111827;
+}
+
+[data-theme='dark'] .verify-container .verify-card .btn-primary {
+  background: linear-gradient(135deg, #55C5F1 0%, #8ED8F6 100%) !important;
+  color: #111827 !important;
+}
+
+[data-theme='dark'] .verify-container .verify-card .btn-primary:hover {
+  background: linear-gradient(135deg, #3AA8D4 0%, #55C5F1 100%) !important;
 }

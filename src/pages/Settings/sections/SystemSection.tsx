@@ -4,6 +4,7 @@ import { showSuccess, showError } from "../../../components/common/toastUtils";
 import { useTheme } from "../../../context/ThemeContext";
 import favoriteService from "../../../services/favoriteService";
 import type { FavoriteItem } from "../../../services/favoriteService";
+import api from "../../../services/axios";
 import "./SystemSection.css";
 import "./MusicSection.css";
 import "./ProfileSection.css"; /* reuse .form-group, .input-prefix, .select-wrap */
@@ -55,6 +56,7 @@ const SystemSection: React.FC = () => {
     next: false,
     confirm: false,
   });
+  const [pwLoading, setPwLoading] = useState(false);
 
   /* ── handlers ── */
   const toggleShowPw = (field: keyof typeof showPw) =>
@@ -69,10 +71,32 @@ const SystemSection: React.FC = () => {
       showError("Không khớp", "Mật khẩu mới và xác nhận không khớp");
       return;
     }
-    // TODO: PUT /api/auth/change-password  { currentPassword, newPassword }
-    showSuccess("Thành công", "Mật khẩu đã được thay đổi!");
-    setPwForm({ current: "", next: "", confirm: "" });
-    setShowPwSection(false);
+    if (pwForm.next.length < 6) {
+      showError("Mật khẩu yếu", "Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+    try {
+      setPwLoading(true);
+      await api.post("/auth/change-password", {
+        oldPassword: pwForm.current,
+        newPassword: pwForm.next,
+      });
+      showSuccess("Thành công", "Mật khẩu đã được thay đổi! Bạn sẽ được đăng xuất...");
+      setPwForm({ current: "", next: "", confirm: "" });
+      setShowPwSection(false);
+
+      // Sign-out after password change for security
+      setTimeout(() => {
+        localStorage.clear();
+        window.dispatchEvent(new Event("authChange"));
+        window.location.href = "/login";
+      }, 1500);
+    } catch (error: any) {
+      const msg = error.response?.data?.message || "Không thể đổi mật khẩu";
+      showError("Lỗi", msg);
+    } finally {
+      setPwLoading(false);
+    }
   };
 
   const PW_FIELDS: { field: keyof PwForm; label: string }[] = [
@@ -190,8 +214,8 @@ const SystemSection: React.FC = () => {
               >
                 Huỷ
               </button>
-              <button className="btn-primary" onClick={handleChangePassword}>
-                Lưu mật khẩu
+              <button className="btn-primary" onClick={handleChangePassword} disabled={pwLoading}>
+                {pwLoading ? "Đang lưu..." : "Lưu mật khẩu"}
               </button>
             </div>
           </div>

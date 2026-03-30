@@ -1,17 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import reactionService from "../../services/reactionService";
-import type { ReactionType } from "../../services/reactionService";
+import reactionService, { type ReactionType, type ReactionUser } from "../../services/reactionService";
 import "./ReactionButton.css";
 import { ThumbsUp } from "lucide-react";
 
-/* ── Reaction config ── */
-// eslint-disable-next-line react-refresh/only-export-components
-export const REACTIONS: {
-  type: ReactionType;
-  emoji: string;
-  label: string;
-  color: string;
-}[] = [
+export const REACTIONS: { type: ReactionType; emoji: string; label: string; color: string }[] = [
   { type: "like", emoji: "👍", label: "Thích", color: "#1877f2" },
   { type: "love", emoji: "❤️", label: "Yêu thích", color: "#f33e58" },
   { type: "haha", emoji: "😆", label: "Haha", color: "#f7b125" },
@@ -20,16 +12,23 @@ export const REACTIONS: {
   { type: "angry", emoji: "😡", label: "Phẫn nộ", color: "#e9710f" },
 ];
 
-const getReaction = (type: ReactionType | null) =>
-  REACTIONS.find((r) => r.type === type) ?? null;
+const getCfg = (type: ReactionType | null) => REACTIONS.find((r) => r.type === type) ?? null;
+
+function tallyTopEmojis(data: ReactionUser[]): string[] {
+  const tally: Record<string, number> = {};
+  data.forEach((r) => {
+    tally[r.reactionType] = (tally[r.reactionType] ?? 0) + 1;
+  });
+  return Object.entries(tally)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([type]) => getCfg(type as ReactionType)?.emoji ?? "");
+}
 
 interface ReactionButtonProps {
   postId: string;
-  /** Số lượng reaction hiện tại */
   initialCount?: number;
-  /** Reaction hiện tại của user (null = chưa react) */
   initialReaction?: ReactionType | null;
-  /** reactionId để PUT đổi loại (nếu backend trả về) */
   initialReactionId?: string | null;
 }
 
@@ -40,241 +39,203 @@ export default function ReactionButton({
   initialReactionId = null,
 }: ReactionButtonProps) {
   const [count, setCount] = useState(initialCount);
-  const [myReaction, setMyReaction] = useState<ReactionType | null>(
-    initialReaction,
-  );
-  const [reactionId, setReactionId] = useState<string | null>(
-    initialReactionId,
-  );
-  const [showPopup, setShowPopup] = useState(false);
+  const [myReaction, setMyReaction] = useState<ReactionType | null>(initialReaction);
+  const [showPicker, setShowPicker] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
-  const [topEmojis, setTopEmojis] = useState<string[]>([]);
+  const [reactions, setReactions] = useState<ReactionUser[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = !!localStorage.getItem("accessToken");
 
-  /* ── Helper: tính top 2 emoji từ danh sách reactions ── */
-  const computeTopEmojis = (reactions: { reactionType: ReactionType }[]) => {
-    const tally: Partial<Record<ReactionType, number>> = {};
-    reactions.forEach((r) => {
-      tally[r.reactionType] = (tally[r.reactionType] ?? 0) + 1;
-    });
-    return Object.entries(tally)
-      .sort((a, b) => (b[1] as number) - (a[1] as number))
-      .slice(0, 2)
-      .map(([type]) => getReaction(type as ReactionType)?.emoji ?? "");
-  };
+  const loadReactions = useCallback(async () => {
+    setFetching(true);
+    try {
+      const data = await reactionService.getReactions(postId);
+      setReactions(data);
+      setCount(data.length);
 
-  /* ── Fetch reactions khi mount (cả khi chưa đăng nhập) ── */
-  useEffect(() => {
-    const fetchReactions = async () => {
-      setFetching(true);
-      try {
-        const reactions = await reactionService.getReactions(postId);
-        setCount(reactions.length);
-        setTopEmojis(computeTopEmojis(reactions));
-
-        // Nếu đã đăng nhập thì kiểm tra reaction của mình
-        if (isLoggedIn) {
-          const axiosModule = await import("../../services/axios");
-          const res = await axiosModule.default.get("/users/me/profile/full");
-          const currentUserId = res.data?.data?.id ?? null;
-          if (currentUserId) {
-            const mine = reactions.find((r) => r.userId === currentUserId);
-            if (mine) {
-              setMyReaction(mine.reactionType);
-              setReactionId(mine.id);
-            }
-          }
+      if (isLoggedIn) {
+        let uid = currentUserId;
+        if (!uid) {
+          const res = await import("../../services/axios").then((m) => m.default.get("/users/me/profile/full"));
+          uid = res.data?.data?.id ?? null;
+          setCurrentUserId(uid);
         }
-      } catch {
-        /* silent */
-      } finally {
-        setFetching(false);
+        if (uid) {
+          const mine = data.find((r) => r.userId === uid);
+          setMyReaction(mine ? (mine.reactionType as ReactionType) : null);
+        }
       }
-    };
+    } catch {
+      // silent
+    } finally {
+      setFetching(false);
+    }
+  }, [postId, isLoggedIn, currentUserId]);
 
-    fetchReactions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId]);
   useEffect(() => {
-    if (!showPopup) return;
+    void loadReactions();
+  }, [loadReactions]);
+
+  useEffect(() => {
+    if (!showPicker && !showTooltip) return;
     const handler = (e: MouseEvent) => {
-      if (
-        btnRef.current?.contains(e.target as Node) ||
-        popupRef.current?.contains(e.target as Node)
-      )
-        return;
-      setShowPopup(false);
+      if (btnRef.current?.contains(e.target as Node)) return;
+      if (pickerRef.current?.contains(e.target as Node)) return;
+      if (tooltipRef.current?.contains(e.target as Node)) return;
+      setShowPicker(false);
+      setShowTooltip(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [showPopup]);
+  }, [showPicker, showTooltip]);
 
-  /* ── Hover: mở popup sau 400ms ── */
-  const handleMouseEnter = () => {
+  const onMouseEnter = () => {
     if (!isLoggedIn) return;
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
-    hoverTimer.current = setTimeout(() => setShowPopup(true), 400);
+    hoverTimer.current = setTimeout(() => setShowTooltip(true), 600);
   };
 
-  const handleMouseLeave = () => {
+  const onMouseLeave = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    leaveTimer.current = setTimeout(() => setShowPopup(false), 300);
+    tooltipTimer.current = setTimeout(() => setShowTooltip(false), 300);
   };
 
-  /* ── Click nút chính: toggle like hoặc bỏ react ── */
-  const handleMainClick = async () => {
+  const onMainClick = () => {
     if (!isLoggedIn || loading) return;
+    setShowPicker((v) => !v);
+    setShowTooltip(false);
+  };
+
+  const onPickReaction = async (type: ReactionType) => {
+    if (!isLoggedIn || loading) return;
+    setShowPicker(false);
     setLoading(true);
     try {
-      if (myReaction) {
+      if (!myReaction) {
+        await reactionService.addReaction(postId, type);
+      } else if (type !== myReaction) {
         await reactionService.removeReaction(postId);
-        setCount((c) => Math.max(0, c - 1));
-        setMyReaction(null);
-        setReactionId(null);
-        setTopEmojis((prev) => {
-          const likeEmoji = getReaction("like")?.emoji ?? "";
-          // Nếu like là top emoji và không còn react nữa, cập nhật lại
-          return prev.filter((e) => e !== likeEmoji || myReaction !== "like");
-        });
+        await reactionService.addReaction(postId, type);
       } else {
-        await reactionService.addReaction(postId, "like");
-        setCount((c) => c + 1);
-        setMyReaction("like");
-        setTopEmojis((prev) => {
-          const likeEmoji = getReaction("like")?.emoji ?? "👍";
-          return prev.includes(likeEmoji)
-            ? prev
-            : [likeEmoji, ...prev].slice(0, 2);
-        });
+        await reactionService.removeReaction(postId);
       }
-    } catch (err) {
-      console.error("Reaction failed:", err);
+      await loadReactions();
+    } catch {
+      // silent
     } finally {
       setLoading(false);
     }
   };
 
-  /* ── Chọn emoji từ popup ── */
-  const handlePickReaction = useCallback(
-    async (type: ReactionType) => {
-      if (!isLoggedIn || loading) return;
-      setShowPopup(false);
-      setLoading(true);
-      try {
-        if (!myReaction) {
-          // Chưa react → thêm mới
-          await reactionService.addReaction(postId, type);
-          setCount((c) => c + 1);
-        } else if (type !== myReaction) {
-          // Đang react khác loại → đổi
-          if (reactionId) {
-            await reactionService.changeReaction(reactionId, type);
-          } else {
-            await reactionService.removeReaction(postId);
-            await reactionService.addReaction(postId, type);
-          }
-          // Count không đổi vì chỉ đổi loại
-        } else {
-          // Chọn lại cùng loại → bỏ
-          await reactionService.removeReaction(postId);
-          setCount((c) => Math.max(0, c - 1));
-          setMyReaction(null);
-          setReactionId(null);
-          setLoading(false);
-          return;
-        }
-        setMyReaction(type);
-      } catch (err) {
-        console.error("Pick reaction failed:", err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [postId, myReaction, reactionId, isLoggedIn, loading],
-  );
-
-  const current = getReaction(myReaction);
-  const formatCount = (n: number) =>
-    n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n > 0 ? String(n) : "";
+  const cfg = getCfg(myReaction);
+  const fmtCount = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n > 0 ? String(n) : "");
 
   return (
     <div className="rb-wrap">
-      {/* ── Main button — không chứa summary ── */}
-      <button
-        ref={btnRef}
-        className={`rb-btn ${myReaction ? "rb-btn--active" : ""} ${fetching ? "rb-btn--fetching" : ""}`}
-        style={current ? { color: current.color } : undefined}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={handleMainClick}
-        disabled={loading || fetching}
-      >
-        <span className="rb-icon">
-          {current ? current.emoji : <ThumbsUp size={18} />}
-        </span>
-        <span className="rb-label">{current ? current.label : "Thích"}</span>
-      </button>
-
-      {/* ── Reaction popup ── */}
-      {showPopup && (
+      {showTooltip && reactions.length > 0 ? (
         <div
-          ref={popupRef}
-          className="rb-popup"
+          ref={tooltipRef}
+          className="rb-tooltip"
           onMouseEnter={() => {
-            if (leaveTimer.current) clearTimeout(leaveTimer.current);
+            if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
           }}
-          onMouseLeave={handleMouseLeave}
+          onMouseLeave={onMouseLeave}
         >
-          {REACTIONS.map((r, i) => (
-            <button
-              key={r.type}
-              className={`rb-emoji-btn ${myReaction === r.type ? "rb-emoji-btn--active" : ""}`}
-              style={{ animationDelay: `${i * 30}ms` }}
-              onClick={() => handlePickReaction(r.type)}
-              title={r.label}
-            >
-              <span className="rb-emoji">{r.emoji}</span>
-              <span className="rb-emoji-label">{r.label}</span>
-            </button>
-          ))}
+          <div className="rb-tooltip-title">Người đã bày tỏ cảm xúc</div>
+          <div className="rb-tooltip-list">
+            {reactions.slice(0, 20).map((r, i) => {
+              const rCfg = getCfg(r.reactionType as ReactionType);
+              const initial = r.userFullName ? r.userFullName.charAt(0).toUpperCase() : "?";
+              return (
+                <div key={`${r.userId}-${i}`} className="rb-tooltip-item">
+                  <div className="rb-tooltip-avatar">
+                    {r.userAvatarUrl ? <img src={r.userAvatarUrl} alt={r.userFullName} /> : <span>{initial}</span>}
+                  </div>
+                  <span className="rb-tooltip-name">{r.userFullName}</span>
+                  {rCfg ? <span className="rb-tooltip-emoji">{rCfg.emoji}</span> : null}
+                </div>
+              );
+            })}
+            {reactions.length > 20 ? (
+              <div className="rb-tooltip-more">+{reactions.length - 20} người khác</div>
+            ) : null}
+          </div>
         </div>
-      )}
+      ) : null}
+
+      <div style={{ position: "relative" }}>
+        <button
+          ref={btnRef}
+          className={`rb-btn ${myReaction ? "rb-btn--active" : ""} ${fetching ? "rb-btn--fetching" : ""}`}
+          style={cfg ? { color: cfg.color } : undefined}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          onClick={onMainClick}
+          disabled={loading || fetching}
+        >
+          <span className="rb-icon">{cfg ? cfg.emoji : <ThumbsUp size={18} />}</span>
+          <span className="rb-label">{cfg ? cfg.label : "Thích"}</span>
+          {count > 0 ? <span className="rb-count">{fmtCount(count)}</span> : null}
+        </button>
+
+        {showPicker ? (
+          <div ref={pickerRef} className="rb-popup">
+            {REACTIONS.map((r, i) => (
+              <button
+                key={r.type}
+                className={`rb-emoji-btn ${myReaction === r.type ? "rb-emoji-btn--active" : ""}`}
+                style={{ animationDelay: `${i * 30}ms` }}
+                onClick={() => void onPickReaction(r.type)}
+                title={r.label}
+              >
+                <span className="rb-emoji">{r.emoji}</span>
+                <span className="rb-emoji-label">{r.label}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-/* ============================================================
-   ReactionSummary — render NGOÀI action row, phía trên
-   Dùng: <ReactionSummary postId={post.id} />
-         <div className="post-actions"> ... </div>
-   ============================================================ */
-// eslint-disable-next-line react-refresh/only-export-components
 export function ReactionSummary({ postId }: { postId: string }) {
   const [count, setCount] = useState(0);
   const [topEmojis, setTopEmojis] = useState<string[]>([]);
+  const [avatars, setAvatars] = useState<Array<string | null>>([]);
+  const [names, setNames] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     reactionService
       .getReactions(postId)
-      .then((reactions) => {
-        setCount(reactions.length);
-        const tally: Partial<Record<ReactionType, number>> = {};
-        reactions.forEach((r) => {
-          tally[r.reactionType] = (tally[r.reactionType] ?? 0) + 1;
-        });
-        const top = Object.entries(tally)
-          .sort((a, b) => (b[1] as number) - (a[1] as number))
-          .slice(0, 2)
-          .map(([type]) => getReaction(type as ReactionType)?.emoji ?? "");
-        setTopEmojis(top);
+      .then((data: ReactionUser[]) => {
+        setCount(data.length);
+        setTopEmojis(tallyTopEmojis(data));
+
+        const seen = new Set<string>();
+        const av: Array<string | null> = [];
+        const nm: string[] = [];
+        for (const r of data) {
+          if (!seen.has(r.userId)) {
+            seen.add(r.userId);
+            av.push(r.userAvatarUrl);
+            nm.push(r.userFullName);
+            if (av.length >= 3) break;
+          }
+        }
+        setAvatars(av);
+        setNames(nm);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
@@ -282,11 +243,22 @@ export function ReactionSummary({ postId }: { postId: string }) {
 
   if (!loaded || count === 0) return null;
 
-  const fmt = (n: number) =>
-    n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+  const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
 
   return (
     <div className="rb-summary">
+      <div className="rb-summary-avatars">
+        {avatars.map((url, i) =>
+          url ? (
+            <img key={i} src={url} alt={names[i] ?? ""} className="rb-summary-avatar-img" title={names[i] ?? ""} />
+          ) : (
+            <div key={i} className="rb-summary-avatar-fallback" title={names[i] ?? ""}>
+              {names[i] ? names[i].charAt(0).toUpperCase() : "?"}
+            </div>
+          ),
+        )}
+      </div>
+
       <span className="rb-summary-emojis">
         {topEmojis.map((emoji, i) => (
           <span key={i} className="rb-summary-emoji">
@@ -295,7 +267,7 @@ export function ReactionSummary({ postId }: { postId: string }) {
         ))}
       </span>
       <span className="rb-summary-count">{fmt(count)}</span>
-      <span className="rb-summary-label">lượt cảm xúc</span>
+      <span className="rb-summary-label">cảm xúc</span>
     </div>
   );
 }

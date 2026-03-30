@@ -1,35 +1,31 @@
 /* ============================================
-   Live Sessions Browse — Member View
-   Spotify Live / YouTube Live Dark Theme
+   Live Sessions Browse (Theme-aware)
    ============================================ */
 
 .lsp-page {
     min-height: 100vh;
     padding: 32px 28px;
-    color: #e2e8f0;
+    color: var(--lsp-text, #0f172a);
+    background: var(--lsp-bg, transparent);
 }
 
 .lsp-header {
-    margin-bottom: 32px;
+    margin-bottom: 28px;
 }
 
 .lsp-header h1 {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 800;
-    background: linear-gradient(135deg, #a78bfa 0%, #a0e4ff 50%, #f97316 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0 0 6px 0;
+    margin: 0 0 8px;
+    color: var(--lsp-title, #0f172a);
 }
 
 .lsp-header p {
-    color: #94a3b8;
-    font-size: 14px;
     margin: 0;
+    font-size: 14px;
+    color: var(--lsp-subtitle, #64748b);
 }
 
-/* ── Grid ── */
 .lsp-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -37,26 +33,24 @@
 }
 
 .lsp-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: var(--lsp-card-bg, #ffffff);
+    border: 1px solid var(--lsp-card-border, #e2e8f0);
     border-radius: 18px;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     cursor: pointer;
-    position: relative;
 }
 
 .lsp-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(124, 58, 237, 0.4);
     transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    border-color: var(--lsp-card-border-hover, #38bdf8);
+    box-shadow: 0 14px 34px rgba(2, 6, 23, 0.16);
 }
 
 .lsp-card-thumb {
     position: relative;
-    height: 160px;
-    background: linear-gradient(135deg, #1e1b4b, #312e81, #4c1d95);
+    height: 168px;
+    background: var(--lsp-thumb-bg, linear-gradient(135deg, #0ea5e9, #6366f1));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -67,7 +61,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(transparent 50%, rgba(0, 0, 0, 0.6));
+    background: linear-gradient(transparent 45%, rgba(0, 0, 0, 0.35));
 }
 
 .lsp-card-thumb img {
@@ -77,7 +71,7 @@
 }
 
 .lsp-thumb-icon {
-    color: rgba(167, 139, 250, 0.4);
+    color: rgba(255, 255, 255, 0.6);
     z-index: 1;
 }
 
@@ -86,38 +80,14 @@
     top: 12px;
     left: 12px;
     z-index: 2;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    background: rgba(239, 68, 68, 0.9);
+    letter-spacing: .6px;
+    background: rgba(239, 68, 68, .92);
     color: #fff;
-    backdrop-filter: blur(4px);
-    animation: lsp-pulse 2s infinite;
-}
-
-.lsp-live-badge::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #fff;
-    animation: lsp-dot 1s infinite;
-}
-
-@keyframes lsp-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-}
-
-@keyframes lsp-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
 }
 
 .lsp-listeners-badge {
@@ -132,9 +102,23 @@
     border-radius: 6px;
     font-size: 11px;
     font-weight: 700;
-    background: rgba(0, 0, 0, 0.6);
-    color: #e2e8f0;
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+}
+
+.lsp-genre {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    z-index: 2;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    background: rgba(14, 165, 233, 0.2);
+    color: #e0f2fe;
 }
 
 .lsp-card-body {
@@ -142,20 +126,19 @@
 }
 
 .lsp-card-name {
+    margin: 0 0 6px;
     font-size: 17px;
     font-weight: 700;
-    color: #f1f5f9;
-    margin: 0 0 5px;
+    color: var(--lsp-card-title, #0f172a);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .lsp-card-desc {
-    font-size: 13px;
-    color: #64748b;
     margin: 0 0 12px;
-    line-height: 1.5;
+    font-size: 13px;
+    color: var(--lsp-card-desc, #64748b);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
@@ -167,6 +150,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
 }
 
 .lsp-card-meta {
@@ -176,103 +160,59 @@
 }
 
 .lsp-meta {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 5px;
     font-size: 12px;
-    color: #64748b;
-}
-
-.lsp-meta svg {
-    opacity: 0.6;
+    color: var(--lsp-meta, #64748b);
 }
 
 .lsp-join-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 7px 16px;
-    border-radius: 20px;
+    border: none;
+    border-radius: 999px;
+    padding: 7px 15px;
     font-size: 12px;
     font-weight: 700;
-    border: none;
+    color: #fff;
     cursor: pointer;
     background: linear-gradient(135deg, #1a9fd4, #55c5f1);
-    color: #fff;
-    transition: all 0.2s;
-    box-shadow: 0 2px 12px rgba(124, 58, 237, 0.3);
 }
 
-.lsp-join-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5);
-}
-
-/* ── Genre Tag ── */
-.lsp-genre {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    background: rgba(167, 139, 250, 0.12);
-    color: #a78bfa;
-    position: absolute;
-    bottom: 12px;
-    left: 12px;
-    z-index: 2;
-}
-
-/* ── Empty ── */
-.lsp-empty {
+.lsp-empty,
+.lsp-loading {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 80px 24px;
     text-align: center;
+    gap: 10px;
+    padding: 88px 20px;
 }
 
 .lsp-empty-icon {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: rgba(124, 58, 237, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
-}
-
-.lsp-empty-icon svg {
-    color: #1a9fd4;
-    opacity: 0.5;
+    background: var(--lsp-empty-bg, rgba(2, 132, 199, .08));
 }
 
 .lsp-empty h3 {
-    color: #e2e8f0;
-    font-size: 18px;
-    font-weight: 700;
-    margin: 0 0 6px;
-}
-
-.lsp-empty p {
-    color: #64748b;
-    font-size: 14px;
     margin: 0;
+    font-size: 20px;
+    color: var(--lsp-empty-title, #0f172a);
 }
 
-/* ── Loading ── */
-.lsp-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 100px 24px;
-    gap: 16px;
-    color: #94a3b8;
+.lsp-empty p,
+.lsp-loading p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--lsp-empty-subtitle, #64748b);
 }
 
 .lsp-spin {
@@ -284,13 +224,43 @@
     to { transform: rotate(360deg); }
 }
 
-/* ── Responsive ── */
-@media (max-width: 700px) {
-    .lsp-grid {
-        grid-template-columns: 1fr;
-    }
+/* Light defaults */
+:root {
+    --lsp-bg: transparent;
+    --lsp-text: #0f172a;
+    --lsp-title: #0f172a;
+    --lsp-subtitle: #64748b;
+    --lsp-card-bg: #ffffff;
+    --lsp-card-border: #e2e8f0;
+    --lsp-card-border-hover: #38bdf8;
+    --lsp-card-title: #0f172a;
+    --lsp-card-desc: #64748b;
+    --lsp-meta: #64748b;
+    --lsp-empty-bg: rgba(2, 132, 199, .08);
+    --lsp-empty-title: #0f172a;
+    --lsp-empty-subtitle: #64748b;
+    --lsp-thumb-bg: linear-gradient(135deg, #0ea5e9, #6366f1);
+}
 
-    .lsp-page {
-        padding: 20px 16px;
-    }
+/* Dark theme */
+[data-theme="dark"] {
+    --lsp-bg: transparent;
+    --lsp-text: #e2e8f0;
+    --lsp-title: #e2e8f0;
+    --lsp-subtitle: #94a3b8;
+    --lsp-card-bg: rgba(255, 255, 255, 0.04);
+    --lsp-card-border: rgba(255, 255, 255, 0.08);
+    --lsp-card-border-hover: rgba(56, 189, 248, 0.5);
+    --lsp-card-title: #f1f5f9;
+    --lsp-card-desc: #94a3b8;
+    --lsp-meta: #94a3b8;
+    --lsp-empty-bg: rgba(99, 102, 241, 0.16);
+    --lsp-empty-title: #e2e8f0;
+    --lsp-empty-subtitle: #94a3b8;
+    --lsp-thumb-bg: linear-gradient(135deg, #1e1b4b, #312e81, #4c1d95);
+}
+
+@media (max-width: 700px) {
+    .lsp-page { padding: 20px 16px; }
+    .lsp-grid { grid-template-columns: 1fr; }
 }

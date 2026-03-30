@@ -4,12 +4,12 @@ import Footer from "./Footer";
 import { MusicPlayer } from "../common/MusicPlayer";
 import { useEffect } from "react";
 
-// Các trang không cần Footer (full-screen fixed layout)
+// Các trang không cần Footer (full-screen live room)
 const NO_FOOTER_ROUTES = ["/livestream"];
 
 const MainLayout = () => {
   const location = useLocation();
-  const hideFooter = NO_FOOTER_ROUTES.includes(location.pathname);
+  const hideFooter = NO_FOOTER_ROUTES.includes(location.pathname) || location.pathname.startsWith('/live/');
 
   // Lock window scroll trên các trang full-screen
   useEffect(() => {

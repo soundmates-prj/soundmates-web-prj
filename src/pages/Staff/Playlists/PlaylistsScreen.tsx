@@ -193,7 +193,7 @@ export function PlaylistsScreen() {
   };
 
   const handleAddSelectedSystemToPlaylist = async () => {
-    if (!selectedPlaylist || selectedSystemMediaIds.length === 0) return;
+    if (!selectedPlaylist || !selectedStation || selectedSystemMediaIds.length === 0) return;
 
     const existingIds = new Set(tracks.map((t) => t.mediaFileId));
     const idsToAdd = selectedSystemMediaIds.filter((id) => !existingIds.has(id));
@@ -205,13 +205,54 @@ export function PlaylistsScreen() {
 
     setMusicActionLoading(true);
     try {
-      await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, idsToAdd);
+      // Bước 1: Import system media lên AzuraCast trước
+      const importResult = await liveSessionApiService.importSystemMediaBatch(
+        selectedStation.id,
+        idsToAdd
+      );
+
+      if (importResult.failedCount > 0) {
+        showError(
+          "Import lỗi",
+          `${importResult.failedCount} bài không thể import lên AzuraCast. Kiểm tra file trên server.`
+        );
+        if (importResult.errors.length > 0) {
+          console.warn("Import errors:", importResult.errors);
+        }
+      }
+
+      if (importResult.importedCount > 0) {
+        showSuccess(
+          "Import thành công",
+          `Đã import ${importResult.importedCount} bài lên AzuraCast`
+        );
+      }
+
+      // Bước 2: Refresh station music để lấy media mới
+      const stationMedia = await liveSessionApiService.getStationMusic(selectedStation.id);
+      setStationMusic(stationMedia);
+
+      // Bước 3: Lấy các media mới được import (có ExternalMediaId)
+      // và thêm vào playlist
+      const importedMediaIds = importResult.importedItems
+        .map((item) => item.mediaFileId)
+        .filter((id) => !existingIds.has(id));
+
+      if (importedMediaIds.length > 0) {
+        await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, importedMediaIds);
+        showSuccess("Đã thêm", `Đã thêm ${importedMediaIds.length} bài vào playlist`);
+      }
+
+      // Refresh playlist tracks
       const updatedTracks = await liveSessionApiService.getPlaylistTracks(selectedPlaylist.id);
       setTracks(updatedTracks);
-      showSuccess("Đã thêm", `Đã thêm ${idsToAdd.length} bài từ System Media vào playlist`);
       setSelectedSystemMediaIds([]);
-    } catch {
-      showError("Lỗi", "Không thể thêm system media vào playlist");
+    } catch (err: any) {
+      console.error("Add system to playlist error:", err);
+      showError(
+        "Lỗi",
+        err?.response?.data?.message || "Không thể thêm system media vào playlist"
+      );
     } finally {
       setMusicActionLoading(false);
     }

@@ -70,11 +70,16 @@ export default function Subscription() {
 
     const toastId = showToast.loading("Đang xử lý thanh toán...");
     try {
+      // Luôn gửi returnUrl để backend redirect đúng về frontend
+      const frontendUrl = window.location.origin;
+      const returnUrl = `${frontendUrl}/payment/result`;
+
       const response = await api.post("/payments", {
         targetType: "Subscription",
         targetId: plan.id ?? plan.planName,
         method: method,
         totalAmount: plan.price,
+        returnUrl,
       });
 
       showToast.dismiss(toastId);
@@ -99,29 +104,29 @@ export default function Subscription() {
     const tierName = plan.planName.toLowerCase();
     const isFree = tierName.includes("free") || plan.price === 0;
     const isPremium = tierName.includes("premium");
-    const isElite = tierName.includes("elite");
 
     const features = [
-      "Nghe podcast & nhạc không giới hạn",
-      "Tham gia phòng Live cùng cộng đồng",
+      "Thưởng thức âm nhạc & podcast không giới hạn",
+      "Giao lưu vui vẻ cùng cộng đồng trong phòng Live",
     ];
 
     if (isFree) {
-      features.push(`${plan.requestLimit} request phát nhạc mỗi ngày`);
-      features.push("Chất lượng âm thanh tiêu chuẩn");
+      features.push(`<strong>${plan.requestLimit} lượt yêu cầu bài hát</strong> mỗi ngày (Đủ cho một buổi sáng chill đúng không nè?)`);
+      features.push("Chưa hỗ trợ Podcast & AI Clone (Gói nâng cấp đang chờ bạn khám phá đó!)");
     } else if (isPremium) {
-      features.push(`${plan.requestLimit} request phát nhạc mỗi ngày`);
-      features.push(`${plan.podcastRequestLimit} request podcast mỗi ngày`);
-      features.push(`Clone <strong>${plan.voiceModelLimit} giọng</strong> từ giọng thật của bạn`);
-      features.push(`${plan.ttsMinuteLimit} phút TTS/tháng`);
-      features.push("Giao diện theme cơ bản");
+      features.push("Mọi đặc quyền từ gói Miễn Phí");
+      features.push(`<strong>${plan.requestLimit} lượt yêu cầu bài hát</strong> mỗi ngày (Thoải mái quẩy cả ngày luôn nhé!)`);
+      features.push(`<strong>${plan.podcastRequestLimit} lượt tạo Podcast</strong> mỗi ngày`);
+      features.push(`Tự tạo <strong>${plan.voiceModelLimit} giọng nói AI</strong> của riêng bạn`);
+      features.push(`<strong>${plan.ttsMinuteLimit} phút</strong> AI đọc văn bản (Tổng thời lượng mỗi tháng)`);
+      features.push("Theme giao diện cơ bản (Nhìn là mê, xài là phê)");
     } else {
-      features.push(`${plan.requestLimit} request phát nhạc mỗi ngày <strong>+ ưu tiên hàng đợi</strong>`);
-      features.push(`${plan.podcastRequestLimit} request podcast mỗi ngày`);
-      features.push(`Clone tới <strong>${plan.voiceModelLimit} giọng</strong> không giới hạn`);
-      features.push(`${plan.ttsMinuteLimit} phút TTS/tháng`);
-      features.push("Giao diện theme mới nhất");
-      features.push("Gửi tin nhắn podcast trong phòng Live");
+      features.push("Đẳng cấp tối thượng - dành riêng cho hệ 'VIP'");
+      features.push(`<strong>${plan.requestLimit} lượt yêu cầu nhạc + Ưu tiên hàng đợi</strong> (Chốt đơn là phát ngay!)`);
+      features.push(`<strong>${plan.podcastRequestLimit} lượt tạo Podcast</strong> mỗi ngày`);
+      features.push(`Tự do sáng tạo tới <strong>${plan.voiceModelLimit} giọng AI</strong> từ bất kỳ nguồn nào`);
+      features.push(`<strong>${plan.ttsMinuteLimit} phút</strong> AI đọc văn bản (Tổng thời lượng mỗi tháng)`);
+      features.push("Cập nhật mọi Theme mới nhất & 'chanh sả' nhất");
     }
 
     return features;
@@ -145,7 +150,7 @@ export default function Subscription() {
         transition={{ duration: 0.6 }}
       >
         <h1 className="subscription-title">Gói đăng ký</h1>
-        <p className="subscription-subtitle">Nâng tầm trải nghiệm âm nhạc của bạn cùng SoundMates</p>
+        <p className="subscription-subtitle">Chào mừng bạn! Hãy chọn một gói dịch vụ để bắt đầu hành trình âm nhạc tuyệt vời nhé.</p>
       </motion.div>
 
       {/* Subscription Plans */}
@@ -155,8 +160,8 @@ export default function Subscription() {
             const getOrder = (plan: Plan) => {
               const name = plan.planName.toLowerCase();
               if (name.includes("free") || plan.price === 0) return 0;
-              if (name.includes("premium")) return 1;
-              if (name.includes("elite")) return 2;
+              if (name.includes("elite")) return 1; // Elite in the center
+              if (name.includes("premium")) return 2;
               return 3;
             };
             return getOrder(a) - getOrder(b);
@@ -170,6 +175,14 @@ export default function Subscription() {
             let cardClass = "free";
             if (isElite) cardClass = "elite";
             else if (isPremium) cardClass = "premium";
+
+            const getPlanDescription = (plan: Plan) => {
+              const name = plan.planName.toLowerCase();
+              if (name.includes("free") || plan.price === 0) return "Trải nghiệm cơ bản, không cần thanh toán.";
+              if (name.includes("premium")) return "Nâng cấp giới hạn và mở khóa AI giọng đọc.";
+              if (name.includes("elite")) return "Toàn quyền truy cập, ưu tiên cao nhất.";
+              return plan.description;
+            };
 
             return (
               <motion.div
@@ -196,7 +209,7 @@ export default function Subscription() {
                       <span className="period">/{plan.durationDays} Ngày</span>
                     )}
                   </div>
-                  <p className="plan-description">{plan.description}</p>
+                  <p className="plan-description">{getPlanDescription(plan)}</p>
                 </div>
 
                 <motion.button
@@ -212,11 +225,11 @@ export default function Subscription() {
                       ? "Đăng ký"
                       : processingMethod !== null && selectedPlan?.id === plan.id
                         ? "Đang xử lý..."
-                        : "Mua Ngay"}
+                        : "Chọn Gói Này"}
                 </motion.button>
 
                 <div className="plan-features">
-                  <h3 className="features-title">Đặc quyền:</h3>
+                  <h3 className="features-title">Ưu đãi dành cho bạn:</h3>
                   <ul className="features-list">
                     {getFeatures(plan).map((feature, idx) => (
                       <li
@@ -228,11 +241,11 @@ export default function Subscription() {
                 </div>
 
                 {plan.price > 0 && (
-                  <p className="included-features">Đã bao gồm tất cả các tính năng miễn phí</p>
+                  <p className="included-features">Bao gồm tất cả các tính năng từ gói Miễn Phí</p>
                 )}
 
                 {isCurrentPlan && (
-                  <div className="current-plan-badge">Gói hiện tại của bạn</div>
+                  <div className="current-plan-badge">Gói bạn đang đồng hành cùng chúng mình</div>
                 )}
               </motion.div>
             );

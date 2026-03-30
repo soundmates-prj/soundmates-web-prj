@@ -10,16 +10,37 @@ import {
   Trash2,
   X,
   MoreHorizontal,
+  ThumbsUp,
 } from "lucide-react";
 import api from "../../services/axios";
 import commentService from "../../services/commentService";
+import reactionService, {
+  type ReactionType,
+  type ReactionUser,
+} from "../../services/reactionService";
 import type { Comment } from "../../types/comment";
 import ShareCard from "./ShareCard";
 import type { ShareCardData } from "./ShareCard";
 import "./CommentModal.css";
 
+/* ── Reaction config ── */
+const REACTIONS: {
+  type: ReactionType;
+  emoji: string;
+  label: string;
+  color: string;
+}[] = [
+  { type: "like", emoji: "👍", label: "Thích", color: "#1877f2" },
+  { type: "love", emoji: "❤️", label: "Yêu thích", color: "#f33e58" },
+  { type: "haha", emoji: "😆", label: "Haha", color: "#f7b125" },
+  { type: "wow", emoji: "😮", label: "Wow", color: "#f7b125" },
+  { type: "sad", emoji: "😢", label: "Buồn", color: "#f7b125" },
+  { type: "angry", emoji: "😡", label: "Phẫn nộ", color: "#e9710f" },
+];
+const getReaction = (type: ReactionType | null) =>
+  REACTIONS.find((r) => r.type === type) ?? null;
+
 /* ── Parse share-music JSON ── */
-// eslint-disable-next-line react-refresh/only-export-components
 export const parseShareMusic = (contentText: string): ShareCardData | null => {
   try {
     const raw = JSON.parse(contentText);
@@ -40,7 +61,7 @@ export const parseShareMusic = (contentText: string): ShareCardData | null => {
   }
 };
 
-/* ── Props cho modal ── */
+/* ── Props ── */
 export interface CommentModalPost {
   id: string;
   userId: string;
@@ -53,9 +74,34 @@ export interface CommentModalPost {
   moodTag?: string | null;
   publishedAt?: string | null;
   createdAt: string;
-  /* Thông tin tác giả */
   authorName: string;
   authorAvatar?: string | null;
+}
+
+/* ── CommentAvatar ── */
+function CommentAvatar({
+  url,
+  name,
+  size = 32,
+}: {
+  url?: string | null;
+  name: string;
+  size?: number;
+}) {
+  return (
+    <div className="cm-avatar" style={{ width: size, height: size }}>
+      {url ? (
+        <img src={url} alt={name} style={{ width: size, height: size }} />
+      ) : (
+        <div
+          className="cm-avatar-fallback"
+          style={{ width: size, height: size }}
+        >
+          {(name || "U").charAt(0).toUpperCase()}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ── CommentItem ── */
@@ -97,28 +143,7 @@ function CommentItem({
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
 
-  const handleUpdate = async () => {
-    if (!editContent.trim() || editContent === comment.content) {
-      setEditing(false);
-      return;
-    }
-    setSubmitting(true);
-    await onUpdate(comment.id, editContent.trim());
-    setEditing(false);
-    setSubmitting(false);
-  };
-
-  const handleReply = async () => {
-    if (!replyText.trim()) return;
-    setSubmitting(true);
-    await onReply(comment.id, replyText.trim());
-    setReplyText("");
-    setReplying(false);
-    setSubmitting(false);
-  };
-
   const timeAgo = (iso: string) => {
-    // eslint-disable-next-line react-hooks/purity
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return "Vừa xong";
@@ -136,13 +161,7 @@ function CommentItem({
 
   return (
     <div className="cm-item">
-      <div className="cm-avatar">
-        {comment.userAvatarUrl ? (
-          <img src={comment.userAvatarUrl} alt={comment.userFullName} />
-        ) : (
-          <User size={14} />
-        )}
-      </div>
+      <CommentAvatar url={comment.userAvatarUrl} name={comment.userFullName} />
       <div className="cm-body">
         {editing ? (
           <div className="cm-edit-wrap">
@@ -155,7 +174,6 @@ function CommentItem({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleUpdate();
                 }
               }}
             />
@@ -168,7 +186,14 @@ function CommentItem({
               </button>
               <button
                 className="cm-btn cm-btn--primary"
-                onClick={handleUpdate}
+                onClick={() => {
+                  void (async () => {
+                    setSubmitting(true);
+                    await onUpdate(comment.id, editContent.trim());
+                    setEditing(false);
+                    setSubmitting(false);
+                  })();
+                }}
                 disabled={submitting}
               >
                 <Send size={12} /> Lưu
@@ -209,10 +234,10 @@ function CommentItem({
                         className="cm-menu-item cm-menu-item--danger"
                         onClick={() => {
                           setMenuOpen(false);
-                          onDelete(comment.id);
+                          void onDelete(comment.id);
                         }}
                       >
-                        <Trash2 size={13} /> Xoá bình luận
+                        <Trash2 size={13} /> Xoá
                       </button>
                     )}
                   </div>
@@ -251,13 +276,29 @@ function CommentItem({
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    handleReply();
+                    void (async () => {
+                      if (!replyText.trim()) return;
+                      setSubmitting(true);
+                      await onReply(comment.id, replyText.trim());
+                      setReplyText("");
+                      setReplying(false);
+                      setSubmitting(false);
+                    })();
                   }
                 }}
               />
               <button
                 className="cm-send-icon-btn"
-                onClick={handleReply}
+                onClick={() =>
+                  void (async () => {
+                    if (!replyText.trim()) return;
+                    setSubmitting(true);
+                    await onReply(comment.id, replyText.trim());
+                    setReplyText("");
+                    setReplying(false);
+                    setSubmitting(false);
+                  })()
+                }
                 disabled={submitting || !replyText.trim()}
               >
                 <Send size={14} />
@@ -293,6 +334,71 @@ function CommentItem({
   );
 }
 
+/* ── ReactionsList inside CommentModal ── */
+function ReactionsList({ postId }: { postId: string }) {
+  const [reactions, setReactions] = useState<ReactionUser[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    reactionService
+      .getReactions(postId)
+      .then((data: ReactionUser[]) => {
+        setReactions(data);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, [postId]);
+
+  if (!loaded) return null;
+
+  const uniqueUsers = (() => {
+    const seen = new Map<string, ReactionUser>();
+    for (const r of reactions) {
+      if (!seen.has(r.userId)) seen.set(r.userId, r);
+    }
+    return Array.from(seen.values());
+  })();
+
+  const byType = REACTIONS.map((cfg) => ({
+    ...cfg,
+    users: uniqueUsers.filter((r) => r.reactionType === cfg.type),
+  })).filter((g) => g.users.length > 0);
+
+  if (byType.length === 0) return null;
+
+  return (
+    <div className="rl-list">
+      {byType.map((group) => (
+        <div key={group.type} className="rl-group">
+          <div className="rl-group-header">
+            <span className="rl-emoji">{group.emoji}</span>
+            <span className="rl-label">{group.label}</span>
+            <span className="rl-count">{group.users.length}</span>
+          </div>
+          <div className="rl-users">
+            {group.users.map((u) => (
+              <div key={u.userId} className="rl-user-chip">
+                {u.userAvatarUrl ? (
+                  <img
+                    src={u.userAvatarUrl}
+                    alt={u.userFullName}
+                    className="rl-user-avatar"
+                  />
+                ) : (
+                  <div className="rl-user-avatar-fallback">
+                    {u.userFullName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="rl-user-name">{u.userFullName}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ── CommentModal ── */
 export default function CommentModal({
   post,
@@ -309,9 +415,10 @@ export default function CommentModal({
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{
-    profileImageUrl?: string | null;
-  } | null>(null);
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(
+    null,
+  );
+  const [showReactions, setShowReactions] = useState(false);
 
   const isLoggedIn = !!localStorage.getItem("accessToken");
 
@@ -339,7 +446,7 @@ export default function CommentModal({
       hype: "#ef4444",
       energetic: "#f97316",
       romantic: "#ec4899",
-      focus: "#8b5cf6",
+      focus: "#8b5e6",
     };
     return tag ? (map[tag.toLowerCase()] ?? "#64748b") : "#64748b";
   };
@@ -352,7 +459,7 @@ export default function CommentModal({
         const data = res.data?.data;
         if (data?.id) {
           setCurrentUserId(data.id);
-          setCurrentUser(data);
+          setCurrentUserAvatar(data.profileImageUrl ?? null);
         }
       })
       .catch(() => {});
@@ -377,13 +484,14 @@ export default function CommentModal({
   );
 
   useEffect(() => {
-    fetchComments(1);
+    void fetchComments(1);
+  }, [fetchComments]);
+  useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [fetchComments]);
-
+  }, []);
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -397,7 +505,8 @@ export default function CommentModal({
     setSubmitting(true);
     try {
       const added = await commentService.addComment(post.id, newComment.trim());
-      setComments((prev) => [...prev, added]);
+      // Backend will populate userFullName/avatar now
+      setComments((prev) => [added, ...prev]);
       setTotalCount((c) => c + 1);
       setNewComment("");
     } catch (err) {
@@ -462,7 +571,10 @@ export default function CommentModal({
 
   return (
     <div className="cm-modal-overlay" onClick={onClose}>
-      <div className="cm-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="cm-modal cm-modal--wide"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* ── Left: post preview ── */}
         <div className="cm-modal-post-preview">
           {!shareData && post.imageUrl?.startsWith("http") ? (
@@ -481,9 +593,7 @@ export default function CommentModal({
             <div className="cm-preview-no-img">
               <div style={{ padding: "20px", textAlign: "center" }}>
                 {post.title && <p className="cm-preview-title">{post.title}</p>}
-                <p className="cm-preview-text" style={{ WebkitLineClamp: 8 }}>
-                  {post.contentText}
-                </p>
+                <p className="cm-preview-text">{post.contentText}</p>
               </div>
             </div>
           )}
@@ -508,20 +618,18 @@ export default function CommentModal({
                   className="cm-preview-mood"
                   style={{ background: `${moodColor}18`, color: moodColor }}
                 >
-                  {post.moodTag}
+                  #{post.moodTag}
                 </span>
               )}
             </div>
-            {!shareData && post.title && (
-              <p className="cm-preview-title">{post.title}</p>
-            )}
+            {post.title && <p className="cm-preview-title">{post.title}</p>}
             {!shareData && (
               <p className="cm-preview-text">{post.contentText}</p>
             )}
           </div>
         </div>
 
-        {/* ── Right: header + comments + input ── */}
+        {/* ── Right: comments + reactions ── */}
         <div className="cm-modal-right">
           <div className="cm-modal-header">
             <h3 className="cm-modal-title">
@@ -531,10 +639,37 @@ export default function CommentModal({
                 <span className="cm-modal-count">{totalCount}</span>
               )}
             </h3>
-            <button className="cm-modal-close" onClick={onClose}>
-              <X size={16} />
-            </button>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              {/* Toggle reactions panel */}
+              <button
+                className={`cm-reactions-toggle ${showReactions ? "active" : ""}`}
+                onClick={() => setShowReactions((v) => !v)}
+                title="Xem reactions"
+              >
+                <ThumbsUp size={14} />
+                Cảm xúc
+              </button>
+              <button className="cm-modal-close" onClick={onClose}>
+                <X size={16} />
+              </button>
+            </div>
           </div>
+
+          {/* ── Reactions panel ── */}
+          {showReactions && (
+            <div className="cm-reactions-panel">
+              <div className="cm-reactions-panel-header">
+                <span>Người bày tỏ cảm xúc</span>
+                <button
+                  className="cm-reactions-close"
+                  onClick={() => setShowReactions(false)}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+              <ReactionsList postId={post.id} />
+            </div>
+          )}
 
           <div className="cm-modal-body">
             {loading ? (
@@ -566,7 +701,7 @@ export default function CommentModal({
                   <div className="cm-pagination">
                     <button
                       className="cm-page-btn"
-                      onClick={() => fetchComments(page - 1)}
+                      onClick={() => void fetchComments(page - 1)}
                       disabled={page <= 1 || loading}
                     >
                       <ChevronLeft size={13} />
@@ -576,7 +711,7 @@ export default function CommentModal({
                     </span>
                     <button
                       className="cm-page-btn"
-                      onClick={() => fetchComments(page + 1)}
+                      onClick={() => void fetchComments(page + 1)}
                       disabled={page >= totalPages || loading}
                     >
                       <ChevronRight size={13} />
@@ -591,8 +726,8 @@ export default function CommentModal({
             {isLoggedIn ? (
               <div className="cm-input-wrap">
                 <div className="cm-input-avatar">
-                  {currentUser?.profileImageUrl ? (
-                    <img src={currentUser.profileImageUrl} alt="me" />
+                  {currentUserAvatar ? (
+                    <img src={currentUserAvatar} alt="me" />
                   ) : (
                     <User size={14} />
                   )}

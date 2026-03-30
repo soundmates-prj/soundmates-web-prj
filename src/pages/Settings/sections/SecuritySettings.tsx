@@ -51,8 +51,15 @@ export default function SecuritySettings() {
         oldPassword: form.oldPassword,
         newPassword: form.newPassword,
       });
-      showSuccess("Thành công", "Đổi mật khẩu thành công");
+      showSuccess("Thành công", "Đổi mật khẩu thành công. Bạn sẽ được đăng xuất...");
       setForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+
+      // Sign-out after password change for security — let user see the toast first
+      setTimeout(() => {
+        localStorage.clear();
+        window.dispatchEvent(new Event("authChange"));
+        window.location.href = "/login";
+      }, 1500);
     } catch (error: any) {
       const msg = error.response?.data?.message || "Không thể đổi mật khẩu";
       showError("Lỗi", msg);

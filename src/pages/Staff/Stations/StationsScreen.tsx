@@ -28,9 +28,7 @@ export function StationsScreen() {
     shortCode: "",
   });
 
-  // Check if user is Admin
-  const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
-  const isAdmin = userInfo?.roleName?.toUpperCase() === "ADMIN";
+  // Staff and Admin can create stations
 
   useEffect(() => {
     loadStations();
@@ -122,15 +120,13 @@ export function StationsScreen() {
             <RefreshCw size={16} className={loading ? "staff-spin" : ""} />
             Làm mới
           </button>
-          {isAdmin && (
-            <button
-              className="staff-btn staff-btn--outline"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <Plus size={16} />
-              Tạo Station
-            </button>
-          )}
+          <button
+            className="staff-btn staff-btn--outline"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus size={16} />
+            Tạo Station
+          </button>
           <button className="staff-btn staff-btn--primary" onClick={handleSync} disabled={syncing}>
             <ArrowDownToLine size={16} className={syncing ? "staff-spin" : ""} />
             {syncing ? "Đang sync..." : "Đồng bộ"}

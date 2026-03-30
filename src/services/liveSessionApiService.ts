@@ -108,7 +108,7 @@ export interface SyncMediaFilesResult {
 export interface ImportedSystemMediaItemResult {
   mediaFileId: string;
   title: string;
-  stationMediaUniqueId: string;
+  stationMediaUniqueId: string; // AzuraCast unique_id sau khi import
 }
 
 export interface ImportSystemMediaBatchResult {
@@ -644,7 +644,6 @@ class LiveSessionApiService {
   async reviewSongRequest(
     songRequestId: string,
     data: {
-      reviewedByUserId: string;
       action: "approve" | "reject";
       rejectReason?: string;
     },
