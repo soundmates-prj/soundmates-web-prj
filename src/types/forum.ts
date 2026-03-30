@@ -77,7 +77,6 @@ export const MOOD_OPTIONS: { value: MoodTag | "all"; label: string }[] = [
   { value: "happy", label: "Vui vẻ" },
   { value: "sad", label: "Buồn" },
   { value: "chill", label: "Chill" },
-  { value: "hype", label: "Hype" },
   { value: "energetic", label: "Năng động" },
   { value: "romantic", label: "Lãng mạn" },
   { value: "focus", label: "Tập trung" },

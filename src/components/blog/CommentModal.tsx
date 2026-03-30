@@ -600,7 +600,7 @@ export default function CommentModal({
                 <div className="cm-input-inner">
                   <textarea
                     className="cm-textarea"
-                    placeholder="Viết bình luận... (Enter để gửi)"
+                    placeholder="Viết bình luận..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     rows={1}
