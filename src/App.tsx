@@ -1,20 +1,23 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { PlayerProvider } from "./context/PlayerContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { LiveSessionProvider } from "./context/LiveSessionContext";
 import Home from "./pages/Home/Home";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
+import HostLayout from "./components/layout/HostLayout";
 import { AnalyticsScreen } from "./pages/Admin/Analytics/AnalyticsScreen";
 import AdminSettingsPage from "./pages/Admin/AdminSettingsPage";
 import { ToastProvider } from "./components/common/Toast";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
 import ForgetPassword from "./pages/Auth/ForgetPassword";
 import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
-import LivestreamPage from "./pages/Livestream/Livestream";
 import { LiveSessionsPage } from "./pages/Livestream/LiveSessionsPage";
 import { LiveRoomPage } from "./pages/Livestream/LiveRoomPage";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import { useParams } from "react-router-dom";
 import Subscription from "./pages/Subscription/Subscription";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import Profile from "./pages/Profile/profile";
@@ -43,6 +46,35 @@ import { PodcastCreatorPage } from "./pages/PodcastCreator/PodcastCreatorPage";
 import ForumPage from "./pages/Forum/ForumPage";
 import SchedulePublicPage from "./pages/SchedulePublic/SchedulePublicPage";
 import TransactionsPage from "./pages/Admin/LiveOps/TransactionsPage";
+
+// ── Host Page Imports ──
+import { HostDashboard } from "./pages/Host/Dashboard/HostDashboard";
+import { HostScheduleView } from "./pages/Host/Schedule/HostScheduleView";
+import { HostMusicRequestsScreen } from "./pages/Host/Requests/HostMusicRequestsScreen";
+import { HostPodcastRequestsScreen } from "./pages/Host/Requests/HostPodcastRequestsScreen";
+import { HostSessionDashboard } from "./pages/Host/LiveSession/HostSessionDashboard";
+import { HostLiveController } from "./pages/Host/LiveSession/HostLiveController";
+import { HostAnalyticsScreen } from "./pages/Host/Analytics/HostAnalyticsScreen";
+import HostSettingsPage from "./pages/Host/Settings/HostSettingsPage";
+
+// ── New Staff Page Imports ──
+import { ChatModerationScreen } from "./pages/Staff/ChatModeration/ChatModerationScreen";
+import { ScriptModerationScreen } from "./pages/Staff/Scripts/ScriptModerationScreen";
+import { CreateLiveSessionScreen } from "./pages/Staff/LiveSession/CreateLiveSessionScreen";
+import { StaffAnalyticsScreen } from "./pages/Staff/Analytics/StaffAnalyticsScreen";
+import { LiveStreamScriptEditor } from "./pages/Staff/Schedule/LiveStreamScriptEditor";
+
+// ── New Admin Page Imports ──
+import { RoleManagementScreen } from "./pages/Admin/Roles/RoleManagementScreen";
+import { SystemModerationScreen } from "./pages/Admin/Moderation/SystemModerationScreen";
+import { UserPostsManagementScreen } from "./pages/Admin/Posts/UserPostsManagementScreen";
+import { SystemConfigScreen } from "./pages/Admin/SystemConfig/SystemConfigScreen";
+
+// ── LiveRoomPageWithKey: force remount when sessionId changes ──
+function LiveRoomPageWithKey() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  return <LiveRoomPage key={sessionId} />;
+}
 
 function App() {
   return (
@@ -79,6 +111,10 @@ function App() {
             <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
             <Route path="settings" element={<AdminSettingsPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="roles" element={<RoleManagementScreen />} />
+            <Route path="moderation" element={<SystemModerationScreen />} />
+            <Route path="posts" element={<UserPostsManagementScreen />} />
+            <Route path="system-config" element={<SystemConfigScreen />} />
           </Route>
 
           {/* ── Staff Routes ── */}
@@ -92,21 +128,54 @@ function App() {
           >
             <Route path="dashboard" element={<StaffDashboard />} />
             <Route path="sessions" element={<StaffLiveSessionsScreen />} />
+            <Route path="create-session" element={<CreateLiveSessionScreen />} />
             <Route path="schedule" element={<ScheduleScreen />} />
             <Route path="music-requests" element={<MusicRequestsScreen />} />
             <Route path="podcast-requests" element={<PodcastRequestsScreen />} />
+            <Route path="chat-moderation" element={<ChatModerationScreen />} />
+            <Route path="ai-scripts" element={<ScriptModerationScreen />} />
+            <Route path="script-editor" element={<LiveStreamScriptEditor />} />
+            <Route path="analytics" element={<StaffAnalyticsScreen />} />
             <Route path="podcast-creator" element={<PodcastCreatorPage />} />
             <Route path="playlists" element={<PlaylistsScreen />} />
             <Route path="stations" element={<StationsScreen />} />
             <Route path="settings" element={<StaffSettingsPage />} />
           </Route>
 
+          {/* ── Host Routes ── */}
+          <Route
+            path="/host"
+            element={
+              <ProtectedRoute requiredRole="HOST">
+                <LiveSessionProvider>
+                  <HostLayout />
+                </LiveSessionProvider>
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<HostDashboard />} />
+            <Route path="sessions" element={<HostSessionDashboard />} />
+            <Route path="admin-sessions" element={<LiveSessionPage />} />
+            <Route path="admin-sessions/:sessionId" element={<LiveSessionDetailPage />} />
+            <Route path="live/:sessionId" element={<HostLiveController />} />
+            <Route path="schedule" element={<HostScheduleView />} />
+            <Route path="music-requests" element={<HostMusicRequestsScreen />} />
+            <Route path="podcast-requests" element={<HostPodcastRequestsScreen />} />
+            <Route path="analytics" element={<HostAnalyticsScreen />} />
+            <Route path="settings" element={<HostSettingsPage />} />
+          </Route>
+
           {/* ── Public Routes ── */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
-            <Route path="/livestream" element={<LivestreamPage />} />
+            {/* Redirect /livestream → /live */}
+            <Route path="/livestream" element={<Navigate to="/live" replace />} />
             <Route path="/live" element={<LiveSessionsPage />} />
-            <Route path="/live/:sessionId" element={<LiveRoomPage />} />
+            <Route path="/live/:sessionId" element={
+              <ErrorBoundary>
+                <LiveRoomPageWithKey />
+              </ErrorBoundary>
+            } />
             <Route path="/subscription" element={<Subscription />} />
             <Route path="/forum" element={<ForumPage />} />
             <Route path="/schedule-public" element={<SchedulePublicPage />} />

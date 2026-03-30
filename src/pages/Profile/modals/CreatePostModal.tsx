@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { X, Plus, Smile, Globe, Users, Lock } from "lucide-react";
 
 const MOOD_TAGS = [
-  "happy",
-  "sad",
-  "chill",
-  "energetic",
-  "romantic",
-  "focus",
+  "Vui vẻ",
+  "Buồn",
+  "Chill",
+  "Năng động",
+  "Lãng mạn",
+  "Tập trung",
 ] as const;
 
 const PRIVACY_OPTIONS = [

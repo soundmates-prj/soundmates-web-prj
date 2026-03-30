@@ -154,7 +154,8 @@ class AudioService {
 
       return response.data.data.voices.map(v => ({
         ...v,
-        id: v.voiceId || v.id // Map voiceId to id if needed
+        // Prefer voiceId (from VieNeu TTS) over id
+        id: v.voiceId || v.id
       }));
     } catch (error: any) {
       console.error('Error fetching voices:', error);

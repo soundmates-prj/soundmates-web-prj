@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { showWarning } from "../../../components/common/toastUtils";
 import {
   Calendar,
   Camera,
@@ -344,6 +345,10 @@ const ProfileSection: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [phoneError, setPhoneError] = useState<string>("");
 
+  // Anti-spam: track last save timestamp
+  const lastSaveRef = useRef<number>(0);
+  const SAVE_COOLDOWN_MS = 3000;
+
   // Crop modal state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropType, setCropType] = useState<"avatar" | "background" | null>(
@@ -456,6 +461,13 @@ const ProfileSection: React.FC = () => {
 
   /* ── Save ── */
   const handleSave = async () => {
+    // Anti-spam guard: prevent saves within cooldown window
+    const now = Date.now();
+    if (now - lastSaveRef.current < SAVE_COOLDOWN_MS) {
+      const remaining = Math.ceil((SAVE_COOLDOWN_MS - (now - lastSaveRef.current)) / 1000);
+      showWarning("Vui lòng chờ", `Bạn vừa lưu xong. Vui lòng chờ ${remaining}s trước khi lưu tiếp.`);
+      return;
+    }
     if (form.phone && !isValidVietnamPhone(form.phone)) {
       setPhoneError("Số điện thoại không hợp lệ (VD: 0912345678)");
       return;
@@ -487,6 +499,7 @@ const ProfileSection: React.FC = () => {
         backgroundImageUrl: cleanBackgroundImageUrl || null,
       };
       await api.put("/auth/profile", payload);
+      lastSaveRef.current = Date.now(); // Mark save timestamp after success
       showSuccess("Đã lưu", "Thông tin hồ sơ đã được cập nhật!");
       const res = await api.get("/users/me/profile/full");
       const updatedUser = res.data.data;
@@ -494,7 +507,13 @@ const ProfileSection: React.FC = () => {
       const storedUserInfo = localStorage.getItem("userInfo");
       if (storedUserInfo) {
         const userInfo = JSON.parse(storedUserInfo);
+        // Sync all core display fields to localStorage
+        userInfo.firstName = updatedUser.firstName;
+        userInfo.lastName = updatedUser.lastName;
+        userInfo.username = updatedUser.username;
+        userInfo.email = updatedUser.email;
         userInfo.avatarUrl = updatedUser.profileImageUrl;
+        
         localStorage.setItem("userInfo", JSON.stringify(userInfo));
         window.dispatchEvent(new Event("authChange"));
       }
@@ -691,9 +710,9 @@ const ProfileSection: React.FC = () => {
                 Huỷ
               </button>
               <button
-                className={`btn primary ${hasChanges() ? "active" : ""}`}
+                className="btn primary"
                 onClick={handleSave}
-                disabled={loading || !!phoneError}
+                disabled={loading || !!phoneError || !hasChanges()}
               >
                 {loading ? "Đang lưu..." : "Lưu thay đổi"}
               </button>

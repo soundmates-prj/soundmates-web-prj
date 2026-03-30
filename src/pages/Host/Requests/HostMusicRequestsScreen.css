@@ -1,0 +1,127 @@
+/* Host Music Requests Screen Styles */
+/* Import shared styles from Staff MusicRequests */
+@import '../../Staff/MusicRequests/MusicRequestsScreen.css';
+
+/* Host-specific overrides */
+.host-mr-page {
+    max-width: 1600px;
+}
+
+.requests-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 32px;
+}
+
+.refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.requests-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 0;
+    gap: 16px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.requests-loading .spin {
+    animation: spin 1s linear infinite;
+}
+
+.requests-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 0;
+    gap: 12px;
+    text-align: center;
+}
+
+.requests-empty svg {
+    color: rgba(255, 255, 255, 0.15);
+    margin-bottom: 8px;
+}
+
+.requests-empty h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.requests-empty p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0;
+    max-width: 400px;
+}
+
+.song-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.song-album {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 400;
+}
+
+.filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    margin-left: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.request-message {
+    margin-top: 4px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    max-width: 200px;
+}
+
+.reject-reason {
+    font-size: 11px;
+    color: rgba(239, 68, 68, 0.7);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

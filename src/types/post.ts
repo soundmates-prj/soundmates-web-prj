@@ -1,6 +1,11 @@
 export interface Post {
+  // ── Identity ────────────────────────────────────────────
   id: string;
   userId: string;
+  userFullName?: string;
+  userAvatarUrl?: string;
+
+  // ── Content ─────────────────────────────────────────────
   title: string;
   contentText: string;
   audioUrl: string | null;
@@ -8,13 +13,22 @@ export interface Post {
   isActive: boolean;
   privacyScope: "public" | "friends" | "private";
   moodTag: string | null;
-  status: "Published" | "Draft" | "Archived";
+
+  // ── Status ──────────────────────────────────────────────
+  status: "Published" | "Draft" | "Archived" | string;
   isGenerated: boolean;
+
+  // ── Timestamps ─────────────────────────────────────────
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;
+
+  // ── Engagement ──────────────────────────────────────────
   reactionCount?: number;
   commentCount?: number;
+  viewCount?: number;
+
+  // ── Music card ──────────────────────────────────────────
   postType?: "share-music" | string | null;
   shareMusic?: {
     trackId: string;
@@ -26,6 +40,20 @@ export interface Post {
   } | null;
 }
 
+// Admin post list item (richer than base Post)
+export interface AdminPostItem {
+  postId: string;
+  title: string;
+  authorName: string;
+  status: string;
+  reactionCount: number;
+  commentCount: number;
+  viewCount: number;
+  publishedAt: string | null;
+  createdAt: string;
+}
+
+// Paginated posts response
 export interface PostsResponse {
   success: boolean;
   message: string;

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import "./SharedLayout.css";
 
 interface SharedHeaderProps {
-    role: 'ADMIN' | 'STAFF';
+    role: 'ADMIN' | 'STAFF' | 'HOST';
 }
 
 export default function SharedHeader({ role }: SharedHeaderProps) {
@@ -35,6 +35,8 @@ export default function SharedHeader({ role }: SharedHeaderProps) {
                 return 'Quản trị';
             case 'STAFF':
                 return 'Nhân viên';
+            case 'HOST':
+                return 'MC';
             default:
                 return role;
         }
@@ -45,6 +47,8 @@ export default function SharedHeader({ role }: SharedHeaderProps) {
             case 'ADMIN':
                 return <Shield size={12} />;
             case 'STAFF':
+                return <Mic2 size={12} />;
+            case 'HOST':
                 return <Mic2 size={12} />;
             default:
                 return null;
@@ -67,7 +71,9 @@ export default function SharedHeader({ role }: SharedHeaderProps) {
                     placeholder={
                         role === 'ADMIN'
                             ? "Tìm kiếm người dùng, bài viết, phiên..."
-                            : "Tìm kiếm phiên, yêu cầu, playlist..."
+                            : role === 'STAFF'
+                                ? "Tìm kiếm phiên, yêu cầu, playlist..."
+                                : "Tìm kiếm phiên, lịch trình, yêu cầu..."
                     }
                     className="shared-search-input"
                 />
@@ -95,7 +101,7 @@ export default function SharedHeader({ role }: SharedHeaderProps) {
                         <span className="shared-user-name">
                             {userInfo?.firstName && userInfo?.lastName
                                 ? `${userInfo.firstName} ${userInfo.lastName}`
-                                : userInfo?.username || (role === 'ADMIN' ? 'Admin' : 'Staff')}
+                                : userInfo?.username || (role === 'ADMIN' ? 'Admin' : role === 'STAFF' ? 'Staff' : 'Host')}
                         </span>
                         <span className="shared-user-role">{getRoleLabel()}</span>
                     </div>

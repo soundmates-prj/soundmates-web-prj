@@ -30,7 +30,7 @@ interface AdminTransaction {
   createdAt: string;
   userProfile?: {
     id: string;
-    userName: string;
+    fullName: string;
     email: string;
     avatarUrl?: string;
   };
@@ -39,7 +39,7 @@ interface AdminTransaction {
 interface PagedResponse<T> {
   items: T[];
   totalCount: number;
-  pageNumber: number;
+  page: number;
   pageSize: number;
   totalPages: number;
 }
@@ -64,7 +64,7 @@ export default function TransactionsPage() {
     try {
       const response = await api.get("/transaction", {
         params: {
-          pageNumber: pageNum,
+          page: pageNum,
           pageSize: pageSize,
         },
       });
@@ -75,7 +75,7 @@ export default function TransactionsPage() {
         setTransactions(data.items || []);
         setTotalCount(data.totalCount || 0);
         setTotalPages(data.totalPages || 1);
-        setPage(data.pageNumber || 1);
+        setPage(data.page || 1);
       }
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -120,7 +120,7 @@ export default function TransactionsPage() {
     const matchesSearch =
       t.paymentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.paymentProvider.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.userProfile?.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.userProfile?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.userProfile?.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       filterStatus === "all" ||
@@ -347,26 +347,43 @@ export default function TransactionsPage() {
                     <tr key={t.id}>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div
-                            style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: "50%",
-                              background: "linear-gradient(135deg, #1a9fd4, #55c5f1)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              color: "#fff",
-                              fontSize: 13,
-                              fontWeight: 700,
-                              flexShrink: 0,
-                            }}
-                          >
-                            {t.userProfile?.userName?.charAt(0).toUpperCase() || "U"}
-                          </div>
+                          {t.userProfile?.avatarUrl ? (
+                            <img
+                              src={t.userProfile.avatarUrl}
+                              alt={t.userProfile.fullName}
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                                flexShrink: 0,
+                              }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: "50%",
+                                background: "linear-gradient(135deg, #1a9fd4, #55c5f1)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#fff",
+                                fontSize: 13,
+                                fontWeight: 700,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {(t.userProfile?.fullName || "U").charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           <div>
                             <div style={{ fontWeight: 600, fontSize: 13 }}>
-                              {t.userProfile?.userName || "Người dùng không xác định"}
+                              {t.userProfile?.fullName || "Người dùng không xác định"}
                             </div>
                             <div style={{ fontSize: 11, color: "#94a3b8" }}>
                               {t.userProfile?.email || "—"}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import {
   Play,
   Pause,
@@ -22,6 +22,7 @@ export function MusicPlayer() {
     isPlaying,
     volume,
     isMuted,
+    elapsed,
     toggle,
     setVolume,
     toggleMute,
@@ -43,26 +44,7 @@ export function MusicPlayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  /* ── Realtime elapsed counter ────────────────────────────────────────── */
-  const [localElapsed, setLocalElapsed] = useState(0);
-
-  useEffect(() => {
-    if (track?.elapsed !== undefined) {
-      setLocalElapsed(track.elapsed);
-    }
-  }, [track?.elapsed]);
-
-  useEffect(() => {
-    if (!track) return;
-    const id = setInterval(() => {
-      setLocalElapsed((prev) => {
-        const max = track?.duration ?? 0;
-        if (max > 0 && prev >= max) return prev;
-        return prev + 1;
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, [track?.duration, track?.title]);
+  /* ── Realtime elapsed counter (synced from LiveRoomPage via context) ──── */
 
   /* ── Helpers ─────────────────────────────────────────────────────────── */
   const fmt = (s: number) => {
@@ -74,7 +56,7 @@ export function MusicPlayer() {
 
   const duration = track?.duration ?? 0;
   const progressPct =
-    duration > 0 ? Math.min((localElapsed / duration) * 100, 100) : 0;
+    duration > 0 ? Math.min((elapsed / duration) * 100, 100) : 0;
 
   /* ── Data hiển thị ───────────────────────────────────────────────────── */
   const title = track?.title ?? "Chưa có bài phát";
@@ -90,7 +72,6 @@ export function MusicPlayer() {
   const iconAccent = isDark ? '#55C5F1' : '#55C5F1';
   const iconMuted  = isDark ? 'rgba(255,255,255,0.35)' : '#9CA3AF';
   const iconHeart  = isDark ? '#818cf8' : '#5F6EE0';
-  const volTrack   = isDark ? 'rgba(255,255,255,0.12)' : '#D9D9D9';
 
   return (
     <div className="music-player">
@@ -136,7 +117,7 @@ export function MusicPlayer() {
 
           {/* Center Section */}
           <div className="center-section">
-            <span className="time-display">{fmt(localElapsed)}</span>
+            <span className="time-display">{fmt(elapsed)}</span>
 
             <button
               className="play-button-clean"
@@ -180,17 +161,19 @@ export function MusicPlayer() {
             </div>
 
             <div className="volume-slider-container">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={displayVolume}
-                onChange={(e) => setVolume(Number(e.target.value))}
-                className="volume-slider"
-                style={{
-                  background: `linear-gradient(to right, var(--mp-icon-accent) 0%, var(--mp-icon-accent) ${displayVolume}%, ${volTrack} ${displayVolume}%, ${volTrack} 100%)`,
-                }}
-              />
+              <div
+                className="volume-slider-track"
+                style={{ "--vol-pct": displayVolume } as React.CSSProperties}
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={displayVolume}
+                  onChange={(e) => setVolume(Number(e.target.value))}
+                  className="volume-slider"
+                />
+              </div>
             </div>
 
             {/* Nút thoát live session — chỉ hiện khi đang trong session */}

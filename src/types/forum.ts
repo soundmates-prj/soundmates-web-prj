@@ -54,6 +54,39 @@ export interface PublishedPostsResponse {
   data: PublishedPostPage;
 }
 
+/** Bài trending — GET /api/v1/posts/trending (có reaction/comment count + tác giả) */
+export interface TrendingPost {
+  id: string;
+  userId: string;
+  userFullName: string;
+  userAvatarUrl: string;
+  title: string;
+  contentText: string;
+  audioUrl: string | null;
+  imgUrl: string | null;
+  privacyScope: string | null;
+  moodTag: string | null;
+  status: string;
+  isGenerated: boolean;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+  reactionCount: number;
+  commentCount: number;
+}
+
+export interface TrendingPostsResponse {
+  success: boolean;
+  message: string;
+  // Backend may return data.items or data.data.items depending on PaginationResult wrapper
+  data: {
+    items?: TrendingPost[];
+    page?: number;
+    pageSize?: number;
+    totalCount?: number;
+  } | TrendingPost[];
+}
+
 /** Query params cho GET /api/v1/posts/published */
 export interface PublishedPostsParams {
   page?: number;
@@ -77,7 +110,6 @@ export const MOOD_OPTIONS: { value: MoodTag | "all"; label: string }[] = [
   { value: "happy", label: "Vui vẻ" },
   { value: "sad", label: "Buồn" },
   { value: "chill", label: "Chill" },
-  { value: "hype", label: "Hype" },
   { value: "energetic", label: "Năng động" },
   { value: "romantic", label: "Lãng mạn" },
   { value: "focus", label: "Tập trung" },
