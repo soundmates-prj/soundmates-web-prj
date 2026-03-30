@@ -2,7 +2,7 @@
 import axios from "axios";
 
 // Base AzuraCast API configuration
-const AZURACAST_BASE_URL = "http://localhost:8081/api"; // Thay đổi URL theo cấu hình của bạn
+const AZURACAST_BASE_URL = "http://localhost:8081/api";
 const AZURACAST_TOKEN = "fa5093c6c01985e1:187b5dd46ba5434cccea3c397625e9f3";
 
 // Create axios instance for AzuraCast
