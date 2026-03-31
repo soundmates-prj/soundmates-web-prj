@@ -16,10 +16,7 @@ import {
     Mic,
     Antenna,
     MessageSquare,
-    ShieldCheck,
-    Flag,
     FileText as FileTextIcon,
-    Settings2,
     Play,
 } from 'lucide-react';
 import logoLight from "../../assets/light_logo.png";
@@ -42,8 +39,6 @@ interface SharedSidebarProps {
 const adminMenuItems: MenuItem[] = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: '/admin/dashboard' },
     { id: 'users', icon: <Users size={20} />, label: 'Người dùng', path: '/admin/users' },
-    { id: 'roles', icon: <ShieldCheck size={20} />, label: 'Vai trò & Quyền', path: '/admin/roles' },
-    { id: 'moderation', icon: <Flag size={20} />, label: 'Kiểm duyệt hệ thống', path: '/admin/moderation' },
     { id: 'music', icon: <Headphones size={20} />, label: 'Kho nhạc', path: '/admin/music' },
     { id: 'stations', icon: <Music2 size={20} />, label: 'Đài phát', path: '/admin/stations' },
     { id: 'playlists', icon: <ListMusic size={20} />, label: 'Playlist', path: '/admin/playlists' },
@@ -52,7 +47,6 @@ const adminMenuItems: MenuItem[] = [
     { id: 'posts', icon: <FileTextIcon size={20} />, label: 'Bài viết người dùng', path: '/admin/posts' },
     { id: 'transactions', icon: <Receipt size={20} />, label: 'Giao dịch', path: '/admin/transactions' },
     { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Báo cáo', path: '/admin/analytics' },
-    { id: 'system-config', icon: <Settings2 size={20} />, label: 'Cấu hình hệ thống', path: '/admin/system-config' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Cài đặt', path: '/admin/settings' },
 ];
 
