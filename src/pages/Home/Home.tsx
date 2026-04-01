@@ -430,7 +430,7 @@ export default function Home() {
               ))
             ) : scheduleItems.length === 0 ? (
               <div className="section-empty">
-                <Icon name="calendar-outline" size={32} />
+                <Icon name="calendar" size={32} />
                 <p>Chưa có lịch phát sóng nào</p>
               </div>
             ) : (
@@ -491,7 +491,7 @@ export default function Home() {
               ))
             ) : forumPosts.length === 0 ? (
               <div className="section-empty">
-                <Icon name="newspaper-outline" size={32} />
+                <Icon name="file-text" size={32} />
                 <p>Chưa có bài viết nào</p>
               </div>
             ) : (

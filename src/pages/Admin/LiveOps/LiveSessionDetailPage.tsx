@@ -112,8 +112,10 @@ export default function LiveSessionDetailPage() {
     try {
       await liveSessionApiService.createSchedule(sessionId, {
         title: scheduleTitle || undefined,
-        startTime: new Date(scheduleStart).toISOString(),
-        endTime: new Date(scheduleEnd).toISOString(),
+        startDate: new Date(scheduleStart).toISOString().split('T')[0],
+        startTime: new Date(scheduleStart).toTimeString().slice(0, 8),
+        endDate: new Date(scheduleEnd).toISOString().split('T')[0],
+        endTime: new Date(scheduleEnd).toTimeString().slice(0, 8),
       });
       showSuccess("Tạo lịch thành công");
       setScheduleTitle("");
@@ -146,15 +148,8 @@ export default function LiveSessionDetailPage() {
   }, [loadData, requestMediaId, requestMessage, sessionId]);
 
   const reviewRequest = useCallback(async (songRequestId: string, action: "approve" | "reject") => {
-    const reviewedByUserId = getCurrentUserId();
-    if (!reviewedByUserId) {
-      showError("Thiếu userInfo", "Không tìm thấy user id để review request");
-      return;
-    }
-
     try {
       await liveSessionApiService.reviewSongRequest(songRequestId, {
-        reviewedByUserId,
         action,
         rejectReason: action === "reject" ? REQUEST_REJECT_REASON_BY_ADMIN : undefined,
       });

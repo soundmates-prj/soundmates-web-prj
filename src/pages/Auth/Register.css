@@ -144,7 +144,6 @@
 
   .input-wrapper.input-error {
     border-color: #e53935;
-    margin-bottom: 4px;
   }
 
   .input-wrapper svg {
@@ -251,8 +250,8 @@
   .error-text {
     color: #e53935;
     font-size: 13px;
-    margin-top: 2px;
-    margin-bottom: 12px;
+    margin-top: 4px;
+    margin-bottom: 14px;
     margin-left: 6px;
   }
 }

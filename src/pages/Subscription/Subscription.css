@@ -1,818 +1,908 @@
 /* ============================================
-   SoundMates Subscription Page Styles
-   TRAE-inspired Modern Dark Theme
+   SoundMates Subscription Page
    ============================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Ephesis&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ============================================
-   Page Container
+   Page Container — inherits theme variables
    ============================================ */
 .subscription-page {
-    min-height: calc(100vh - 89px - 55px);
-    background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 50%, #f0f9ff 100%);
-    padding: 0 20px 100px;
-    overflow-x: hidden;
-    color: #0f172a;
+  min-height: calc(100vh - 89px - 55px);
+  background-color: var(--bg-primary);
+  background-image: var(--subscription-bg);
+  padding: 0 20px 100px;
+  overflow-x: hidden;
+  color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* ============================================
    Page Header
    ============================================ */
 .subscription-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px 40px;
 }
 
 .subscription-title {
-    font-family: 'Ephesis', cursive;
-    font-size: 5rem;
-    font-weight: 400;
-    line-height: 1.1;
-    margin: 0;
-    text-align: center;
-    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 50%, #8ED8F6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-size: 200% 200%;
-    animation: gradientShift 8s ease infinite;
-    letter-spacing: 2px;
-    filter: drop-shadow(0 4px 16px rgba(85, 197, 241, 0.3));
-    position: relative;
-}
-
-.subscription-title::after {
-    content: 'Gói đăng ký';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 50%, #8ED8F6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: blur(20px);
-    opacity: 0.3;
-    z-index: -1;
-}
-
-@keyframes gradientShift {
-    0%, 100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
+  font-family: 'Ephesis', cursive;
+  font-size: 3.5rem;
+  font-weight: 400;
+  line-height: 1.1;
+  margin: 0;
+  text-align: center;
+  color: var(--subscription-title);
+  letter-spacing: 0.02em;
 }
 
 .subscription-subtitle {
-    font-family: 'Inter', sans-serif;
-    font-size: 1rem;
-    color: #64748b;
-    margin-top: 16px;
-    text-align: center;
-    max-width: 600px;
-    font-weight: 400;
-    line-height: 1.6;
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  margin-top: 12px;
+  text-align: center;
+  max-width: 560px;
+  line-height: 1.6;
+  font-weight: 400;
 }
 
 /* ============================================
-   Subscription Plans Container
+   Plans Grid — 3 cards, Elite in center
    ============================================ */
 .subscription-plans {
-    display: flex;
-    gap: 24px;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto 60px;
-    flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: stretch;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto 60px;
 }
 
 /* ============================================
-   Subscription Cards
+   Subscription Card
    ============================================ */
 .subscription-card {
-    position: relative;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    padding: 0;
-    width: 100%;
-    max-width: 340px;
-    min-height: 580px;
-    display: flex;
-    flex-direction: column;
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
-    overflow: visible;
+  position: relative;
+  background-color: var(--subscription-card-bg);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-2xl);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--subscription-card-border);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  overflow: visible;
 }
 
 .subscription-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
-    border-color: rgba(85, 197, 241, 0.3);
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--subscription-card-hover-border);
 }
 
 .subscription-card.free {
-    border: 2px solid rgba(226, 232, 240, 0.8);
+  border-color: var(--border-light);
 }
 
 .subscription-card.free:hover {
-    border-color: rgba(148, 163, 184, 0.4);
+  border-color: var(--border-medium);
 }
 
 .subscription-card.premium {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.95) 100%);
-    border: 2px solid rgba(85, 197, 241, 0.3);
-    box-shadow: 0 12px 40px rgba(85, 197, 241, 0.15);
+  border-color: var(--subscription-premium-border);
+  box-shadow: var(--subscription-premium-shadow);
 }
 
 .subscription-card.premium:hover {
-    border-color: rgba(85, 197, 241, 0.5);
-    box-shadow: 0 20px 56px rgba(85, 197, 241, 0.2);
+  border-color: var(--subscription-premium-border-hover);
+  box-shadow: var(--subscription-premium-shadow-hover);
 }
 
 .subscription-card.elite {
-    background: linear-gradient(135deg, rgba(240, 249, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
-    border: 2px solid rgba(85, 197, 241, 0.5);
-    box-shadow: 0 12px 40px rgba(85, 197, 241, 0.2);
-    transform: scale(1.02);
-    z-index: 2;
+  border-color: var(--subscription-elite-border);
+  box-shadow: var(--subscription-elite-shadow);
+  transform: translateY(-12px);
+  z-index: 2;
 }
 
 .subscription-card.elite:hover {
-    transform: scale(1.02) translateY(-6px);
-    border-color: rgba(85, 197, 241, 0.7);
-    box-shadow: 0 20px 56px rgba(85, 197, 241, 0.3);
+  transform: translateY(-18px);
+  border-color: var(--subscription-elite-border-hover);
+  box-shadow: var(--subscription-elite-shadow-hover);
 }
 
-.subscription-card.elite::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    border-radius: 24px;
-    background: radial-gradient(800px circle at top, rgba(85, 197, 241, 0.08), transparent 50%);
-    pointer-events: none;
-    z-index: 0;
+/* Elite card ordered first — appears in center on 3-column grid */
+.subscription-card.order-elite {
+  order: 1;
 }
 
-/* ============================================
-   Popular Badge
-   ============================================ */
-.popular-badge {
-    position: absolute;
-    top: -16px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 100%);
-    color: #ffffff;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 8px 20px;
-    border-radius: 24px;
-    white-space: nowrap;
-    z-index: 10;
-    box-shadow: 0 4px 24px rgba(85, 197, 241, 0.4);
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
+/* Free card stays at the left */
+.subscription-card.free {
+  order: 0;
+}
+
+/* Premium card pushed to the far right */
+.subscription-card.premium {
+  order: 2;
 }
 
 /* ============================================
-   Popular Badge
+   Badges
    ============================================ */
 .popular-badge {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 100%);
-    color: #ffffff;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 6px 16px;
-    border-radius: 20px;
-    white-space: nowrap;
-    z-index: 10;
-    box-shadow: 0 4px 20px rgba(85, 197, 241, 0.4);
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--subscription-accent) 0%, #3B9FD8 100%);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 20px;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(85, 197, 241, 0.4);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.current-badge {
+  position: absolute;
+  top: -14px;
+  right: -1px;
+  background: var(--success-500);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 12px 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
 }
 
 /* ============================================
    Plan Header
    ============================================ */
 .plan-header {
-    padding: 36px 28px 20px;
-    text-align: left;
-    position: relative;
-    z-index: 1;
+  padding: 40px 28px 20px;
+  text-align: left;
+  position: relative;
+  z-index: 1;
 }
 
 .subscription-card.elite .plan-header {
-    padding-top: 44px;
+  padding-top: 40px;
 }
 
 .plan-name {
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #0f172a;
-    margin: 0 0 16px;
-    line-height: 1.2;
-    letter-spacing: -0.3px;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--subscription-plan-name);
+  margin: 0 0 16px;
+  line-height: 1.2;
 }
 
 .plan-pricing {
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 4px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-    min-height: 56px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  min-height: 56px;
 }
 
 .currency {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: #64748b;
-    text-decoration: underline;
-    margin-top: 6px;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  margin-top: 8px;
 }
 
 .price {
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 2.75rem;
-    font-weight: 700;
-    color: #0f172a;
-    line-height: 1;
-    letter-spacing: -1.2px;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--subscription-price);
+  line-height: 1;
+  letter-spacing: -1px;
 }
 
 .period {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #64748b;
-    margin-top: 24px;
-    line-height: 1;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-top: 24px;
+  line-height: 1;
 }
 
 .plan-description {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 400;
-    color: #475569;
-    line-height: 1.5;
-    margin: 0;
-    min-height: 44px;
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  min-height: 44px;
 }
 
 /* ============================================
-   Subscribe Button
+   Subscribe Button — all plans use primary #55C5F1
    ============================================ */
 .plan-button {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    color: #ffffff;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 600;
-    padding: 14px 24px;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    margin: 0 28px 24px;
-    display: block;
-    width: calc(100% - 56px);
-    transition: all 0.3s ease;
-    position: relative;
-    z-index: 1;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+  background-color: #55C5F1;
+  color: #ffffff;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: 14px 24px;
+  border-radius: var(--radius-lg);
+  border: none;
+  cursor: pointer;
+  margin: 0 28px 24px;
+  display: block;
+  width: calc(100% - 56px);
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(85, 197, 241, 0.3);
 }
 
-.plan-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+.plan-button:hover:not(:disabled) {
+  background-color: #3B9FD8;
+  box-shadow: 0 8px 24px rgba(85, 197, 241, 0.4);
+  transform: translateY(-2px);
 }
 
-.subscription-card.premium .plan-button {
-    background: linear-gradient(135deg, #55C5F1 0%, #3B9FD8 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 20px rgba(85, 197, 241, 0.3);
-}
-
-.subscription-card.premium .plan-button:hover {
-    box-shadow: 0 8px 28px rgba(85, 197, 241, 0.4);
-}
-
-.subscription-card.elite .plan-button {
-    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 100%);
-    color: #ffffff;
-    box-shadow: 0 6px 24px rgba(85, 197, 241, 0.4);
-}
-
-.subscription-card.elite .plan-button:hover {
-    box-shadow: 0 10px 32px rgba(85, 197, 241, 0.5);
+.plan-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ============================================
-   Features Section
+   Features List — no icons
    ============================================ */
 .plan-features {
-    padding: 0 28px 28px;
-    flex-grow: 1;
-    position: relative;
-    z-index: 1;
-    overflow-y: auto;
-    max-height: 280px;
-}
-
-.plan-features::-webkit-scrollbar {
-    width: 4px;
-}
-
-.plan-features::-webkit-scrollbar-track {
-    background: rgba(226, 232, 240, 0.3);
-    border-radius: 4px;
-}
-
-.plan-features::-webkit-scrollbar-thumb {
-    background: rgba(85, 197, 241, 0.3);
-    border-radius: 4px;
-}
-
-.plan-features::-webkit-scrollbar-thumb:hover {
-    background: rgba(85, 197, 241, 0.5);
+  padding: 0 28px 28px;
+  flex-grow: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .features-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #64748b;
-    margin: 0 0 16px 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 14px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .features-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .features-list li {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.875rem;
-    font-weight: 400;
-    color: #475569;
-    line-height: 1.5;
-    margin-bottom: 14px;
-    padding-left: 28px;
-    position: relative;
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  padding-left: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .features-list li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 3px;
-    width: 18px;
-    height: 18px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-    opacity: 0.8;
-    flex-shrink: 0;
-}
-
-.subscription-card.premium .features-list li::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355C5F1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
-    opacity: 1;
-}
-
-.subscription-card.elite .features-list li::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355C5F1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
-    opacity: 1;
+  content: '';
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355C5F1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.9;
+  margin-top: 2px;
 }
 
 .features-list li strong {
-    font-weight: 600;
-    color: #0f172a;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 /* ============================================
    Included Features Note
    ============================================ */
 .included-features {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #64748b;
-    text-align: left;
-    margin: 0 28px 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(226, 232, 240, 0.6);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: left;
+  margin: 0 28px 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.included-features::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 
 /* ============================================
    Current Plan Badge
    ============================================ */
 .current-plan-badge {
-    background: rgba(248, 250, 252, 0.8);
-    color: #64748b;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-align: center;
-    padding: 14px 20px;
-    border-radius: 0 0 24px 24px;
-    margin-top: auto;
-    border-top: 1px solid rgba(226, 232, 240, 0.6);
-}
-
-[data-theme='dark'] .subscription-page {
-    background: #000000;
-    background-image: radial-gradient(circle at 50% 0%, rgba(85, 197, 241, 0.1) 0%, #000000 70%);
-    color: #ffffff;
-}
-
-[data-theme='dark'] .subscription-title {
-    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 50%, #8ED8F6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-size: 200% 200%;
-    filter: drop-shadow(0 4px 20px rgba(85, 197, 241, 0.5));
-}
-
-[data-theme='dark'] .subscription-title::after {
-    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 50%, #8ED8F6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-[data-theme='dark'] .subscription-subtitle {
-    color: #9ca3af;
-}
-
-[data-theme='dark'] .subscription-card {
-    background: rgba(20, 20, 20, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-[data-theme='dark'] .subscription-card:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-}
-
-[data-theme='dark'] .subscription-card.free {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-[data-theme='dark'] .subscription-card.premium {
-    border: 1px solid rgba(85, 197, 241, 0.3);
-    box-shadow: 0 10px 50px rgba(85, 197, 241, 0.15);
-}
-
-[data-theme='dark'] .subscription-card.elite {
-    background: linear-gradient(180deg, rgba(20, 30, 40, 0.9) 0%, rgba(15, 20, 30, 0.9) 100%);
-    border: 2px solid rgba(85, 197, 241, 0.4);
-    box-shadow: 0 16px 48px rgba(85, 197, 241, 0.15);
-}
-
-[data-theme='dark'] .subscription-card.elite:hover {
-    border-color: rgba(85, 197, 241, 0.6);
-    box-shadow: 0 24px 64px rgba(85, 197, 241, 0.25);
-}
-
-[data-theme='dark'] .plan-name,
-[data-theme='dark'] .price,
-[data-theme='dark'] .features-list li strong {
-    color: #ffffff;
-}
-
-[data-theme='dark'] .currency,
-[data-theme='dark'] .period,
-[data-theme='dark'] .plan-description,
-[data-theme='dark'] .features-title,
-[data-theme='dark'] .features-list li,
-[data-theme='dark'] .included-features,
-[data-theme='dark'] .current-plan-badge {
-    color: #9ca3af;
-}
-
-[data-theme='dark'] .plan-button {
-    background: linear-gradient(135deg, rgba(85, 197, 241, 0.15) 0%, rgba(85, 197, 241, 0.1) 100%);
-    border: 1px solid rgba(85, 197, 241, 0.3);
-    color: #55C5F1;
-}
-
-[data-theme='dark'] .plan-button:hover {
-    background: linear-gradient(135deg, rgba(85, 197, 241, 0.25) 0%, rgba(85, 197, 241, 0.15) 100%);
-    border-color: rgba(85, 197, 241, 0.5);
-}
-
-[data-theme='dark'] .subscription-card.premium .plan-button {
-    background: linear-gradient(135deg, #55C5F1 0%, #3B9FD8 100%);
-    color: #ffffff;
-    border: none;
-}
-
-[data-theme='dark'] .subscription-card.elite .plan-button {
-    background: linear-gradient(135deg, #3B9FD8 0%, #55C5F1 100%);
-    color: #ffffff;
-    border: none;
-}
-
-[data-theme='dark'] .current-plan-badge {
-    background: rgba(255, 255, 255, 0.05);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-[data-theme='dark'] .included-features {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--subscription-card-bg);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-align: center;
+  padding: 14px 20px;
+  border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
+  margin-top: auto;
+  border-top: 1px solid var(--border-light);
 }
 
 /* ============================================
-   Responsive Design
+   FAQ Section — uses CSS variables
    ============================================ */
-@media (max-width: 1200px) {
-    .subscription-plans {
-        gap: 20px;
-    }
-    
-    .subscription-card.elite {
-        transform: scale(1);
-    }
-    
-    .subscription-card.elite:hover {
-        transform: translateY(-6px);
-    }
+.faq-section {
+  max-width: 800px;
+  margin: 0 auto 60px;
+  padding: 0 20px;
 }
 
-@media (max-width: 992px) {
-    .subscription-plans {
-        align-items: center;
-    }
-
-    .subscription-card {
-        max-width: calc(50% - 15px);
-        min-height: 560px;
-    }
-    
-    .subscription-card.elite {
-        order: -1;
-        max-width: 100%;
-        margin-bottom: 20px;
-    }
+.faq-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+  color: var(--text-primary);
 }
 
-@media (max-width: 768px) {
-    .subscription-plans {
-        flex-direction: column;
-        gap: 24px;
-        margin-bottom: 40px;
-    }
+.faq-title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
 
-    .subscription-card {
-        max-width: 100%;
-        width: 100%;
-        min-height: auto;
-    }
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-    .subscription-title {
-        font-size: 3.5rem;
-    }
-    
-    .subscription-title::after {
-        display: none;
-    }
-    
-    .subscription-header {
-        padding: 60px 20px 30px;
-    }
-    
-    .subscription-subtitle {
-        font-size: 0.95rem;
-    }
-    
-    .plan-features {
-        max-height: none;
-        overflow-y: visible;
-    }
+.faq-item {
+  background-color: var(--subscription-card-bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.faq-item:has(.faq-question:focus) {
+  border-color: var(--subscription-accent);
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  gap: 16px;
+  transition: color 0.2s ease;
+}
+
+.faq-question:hover {
+  color: var(--subscription-accent);
+}
+
+.faq-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.faq-chevron--open {
+  transform: rotate(180deg);
+  color: var(--subscription-accent);
+}
+
+.faq-answer {
+  overflow: hidden;
+}
+
+.faq-answer p {
+  padding: 0 20px 16px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* ============================================
-   Payment Method Modal
+   Modals — use CSS variables
    ============================================ */
 .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: fixed;
+  inset: 0;
+  background-color: var(--bg-overlay);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
 }
 
-.payment-method-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1001;
-    background: #ffffff;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 440px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-}
-
-[data-theme='dark'] .payment-method-modal {
-    background: #1e1e2e;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+.payment-method-modal,
+.history-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  background-color: var(--subscription-card-bg);
+  border-radius: var(--radius-2xl);
+  width: 90%;
+  max-width: 440px;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
 }
 
 .modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-}
-
-[data-theme='dark'] .modal-header {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .modal-header h3 {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #0f172a;
-    margin: 0;
-}
-
-[data-theme='dark'] .modal-header h3 {
-    color: #ffffff;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #94a3b8;
-    padding: 0;
-    line-height: 1;
-    transition: color 0.2s;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
 }
 
 .modal-close:hover {
-    color: #0f172a;
+  color: var(--text-primary);
 }
 
-[data-theme='dark'] .modal-close:hover {
-    color: #ffffff;
-}
-
+/* Payment Method Modal */
 .modal-body {
-    padding: 20px 24px 24px;
+  padding: 20px 24px 24px;
 }
 
 .modal-plan-info {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(85, 197, 241, 0.08);
-    border-radius: 12px;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-}
-
-[data-theme='dark'] .modal-plan-info {
-    background: rgba(85, 197, 241, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--subscription-accent-light);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin-bottom: 20px;
 }
 
 .modal-plan-name {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    color: #0f172a;
-    font-size: 0.95rem;
-}
-
-[data-theme='dark'] .modal-plan-name {
-    color: #ffffff;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
 }
 
 .modal-plan-price {
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    color: #55C5F1;
-    font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--subscription-accent);
+  font-size: var(--font-size-sm);
 }
 
 .payment-methods {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .payment-method-btn {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    background: rgba(248, 250, 252, 0.8);
-    border: 1.5px solid rgba(226, 232, 240, 0.6);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    width: 100%;
-    text-align: left;
-}
-
-[data-theme='dark'] .payment-method-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background-color: var(--bg-secondary);
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: left;
 }
 
 .payment-method-btn:hover {
-    border-color: #55C5F1;
-    background: rgba(85, 197, 241, 0.08);
-    box-shadow: 0 4px 16px rgba(85, 197, 241, 0.15);
-}
-
-[data-theme='dark'] .payment-method-btn:hover {
-    background: rgba(85, 197, 241, 0.12);
+  border-color: var(--subscription-accent);
+  background-color: var(--subscription-accent-light);
 }
 
 .payment-method-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #ffffff;
 }
 
 .payment-method-icon.vnpay {
-    background: linear-gradient(135deg, #1a9fd9 0%, #0d6ea8 100%);
-    color: #ffffff;
+  background: linear-gradient(135deg, #1a9fd9, #0d6ea8);
 }
 
 .payment-method-icon.payos {
-    background: linear-gradient(135deg, #55C5F1 0%, #3B9FD8 100%);
-    color: #ffffff;
+  background: linear-gradient(135deg, var(--subscription-accent), #3B9FD8);
 }
 
 .payment-method-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-grow: 1;
 }
 
 .payment-method-name {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: #0f172a;
-}
-
-[data-theme='dark'] .payment-method-name {
-    color: #ffffff;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
 }
 
 .payment-method-desc {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 400;
-    color: #64748b;
-}
-
-[data-theme='dark'] .payment-method-desc {
-    color: #9ca3af;
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  color: var(--text-secondary);
 }
 
 .payment-method-arrow {
-    font-size: 1.2rem;
-    color: #94a3b8;
-    font-weight: 300;
-    line-height: 1;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  font-weight: 300;
+  line-height: 1;
+}
+
+/* ============================================
+   History Modal
+   ============================================ */
+.history-modal {
+  max-width: 520px;
+}
+
+.history-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.history-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: color 0.2s ease, border-color 0.2s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.history-tab--active {
+  color: var(--subscription-accent);
+  border-bottom-color: var(--subscription-accent);
+}
+
+.history-body {
+  padding: 20px 24px 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.history-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.history-card-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+}
+
+.history-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  gap: 12px;
+}
+
+.history-meta-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.history-meta-value {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.history-section-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.history-empty p {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ============================================
+   Loading & Error States
+   ============================================ */
+.subscription-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+}
+
+.subscription-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--subscription-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.subscription-error-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.retry-button {
+  background: var(--subscription-accent);
+  color: #ffffff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.retry-button:hover {
+  opacity: 0.85;
+}
+
+/* ============================================
+   Current Plan Banner
+   ============================================ */
+.current-plan-banner {
+  max-width: 1200px;
+  margin: 0 auto 32px;
+  padding: 16px 20px;
+  background-color: var(--subscription-card-bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.current-plan-banner:hover {
+  border-color: var(--subscription-accent);
+  box-shadow: var(--shadow-md);
+}
+
+.current-plan-banner-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--subscription-accent), #3B9FD8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.current-plan-banner-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.current-plan-banner-caption {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.current-plan-banner-name {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.current-plan-banner-status {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.current-plan-banner-tag {
+  background-color: var(--subscription-accent-light);
+  color: var(--subscription-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.current-plan-history-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.current-plan-history-btn:hover {
+  color: var(--subscription-accent);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 1024px) {
+  .subscription-plans {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* Reset order on tablet — show as [Free, Elite] then Premium below */
+  .subscription-card.elite {
+    grid-column: 1 / -1;
+    order: 1;
+    max-width: 100%;
+    transform: none;
+  }
+
+  .subscription-card.elite:hover {
+    transform: translateY(-6px);
+  }
+
+  .subscription-card.free {
+    order: 0;
+  }
+
+  .subscription-card.premium {
+    order: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .subscription-plans {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  /* Reset all order on mobile — natural DOM order */
+  .subscription-card.elite,
+  .subscription-card.free,
+  .subscription-card.premium {
+    order: unset;
+    transform: none;
+  }
+
+  .subscription-card.elite:hover {
+    transform: translateY(-4px);
+  }
+
+  .subscription-title {
+    font-size: var(--font-size-3xl);
+  }
+
+  .plan-header {
+    padding: 36px 24px 20px;
+  }
+
+  .plan-button {
+    margin: 0 24px 24px;
+    width: calc(100% - 48px);
+  }
+
+  .plan-features {
+    padding: 0 24px 24px;
+  }
+
+  .included-features {
+    margin: 0 24px 20px;
+  }
+
+  .subscription-card.elite .plan-header {
+    padding-top: 44px;
+  }
 }

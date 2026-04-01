@@ -3,7 +3,7 @@ export * from './api';
 export * from './azuracastApi';
 export * from './musicCatalogService';
 // Selectively re-export from livestreamService to avoid duplicate names
-export type { TrackInfo, ApiResponse, SongRequestItem } from './livestreamService';
+export type { TrackInfo } from './livestreamService';
 export { livestreamService as _livestreamService } from './livestreamService';
 
 // Export userService types

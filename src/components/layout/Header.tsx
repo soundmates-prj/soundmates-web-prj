@@ -52,21 +52,28 @@ const Header: React.FC = () => {
       try {
         const stored = localStorage.getItem("userInfo");
         if (stored) {
-          const parsedUserInfo = JSON.parse(stored);
+          // Priority 1: use localStorage data immediately (always fresh after profile update)
+          const parsedUserInfo = JSON.parse(stored) as UserInfo;
+          setUserInfo(parsedUserInfo);
+
+          // Priority 2: refresh from API asynchronously to keep localStorage in sync
           api
             .get("/users/me/profile/full")
             .then((res) => {
               const profileData = res.data.data;
-              setUserInfo({
+              const freshUserInfo: UserInfo = {
                 firstName: profileData.firstName,
                 lastName: profileData.lastName,
                 username: profileData.username,
                 email: profileData.email,
                 avatarUrl: validateImageUrl(profileData.profileImageUrl) || null,
-              });
+              };
+              // Sync back to localStorage so next page load is correct
+              localStorage.setItem("userInfo", JSON.stringify(freshUserInfo));
+              setUserInfo(freshUserInfo);
             })
             .catch(() => {
-              setUserInfo(parsedUserInfo);
+              // API failed — keep using localStorage data
             });
         } else {
           setUserInfo(null);

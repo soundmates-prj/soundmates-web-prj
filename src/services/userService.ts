@@ -1,13 +1,14 @@
 import api from './axios';
 
 // ── Enum — matches backend AccountStatusEnum ──────────────────────
-export enum AccountStatusEnum {
-  Active = 1,
-  Deactivated = 2,
-  Suspended = 3,
-}
+export const AccountStatusEnum = {
+  Active: 1,
+  Deactivated: 2,
+  Suspended: 3,
+} as const;
+export type AccountStatusEnum = typeof AccountStatusEnum[keyof typeof AccountStatusEnum];
 
-export const AccountStatusLabel: Record<AccountStatusEnum, string> = {
+export const AccountStatusLabel: Record<number, string> = {
   [AccountStatusEnum.Active]: 'Hoạt động',
   [AccountStatusEnum.Deactivated]: 'Đã vô hiệu hóa',
   [AccountStatusEnum.Suspended]: 'Đã tạm khóa',

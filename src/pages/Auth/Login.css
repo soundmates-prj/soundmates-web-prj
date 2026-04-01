@@ -180,8 +180,33 @@
 
 /* ACTIONS */
 .actions {
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 15px;
+}
+
+/* P4: Remember Me checkbox */
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-family: poppins, sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.remember-me input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #55C5F1;
+  cursor: pointer;
+}
+
+.remember-me span {
+  color: var(--text-secondary);
 }
 
 .forgot {
