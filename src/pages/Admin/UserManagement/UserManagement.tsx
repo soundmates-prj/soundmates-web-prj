@@ -183,7 +183,7 @@ function DetailField({ label, value }: { label: string; value: string }) {
 function UpdateStatusModal({
   isOpen, onClose, user, onSuccess,
 }: {
-  isOpen: boolean; onClose: () => void; user: User | null; onSuccess: () => void;
+  isOpen: boolean; onClose: () => void; user: User | null; onSuccess: (userId: string, newStatus: number) => void;
 }) {
   // Canonical status from accountStatus field (defaults to isActive for legacy)
   const currentStatus: number = user?.accountStatus
@@ -212,7 +212,7 @@ function UpdateStatusModal({
     });
     if (res.success) {
       showSuccess('Đã cập nhật', res.message || 'Trạng thái tài khoản đã được cập nhật.');
-      onSuccess(); onClose();
+      onSuccess(user.id, selected); onClose();
     } else {
       showError('Thất bại', res.message);
     }
@@ -316,7 +316,7 @@ function UpdateStatusModal({
 function VerifyEmailModal({
   isOpen, onClose, user, onSuccess,
 }: {
-  isOpen: boolean; onClose: () => void; user: User | null; onSuccess: () => void;
+  isOpen: boolean; onClose: () => void; user: User | null; onSuccess: (userId: string) => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
   const handle = async () => {
@@ -325,7 +325,7 @@ function VerifyEmailModal({
     const res = await userService.verifyEmail(user.id);
     if (res.success) {
       showSuccess('Đã xác minh', res.message || `Email của "${user.name}" đã được xác minh và tài khoản kích hoạt.`);
-      onSuccess(); onClose();
+      onSuccess(user.id); onClose();
     } else {
       showError('Thất bại', res.message);
     }
@@ -358,7 +358,7 @@ function VerifyEmailModal({
 function DeleteModal({
   isOpen, onClose, user, onSuccess,
 }: {
-  isOpen: boolean; onClose: () => void; user: User | null; onSuccess: () => void;
+  isOpen: boolean; onClose: () => void; user: User | null; onSuccess: (userId: string) => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
   const handle = async () => {
@@ -367,7 +367,7 @@ function DeleteModal({
     const res = await userService.deleteUser(user.id);
     if (res.success) {
       showSuccess('Đã xóa', `Tài khoản "${user.name}" đã bị xóa vĩnh viễn.`);
-      onSuccess(); onClose();
+      onSuccess(user.id); onClose();
     } else {
       showError('Thất bại', res.message);
     }
@@ -471,6 +471,13 @@ export function UserManagementScreen() {
     setSelectedUser(user);
     setter(true);
     setActiveActionMenu(null);
+  };
+
+  // Reset to page 1 + clear search after any mutation so the table always shows valid data
+  const resetAndRefresh = () => {
+    setSearchQuery('');
+    setCurrentPage(1);
+    fetchUsers();
   };
 
   const fmt = (d: string) => d ? new Date(d).toLocaleDateString('vi-VN') : '—';
@@ -687,13 +694,42 @@ export function UserManagementScreen() {
 
       {/* Modals */}
       <ViewDetailsModal isOpen={viewModal} onClose={() => setViewModal(false)} user={selectedUser} />
-      <UpdateStatusModal isOpen={statusModal} onClose={() => setStatusModal(false)} user={selectedUser} onSuccess={fetchUsers} />
-      <VerifyEmailModal isOpen={verifyModal} onClose={() => setVerifyModal(false)} user={selectedUser} onSuccess={fetchUsers} />
-      <DeleteModal isOpen={deleteModal} onClose={() => setDeleteModal(false)} user={selectedUser} onSuccess={fetchUsers} />
+      <UpdateStatusModal
+        isOpen={statusModal}
+        onClose={() => setStatusModal(false)}
+        user={selectedUser}
+        onSuccess={(userId, newStatus) => {
+          // Optimistic update: update local state immediately — no need to wait for event sync
+          setUsers(prev => prev.map(u =>
+            u.id === userId ? { ...u, accountStatus: newStatus } : u
+          ));
+        }}
+      />
+      <VerifyEmailModal
+        isOpen={verifyModal}
+        onClose={() => setVerifyModal(false)}
+        user={selectedUser}
+        onSuccess={(userId) => {
+          // Optimistic: mark verified + active locally
+          setUsers(prev => prev.map(u =>
+            u.id === userId ? { ...u, isVerified: true, accountStatus: AccountStatusEnum.Active } : u
+          ));
+        }}
+      />
+      <DeleteModal
+        isOpen={deleteModal}
+        onClose={() => setDeleteModal(false)}
+        user={selectedUser}
+        onSuccess={(userId) => {
+          // Optimistic: remove deleted user from local list
+          setUsers(prev => prev.filter(u => u.id !== userId));
+          setTotalItems(prev => Math.max(0, prev - 1));
+        }}
+      />
       <AddUserModal
         isOpen={addUserModal}
         onClose={() => setAddUserModal(false)}
-        onSuccess={() => { setAddUserModal(false); fetchUsers(); }}
+        onSuccess={() => { setAddUserModal(false); resetAndRefresh(); }}
       />
     </div>
   );
