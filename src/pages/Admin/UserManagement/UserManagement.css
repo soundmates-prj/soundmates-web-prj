@@ -62,7 +62,10 @@
 /* ── Table ── */
 .lm-table-wrapper {
     overflow-x: auto;
+    overflow-y: visible;
     margin-bottom: 24px;
+    /* Critical: allow action dropdowns to escape the scroll container */
+    position: relative;
 }
 
 .lm-table {
@@ -256,6 +259,22 @@
 /* ── Action Menu ── */
 .lm-action-menu-wrapper {
     position: relative;
+    display: inline-block;
+}
+
+/* Allow dropdown to overflow table cell boundaries */
+.lm-action-menu-wrapper {
+    overflow: visible;
+}
+
+/* Ensure the action column cell doesn't clip the dropdown */
+.lm-table td.lm-action-cell {
+    overflow: visible;
+}
+
+/* Make the tbody overflow visible so dropdowns escape the table */
+.lm-table tbody {
+    overflow: visible;
 }
 
 .lm-action-btn {
@@ -295,7 +314,7 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     padding: 8px 0;
     width: 192px;
-    z-index: 10;
+    z-index: 9999;
     animation: lm-dropdown-in 0.2s ease;
 }
 
@@ -685,4 +704,298 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+/* ── Grid ── */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ── Buttons ── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: inherit;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #1a9fd4, #55c5f1);
+    color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.btn-secondary {
+    background: var(--neutral-100);
+    color: var(--neutral-700);
+    border: 1px solid var(--neutral-200);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--neutral-200);
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* ── Stat Cards ── */
+.lm-stat-card {
+    background: #fff;
+    border: 1px solid var(--neutral-200);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+[data-theme="dark"] .lm-stat-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.lm-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(26, 159, 212, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a9fd4;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .lm-stat-icon {
+    background: rgba(26, 159, 212, 0.15);
+}
+
+.lm-stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lm-stat-label {
+    font-size: 12px;
+    color: var(--neutral-500);
+    font-weight: 500;
+}
+
+[data-theme="dark"] .lm-stat-label {
+    color: #94a3b8;
+}
+
+.lm-stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--neutral-900);
+}
+
+[data-theme="dark"] .lm-stat-value {
+    color: #f1f5f9;
+}
+
+/* ── Page layout ── */
+.lm-page {
+    padding: 28px;
+    min-height: 100vh;
+}
+
+.lm-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.lm-header-left h1 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--neutral-900);
+}
+
+[data-theme="dark"] .lm-header-left h1 {
+    color: #f1f5f9;
+}
+
+.lm-header-left p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--neutral-500);
+}
+
+[data-theme="dark"] .lm-header-left p {
+    color: #94a3b8;
+}
+
+.lm-header-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.lm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: inherit;
+}
+
+.lm-btn--primary {
+    background: linear-gradient(135deg, #1a9fd4, #55c5f1);
+    color: #fff;
+}
+
+.lm-btn--primary:hover {
+    filter: brightness(1.1);
+}
+
+.lm-btn--outline {
+    background: #fff;
+    color: var(--neutral-700);
+    border: 1px solid var(--neutral-200);
+}
+
+.lm-btn--outline:hover {
+    background: var(--neutral-50);
+    border-color: var(--neutral-300);
+}
+
+[data-theme="dark"] .lm-btn--outline {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .lm-btn--outline:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Stats Grid ── */
+.lm-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+    .lm-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .lm-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Card ── */
+.lm-card {
+    background: #fff;
+    border: 1px solid var(--neutral-200);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+[data-theme="dark"] .lm-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.lm-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.lm-card-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--neutral-900);
+}
+
+[data-theme="dark"] .lm-card-title {
+    color: #f1f5f9;
+}
+
+/* ── Loading / Empty ── */
+.lm-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--neutral-400);
+    gap: 12px;
+}
+
+[data-theme="dark"] .lm-loading {
+    color: #94a3b8;
+}
+
+.lm-spin {
+    animation: spin 1s linear infinite;
+}
+
+.lm-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--neutral-400);
+    gap: 12px;
+    text-align: center;
+}
+
+.lm-empty p {
+    margin: 0;
+    font-size: 15px;
+}
+
+[data-theme="dark"] .lm-empty {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .lm-empty svg {
+    color: #94a3b8;
 }

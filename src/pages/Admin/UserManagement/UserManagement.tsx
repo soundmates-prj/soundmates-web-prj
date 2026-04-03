@@ -24,6 +24,7 @@ import userService, {
   AccountStatusEnum,
 } from '../../../services/userService';
 import { showSuccess, showError } from '../../../components/common/toastUtils';
+import { AddUserModal } from './UserManagementModals';
 
 // ── Enum helpers ────────────────────────────────────────────────
 
@@ -31,9 +32,12 @@ const STATUS_OPTIONS = [
   { value: AccountStatusEnum.Active, label: 'Hoạt động', color: '#16a34a' },
   { value: AccountStatusEnum.Deactivated, label: 'Đã vô hiệu hóa', color: '#94a3b8' },
   { value: AccountStatusEnum.Suspended, label: 'Tạm khóa', color: '#dc2626' },
+  { value: 4, label: 'Chờ xóa', color: '#f59e0b' },
 ] as const;
 
-const getStatusOption = (status: AccountStatusEnum) =>
+type StatusOption = typeof STATUS_OPTIONS[number];
+
+const getStatusOption = (status: number): StatusOption =>
   STATUS_OPTIONS.find(o => o.value === status) ?? STATUS_OPTIONS[1];
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -46,16 +50,21 @@ interface User {
   roleName: string;
   isActive: boolean;
   isVerified: boolean;
-  isBanned: boolean;
+  accountStatus: number;     // 1=Active 2=Deactivated 3=Suspended 4=DeletionPending
+  deletionRequestedAt?: string | null;
+  deletionScheduledAt?: string | null;
+  deactivatedAt?: string | null;
+  deactivationReason?: string | null;
   bannedAt?: string | null;
   banReason?: string | null;
-  deactivatedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 function mapUserDtoToUser(dto: UserDto): User {
   const fullName = [dto.firstName, dto.lastName].filter(Boolean).join(' ') || dto.username || '';
+  // accountStatus is the canonical source of truth; fallback to legacy isActive/isBanned
+  const accountStatus = dto.accountStatus ?? (dto.isActive ? 1 : 3);
   return {
     id: dto.id ?? '',
     name: fullName,
@@ -64,10 +73,13 @@ function mapUserDtoToUser(dto: UserDto): User {
     roleName: dto.roleName || 'USER',
     isActive: dto.isActive ?? false,
     isVerified: dto.isVerified ?? false,
-    isBanned: dto.isBanned ?? false,
+    accountStatus,
+    deletionRequestedAt: dto.deletionRequestedAt ?? null,
+    deletionScheduledAt: dto.deletionScheduledAt ?? null,
+    deactivatedAt: dto.deactivatedAt ?? null,
+    deactivationReason: dto.deactivationReason ?? null,
     bannedAt: dto.bannedAt ?? null,
     banReason: dto.banReason ?? null,
-    deactivatedAt: dto.deactivatedAt ?? null,
     createdAt: dto.createdAt || '',
     updatedAt: dto.updatedAt || '',
   };
@@ -113,11 +125,7 @@ function ViewDetailsModal({
   if (!isOpen || !user) return null;
   const fmt = (d: string | null | undefined) =>
     d ? new Date(d).toLocaleString('vi-VN') : '—';
-  const statusOpt = user.isActive
-    ? STATUS_OPTIONS[0]
-    : user.isBanned
-    ? STATUS_OPTIONS[2]
-    : STATUS_OPTIONS[1];
+  const statusOpt = getStatusOption(user.accountStatus);
   return (
     <ModalBase isOpen={isOpen} onClose={onClose} title="Chi tiết người dùng" size="large">
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 20 }}>
@@ -177,21 +185,18 @@ function UpdateStatusModal({
 }: {
   isOpen: boolean; onClose: () => void; user: User | null; onSuccess: () => void;
 }) {
-  // Derive current status from entity
-  const currentStatus: AccountStatusEnum = user?.isActive
-    ? AccountStatusEnum.Active
-    : user?.isBanned
-    ? AccountStatusEnum.Suspended
-    : AccountStatusEnum.Deactivated;
+  // Canonical status from accountStatus field (defaults to isActive for legacy)
+  const currentStatus: number = user?.accountStatus
+    ?? (user?.isActive ? AccountStatusEnum.Active : AccountStatusEnum.Deactivated);
 
-  const [selected, setSelected] = useState<AccountStatusEnum>(currentStatus);
+  const [selected, setSelected] = useState<number>(currentStatus);
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // Reset when modal opens
   useEffect(() => {
     if (isOpen && user) {
-      setSelected(user.isActive ? AccountStatusEnum.Active : user.isBanned ? AccountStatusEnum.Suspended : AccountStatusEnum.Deactivated);
+      setSelected(user.accountStatus ?? (user.isActive ? AccountStatusEnum.Active : AccountStatusEnum.Deactivated));
       setReason('');
     }
   }, [isOpen, user]);
@@ -202,7 +207,7 @@ function UpdateStatusModal({
     if (selected === currentStatus) { onClose(); return; }
     setSubmitting(true);
     const res = await userService.updateAccountStatus(user.id, {
-      status: selected,
+      status: selected as AccountStatusEnum,
       reason: reason || undefined,
     });
     if (res.success) {
@@ -423,6 +428,7 @@ export function UserManagementScreen() {
   const [statusModal, setStatusModal] = useState(false);
   const [verifyModal, setVerifyModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
+  const [addUserModal, setAddUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -469,9 +475,9 @@ export function UserManagementScreen() {
 
   const fmt = (d: string) => d ? new Date(d).toLocaleDateString('vi-VN') : '—';
 
-  // Stats
-  const activeCount = users.filter(u => u.isActive).length;
-  const inactiveCount = users.filter(u => !u.isActive).length;
+  // Stats — derive from canonical accountStatus field
+  const activeCount = users.filter(u => u.accountStatus === AccountStatusEnum.Active).length;
+  const inactiveCount = users.filter(u => u.accountStatus !== AccountStatusEnum.Active).length;
   const verifiedCount = users.filter(u => u.isVerified).length;
 
   return (
@@ -486,7 +492,7 @@ export function UserManagementScreen() {
           <button className="lm-btn lm-btn--outline" onClick={fetchUsers}>
             <RefreshCw size={15} /> Làm mới
           </button>
-          <button className="lm-btn lm-btn--primary">
+          <button className="lm-btn lm-btn--primary" onClick={() => setAddUserModal(true)}>
             <Plus size={15} /> Thêm người dùng
           </button>
         </div>
@@ -549,11 +555,7 @@ export function UserManagementScreen() {
               </thead>
               <tbody>
                 {users.map(user => {
-                  const statusOpt = user.isActive
-                    ? STATUS_OPTIONS[0]
-                    : user.isBanned
-                    ? STATUS_OPTIONS[2]
-                    : STATUS_OPTIONS[1];
+                  const statusOpt = getStatusOption(user.accountStatus);
                   return (
                     <tr key={user.id}>
                       <td>
@@ -595,7 +597,7 @@ export function UserManagementScreen() {
                         <span className="lm-text-small">{fmt(user.createdAt)}</span>
                       </td>
 
-                      <td>
+                      <td className="lm-action-cell">
                         <div
                           className="lm-action-menu-wrapper"
                           ref={el => {
@@ -688,6 +690,11 @@ export function UserManagementScreen() {
       <UpdateStatusModal isOpen={statusModal} onClose={() => setStatusModal(false)} user={selectedUser} onSuccess={fetchUsers} />
       <VerifyEmailModal isOpen={verifyModal} onClose={() => setVerifyModal(false)} user={selectedUser} onSuccess={fetchUsers} />
       <DeleteModal isOpen={deleteModal} onClose={() => setDeleteModal(false)} user={selectedUser} onSuccess={fetchUsers} />
+      <AddUserModal
+        isOpen={addUserModal}
+        onClose={() => setAddUserModal(false)}
+        onSuccess={() => { setAddUserModal(false); fetchUsers(); }}
+      />
     </div>
   );
 }

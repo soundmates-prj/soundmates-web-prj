@@ -5,6 +5,7 @@ export const AccountStatusEnum = {
   Active: 1,
   Deactivated: 2,
   Suspended: 3,
+  DeletionPending: 4,
 } as const;
 export type AccountStatusEnum = typeof AccountStatusEnum[keyof typeof AccountStatusEnum];
 
@@ -20,17 +21,20 @@ export interface UserDto {
   id: string;
   username: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   roleId?: string;
   roleName?: string;
   isActive: boolean;
   isVerified: boolean;
   emailVerifiedAt?: string | null;
-  isBanned: boolean;
+  accountStatus?: number;           // 1=Active 2=Deactivated 3=Suspended 4=DeletionPending
+  deactivatedAt?: string | null;
+  deactivationReason?: string | null;
+  deletionRequestedAt?: string | null;
+  deletionScheduledAt?: string | null;
   bannedAt?: string | null;
   banReason?: string | null;
-  deactivatedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
   // Profile
@@ -71,10 +75,28 @@ export interface GetUsersParams {
 
 // ── Request payloads ───────────────────────────────────────────────
 
+export interface UpdatePasswordPayload {
+  oldPassword: string;
+  newPassword: string;
+}
+
 export interface UpdateAccountStatusPayload {
   status: AccountStatusEnum;
   reason?: string;
   note?: string;
+}
+
+// ── Account deactivation / deletion payloads ─────────────────────────
+
+export interface DeactivateAccountPayload {
+  password: string;
+  reason: string;
+  additionalNote?: string;
+}
+
+export interface RequestDeletionPayload {
+  password: string;
+  confirmationText: string;
 }
 
 // ── User Service ──────────────────────────────────────────────────
@@ -154,6 +176,32 @@ class UserService {
   }
 
   // ═══════════════════════════════════════════════════════════════════
+  // CHANGE PASSWORD
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * POST /api/v1/auth/change-password
+   * Authenticated user changes their own password.
+   */
+  async updatePassword(
+    payload: UpdatePasswordPayload,
+  ): Promise<ApiResponse<void>> {
+    try {
+      const res = await api.post<ApiResponse<void>>(
+        '/auth/change-password',
+        {
+          oldPassword: payload.oldPassword,
+          newPassword: payload.newPassword,
+        },
+      );
+      return res.data;
+    } catch (err: any) {
+      console.error('[UserService] updatePassword error:', err);
+      return this.fail(err, 'Không thể đổi mật khẩu');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
   // STATUS — Unified PATCH endpoint
   // Idempotent: setting same status twice = 200 OK (no-op)
   // ═══════════════════════════════════════════════════════════════════
@@ -195,6 +243,71 @@ class UserService {
     } catch (err: any) {
       console.error('[UserService] verifyEmail error:', err);
       return this.fail(err, 'Không thể xác minh email người dùng');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // MEMBER ACCOUNT SELF-SERVICE
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * POST /api/v1/auth/deactivate-account
+   * Member-initiated account deactivation (soft lock, reversible within 90 days).
+   */
+  async deactivateAccount(
+    payload: DeactivateAccountPayload,
+  ): Promise<ApiResponse<void>> {
+    try {
+      const res = await api.post<ApiResponse<void>>(
+        '/auth/deactivate-account',
+        {
+          password: payload.password,
+          reason: payload.reason,
+          additionalNote: payload.additionalNote,
+        },
+      );
+      return res.data;
+    } catch (err: any) {
+      console.error('[UserService] deactivateAccount error:', err);
+      return this.fail(err, 'Không thể vô hiệu hóa tài khoản');
+    }
+  }
+
+  /**
+   * POST /api/v1/auth/request-account-deletion
+   * Member-initiated permanent deletion request (30-day grace period).
+   */
+  async requestAccountDeletion(
+    payload: RequestDeletionPayload,
+  ): Promise<ApiResponse<void>> {
+    try {
+      const res = await api.post<ApiResponse<void>>(
+        '/auth/request-account-deletion',
+        {
+          password: payload.password,
+          confirmationText: payload.confirmationText,
+        },
+      );
+      return res.data;
+    } catch (err: any) {
+      console.error('[UserService] requestAccountDeletion error:', err);
+      return this.fail(err, 'Không thể xóa tài khoản');
+    }
+  }
+
+  /**
+   * POST /api/v1/auth/cancel-account-deletion
+   * Cancels a pending deletion within the 30-day grace period.
+   */
+  async cancelAccountDeletion(): Promise<ApiResponse<void>> {
+    try {
+      const res = await api.post<ApiResponse<void>>(
+        '/auth/cancel-account-deletion',
+      );
+      return res.data;
+    } catch (err: any) {
+      console.error('[UserService] cancelAccountDeletion error:', err);
+      return this.fail(err, 'Không thể hủy yêu cầu xóa tài khoản');
     }
   }
 

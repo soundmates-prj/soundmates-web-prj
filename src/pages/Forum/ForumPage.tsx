@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   MessageCircle,
   Share2,
@@ -153,6 +154,9 @@ function PostCard({ post }: { post: PublishedPost }) {
 
 /* ─── Main page ─── */
 export default function ForumPage() {
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get("highlight");
+  const highlightRef = useRef<HTMLDivElement>(null);
   const [allPosts, setAllPosts] = useState<PublishedPost[]>([]);
   const [posts, setPosts] = useState<PublishedPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,6 +206,19 @@ export default function ForumPage() {
     setPage(1);
     fetchPosts(1);
   }, [mood]); // eslint-disable-line
+
+  // Scroll to highlighted post from search
+  useEffect(() => {
+    if (!highlightId || !highlightRef.current) return;
+    setTimeout(() => {
+      highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      highlightRef.current?.classList.add("fp-post-highlight");
+      const timer = setTimeout(() => {
+        highlightRef.current?.classList.remove("fp-post-highlight");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }, 500);
+  }, [highlightId, posts]);
 
   const handlePageChange = (p: number) => {
     setPage(p);
@@ -303,7 +320,12 @@ export default function ForumPage() {
             <>
               <div className="fp-posts">
                 {posts.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                  <div
+                    key={post.id}
+                    ref={post.id === highlightId ? highlightRef : undefined}
+                  >
+                    <PostCard post={post} />
+                  </div>
                 ))}
               </div>
               {totalPages > 1 && (

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/axios";
 import { showToast } from "../../utils/toast";
+import vnpayLogo from "../../assets/vnpay_logo.png";
+import payosLogo from "../../assets/payos_logo.png";
 import "./Subscription.css";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -70,8 +72,8 @@ const detectPlanTier = (plan: Plan): "free" | "premium" | "elite" | "other" => {
 const getTierOrder = (tier: ReturnType<typeof detectPlanTier>) => {
   switch (tier) {
     case "free": return 0;
-    case "premium": return 1;
-    case "elite": return 2;
+    case "elite": return 1;
+    case "premium": return 2;
     default: return 3;
   }
 };
@@ -273,7 +275,7 @@ function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): Featu
       { text: `${plan.podcastRequestLimit} lượt tạo Podcast`, bold: " mỗi ngày" },
       { text: "Tự do sáng tạo giọng AI", bold: ` tới ${plan.voiceModelLimit} giọng` },
       { text: "AI đọc văn bản", bold: `${plan.ttsMinuteLimit} phút/tháng` },
-      { text: "Cập nhật mọi Theme mới nhất & 'chanh sả' nhất" },
+      { text: "Cập nhật mọi Theme mới nhất & 'đặc biệt' nhất" },
     ];
   }
   // premium
@@ -428,8 +430,8 @@ export default function Subscription() {
     return (
       <div className="subscription-page">
         <div className="subscription-header">
-          <h1 className="subscription-title">Gói đăng ký</h1>
-          <p className="subscription-subtitle">Đang tải danh sách gói dịch vụ...</p>
+          <h1 className="subscription-title">Chọn Gói Dịch Vụ</h1>
+          <p className="subscription-subtitle">Đang Tải Bảng Giá...</p>
         </div>
         <div className="subscription-loading">
           <div className="subscription-spinner" />
@@ -442,7 +444,7 @@ export default function Subscription() {
     return (
       <div className="subscription-page">
         <div className="subscription-header">
-          <h1 className="subscription-title">Gói đăng ký</h1>
+          <h1 className="subscription-title">Gói Đăng Ký</h1>
           <p className="subscription-subtitle">{loadError}</p>
         </div>
         <div className="subscription-error-actions">
@@ -458,7 +460,7 @@ export default function Subscription() {
     return (
       <div className="subscription-page">
         <div className="subscription-header">
-          <h1 className="subscription-title">Gói đăng ký</h1>
+          <h1 className="subscription-title">Gói Đăng Ký</h1>
           <p className="subscription-subtitle">Hiện chưa có gói đăng ký khả dụng. Vui lòng quay lại sau.</p>
         </div>
       </div>
@@ -478,8 +480,8 @@ export default function Subscription() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <motion.div className="subscription-header"
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-        <h1 className="subscription-title">Gói đăng ký</h1>
-        <p className="subscription-subtitle">Chào mừng bạn! Hãy chọn một gói dịch vụ để bắt đầu hành trình âm nhạc tuyệt vời nhé.</p>
+        <h1 className="subscription-title">Chọn gói dịch vụ</h1>
+        <p className="subscription-subtitle">Nâng cao trải nghiệm âm nhạc và sáng tạo nội dung với các gói dịch vụ linh hoạt, phù hợp với mọi nhu cầu.</p>
       </motion.div>
 
       {/* ── Current Plan Banner ──────────────────────────────────────── */}
@@ -533,7 +535,14 @@ export default function Subscription() {
               whileHover={{ y: -6, transition: { duration: 0.2 } }}
             >
               {/* Badges */}
-              {tier === "elite" && <div className="popular-badge">Elite</div>}
+              {tier === "elite" && (
+                <div className="popular-badge">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="#fbbf24" stroke="none">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  Yêu thích nhất
+                </div>
+              )}
               {isCurrent && (
                 <div className="current-badge">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="12" height="12">
@@ -635,11 +644,7 @@ export default function Subscription() {
                 </div>
                 <div className="payment-methods">
                   <motion.button className="payment-method-btn" onClick={() => handlePay(selectedPlan, "VNPay")} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <div className="payment-method-icon vnpay">
-                      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
-                      </svg>
-                    </div>
+                    <img src={vnpayLogo} alt="VNPay" className="payment-method-logo vnpay" />
                     <div className="payment-method-info">
                       <span className="payment-method-name">VNPay</span>
                       <span className="payment-method-desc">Thanh toán qua VNPay QR</span>
@@ -647,11 +652,7 @@ export default function Subscription() {
                     <span className="payment-method-arrow">›</span>
                   </motion.button>
                   <motion.button className="payment-method-btn" onClick={() => handlePay(selectedPlan, "PayOS")} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <div className="payment-method-icon payos">
-                      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
-                        <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM7 10h2v4H7zm4-1h2v5h-2zm4 3h2v2h-2z" />
-                      </svg>
-                    </div>
+                    <img src={payosLogo} alt="PayOS" className="payment-method-logo payos" />
                     <div className="payment-method-info">
                       <span className="payment-method-name">PayOS</span>
                       <span className="payment-method-desc">Thanh toán qua PayOS — Ví điện tử</span>
