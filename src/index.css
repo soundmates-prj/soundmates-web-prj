@@ -3,7 +3,7 @@
    A Platform for Emotional Podcast Letters
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Ephesis&display=swap');
 
 /* ============================================
    Global Reset & Body Styles
@@ -179,16 +179,53 @@ body {
   --footer-social-color: #000000;
   --footer-social-hover-bg: #55C5F1;
   --footer-social-hover-color: #ffffff;
-  
+
   --dropdown-bg: #ffffff;
   --dropdown-border: #E5E7EB;
   --dropdown-text: #374151;
   --dropdown-hover: #F3F4F6;
   --dropdown-shadow: rgba(0, 0, 0, 0.1);
-  
+
   --search-bg: #F9FAFB;
   --search-border: #E5E7EB;
   --search-text: #374151;
+
+  /* ============================================
+     Subscription Page Tokens
+     ============================================ */
+  --subscription-bg: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 50%, #f0f9ff 100%);
+  --subscription-accent: #55C5F1;
+  --subscription-accent-dark: #3B9FD8;
+  --subscription-accent-light: rgba(85, 197, 241, 0.08);
+
+  /* Card */
+  --subscription-card-bg: rgba(255, 255, 255, 0.95);
+  --subscription-card-border: rgba(255, 255, 255, 0.8);
+  --subscription-card-hover-border: rgba(85, 197, 241, 0.3);
+
+  /* Titles & text */
+  --subscription-title: #55C5F1;
+  --subscription-plan-name: #0f172a;
+  --subscription-price: #0f172a;
+
+  /* Premium card */
+  --subscription-premium-border: rgba(85, 197, 241, 0.3);
+  --subscription-premium-border-hover: rgba(85, 197, 241, 0.5);
+  --subscription-premium-shadow: 0 12px 40px rgba(85, 197, 241, 0.15);
+  --subscription-premium-shadow-hover: 0 20px 56px rgba(85, 197, 241, 0.22);
+
+  /* Elite card */
+  --subscription-elite-border: rgba(85, 197, 241, 0.5);
+  --subscription-elite-border-hover: rgba(85, 197, 241, 0.7);
+  --subscription-elite-shadow: 0 12px 40px rgba(85, 197, 241, 0.22);
+  --subscription-elite-shadow-hover: 0 20px 56px rgba(85, 197, 241, 0.3);
+
+  /* Button */
+  --subscription-btn-bg: #0f172a;
+  --subscription-btn-text: #ffffff;
+  --subscription-btn-border: #0f172a;
+  --subscription-btn-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+  --subscription-btn-shadow-hover: 0 8px 24px rgba(15, 23, 42, 0.25);
 }
 
 [data-theme='dark'] {
@@ -211,7 +248,7 @@ body {
   --footer-social-color: #ffffff;
   --footer-social-hover-bg: #55C5F1;
   --footer-social-hover-color: #ffffff;
-  
+
   --dropdown-bg: #1e1e1e;
   --dropdown-border: #333333;
   --dropdown-text: #e0e0e0;
@@ -226,11 +263,48 @@ body {
   --bg-primary: #121212;
   --bg-secondary: #1e1e1e;
   --bg-card: #1e1e1e;
-  
+
   /* Text Colors */
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
   --text-inverse: #111827;
+
+  /* ============================================
+     Subscription Page Tokens (Dark)
+     ============================================ */
+  --subscription-bg: radial-gradient(circle at 50% 0%, rgba(85, 197, 241, 0.06) 0%, #121212 70%);
+  --subscription-accent: #55C5F1;
+  --subscription-accent-dark: #3B9FD8;
+  --subscription-accent-light: rgba(85, 197, 241, 0.1);
+
+  /* Card */
+  --subscription-card-bg: rgba(20, 20, 20, 0.7);
+  --subscription-card-border: rgba(255, 255, 255, 0.1);
+  --subscription-card-hover-border: rgba(255, 255, 255, 0.25);
+
+  /* Titles & text */
+  --subscription-title: #55C5F1;
+  --subscription-plan-name: #ffffff;
+  --subscription-price: #ffffff;
+
+  /* Premium card */
+  --subscription-premium-border: rgba(85, 197, 241, 0.3);
+  --subscription-premium-border-hover: rgba(85, 197, 241, 0.45);
+  --subscription-premium-shadow: 0 10px 50px rgba(85, 197, 241, 0.15);
+  --subscription-premium-shadow-hover: 0 16px 60px rgba(85, 197, 241, 0.22);
+
+  /* Elite card */
+  --subscription-elite-border: rgba(85, 197, 241, 0.45);
+  --subscription-elite-border-hover: rgba(85, 197, 241, 0.65);
+  --subscription-elite-shadow: 0 16px 48px rgba(85, 197, 241, 0.18);
+  --subscription-elite-shadow-hover: 0 24px 64px rgba(85, 197, 241, 0.28);
+
+  /* Button */
+  --subscription-btn-bg: rgba(85, 197, 241, 0.12);
+  --subscription-btn-text: #55C5F1;
+  --subscription-btn-border: rgba(85, 197, 241, 0.3);
+  --subscription-btn-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --subscription-btn-shadow-hover: 0 8px 24px rgba(85, 197, 241, 0.2);
 }
 
 /* ============================================

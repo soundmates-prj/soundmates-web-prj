@@ -1,46 +1,84 @@
-import { useState } from 'react';
-import { Music, Search, CheckCircle, XCircle, Clock, User, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Music, Search, CheckCircle, XCircle, Clock, User, Calendar, RefreshCw } from 'lucide-react';
+import { liveSessionApiService } from "../../../services/liveSessionApiService";
+import type { SongRequestResult } from "../../../services/liveSessionApiService";
+import { showSuccess, showError } from "../../../components/common/toastUtils";
 import './MusicRequestsScreen.css';
 
-const musicRequests = [
-  { id: 1, title: 'Bohemian Rhapsody', artist: 'Queen', user: 'User123', requestedAt: '2024-01-15 10:30', status: 'pending', genre: 'Rock', duration: '5:55' },
-  { id: 2, title: 'Imagine', artist: 'John Lennon', user: 'MusicLover', requestedAt: '2024-01-15 11:15', status: 'pending', genre: 'Pop', duration: '3:03' },
-  { id: 3, title: 'Hotel California', artist: 'Eagles', user: 'RockFan99', requestedAt: '2024-01-15 12:00', status: 'approved', genre: 'Rock', duration: '6:30' },
-  { id: 4, title: 'Billie Jean', artist: 'Michael Jackson', user: 'PopKing', requestedAt: '2024-01-15 13:45', status: 'approved', genre: 'Pop', duration: '4:54' },
-  { id: 5, title: 'Stairway to Heaven', artist: 'Led Zeppelin', user: 'ClassicRock', requestedAt: '2024-01-15 14:20', status: 'rejected', genre: 'Rock', duration: '8:02' },
-  { id: 6, title: 'Sweet Child O Mine', artist: 'Guns N Roses', user: 'GnRFan', requestedAt: '2024-01-15 15:10', status: 'pending', genre: 'Rock', duration: '5:56' },
-];
-
 export function MusicRequestsScreen() {
+  const [requests, setRequests] = useState<SongRequestResult[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const filteredRequests = musicRequests.filter(req => {
-    const matchesFilter = filter === 'all' || req.status === filter;
-    const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         req.artist.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+  useEffect(() => { loadRequests(); }, []);
+
+  const loadRequests = async (sessionId?: string) => {
+    setLoading(true);
+    try {
+      const data = await liveSessionApiService.getSongRequests(sessionId ?? "");
+      setRequests(data);
+    } catch {
+      showError("Lỗi", "Không thể tải yêu cầu nhạc");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    setActionLoading(id);
+    try {
+      await liveSessionApiService.reviewSongRequest(id, { action: "approve" });
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+      showSuccess("Thành công", "Yêu cầu đã được duyệt");
+    } catch {
+      showError("Lỗi", "Không thể duyệt yêu cầu");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    setActionLoading(id);
+    try {
+      await liveSessionApiService.reviewSongRequest(id, { action: "reject" });
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Rejected' } : r));
+      showSuccess("Thành công", "Yêu cầu đã bị từ chối");
+    } catch {
+      showError("Lỗi", "Không thể từ chối yêu cầu");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const filteredRequests = requests.filter(req => {
+    const matchFilter = filter === 'all' || req.status === filter; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const matchSearch =
+      !searchQuery.trim() ||
+      (req.songTitle || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (req.songArtist || '').toLowerCase().includes(searchQuery.toLowerCase());
+    return matchFilter && matchSearch;
   });
 
   const stats = {
-    total: musicRequests.length,
-    pending: musicRequests.filter(r => r.status === 'pending').length,
-    approved: musicRequests.filter(r => r.status === 'approved').length,
-    rejected: musicRequests.filter(r => r.status === 'rejected').length,
+    total: requests.length,
+    pending: requests.filter(r => r.status === 'Pending').length,
+    approved: requests.filter(r => r.status === 'Approved').length,
+    rejected: requests.filter(r => r.status === 'Rejected').length,
   };
 
   return (
     <div className="music-requests-screen">
       <div className="requests-header">
         <div>
-          <h1 className="requests-title" style={{
-            background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>Music Requests</h1>
-          <p className="requests-subtitle">Review and manage music requests from users</p>
+          <h1 className="requests-title">Yêu cầu nhạc</h1>
+          <p className="requests-subtitle">Duyệt và quản lý yêu cầu nhạc từ người dùng</p>
         </div>
+        <button className="lm-btn lm-btn--outline" onClick={() => void loadRequests()} disabled={loading}>
+          <RefreshCw size={14} />
+          Làm mới
+        </button>
       </div>
 
       <div className="requests-stats">
@@ -48,28 +86,28 @@ export function MusicRequestsScreen() {
           <Music size={20} />
           <div>
             <span className="stat-value">{stats.total}</span>
-            <span className="stat-label">Total Requests</span>
+            <span className="stat-label">Tổng yêu cầu</span>
           </div>
         </div>
         <div className="stat-item pending">
           <Clock size={20} />
           <div>
             <span className="stat-value">{stats.pending}</span>
-            <span className="stat-label">Pending</span>
+            <span className="stat-label">Đang chờ</span>
           </div>
         </div>
         <div className="stat-item approved">
           <CheckCircle size={20} />
           <div>
             <span className="stat-value">{stats.approved}</span>
-            <span className="stat-label">Approved</span>
+            <span className="stat-label">Đã duyệt</span>
           </div>
         </div>
         <div className="stat-item rejected">
           <XCircle size={20} />
           <div>
             <span className="stat-value">{stats.rejected}</span>
-            <span className="stat-label">Rejected</span>
+            <span className="stat-label">Từ chối</span>
           </div>
         </div>
       </div>
@@ -79,109 +117,101 @@ export function MusicRequestsScreen() {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search by title or artist..."
+            placeholder="Tìm theo tên bài hát hoặc nghệ sĩ..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
         <div className="filter-tabs">
-          <button
-            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            All
-          </button>
-          <button
-            className={`filter-tab ${filter === 'pending' ? 'active' : ''}`}
-            onClick={() => setFilter('pending')}
-          >
-            Pending ({stats.pending})
-          </button>
-          <button
-            className={`filter-tab ${filter === 'approved' ? 'active' : ''}`}
-            onClick={() => setFilter('approved')}
-          >
-            Approved ({stats.approved})
-          </button>
-          <button
-            className={`filter-tab ${filter === 'rejected' ? 'active' : ''}`}
-            onClick={() => setFilter('rejected')}
-          >
-            Rejected ({stats.rejected})
-          </button>
+          <button className={`filter-tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Tất cả</button>
+          <button className={`filter-tab ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>Đang chờ ({stats.pending})</button>
+          <button className={`filter-tab ${filter === 'approved' ? 'active' : ''}`} onClick={() => setFilter('approved')}>Đã duyệt ({stats.approved})</button>
+          <button className={`filter-tab ${filter === 'rejected' ? 'active' : ''}`} onClick={() => setFilter('rejected')}>Từ chối ({stats.rejected})</button>
         </div>
       </div>
 
-      <div className="requests-table-card">
-        <table className="requests-table">
-          <thead>
-            <tr>
-              <th>Song</th>
-              <th>Artist</th>
-              <th>Genre</th>
-              <th>Duration</th>
-              <th>Requested By</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRequests.map((request) => (
-              <tr key={request.id}>
-                <td>
-                  <div className="song-cell">
-                    <div className="song-icon">
-                      <Music size={16} />
-                    </div>
-                    <span className="song-title">{request.title}</span>
-                  </div>
-                </td>
-                <td>{request.artist}</td>
-                <td>
-                  <span className="genre-badge">{request.genre}</span>
-                </td>
-                <td>{request.duration}</td>
-                <td>
-                  <div className="user-cell">
-                    <User size={14} />
-                    {request.user}
-                  </div>
-                </td>
-                <td>
-                  <div className="date-cell">
-                    <Calendar size={14} />
-                    {new Date(request.requestedAt).toLocaleDateString('vi-VN')}
-                  </div>
-                </td>
-                <td>
-                  <span className={`status-badge ${request.status}`}>
-                    {request.status === 'approved' && <CheckCircle size={14} />}
-                    {request.status === 'rejected' && <XCircle size={14} />}
-                    {request.status === 'pending' && <Clock size={14} />}
-                    {request.status}
-                  </span>
-                </td>
-                <td>
-                  {request.status === 'pending' && (
-                    <div className="action-buttons">
-                      <button className="action-btn approve">
-                        <CheckCircle size={16} />
-                        Approve
-                      </button>
-                      <button className="action-btn reject">
-                        <XCircle size={16} />
-                        Reject
-                      </button>
-                    </div>
-                  )}
-                </td>
+      {loading ? (
+        <div className="lm-loading">
+          <RefreshCw size={28} className="lm-spin" />
+          <p>Đang tải yêu cầu nhạc...</p>
+        </div>
+      ) : filteredRequests.length === 0 ? (
+        <div className="lm-empty">
+          <Music size={40} />
+          <p>Không có yêu cầu nào</p>
+        </div>
+      ) : (
+        <div className="requests-table-card">
+          <table className="requests-table">
+            <thead>
+              <tr>
+                <th>Bài hát</th>
+                <th>Nghệ sĩ</th>
+                <th>Người yêu cầu</th>
+                <th>Ngày</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredRequests.map((request) => (
+                <tr key={request.id}>
+                  <td>
+                    <div className="song-cell">
+                      <div className="song-icon"><Music size={16} /></div>
+                      <span className="song-title">{request.songTitle || '—'}</span>
+                    </div>
+                  </td>
+                  <td>{request.songArtist || '—'}</td>
+                  <td>
+                    <div className="user-cell">
+                      <User size={14} />
+                      {request.requestedByUserId || '—'}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="date-cell">
+                      <Calendar size={14} />
+                      {request.requestedAt ? new Date(request.requestedAt).toLocaleDateString('vi-VN') : '—'}
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${request.status?.toLowerCase()}`}>
+                      {request.status === 'Approved' && <CheckCircle size={14} />}
+                      {request.status === 'Rejected' && <XCircle size={14} />}
+                      {request.status === 'Pending' && <Clock size={14} />}
+                      {request.status === 'Approved' ? 'Đã duyệt' : request.status === 'Rejected' ? 'Từ chối' : 'Đang chờ'}
+                    </span>
+                  </td>
+                  <td>
+                    {request.status === 'Pending' && (
+                      <div className="action-buttons">
+                        <button
+                          className="action-btn approve"
+                          disabled={actionLoading === request.id}
+                          onClick={() => handleApprove(request.id)}
+                        >
+                          <CheckCircle size={14} />
+                          Duyệt
+                        </button>
+                        <button
+                          className="action-btn reject"
+                          disabled={actionLoading === request.id}
+                          onClick={() => handleReject(request.id)}
+                        >
+                          <XCircle size={14} />
+                          Từ chối
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

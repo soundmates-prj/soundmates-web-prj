@@ -108,7 +108,7 @@ export interface SyncMediaFilesResult {
 export interface ImportedSystemMediaItemResult {
   mediaFileId: string;
   title: string;
-  stationMediaUniqueId: string;
+  stationMediaUniqueId: string; // AzuraCast unique_id sau khi import
 }
 
 export interface ImportSystemMediaBatchResult {
@@ -153,9 +153,41 @@ export interface SessionScheduleResult {
   id: string;
   liveSessionId: string;
   title: string | null;
-  startTime: string;
-  endTime: string;
+  startTime: string;     // TimeOnly "HH:mm:ss"
+  endTime: string;       // TimeOnly "HH:mm:ss"
+  status: string | null;
+  isRecurring: boolean;
+  daysOfWeek: number;    // DaysOfWeek flags enum
+  startDate: string;    // DateOnly "yyyy-MM-dd"
+  endDate: string | null;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: string;
+  // Nested live session + station data
+  liveSession: LiveSessionScheduleData | null;
+}
+
+export interface LiveSessionScheduleData {
+  id: string;
+  sessionName: string;
+  description: string | null;
+  status: string;
+  hostUserId: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  genre: string | null;
+  thumbnailUrl: string | null;
+  station: StationScheduleData | null;
+}
+
+export interface StationScheduleData {
+  id: string;
+  externalStationId: number;
+  stationName: string;
+  stationShortcode: string | null;
+  description: string | null;
+  streamUrl: string | null;
+  publicPlayerUrl: string | null;
 }
 
 export interface AzuraCastHealthResult {
@@ -513,7 +545,15 @@ class LiveSessionApiService {
 
   async createSchedule(
     id: string,
-    data: { startTime: string; endTime: string; title?: string },
+    data: {
+      startDate: string;   // "yyyy-MM-dd"
+      endDate?: string;    // "yyyy-MM-dd"
+      startTime: string;   // "HH:mm:ss"
+      endTime: string;     // "HH:mm:ss"
+      title?: string;
+      isRecurring?: boolean;
+      daysOfWeek?: number; // DaysOfWeek flags
+    },
   ): Promise<SessionScheduleResult> {
     // POST /api/v1/schedule/live-session/{liveSessionId}
     const res = await api.post<ApiResponse<SessionScheduleResult>>(
@@ -523,16 +563,32 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
-  async getSchedules(): Promise<SessionScheduleResult[]> {
+  async getSchedules(liveSessionId?: string): Promise<SessionScheduleResult[]> {
     // GET /api/v1/schedule — Get all session schedules
-    const res =
-      await api.get<ApiResponse<SessionScheduleResult[]>>(`/schedule`);
+    const res = await api.get<ApiResponse<SessionScheduleResult[]>>(`/schedule`, {
+      params: liveSessionId ? { liveSessionId } : undefined,
+    });
+    return res.data.data;
+  }
+
+  async getScheduleById(scheduleId: string): Promise<SessionScheduleResult> {
+    const res = await api.get<ApiResponse<SessionScheduleResult>>(
+      `/schedule/${scheduleId}`,
+    );
     return res.data.data;
   }
 
   async updateSchedule(
     scheduleId: string,
-    data: { startTime?: string; endTime?: string; title?: string },
+    data: {
+      startDate: string;
+      endDate?: string;
+      startTime: string;
+      endTime: string;
+      title?: string;
+      isRecurring?: boolean;
+      daysOfWeek?: number;
+    },
   ): Promise<SessionScheduleResult> {
     // PUT /api/v1/schedule/{scheduleId}
     const res = await api.put<ApiResponse<SessionScheduleResult>>(
@@ -588,7 +644,6 @@ class LiveSessionApiService {
   async reviewSongRequest(
     songRequestId: string,
     data: {
-      reviewedByUserId: string;
       action: "approve" | "reject";
       rejectReason?: string;
     },

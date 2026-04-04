@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/api/v1/",
+  baseURL: `${import.meta.env.VITE_API_URL}/api/v1/`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -45,6 +45,26 @@ api.interceptors.response.use(
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Skip token refresh for auth endpoints — let the component handle the error
+      const isAuthRequest =
+        originalRequest.url?.includes("auth/login") ||
+        originalRequest.url?.includes("auth/google-login") ||
+        originalRequest.url?.includes("auth/refresh-token");
+
+      if (isAuthRequest) {
+        return Promise.reject(error);
+      }
+
+      // Skip for guest: /me/* endpoints return 401 for unauthenticated users —
+      // just pass the error through so the component can handle it gracefully
+      // (e.g., show empty data instead of redirecting)
+      const isMeEndpoint = originalRequest.url?.startsWith("me/") ||
+                           originalRequest.url?.includes("/me/");
+
+      if (isMeEndpoint && !localStorage.getItem("accessToken")) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -75,7 +95,7 @@ api.interceptors.response.use(
       try {
         // Call refresh token endpoint
         const response = await axios.post(
-          "http://localhost:8080/api/v1/auth/refresh-token",
+          `${import.meta.env.VITE_API_URL}/api/v1/auth/refresh-token`,
           { refreshToken }
         );
 

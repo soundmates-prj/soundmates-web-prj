@@ -16,17 +16,76 @@ const Login: React.FC = () => {
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  // EF-02: Field-level error state for empty-input highlighting
+  const [fieldErrors, setFieldErrors] = useState({ emailOrUsername: false, password: false });
   const navigate = useNavigate();
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  const handleLogin = async () => {
-    if (!emailOrUsername.trim() || !password) {
+  /** Map HTTP status codes / backend messages to Vietnamese UX messages per use-case */
+  const getLoginErrorMessage = (error: any): { title: string; description: string } => {
+    const status = error?.response?.status;
+    const serverMsg: string = error?.response?.data?.message || "";
+
+    // EF-03: Account locked / disabled
+    if (status === 403) {
+      // Distinguish between brute-force lockout (temporary) vs deactivated/banned
+      if (serverMsg.toLowerCase().includes("15 minutes") || serverMsg.toLowerCase().includes("locked due to too many")) {
+        return {
+          title: "Tài khoản bị khóa tạm thời",
+          description: "Tài khoản của bạn đã bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút hoặc liên hệ hỗ trợ.",
+        };
+      }
+      return {
+        title: "Tài khoản bị khóa",
+        description: "Tài khoản của bạn đã bị khóa hoặc vô hiệu hóa. Vui lòng liên hệ hỗ trợ.",
+      };
+    }
+
+    // EF-01: Invalid credentials
+    if (status === 401 || status === 400) {
+      return {
+        title: "Sai thông tin đăng nhập",
+        description: "Sai email/tên người dùng hoặc mật khẩu. Vui lòng thử lại.",
+      };
+    }
+
+    // Network error (no response from server)
+    if (!error?.response) {
+      return {
+        title: "Lỗi kết nối",
+        description: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng và thử lại.",
+      };
+    }
+
+    // Generic server error
+    return {
+      title: "Đăng nhập không thành công",
+      description: serverMsg || "Có lỗi xảy ra. Vui lòng thử lại sau.",
+    };
+  };
+
+  const handleLogin = async (e?: React.MouseEvent | React.FormEvent | React.KeyboardEvent) => {
+    if (e && e.preventDefault) e.preventDefault();
+    // Guard: prevent double-submit while loading
+    if (loading) return;
+
+    // EF-02: Validate empty fields and highlight them
+    const errors = {
+      emailOrUsername: !emailOrUsername.trim(),
+      password: !password,
+    };
+    setFieldErrors(errors);
+
+    if (errors.emailOrUsername || errors.password) {
       showError("Thiếu thông tin", "Vui lòng nhập Email/Tên người dùng và mật khẩu");
       return;
     }
-    // Nếu người dùng nhập có dấu @ thì kiểm tra định dạng email
+
+    // BR-01: Email format check (only when user typed an @)
     if (emailOrUsername.includes("@") && !EMAIL_REGEX.test(emailOrUsername.trim())) {
+      setFieldErrors((prev) => ({ ...prev, emailOrUsername: true }));
       showError("Email không hợp lệ", "Vui lòng kiểm tra lại địa chỉ email");
       return;
     }
@@ -37,14 +96,13 @@ const Login: React.FC = () => {
       const res = await api.post("/auth/login", {
         emailOrUsername: emailOrUsername.trim(),
         password,
+        rememberMe,
       });
-
-      console.log("LOGIN RESPONSE:", res.data);
 
       const accessToken = res.data?.data?.accessToken;
 
       if (!accessToken) {
-        showError("Lỗi hệ thống", "Server không trả về token");
+        showError("Lỗi hệ thống", "Server không trả về token. Vui lòng thử lại.");
         return;
       }
 
@@ -62,30 +120,33 @@ const Login: React.FC = () => {
       }
       window.dispatchEvent(new Event("authChange"));
 
+      // Clear field errors on success
+      setFieldErrors({ emailOrUsername: false, password: false });
       showSuccess("Đăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
-      
-      // Redirect based on role
-      const roleName = userData?.roleName?.toUpperCase();
-      if (roleName === "ADMIN") {
-        navigate("/admin/dashboard");
-      } else if (roleName === "STAFF") {
-        navigate("/staff/dashboard");
+
+      // P5: Use redirectUrl from BE response (source of truth for role-based navigation)
+      const redirectUrl = userData?.redirectUrl;
+      if (redirectUrl) {
+        navigate(redirectUrl);
       } else {
         navigate("/");
       }
     } catch (error: any) {
-      showError(
-        "Đăng nhập không thành công!",
-        error.response?.data?.message || "Mật khẩu hoặc Email/Username không khớp.",
-      );
+      const { title, description } = getLoginErrorMessage(error);
+      showError(title, description);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !loading) {
-      handleLogin();
+  // Replace deprecated onKeyPress with onKeyDown
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      if (!loading) {
+        handleLogin(e);
+      } else {
+        e.preventDefault();
+      }
     }
   };
 
@@ -106,27 +167,35 @@ const Login: React.FC = () => {
           <h2>Đăng nhập</h2>
           <p className="subtitle">Chào mừng bạn quay trở lại !</p>
 
-          {/* Email hoặc Tên người dùng */}
-          <div className="input-wrapper">
+          {/* Email / Username — highlights red if empty (EF-02) */}
+          <div className={`input-wrapper ${fieldErrors.emailOrUsername ? "input-error" : ""}`}>
             <Mail size={18} />
             <input
               type="text"
               placeholder="Tên người dùng hoặc Email"
               value={emailOrUsername}
-              onChange={(e) => setEmailOrUsername(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onChange={(e) => {
+                setEmailOrUsername(e.target.value);
+                if (fieldErrors.emailOrUsername)
+                  setFieldErrors((p) => ({ ...p, emailOrUsername: false }));
+              }}
+              onKeyDown={handleKeyDown}
             />
           </div>
 
-          {/* Password */}
-          <div className="input-wrapper">
+          {/* Password — highlights red if empty (EF-02) */}
+          <div className={`input-wrapper ${fieldErrors.password ? "input-error" : ""}`}>
             <Lock size={18} />
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Mật khẩu"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (fieldErrors.password)
+                  setFieldErrors((p) => ({ ...p, password: false }));
+              }}
+              onKeyDown={handleKeyDown}
             />
             <span
               className="toggle-password"
@@ -137,10 +206,21 @@ const Login: React.FC = () => {
           </div>
 
           <div className="actions">
+            {/* P4: Remember Me checkbox */}
+            <label className="remember-me">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span>Nhớ tài khoản</span>
+            </label>
             <span className="forgot" onClick={() => navigate("/forget-password")}>Quên mật khẩu?</span>
           </div>
 
+          {/* type="button" prevents implicit form submission that caused page reload */}
           <Button
+            type="button"
             className="btn-primary"
             isLoading={loading}
             onClick={handleLogin}
@@ -161,8 +241,6 @@ const Login: React.FC = () => {
               width="100%"
               text="signin_with"
               onSuccess={async (credentialResponse) => {
-                console.log("Google credentialResponse:", credentialResponse);
-                console.log("Google ID Token:", credentialResponse.credential);
                 try {
                   const idToken = credentialResponse.credential;
 
@@ -171,11 +249,7 @@ const Login: React.FC = () => {
                     return;
                   }
 
-                  const res = await api.post("/auth/google-login", {
-                    idToken,
-                  });
-
-                  console.log("GOOGLE LOGIN RESPONSE:", res.data);
+                  const res = await api.post("/auth/google-login", { idToken });
 
                   const accessToken = res.data?.data?.accessToken;
 
@@ -199,11 +273,11 @@ const Login: React.FC = () => {
                   window.dispatchEvent(new Event("authChange"));
 
                   showSuccess("Đăng nhập Google thành công!", "Chào mừng bạn quay trở lại SoundMates");
-                  
-                  // Redirect based on role
-                  const roleName = googleUserData?.roleName?.toUpperCase();
-                  if (roleName === "ADMIN") {
-                    navigate("/admin/dashboard");
+
+                  // P5: Use redirectUrl from BE response
+                  const redirectUrl = googleUserData?.redirectUrl;
+                  if (redirectUrl) {
+                    navigate(redirectUrl);
                   } else {
                     navigate("/");
                   }

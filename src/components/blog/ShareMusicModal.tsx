@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Music2, Search, X } from "lucide-react";
-import favoriteService, { type FavoriteItem } from "../../services/favoriteService";
+import favoriteService, {
+  type FavoriteItem,
+} from "../../services/favoriteService";
 import shareMusicService from "../../services/shareMusicService";
 import type { Post } from "../../types/post";
-import ShareCard, { type ShareCardData, type ShareCardTemplate } from "./ShareCard";
+import ShareCard, {
+  type ShareCardData,
+  type ShareCardTemplate,
+} from "./ShareCard";
 import "./ShareMusicModal.css";
 
 interface ShareMusicModalProps {
@@ -14,7 +19,11 @@ interface ShareMusicModalProps {
 
 const templates: ShareCardTemplate[] = ["dark", "light", "gradient", "minimal"];
 
-export default function ShareMusicModal({ open, onClose, onShared }: ShareMusicModalProps) {
+export default function ShareMusicModal({
+  open,
+  onClose,
+  onShared,
+}: ShareMusicModalProps) {
   const [tracks, setTracks] = useState<FavoriteItem[]>([]);
   const [selected, setSelected] = useState<FavoriteItem | null>(null);
   const [template, setTemplate] = useState<ShareCardTemplate>("gradient");
@@ -98,7 +107,7 @@ export default function ShareMusicModal({ open, onClose, onShared }: ShareMusicM
     <div className="sm-modal-overlay" onClick={onClose}>
       <div className="sm-modal" onClick={(e) => e.stopPropagation()}>
         <div className="sm-modal__header">
-          <h3>Share Music</h3>
+          <h3>Chia sẻ nhạc</h3>
           <button className="sm-icon-btn" onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
@@ -168,10 +177,18 @@ export default function ShareMusicModal({ open, onClose, onShared }: ShareMusicM
         </div>
 
         <div className="sm-modal__footer">
-          <button className="sm-btn sm-btn--ghost" onClick={onClose} disabled={sharing}>
+          <button
+            className="sm-btn sm-btn--ghost"
+            onClick={onClose}
+            disabled={sharing}
+          >
             Hủy
           </button>
-          <button className="sm-btn sm-btn--primary" onClick={handleShare} disabled={!selected || sharing}>
+          <button
+            className="sm-btn sm-btn--primary"
+            onClick={handleShare}
+            disabled={!selected || sharing}
+          >
             {sharing ? "Đang đăng..." : "Đăng lên tường"}
           </button>
         </div>

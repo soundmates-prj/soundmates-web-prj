@@ -1,0 +1,249 @@
+/* System Moderation Screen Styles */
+.sys-mod-page { max-width: 1100px; }
+
+.sys-mod-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.sys-mod-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    background: linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+.sys-mod-subtitle {
+    font-size: 14px;
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+.sys-mod-header-stats { display: flex; gap: 8px; }
+
+.sys-mod-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.sys-mod-badge--pending {
+    background: rgba(234,179,8,0.1);
+    color: #ca8a04;
+}
+
+/* Search */
+.sys-mod-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid var(--neutral-200);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    color: var(--neutral-400);
+}
+
+[data-theme="dark"] .sys-mod-search {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.sys-mod-search input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    font-family: inherit;
+    flex: 1;
+    color: var(--neutral-800);
+}
+
+[data-theme="dark"] .sys-mod-search input { color: rgba(255,255,255,0.9); }
+
+/* List */
+.sys-mod-list { display: flex; flex-direction: column; gap: 10px; }
+
+.sys-mod-item {
+    display: flex;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid var(--neutral-200);
+    border-radius: 12px;
+    padding: 16px;
+    align-items: flex-start;
+}
+
+[data-theme="dark"] .sys-mod-item {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.sys-mod-item-left { display: flex; gap: 12px; flex: 1; min-width: 0; }
+
+.sys-mod-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sys-mod-content { flex: 1; min-width: 0; }
+
+.sys-mod-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.sys-mod-reported {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--neutral-900);
+}
+
+[data-theme="dark"] .sys-mod-reported { color: #fff; }
+
+.sys-mod-content-type {
+    font-size: 11px;
+    background: var(--neutral-100);
+    color: var(--neutral-600);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.sys-mod-time {
+    font-size: 11px;
+    color: var(--neutral-400);
+}
+
+.sys-mod-text {
+    font-size: 13px;
+    color: var(--neutral-700);
+    background: rgba(239,68,68,0.04);
+    border-left: 3px solid #dc2626;
+    padding: 6px 10px;
+    border-radius: 0 6px 6px 0;
+    margin: 0 0 6px 0;
+    word-break: break-word;
+}
+
+.sys-mod-reason {
+    font-size: 12px;
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+.sys-mod-reporter { color: var(--neutral-400); }
+
+/* Actions */
+.sys-mod-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+
+.sys-mod-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sys-mod-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.sys-mod-btn--view { background: var(--neutral-100); color: var(--neutral-700); }
+.sys-mod-btn--view:hover { background: var(--neutral-200); }
+
+.sys-mod-btn--dismiss { background: rgba(100,116,139,0.1); color: #64748b; }
+.sys-mod-btn--dismiss:hover { background: rgba(100,116,139,0.2); }
+
+.sys-mod-btn--warn { background: rgba(234,179,8,0.1); color: #ca8a04; }
+.sys-mod-btn--warn:hover { background: rgba(234,179,8,0.2); }
+
+.sys-mod-btn--suspend { background: rgba(234,179,8,0.15); color: #b45309; }
+.sys-mod-btn--suspend:hover { background: rgba(234,179,8,0.25); }
+
+.sys-mod-btn--ban { background: rgba(127,29,29,0.1); color: #991b1b; }
+.sys-mod-btn--ban:hover { background: rgba(127,29,29,0.2); }
+
+/* Modal */
+.sys-mod-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+
+.sys-mod-modal {
+    background: #fff; border-radius: 16px; width: 100%; max-width: 520px;
+    max-height: 90vh; display: flex; flex-direction: column;
+}
+
+[data-theme="dark"] .sys-mod-modal { background: #1e293b; }
+
+.sys-mod-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid var(--neutral-200);
+    flex-shrink: 0;
+}
+
+.sys-mod-modal-header h3 { margin: 0 0 2px 0; font-size: 16px; color: var(--neutral-900); }
+[data-theme="dark"] .sys-mod-modal-header h3 { color: #fff; }
+
+.sys-mod-modal-type { font-size: 12px; font-weight: 600; }
+
+.sys-mod-modal-header button {
+    background: none; border: none; font-size: 22px;
+    color: var(--neutral-400); cursor: pointer; padding: 0;
+}
+
+[data-theme="dark"] .sys-mod-modal-header { border-bottom-color: rgba(255,255,255,0.1); }
+
+.sys-mod-modal-body { padding: 20px 24px; overflow-y: auto; }
+
+.sys-mod-detail-row {
+    display: flex; gap: 10px; margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.sys-mod-detail-row span { min-width: 120px; color: var(--neutral-500); font-weight: 500; }
+.sys-mod-detail-row strong { color: var(--neutral-900); }
+[data-theme="dark"] .sys-mod-detail-row strong { color: rgba(255,255,255,0.9); }
+
+.sys-mod-detail-message span { font-weight: 500; color: var(--neutral-500); display: block; margin-bottom: 6px; }
+.sys-mod-detail-message p {
+    margin: 0; background: rgba(239,68,68,0.05);
+    border-left: 3px solid #dc2626; padding: 8px 12px;
+    border-radius: 0 6px 6px 0; font-size: 13px; color: var(--neutral-800);
+}
+
+.sys-mod-modal-footer {
+    display: flex; gap: 6px; padding: 16px 24px;
+    border-top: 1px solid var(--neutral-200);
+    justify-content: flex-end; flex-wrap: wrap; flex-shrink: 0;
+}
+
+[data-theme="dark"] .sys-mod-modal-footer { border-top-color: rgba(255,255,255,0.1); }

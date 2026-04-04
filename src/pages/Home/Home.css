@@ -524,6 +524,14 @@
     transition: all 0.3s ease;
     white-space: nowrap;
     align-self: center;
+    text-decoration: none;
+    text-align: center;
+}
+
+a.forum-item-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .forum-item-action:hover {
@@ -819,6 +827,62 @@
 @keyframes wave {
     0%, 100% { transform: scaleY(0.5); }
     50% { transform: scaleY(1.5); }
+}
+
+/* ============================================
+   SKELETON LOADING
+   ============================================ */
+.skeleton {
+    background: var(--sm-card-bg);
+    border-radius: var(--sm-radius);
+    border: 1px solid var(--sm-card-border);
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(85, 197, 241, 0.06) 50%,
+        transparent 100%
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.schedule-item.skeleton {
+    height: 76px;
+}
+
+.forum-item.skeleton {
+    height: 100px;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+.section-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    gap: 12px;
+    color: var(--sm-text-muted);
+    text-align: center;
+}
+
+.section-empty p {
+    font-size: 0.95rem;
+    margin: 0;
 }
 
 /* ============================================

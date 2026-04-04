@@ -26,6 +26,7 @@ import {
   type TrackInfo,
 } from "../../services/livestreamService";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
+import { liveHubService } from "../../services/liveHubService";
 import { usePlayer } from "../../context/PlayerContext";
 import html2canvas from "html2canvas";
 
@@ -197,6 +198,9 @@ const LivestreamPage: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [activeSession, setActiveSession] = useState<LiveSessionResult | null>(null);
+  // SignalR real-time
+  const [hubConnected, setHubConnected] = useState(false);
+  const activeSessionIdRef = useRef<string | null>(null);
 
   // Refs
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -239,9 +243,95 @@ const LivestreamPage: React.FC = () => {
         const session = await livestreamService.getLiveSession(liveSession.id);
         setActiveSession(session);
 
-        const data = livestreamService.toNowPlaying(session);
+        // Fetch real now-playing from AzuraCast via backend for album art / track info
+        let trackData: NowPlayingData | null = null;
+        try {
+          const azuraData: any = await liveSessionApiService.getStationNowPlaying(session.stationId);
+          if (azuraData) {
+            trackData = {
+              externalStationId: azuraData.externalStationId ?? azuraData.station?.id ?? 0,
+              stationName: azuraData.stationName ?? session.stationName ?? azuraData.station?.name ?? '',
+              stationShortcode: azuraData.stationShortcode ?? '',
+              listenUrl: azuraData.listenUrl ?? '',
+              publicPlayerUrl: azuraData.publicPlayerUrl ?? '',
+              isOnline: azuraData.isOnline ?? true,
+              isLive: azuraData.isLive ?? true,
+              streamerName: azuraData.streamerName ?? null,
+              totalListeners: azuraData.totalListeners ?? 0,
+              uniqueListeners: azuraData.uniqueListeners ?? 0,
+              currentTrack: azuraData.currentTrack ? {
+                shId: azuraData.currentTrack.shId ?? azuraData.currentTrack.id ?? 0,
+                text: azuraData.currentTrack.text ?? azuraData.currentTrack.title ?? '',
+                title: azuraData.currentTrack.title ?? 'Unknown',
+                artist: azuraData.currentTrack.artist ?? 'Unknown',
+                album: azuraData.currentTrack.album ?? '',
+                genre: azuraData.currentTrack.genre ?? '',
+                artUrl: proxyArtUrl(azuraData.currentTrack.artUrl ?? ''),
+                lyrics: azuraData.currentTrack.lyrics ?? null,
+                playedAt: azuraData.currentTrack.playedAt ?? 0,
+                duration: azuraData.currentTrack.duration ?? 0,
+                elapsed: azuraData.currentTrack.elapsed ?? 0,
+                remaining: azuraData.currentTrack.remaining ?? 0,
+                isRequest: azuraData.currentTrack.isRequest ?? false,
+              } : {
+                shId: 0, text: '', title: 'Unknown', artist: 'Unknown',
+                album: '', genre: '', artUrl: '',
+                lyrics: null, playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
+              },
+              playingNext: azuraData.playingNext ? {
+                shId: azuraData.playingNext.shId ?? 0,
+                text: azuraData.playingNext.text ?? '',
+                title: azuraData.playingNext.title ?? 'Unknown',
+                artist: azuraData.playingNext.artist ?? 'Unknown',
+                album: azuraData.playingNext.album ?? '',
+                genre: azuraData.playingNext.genre ?? '',
+                artUrl: proxyArtUrl(azuraData.playingNext.artUrl ?? ''),
+                lyrics: azuraData.playingNext.lyrics ?? null,
+                playedAt: azuraData.playingNext.playedAt ?? 0,
+                duration: azuraData.playingNext.duration ?? 0,
+                elapsed: 0,
+                remaining: azuraData.playingNext.remaining ?? 0,
+                isRequest: azuraData.playingNext.isRequest ?? false,
+              } : azuraData.nextSong ? {
+                shId: azuraData.nextSong.shId ?? azuraData.nextSong.id ?? 0,
+                text: azuraData.nextSong.text ?? azuraData.nextSong.title ?? '',
+                title: azuraData.nextSong.title ?? 'Unknown',
+                artist: azuraData.nextSong.artist ?? 'Unknown',
+                album: azuraData.nextSong.album ?? '',
+                genre: azuraData.nextSong.genre ?? '',
+                artUrl: proxyArtUrl(azuraData.nextSong.artUrl ?? ''),
+                lyrics: null, playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
+              } : {
+                shId: 0, text: '', title: 'Không có bài tiếp theo', artist: '',
+                album: '', genre: '', artUrl: proxyArtUrl(''),
+                lyrics: null, playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
+              },
+              songHistory: (azuraData.songHistory || []).map((t: any) => ({
+                shId: t.shId ?? t.id ?? 0,
+                text: t.text ?? t.title ?? '',
+                title: t.title ?? 'Unknown',
+                artist: t.artist ?? 'Unknown',
+                album: t.album ?? '',
+                genre: t.genre ?? '',
+                artUrl: proxyArtUrl(t.artUrl ?? ''),
+                lyrics: t.lyrics ?? null,
+                playedAt: t.playedAt ?? 0,
+                duration: t.duration ?? 0,
+                elapsed: 0,
+                remaining: t.remaining ?? 0,
+                isRequest: t.isRequest ?? false,
+              })),
+            };
+          }
+        } catch {
+          // Fallback: use session data if now-playing fetch fails
+        }
+
+        // Use AzuraCast data if available, otherwise fallback to session
+        const data = trackData || livestreamService.toNowPlaying(session);
         setNowPlaying(data);
         setElapsed(data.currentTrack.elapsed);
+
         // Push track info to global player context
         player.setTrack({
           title: data.currentTrack.title,
@@ -255,6 +345,19 @@ const LivestreamPage: React.FC = () => {
           elapsed: data.currentTrack.elapsed,
           listenUrl: livestreamService.getListenUrl(session.streamUrl || data.listenUrl),
         });
+
+        // Start SignalR real-time
+        if (session.id) {
+          activeSessionIdRef.current = session.id;
+          try {
+            await liveHubService.start();
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            await liveHubService.joinSession(session.id, userInfo.id || userInfo.userId);
+            setHubConnected(true);
+          } catch (err) {
+            console.warn('[Livestream] SignalR connection failed:', err);
+          }
+        }
       } catch (err) {
         console.error("Failed to fetch now playing:", err);
       } finally {
@@ -281,6 +384,39 @@ const LivestreamPage: React.FC = () => {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
+
+  // SignalR real-time: listener count + chat
+  useEffect(() => {
+    const offListeners = liveHubService.onListenersUpdated((sessionId, count) => {
+      if (activeSessionIdRef.current === sessionId && nowPlaying) {
+        setNowPlaying(prev => prev ? { ...prev, totalListeners: count } : prev);
+      }
+    });
+
+    const offChat = liveHubService.onReceiveChat((msg) => {
+      if (activeSessionIdRef.current === msg.liveSessionId) {
+        setChatMessages(prev => [...prev, {
+          id: msg.id || Date.now().toString(),
+          type: 'user' as const,
+          name: msg.userId || 'Khách',
+          text: msg.message,
+          time: msg.createdAt
+            ? new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+            : 'Vừa xong',
+          avatarColor: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'),
+        }]);
+      }
+    });
+
+    return () => {
+      offListeners();
+      offChat();
+      if (activeSessionIdRef.current) {
+        liveHubService.leaveSession(activeSessionIdRef.current);
+      }
+      liveHubService.offAll();
+    };
+  }, []);
 
   // ===== CHAT =====
   const sendChat = () => {

@@ -15,6 +15,7 @@ export interface ShareMusicData {
 
 /** Item trả về từ GET /api/v1/posts/published */
 export interface PublishedPost {
+  reactionCount: number;
   id: string;
   userId: string;
   /** Tên đầy đủ của tác giả — đã có sẵn trong response */
@@ -51,6 +52,39 @@ export interface PublishedPostsResponse {
   success: boolean;
   message: string;
   data: PublishedPostPage;
+}
+
+/** Bài trending — GET /api/v1/posts/trending (có reaction/comment count + tác giả) */
+export interface TrendingPost {
+  id: string;
+  userId: string;
+  userFullName: string;
+  userAvatarUrl: string;
+  title: string;
+  contentText: string;
+  audioUrl: string | null;
+  imgUrl: string | null;
+  privacyScope: string | null;
+  moodTag: string | null;
+  status: string;
+  isGenerated: boolean;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+  reactionCount: number;
+  commentCount: number;
+}
+
+export interface TrendingPostsResponse {
+  success: boolean;
+  message: string;
+  // Backend may return data.items or data.data.items depending on PaginationResult wrapper
+  data: {
+    items?: TrendingPost[];
+    page?: number;
+    pageSize?: number;
+    totalCount?: number;
+  } | TrendingPost[];
 }
 
 /** Query params cho GET /api/v1/posts/published */

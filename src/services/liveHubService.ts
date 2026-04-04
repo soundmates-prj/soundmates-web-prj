@@ -97,28 +97,44 @@ class LiveHubService {
     }
   }
 
-  onSessionStarted(callback: (session: LiveSessionEvent) => void): void {
-    this.getConnection().on("SessionStarted", callback);
+  onSessionStarted(callback: (session: LiveSessionEvent) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("SessionStarted", callback);
+    return () => conn.off("SessionStarted", callback);
   }
 
-  onSessionEnded(callback: (session: LiveSessionEvent) => void): void {
-    this.getConnection().on("SessionEnded", callback);
+  onSessionEnded(callback: (session: LiveSessionEvent) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("SessionEnded", callback);
+    return () => conn.off("SessionEnded", callback);
   }
 
-  onUserJoined(callback: (sessionId: string, userId: string | null, count: number) => void): void {
-    this.getConnection().on("UserJoined", callback);
+  onUserJoined(callback: (sessionId: string, userId: string | null, count: number) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("UserJoined", callback);
+    conn.on("userjoined", callback);
+    return () => { conn.off("UserJoined", callback); conn.off("userjoined", callback); };
   }
 
-  onUserLeft(callback: (sessionId: string, userId: string | null, count: number) => void): void {
-    this.getConnection().on("UserLeft", callback);
+  onUserLeft(callback: (sessionId: string, userId: string | null, count: number) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("UserLeft", callback);
+    conn.on("userleft", callback);
+    return () => { conn.off("UserLeft", callback); conn.off("userleft", callback); };
   }
 
-  onReceiveChat(callback: (chat: ChatMessage) => void): void {
-    this.getConnection().on("ReceiveChat", callback);
+  onReceiveChat(callback: (chat: ChatMessage) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("ReceiveChat", callback);
+    conn.on("receivechat", callback);
+    return () => { conn.off("ReceiveChat", callback); conn.off("receivechat", callback); };
   }
 
-  onListenersUpdated(callback: (sessionId: string, count: number) => void): void {
-    this.getConnection().on("ListenersUpdated", callback);
+  onListenersUpdated(callback: (sessionId: string, count: number) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("ListenersUpdated", callback);
+    conn.on("listenersupdated", callback);
+    return () => { conn.off("ListenersUpdated", callback); conn.off("listenersupdated", callback); };
   }
 
   offAll(): void {
@@ -129,6 +145,12 @@ class LiveHubService {
     conn.off("UserLeft");
     conn.off("ReceiveChat");
     conn.off("ListenersUpdated");
+    conn.off("sessionstarted");
+    conn.off("sessionended");
+    conn.off("userjoined");
+    conn.off("userleft");
+    conn.off("receivechat");
+    conn.off("listenersupdated");
   }
 }
 
