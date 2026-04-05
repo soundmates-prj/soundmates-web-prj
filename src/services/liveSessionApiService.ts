@@ -618,15 +618,16 @@ class LiveSessionApiService {
   /* ── Song Requests ── */
 
   async getSongRequests(
-    sessionId: string,
+    sessionId?: string,
     status?: string,
   ): Promise<SongRequestResult[]> {
-    const res = await api.get<ApiResponse<SongRequestResult[]>>(
-      `/livesession/${sessionId}/song-requests`,
-      {
-        params: status ? { status } : undefined,
-      },
-    );
+    // If no sessionId, fetch ALL requests (for Staff dashboard)
+    const url = sessionId
+      ? `/livesession/${sessionId}/song-requests`
+      : `/livesession/song-requests`;
+    const res = await api.get<ApiResponse<SongRequestResult[]>>(url, {
+      params: status ? { status } : undefined,
+    });
     return res.data.data;
   }
 

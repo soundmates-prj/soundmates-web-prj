@@ -18,6 +18,7 @@ import { showToast } from '../../../utils/toast';
 import { useLiveSession } from "../../../context/LiveSessionContext";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import type { LiveSessionResult, SongRequestResult } from "../../../services/liveSessionApiService";
+import liveHubService from "../../../services/liveHubService";
 import './HostLiveController.css';
 
 export function HostLiveController() {
@@ -43,15 +44,43 @@ export function HostLiveController() {
     };
   }, [sessionId]);
 
-  // Poll requests every 5s when live
+  // Poll requests every 5s when live (backup) + register real-time handler (primary)
   useEffect(() => {
+    if (!sessionId) return;
+
+    // Real-time: instantly add new requests when they come in via SignalR
+    const offCreated = liveHubService.onSongRequestCreated((req) => {
+      if (req.sessionId !== sessionId) return;
+      setRequests(prev => [{
+        id: req.requestId,
+        liveSessionId: req.sessionId,
+        mediaFileId: req.mediaFileId,
+        requestedByUserId: req.requestedByUserId,
+        status: 'Pending',
+        reviewedByUserId: null,
+        requestedAt: req.createdAt,
+        reviewedAt: null,
+        message: req.message,
+        rejectReason: null,
+        songTitle: req.songTitle,
+        songArtist: req.songArtist,
+        songAlbum: null,
+      }, ...prev]);
+      showToast.info(`Yêu cầu mới: "${req.songTitle}" từ ${req.requestedByUserName ?? 'người dùng'}`);
+    });
+
+    // Polling: also poll as a fallback (every 5s when live)
     if (isLive && sessionId) {
-      loadRequests();
-      pollRef.current = setInterval(loadRequests, 5000);
+      void loadRequests();
+      pollRef.current = setInterval(() => { void loadRequests(); }, 5000);
     } else if (pollRef.current) {
       clearInterval(pollRef.current);
     }
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+
+    return () => {
+      offCreated();
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, [isLive, sessionId]);
 
   // Auto-scroll chat
@@ -65,7 +94,6 @@ export function HostLiveController() {
     try {
       const session = await liveSessionApiService.getLiveSession(sessionId);
       setSessionData(session);
-      // Guard: if session already ended, show error
       if (session.status?.toLowerCase() === 'ended') {
         showToast.error('Phiên đã kết thúc — Phiên này đã được kết thúc trước đó.');
       }
@@ -86,7 +114,9 @@ export function HostLiveController() {
     try {
       const data = await liveSessionApiService.getSongRequests(sessionId);
       setRequests(data);
-    } catch {
+    } catch (err) {
+      console.error('[HostLiveController] loadRequests error:', err);
+      showToast.error('Không thể tải yêu cầu nhạc');
       setRequests([]);
     } finally { setLoadingRequests(false); }
   };
@@ -141,12 +171,12 @@ export function HostLiveController() {
 
   const handleApproveRequest = async (id: string) => {
     try {
-      await liveSessionApiService.reviewSongRequest(id, {
-        action: 'approve',
-      });
+      await liveSessionApiService.reviewSongRequest(id, { action: 'approve' });
       setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+      showToast.success('Yêu cầu đã được chấp nhận');
     } catch (err) {
-      console.error('[HostLiveController] Approve request failed:', err);
+      console.error('[HostLiveController] Approve failed:', err);
+      showToast.error('Không thể duyệt yêu cầu');
     }
   };
 
@@ -157,8 +187,10 @@ export function HostLiveController() {
         rejectReason: 'Host từ chối',
       });
       setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Rejected' } : r));
+      showToast.success('Yêu cầu đã bị từ chối');
     } catch (err) {
-      console.error('[HostLiveController] Reject request failed:', err);
+      console.error('[HostLiveController] Reject failed:', err);
+      showToast.error('Không thể từ chối yêu cầu');
     }
   };
 
@@ -273,8 +305,13 @@ export function HostLiveController() {
               <h3 className="host-lc-panel-title">
                 <Music size={18} />
                 Yêu cầu nhạc
+                {requests.filter(r => r.status === 'Pending').length > 0 && (
+                  <span className="host-lc-request-badge">
+                    {requests.filter(r => r.status === 'Pending').length}
+                  </span>
+                )}
               </h3>
-              <button className="host-lc-refresh-btn" onClick={loadRequests} disabled={loadingRequests}>
+              <button className="host-lc-refresh-btn" onClick={() => void loadRequests()} disabled={loadingRequests}>
                 <RefreshCw size={14} className={loadingRequests ? 'host-lc-spin' : ''} />
               </button>
             </div>
@@ -291,19 +328,22 @@ export function HostLiveController() {
                     <div className="host-lc-request-info">
                       <span className="host-lc-request-title">{req.songTitle}</span>
                       <span className="host-lc-request-artist">{req.songArtist || '—'}</span>
+                      {req.message && (
+                        <span className="host-lc-request-message">"{req.message}"</span>
+                      )}
                       <span className="host-lc-request-user">từ {req.requestedByUserId || 'Khách'}</span>
                     </div>
                     <div className="host-lc-request-actions">
                       <button
                         className="host-lc-action-btn host-lc-action-btn--approve"
-                        onClick={() => handleApproveRequest(req.id)}
+                        onClick={() => void handleApproveRequest(req.id)}
                         title="Duyệt"
                       >
                         <CheckCircle size={18} />
                       </button>
                       <button
                         className="host-lc-action-btn host-lc-action-btn--reject"
-                        onClick={() => handleRejectRequest(req.id)}
+                        onClick={() => void handleRejectRequest(req.id)}
                         title="Từ chối"
                       >
                         <Square size={18} />
@@ -314,7 +354,6 @@ export function HostLiveController() {
               )}
             </div>
 
-            {/* Approved queue */}
             {requests.filter(r => r.status === 'Approved').length > 0 && (
               <div className="host-lc-approved-section">
                 <h4 className="host-lc-subtitle-label">Đã duyệt</h4>

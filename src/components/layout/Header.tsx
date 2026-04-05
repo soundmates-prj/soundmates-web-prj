@@ -126,10 +126,8 @@ const Header: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
-    if (player.isPlaying) {
-      player.toggle();
-      showInfo("Nhạc đã dừng", "Bạn đã đăng xuất khỏi SoundMates");
-    }
+    // Dừng nhạc hẳn khi đăng xuất
+    player.leaveSession();
     localStorage.removeItem("accessToken");
     localStorage.removeItem("userInfo");
     setIsLoggedIn(false);
@@ -140,10 +138,8 @@ const Header: React.FC = () => {
   };
 
   const handleProfile = () => {
-    if (player.isPlaying) {
-      player.toggle();
-      showInfo("Nhạc đã dừng", "Chuyển sang trang cá nhân");
-    }
+    // Dừng nhạc hẳn khi chuyển sang trang cá nhân
+    player.leaveSession();
     setShowDropdown(false);
     navigate("/profile");
   };

@@ -332,6 +332,31 @@
     background: var(--error-600);
 }
 
+.req-message-cell {
+    font-style: italic;
+    font-size: 0.8rem;
+    color: var(--neutral-500);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.req-reject-cell {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--error-500);
+    margin-top: 2px;
+}
+
+[data-theme="dark"] .req-message-cell {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .req-reject-cell {
+    color: #f87171;
+}
+
 @media (max-width: 768px) {
     .requests-filters {
         flex-direction: column;

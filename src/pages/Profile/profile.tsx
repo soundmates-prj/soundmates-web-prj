@@ -14,6 +14,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
+import { usePlayer } from "../../context/PlayerContext";
 import "./profile.css";
 import "./profile-dark.css";
 import type { User } from "../../types/user";
@@ -75,6 +76,10 @@ export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [tab, setTab] = useState<Tab>("overview");
+  const { leaveSession } = usePlayer();
+
+  // Dừng nhạc đang phát khi vào trang cá nhân
+  useEffect(() => { leaveSession(); }, [leaveSession]);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showShareMusic, setShowShareMusic] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);

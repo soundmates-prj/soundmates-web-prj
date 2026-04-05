@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from "react";
 import { liveHubService, type ChatMessage, type LiveSessionEvent } from "../services/liveHubService";
 import { liveSessionApiService } from "../services/liveSessionApiService";
 
@@ -29,6 +37,19 @@ interface LiveSessionContextValue {
 
 const LiveSessionContext = createContext<LiveSessionContextValue | null>(null);
 
+function getCurrentUserId(): string | null {
+  try {
+    const raw = localStorage.getItem("userInfo");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return parsed.id || parsed.userId || null;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 export function LiveSessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<LiveSession | null>(null);
   const [isLive, setIsLive] = useState(false);
@@ -38,9 +59,8 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
-  // Ref to avoid stale closure in event listeners
   const currentSessionIdRef = useRef<string | null>(null);
-  // Refs to store unsubscribe functions from per-session listeners
+  // Store per-listener unsubscribe functions
   const listenersUnsubscribeRef = useRef<(() => void) | null>(null);
   const chatUnsubscribeRef = useRef<(() => void) | null>(null);
   const sessionStartedUnsubscribeRef = useRef<(() => void) | null>(null);
@@ -59,7 +79,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const sessionId = currentSessionIdRef.current;
 
-    // Clean up previous session listeners
+    // Clean up previous session listeners — each unsubscribe fn handles its own event
     listenersUnsubscribeRef.current?.();
     chatUnsubscribeRef.current?.();
     sessionStartedUnsubscribeRef.current?.();
@@ -67,7 +87,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
 
     if (!sessionId) return;
 
-    // Listener count
+    // Listener count — authoritative from hub
     listenersUnsubscribeRef.current = liveHubService.onListenersUpdated((sid, count) => {
       if (sid === currentSessionIdRef.current) {
         setListeners(count);
@@ -84,7 +104,9 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     // Session started
     sessionStartedUnsubscribeRef.current = liveHubService.onSessionStarted((evt: LiveSessionEvent) => {
       if (evt.id === currentSessionIdRef.current) {
-        setSession(prev => prev ? { ...prev, status: evt.status, startedAt: evt.startedAt ?? undefined } : prev);
+        setSession(prev =>
+          prev ? { ...prev, status: evt.status, startedAt: evt.startedAt ?? undefined } : prev
+        );
         setIsLive(true);
         setIsPaused(false);
       }
@@ -106,73 +128,67 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     };
   }, [currentSessionId]);
 
-  // Global cleanup on unmount
+  // Global cleanup on unmount — leave session but do NOT call offAll()
+  // (other components share the hub connection)
   useEffect(() => {
     return () => {
       if (currentSessionIdRef.current) {
-        liveHubService.leaveSession(currentSessionIdRef.current);
+        const sid = currentSessionIdRef.current;
+        const uid = getCurrentUserId();
+        void liveHubService.leaveSession(sid, uid);
       }
-      liveHubService.offAll();
+      // Do NOT call offAll() — per-session effect above already cleaned up
+      // this provider's listeners. offAll() would destroy listeners for
+      // every other component sharing the hub.
     };
   }, []);
 
+  // ─── Session actions ───────────────────────────────────────────────────────
+
   const startSession = useCallback(async (sessionId: string) => {
-    try {
-      await liveSessionApiService.startSession(sessionId);
-    } catch (err) {
-      // Re-throw so caller (HostLiveController) can handle the error
-      throw err;
-    }
+    // API first — fail fast before touching any state
+    await liveSessionApiService.startSession(sessionId);
+
     setCurrentSessionId(sessionId);
     currentSessionIdRef.current = sessionId;
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-    const userId = userInfo?.id || userInfo?.userId || null;
+
+    const userId = getCurrentUserId();
     await liveHubService.joinSession(sessionId, userId);
 
-    const session = await liveSessionApiService.getLiveSession(sessionId);
+    const sess = await liveSessionApiService.getLiveSession(sessionId);
     setSession({
-      id: session.id,
-      sessionName: session.sessionName,
-      description: session.description ?? undefined,
-      status: session.status,
-      stationName: session.stationName ?? undefined,
-      streamUrl: session.streamUrl ?? undefined,
+      id: sess.id,
+      sessionName: sess.sessionName,
+      description: sess.description ?? undefined,
+      status: sess.status,
+      stationName: sess.stationName ?? undefined,
+      streamUrl: sess.streamUrl ?? undefined,
     });
-    setIsLive(session.status?.toLowerCase() === 'live');
-    setIsPaused(session.status?.toLowerCase() === 'paused');
+    setIsLive(sess.status?.toLowerCase() === "live");
+    setIsPaused(sess.status?.toLowerCase() === "paused");
   }, []);
 
   const pauseSession = useCallback(async (sessionId: string) => {
-    try {
-      await liveSessionApiService.pauseSession(sessionId);
-      setIsPaused(true);
-    } catch (err) {
-      console.error("Không thể tạm dừng phiên:", err);
-    }
+    const result = await liveSessionApiService.pauseSession(sessionId);
+    setIsPaused(result.status?.toLowerCase() === "paused");
   }, []);
 
   const resumeSession = useCallback(async (sessionId: string) => {
-    try {
-      await liveSessionApiService.resumeSession(sessionId);
-      setIsPaused(false);
-    } catch (err) {
-      console.error("Không thể tiếp tục phiên:", err);
-    }
+    const result = await liveSessionApiService.resumeSession(sessionId);
+    setIsPaused(result.status?.toLowerCase() === "paused");
   }, []);
 
   const stopSession = useCallback(async (sessionId: string) => {
-    try {
-      await liveSessionApiService.stopSession(sessionId);
-      setIsLive(false);
-      setIsPaused(false);
-      liveHubService.leaveSession(sessionId);
-    } catch (err) {
-      console.error("Không thể dừng phiên:", err);
-    }
+    const result = await liveSessionApiService.stopSession(sessionId);
+    setIsLive(result.status?.toLowerCase() === "live");
+    setIsPaused(result.status?.toLowerCase() === "paused");
+    const uid = getCurrentUserId();
+    await liveHubService.leaveSession(sessionId, uid);
   }, []);
 
   const leaveSession = useCallback((sessionId: string) => {
-    liveHubService.leaveSession(sessionId);
+    const uid = getCurrentUserId();
+    void liveHubService.leaveSession(sessionId, uid);
     currentSessionIdRef.current = null;
     setCurrentSessionId(null);
     setSession(null);
@@ -183,7 +199,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sendChat = useCallback((sessionId: string, userId: string, message: string) => {
-    liveHubService.sendChat(sessionId, userId, message);
+    void liveHubService.sendChat(sessionId, userId, message);
   }, []);
 
   return (

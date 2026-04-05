@@ -1,6 +1,8 @@
 import * as signalR from "@microsoft/signalr";
 
-const LIVE_HUB_URL = "http://localhost:8003/hubs/live-session";
+const LIVE_HUB_URL =
+  import.meta.env.VITE_SIGNALR_HUB_URL ??
+  "http://localhost:8003/hubs/live-session";
 
 export interface ChatMessage {
   id: string;
@@ -26,9 +28,34 @@ export interface LiveSessionEvent {
   listenersCount: number;
 }
 
+export interface SongChangedEvent {
+  sessionId: string;
+  trackTitle: string;
+  trackArtist: string | null;
+  trackAlbum: string | null;
+  artUrl: string | null;
+  duration: number;
+  elapsed: number;
+  listenUrl: string | null;
+  isRequest: boolean;
+  playedAt: string;
+}
+
+export interface SongRequestCreatedEvent {
+  requestId: string;
+  sessionId: string;
+  mediaFileId: string;
+  songTitle: string;
+  songArtist: string | null;
+  requestedByUserId: string;
+  requestedByUserName: string | null;
+  message: string | null;
+  createdAt: string;
+}
+
 class LiveHubService {
   private connection: signalR.HubConnection | null = null;
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempt = 0;
 
   getConnection(): signalR.HubConnection {
     if (!this.connection) {
@@ -40,6 +67,15 @@ class LiveHubService {
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
         .configureLogging(signalR.LogLevel.Warning)
         .build();
+
+      this.connection.onreconnecting(() => {
+        this.reconnectAttempt++;
+        console.log(`[LiveHub] Reconnecting... attempt ${this.reconnectAttempt}`);
+      });
+      this.connection.onreconnected(() => {
+        console.log("[LiveHub] Reconnected");
+        this.reconnectAttempt = 0;
+      });
     }
     return this.connection;
   }
@@ -50,107 +86,109 @@ class LiveHubService {
       try {
         await conn.start();
         console.log("[LiveHub] Connected");
+        this.reconnectAttempt = 0;
       } catch (err) {
         console.error("[LiveHub] Connection failed:", err);
-        this.scheduleReconnect();
       }
     }
   }
 
   async stop(): Promise<void> {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
     if (this.connection && this.connection.state !== signalR.HubConnectionState.Disconnected) {
       await this.connection.stop();
       console.log("[LiveHub] Disconnected");
     }
   }
 
-  private scheduleReconnect(): void {
-    if (this.reconnectTimer) return;
-    this.reconnectTimer = setTimeout(async () => {
-      this.reconnectTimer = null;
-      await this.start();
-    }, 5000);
-  }
-
-  async joinSession(sessionId: string, userId?: string): Promise<void> {
+  // Backend: JoinSession(sessionId, userId?, anonymousIdentifier?)
+  async joinSession(sessionId: string, userId?: string | null): Promise<void> {
     const conn = this.getConnection();
     if (conn.state === signalR.HubConnectionState.Connected) {
-      await conn.invoke("JoinSession", sessionId, userId ?? null, null);
+      await conn.invoke("JoinSession", sessionId, userId ?? null);
     }
   }
 
-  async leaveSession(sessionId: string, userId?: string): Promise<void> {
+  // Backend: LeaveSession(sessionId, userId?, anonymousIdentifier?)
+  async leaveSession(sessionId: string, userId?: string | null): Promise<void> {
     const conn = this.getConnection();
     if (conn.state === signalR.HubConnectionState.Connected) {
-      await conn.invoke("LeaveSession", sessionId, userId ?? null, null);
+      await conn.invoke("LeaveSession", sessionId, userId ?? null);
     }
   }
 
   async sendChat(sessionId: string, userId: string, message: string): Promise<void> {
     const conn = this.getConnection();
-    if (conn.state === signalR.HubConnectionState.Connected) {
-      await conn.invoke("SendChat", sessionId, userId, message);
+    if (conn.state !== signalR.HubConnectionState.Connected) {
+      throw new Error("Mất kết nối — không thể gửi tin nhắn");
     }
+    await conn.invoke("SendChat", sessionId, userId, message);
   }
+
+  // ─── Event handlers ───────────────────────────────────────────────────────
+  // Backend sends lowercase event names: sessionstarted, sessionended, userjoined, userleft
 
   onSessionStarted(callback: (session: LiveSessionEvent) => void): () => void {
     const conn = this.getConnection();
-    conn.on("SessionStarted", callback);
-    return () => conn.off("SessionStarted", callback);
+    conn.on("sessionstarted", callback);
+    return () => conn.off("sessionstarted", callback);
   }
 
   onSessionEnded(callback: (session: LiveSessionEvent) => void): () => void {
     const conn = this.getConnection();
-    conn.on("SessionEnded", callback);
-    return () => conn.off("SessionEnded", callback);
+    conn.on("sessionended", callback);
+    return () => conn.off("sessionended", callback);
   }
 
-  onUserJoined(callback: (sessionId: string, userId: string | null, count: number) => void): () => void {
+  onUserJoined(
+    callback: (sessionId: string, userId: string | null, count: number) => void,
+  ): () => void {
     const conn = this.getConnection();
-    conn.on("UserJoined", callback);
     conn.on("userjoined", callback);
-    return () => { conn.off("UserJoined", callback); conn.off("userjoined", callback); };
+    return () => conn.off("userjoined", callback);
   }
 
-  onUserLeft(callback: (sessionId: string, userId: string | null, count: number) => void): () => void {
+  onUserLeft(
+    callback: (sessionId: string, userId: string | null, count: number) => void,
+  ): () => void {
     const conn = this.getConnection();
-    conn.on("UserLeft", callback);
     conn.on("userleft", callback);
-    return () => { conn.off("UserLeft", callback); conn.off("userleft", callback); };
+    return () => conn.off("userleft", callback);
   }
 
   onReceiveChat(callback: (chat: ChatMessage) => void): () => void {
     const conn = this.getConnection();
     conn.on("ReceiveChat", callback);
-    conn.on("receivechat", callback);
-    return () => { conn.off("ReceiveChat", callback); conn.off("receivechat", callback); };
+    return () => conn.off("ReceiveChat", callback);
   }
 
   onListenersUpdated(callback: (sessionId: string, count: number) => void): () => void {
     const conn = this.getConnection();
     conn.on("ListenersUpdated", callback);
-    conn.on("listenersupdated", callback);
-    return () => { conn.off("ListenersUpdated", callback); conn.off("listenersupdated", callback); };
+    return () => conn.off("ListenersUpdated", callback);
+  }
+
+  onSongChanged(callback: (song: SongChangedEvent) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("SongChanged", callback);
+    return () => conn.off("SongChanged", callback);
+  }
+
+  onSongRequestCreated(callback: (req: SongRequestCreatedEvent) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("SongRequestCreated", callback);
+    return () => conn.off("SongRequestCreated", callback);
   }
 
   offAll(): void {
     const conn = this.getConnection();
-    conn.off("SessionStarted");
-    conn.off("SessionEnded");
-    conn.off("UserJoined");
-    conn.off("UserLeft");
-    conn.off("ReceiveChat");
-    conn.off("ListenersUpdated");
     conn.off("sessionstarted");
     conn.off("sessionended");
     conn.off("userjoined");
     conn.off("userleft");
-    conn.off("receivechat");
-    conn.off("listenersupdated");
+    conn.off("ReceiveChat");
+    conn.off("ListenersUpdated");
+    conn.off("SongChanged");
+    conn.off("SongRequestCreated");
   }
 }
 

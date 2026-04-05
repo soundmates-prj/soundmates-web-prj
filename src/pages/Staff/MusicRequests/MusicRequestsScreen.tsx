@@ -5,19 +5,22 @@ import type { SongRequestResult } from "../../../services/liveSessionApiService"
 import { showSuccess, showError } from "../../../components/common/toastUtils";
 import './MusicRequestsScreen.css';
 
+type FilterStatus = 'All' | 'Pending' | 'Approved' | 'Rejected';
+
 export function MusicRequestsScreen() {
   const [requests, setRequests] = useState<SongRequestResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [filter, setFilter] = useState<FilterStatus>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => { loadRequests(); }, []);
 
-  const loadRequests = async (sessionId?: string) => {
+  const loadRequests = async () => {
     setLoading(true);
     try {
-      const data = await liveSessionApiService.getSongRequests(sessionId ?? "");
+      // Call with no sessionId to get ALL requests (Staff dashboard view)
+      const data = await liveSessionApiService.getSongRequests();
       setRequests(data);
     } catch {
       showError("Lỗi", "Không thể tải yêu cầu nhạc");
@@ -53,7 +56,8 @@ export function MusicRequestsScreen() {
   };
 
   const filteredRequests = requests.filter(req => {
-    const matchFilter = filter === 'all' || req.status === filter; // eslint-disable-line @typescript-eslint/no-unused-vars
+    // FIX: use exact PascalCase to match API response ("Pending", "Approved", "Rejected")
+    const matchFilter = filter === 'All' || req.status === filter;
     const matchSearch =
       !searchQuery.trim() ||
       (req.songTitle || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -124,10 +128,10 @@ export function MusicRequestsScreen() {
         </div>
 
         <div className="filter-tabs">
-          <button className={`filter-tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Tất cả</button>
-          <button className={`filter-tab ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>Đang chờ ({stats.pending})</button>
-          <button className={`filter-tab ${filter === 'approved' ? 'active' : ''}`} onClick={() => setFilter('approved')}>Đã duyệt ({stats.approved})</button>
-          <button className={`filter-tab ${filter === 'rejected' ? 'active' : ''}`} onClick={() => setFilter('rejected')}>Từ chối ({stats.rejected})</button>
+          <button className={`filter-tab ${filter === 'All' ? 'active' : ''}`} onClick={() => setFilter('All')}>Tất cả</button>
+          <button className={`filter-tab ${filter === 'Pending' ? 'active' : ''}`} onClick={() => setFilter('Pending')}>Đang chờ ({stats.pending})</button>
+          <button className={`filter-tab ${filter === 'Approved' ? 'active' : ''}`} onClick={() => setFilter('Approved')}>Đã duyệt ({stats.approved})</button>
+          <button className={`filter-tab ${filter === 'Rejected' ? 'active' : ''}`} onClick={() => setFilter('Rejected')}>Từ chối ({stats.rejected})</button>
         </div>
       </div>
 
@@ -150,6 +154,7 @@ export function MusicRequestsScreen() {
                 <th>Nghệ sĩ</th>
                 <th>Người yêu cầu</th>
                 <th>Ngày</th>
+                <th>Tin nhắn / Lý do</th>
                 <th>Trạng thái</th>
                 <th>Hành động</th>
               </tr>
@@ -175,6 +180,16 @@ export function MusicRequestsScreen() {
                       <Calendar size={14} />
                       {request.requestedAt ? new Date(request.requestedAt).toLocaleDateString('vi-VN') : '—'}
                     </div>
+                  </td>
+                  <td>
+                    {request.message && (
+                      <div className="req-message-cell" title={request.message}>
+                        "{request.message}"
+                      </div>
+                    )}
+                    {request.rejectReason && (
+                      <div className="req-reject-cell">{request.rejectReason}</div>
+                    )}
                   </td>
                   <td>
                     <span className={`status-badge ${request.status?.toLowerCase()}`}>
