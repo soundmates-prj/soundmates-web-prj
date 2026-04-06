@@ -69,9 +69,9 @@ export function HostMusicRequestsScreen() {
       setAllRequests(prev =>
         prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r)
       );
-      showToast.success('Đã duyệt', 'Yêu cầu bài hát đã được chấp nhận');
+      showToast.success('Đã duyệt — Yêu cầu bài hát đã được chấp nhận');
     } catch {
-      showToast.error('Lỗi', 'Không thể duyệt yêu cầu. Vui lòng thử lại.');
+      showToast.error('Lỗi — Không thể duyệt yêu cầu. Vui lòng thử lại.');
     }
   };
 
@@ -85,9 +85,9 @@ export function HostMusicRequestsScreen() {
       setAllRequests(prev =>
         prev.map(r => r.id === id ? { ...r, status: 'Rejected' } : r)
       );
-      showSuccess('Đã từ chối', 'Yêu cầu đã bị từ chối');
+      showToast.success('Đã từ chối — Yêu cầu đã bị từ chối');
     } catch {
-      showToast.error('Lỗi', 'Không thể từ chối yêu cầu. Vui lòng thử lại.');
+      showToast.error('Lỗi — Không thể từ chối yêu cầu. Vui lòng thử lại.');
     }
   };
 

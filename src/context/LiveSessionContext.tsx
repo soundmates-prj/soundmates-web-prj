@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
 import { liveHubService, type ChatMessage, type LiveSessionEvent } from "../services/liveHubService";
 import { liveSessionApiService } from "../services/liveSessionApiService";
 
@@ -133,10 +133,10 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     setSession({
       id: session.id,
       sessionName: session.sessionName,
-      description: session.description,
+      description: session.description ?? undefined,
       status: session.status,
-      stationName: session.stationName,
-      streamUrl: session.streamUrl,
+      stationName: session.stationName ?? undefined,
+      streamUrl: session.streamUrl ?? undefined,
     });
     setIsLive(session.status?.toLowerCase() === 'live');
     setIsPaused(session.status?.toLowerCase() === 'paused');

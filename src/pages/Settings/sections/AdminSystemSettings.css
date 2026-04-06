@@ -32,3 +32,183 @@
   font-weight: 700;
   color: var(--text-color);
 }
+
+/* Tab navigation (shared with SystemConfigScreen) */
+.sys-config-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--neutral-100);
+  border-radius: 12px;
+  padding: 4px;
+  width: fit-content;
+}
+
+[data-theme="dark"] .sys-config-tabs {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sys-config-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--neutral-600);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sys-config-tab:hover {
+  color: var(--neutral-900);
+}
+
+.sys-config-tab.active {
+  background: linear-gradient(135deg, #1a9fd4, #55c5f1);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(26, 159, 212, 0.25);
+}
+
+/* Ops utility classes */
+.ops-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.ops-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.ops-inline-row .ops-input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}
+
+.ops-inline-row .ops-btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  white-space: nowrap;
+}
+
+.ops-input {
+  padding: 9px 12px;
+  background: var(--neutral-50);
+  border: 1.5px solid var(--neutral-200);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--neutral-800);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+[data-theme="dark"] .ops-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ops-input:focus {
+  border-color: #1a9fd4;
+}
+
+.ops-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ops-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ops-btn--primary {
+  background: linear-gradient(135deg, #1a9fd4, #55c5f1);
+  color: #fff;
+}
+
+.ops-btn--primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.ops-btn--outline {
+  background: transparent;
+  border: 1.5px solid var(--neutral-300);
+  color: var(--neutral-700);
+}
+
+[data-theme="dark"] .ops-btn--outline {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ops-btn--ghost {
+  background: transparent;
+  color: var(--neutral-600);
+  padding: 9px 10px;
+}
+
+.ops-btn--ghost:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .ops-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ops-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ops-badge--good {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.ops-badge--warn {
+  background: rgba(234, 179, 8, 0.1);
+  color: #ca8a04;
+}
+
+.ops-badge--danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.ops-skeleton {
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+[data-theme="dark"] .ops-skeleton {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

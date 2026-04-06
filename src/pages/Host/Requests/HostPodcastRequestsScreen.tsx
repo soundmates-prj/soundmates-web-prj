@@ -56,9 +56,9 @@ export function HostPodcastRequestsScreen() {
       await liveSessionApiService.updatePodcast(id, { status: 'Published' });
       setPodcasts(prev => prev.map(p => p.id === id ? { ...p, status: 'Published' } : p));
       if (selectedPodcast?.id === id) setSelectedPodcast(null);
-      showToast.success('Đã xuất bản', 'Podcast đã được phát hành thành công');
+      showToast.success('Đã xuất bản — Podcast đã được phát hành thành công');
     } catch {
-      showToast.error('Lỗi', 'Không thể xuất bản podcast. Vui lòng thử lại.');
+      showToast.error('Lỗi — Không thể xuất bản podcast. Vui lòng thử lại.');
     }
   };
 
@@ -67,9 +67,9 @@ export function HostPodcastRequestsScreen() {
       await liveSessionApiService.updatePodcast(id, { status: 'Archived' });
       setPodcasts(prev => prev.map(p => p.id === id ? { ...p, status: 'Archived' } : p));
       if (selectedPodcast?.id === id) setSelectedPodcast(null);
-      showToast.success('Đã lưu trữ', 'Podcast đã được lưu trữ');
+      showToast.success('Đã lưu trữ — Podcast đã được lưu trữ');
     } catch {
-      showToast.error('Lỗi', 'Không thể lưu trữ podcast. Vui lòng thử lại.');
+      showToast.error('Lỗi — Không thể lưu trữ podcast. Vui lòng thử lại.');
     }
   };
 
@@ -78,9 +78,9 @@ export function HostPodcastRequestsScreen() {
       await liveSessionApiService.updatePodcast(id, { status: 'Draft' });
       setPodcasts(prev => prev.map(p => p.id === id ? { ...p, status: 'Draft' } : p));
       if (selectedPodcast?.id === id) setSelectedPodcast(null);
-      showToast.success('Đã khôi phục', 'Podcast đã được khôi phục về bản nháp');
+      showToast.success('Đã khôi phục — Podcast đã được khôi phục về bản nháp');
     } catch {
-      showToast.error('Lỗi', 'Không thể khôi phục podcast. Vui lòng thử lại.');
+      showToast.error('Lỗi — Không thể khôi phục podcast. Vui lòng thử lại.');
     }
   };
 

@@ -1266,6 +1266,20 @@
 
 .cm-btn--ghost:hover { background: var(--bg-secondary, #f1f5f9); color: var(--text-primary); }
 
+/* ── Post highlight (from search) ── */
+.fp-post-highlight {
+  animation: fp-highlight-pulse 3s ease;
+  border-radius: 16px;
+  outline: 2px solid #55C5F1;
+  outline-offset: 2px;
+}
+
+@keyframes fp-highlight-pulse {
+  0%   { outline-color: #55C5F1; }
+  50%  { outline-color: rgba(85, 197, 241, 0.3); }
+  100% { outline-color: rgba(85, 197, 241, 0.3); }
+}
+
 /* ── Responsive ── */
 @media (max-width: 680px) {
   .cm-modal {

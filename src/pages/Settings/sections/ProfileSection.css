@@ -212,6 +212,27 @@
   margin-top: 2px;
 }
 
+/* ── Character counter (bio field) ── */
+.char-counter {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-secondary, #737373);
+  margin-left: auto;
+}
+
+/* ── Input-icon wrapped textarea ── */
+.input-icon textarea {
+  border: none;
+  outline: none;
+  width: 100%;
+  background: transparent;
+  color: var(--text-primary, #171717);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  line-height: 1.5;
+}
+
 /* ── Actions ── */
 .form-actions {
   display: flex;
@@ -273,10 +294,17 @@
   padding: 12px 14px;
   border-radius: 10px;
   display: flex;
+  align-items: flex-start;
   gap: 10px;
   font-size: 12.5px;
   color: var(--text-secondary, #737373);
   line-height: 1.5;
+}
+
+.privacy-icon {
+  color: #55c5f1;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 /* ===================================================

@@ -14,10 +14,10 @@ export function MusicRequestsScreen() {
 
   useEffect(() => { loadRequests(); }, []);
 
-  const loadRequests = async () => {
+  const loadRequests = async (sessionId?: string) => {
     setLoading(true);
     try {
-      const data = await liveSessionApiService.getSongRequests();
+      const data = await liveSessionApiService.getSongRequests(sessionId ?? "");
       setRequests(data);
     } catch {
       showError("Lỗi", "Không thể tải yêu cầu nhạc");
@@ -29,7 +29,7 @@ export function MusicRequestsScreen() {
   const handleApprove = async (id: string) => {
     setActionLoading(id);
     try {
-      await liveSessionApiService.reviewSongRequest(id, 'Approved');
+      await liveSessionApiService.reviewSongRequest(id, { action: "approve" });
       setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
       showSuccess("Thành công", "Yêu cầu đã được duyệt");
     } catch {
@@ -42,7 +42,7 @@ export function MusicRequestsScreen() {
   const handleReject = async (id: string) => {
     setActionLoading(id);
     try {
-      await liveSessionApiService.reviewSongRequest(id, 'Rejected');
+      await liveSessionApiService.reviewSongRequest(id, { action: "reject" });
       setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Rejected' } : r));
       showSuccess("Thành công", "Yêu cầu đã bị từ chối");
     } catch {
@@ -53,11 +53,11 @@ export function MusicRequestsScreen() {
   };
 
   const filteredRequests = requests.filter(req => {
-    const matchFilter = filter === 'all' || req.status === filter;
+    const matchFilter = filter === 'all' || req.status === filter; // eslint-disable-line @typescript-eslint/no-unused-vars
     const matchSearch =
       !searchQuery.trim() ||
       (req.songTitle || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (req.artist || '').toLowerCase().includes(searchQuery.toLowerCase());
+      (req.songArtist || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchFilter && matchSearch;
   });
 
@@ -75,7 +75,7 @@ export function MusicRequestsScreen() {
           <h1 className="requests-title">Yêu cầu nhạc</h1>
           <p className="requests-subtitle">Duyệt và quản lý yêu cầu nhạc từ người dùng</p>
         </div>
-        <button className="lm-btn lm-btn--outline" onClick={loadRequests} disabled={loading}>
+        <button className="lm-btn lm-btn--outline" onClick={() => void loadRequests()} disabled={loading}>
           <RefreshCw size={14} />
           Làm mới
         </button>
@@ -163,11 +163,11 @@ export function MusicRequestsScreen() {
                       <span className="song-title">{request.songTitle || '—'}</span>
                     </div>
                   </td>
-                  <td>{request.artist || '—'}</td>
+                  <td>{request.songArtist || '—'}</td>
                   <td>
                     <div className="user-cell">
                       <User size={14} />
-                      {request.requestedBy || '—'}
+                      {request.requestedByUserId || '—'}
                     </div>
                   </td>
                   <td>

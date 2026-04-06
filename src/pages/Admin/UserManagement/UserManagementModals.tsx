@@ -1,9 +1,10 @@
-import { 
+import {
   X,
   Upload,
   Save,
   Check,
   AlertCircle,
+  Loader2,
 
   Mail,
   Shield,
@@ -15,8 +16,11 @@ import {
   UserPlus,
 
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './UserManagement.css';
+import userService from '../../../services/userService';
+import roleService, { type RoleDto } from '../../../services/roleService';
+import { showSuccess, showError } from '../../../components/common/toastUtils';
 
 // Modal Base Component
 interface ModalProps {
@@ -57,34 +61,112 @@ function getInitials(name: string): string {
 }
 
 // Add User Modal
-export function AddUserModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+interface AddUserModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModalProps) {
+  const [roles, setRoles] = useState<RoleDto[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
-    role: 'user',
-    sendWelcomeEmail: true,
+    roleId: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({ username: '', firstName: '', lastName: '', email: '', password: '', roleId: '' });
+      setSubmitting(false);
+      // Load roles
+      setLoadingRoles(true);
+      roleService.getRoles().then(res => {
+        if (res.success && res.data) setRoles(res.data);
+        setLoadingRoles(false);
+      }).catch(() => setLoadingRoles(false));
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Adding user:', formData);
-    onClose();
+    if (submitting) return;
+
+    if (!formData.username.trim()) {
+      showError('Lỗi', 'Username không được để trống');
+      return;
+    }
+    if (!formData.email.trim()) {
+      showError('Lỗi', 'Email không được để trống');
+      return;
+    }
+    if (!formData.password.trim() || formData.password.length < 6) {
+      showError('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    setSubmitting(true);
+    const res = await userService.createUser({
+      username: formData.username.trim(),
+      email: formData.email.trim(),
+      password: formData.password,
+      firstName: formData.firstName.trim() || undefined,
+      lastName: formData.lastName.trim() || undefined,
+      roleId: formData.roleId || undefined,
+    });
+    setSubmitting(false);
+
+    if (res.success) {
+      showSuccess('Thành công', res.message || 'Người dùng đã được tạo thành công!');
+      onSuccess();
+      onClose();
+    } else {
+      showError('Thất bại', res.message || 'Không thể tạo người dùng');
+    }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Thêm User Mới">
+    <Modal isOpen={isOpen} onClose={onClose} title="Thêm người dùng mới">
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label className="form-label">Họ và Tên *</label>
+          <label className="form-label">Username *</label>
           <input
             type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            value={formData.username}
+            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
             className="form-input"
-            placeholder="Nhập họ và tên"
+            placeholder="vd: johndoe"
             required
           />
+        </div>
+
+        <div className="grid-2">
+          <div className="form-group">
+            <label className="form-label">Họ</label>
+            <input
+              type="text"
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              className="form-input"
+              placeholder="vd: Nguyễn"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Tên</label>
+            <input
+              type="text"
+              value={formData.lastName}
+              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              className="form-input"
+              placeholder="vd: Văn A"
+            />
+          </div>
         </div>
 
         <div className="form-group">
@@ -106,46 +188,49 @@ export function AddUserModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             className="form-input"
-            placeholder="Nhập mật khẩu"
+            placeholder="Ít nhất 6 ký tự"
             required
+            minLength={6}
           />
         </div>
 
         <div className="form-group">
-          <label className="form-label">Vai Trò *</label>
-          <select
-            value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            className="form-select"
-            required
-          >
-            <option value="user">User</option>
-            <option value="mentor">Mentor</option>
-            <option value="moderator">Moderator</option>
-            <option value="admin">Admin</option>
-          </select>
+          <label className="form-label">Vai trò</label>
+          {loadingRoles ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 9, color: 'var(--neutral-500)' }}>
+              <Loader2 size={14} className="spinner" /> Đang tải vai trò...
+            </div>
+          ) : (
+            <select
+              value={formData.roleId}
+              onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+              className="form-select"
+            >
+              <option value="">— Mặc định: MEMBER —</option>
+              {roles.map(role => (
+                <option key={role.id} value={role.id}>{role.name}</option>
+              ))}
+            </select>
+          )}
         </div>
 
-        <div className="form-checkbox-wrapper">
-          <input
-            type="checkbox"
-            id="sendWelcomeEmail"
-            checked={formData.sendWelcomeEmail}
-            onChange={(e) => setFormData({ ...formData, sendWelcomeEmail: e.target.checked })}
-            className="form-checkbox"
-          />
-          <label htmlFor="sendWelcomeEmail" className="form-checkbox-label">
-            Gửi email chào mừng
-          </label>
+        <div className="alert-box info" style={{ marginBottom: 16 }}>
+          <Mail size={16} style={{ color: '#1a9fd4', flexShrink: 0, marginTop: 2 }} />
+          <p style={{ margin: 0, fontSize: 13 }}>
+            Tài khoản sẽ được tự động xác minh email và kích hoạt ngay sau khi tạo.
+          </p>
         </div>
 
         <div className="modal-footer">
-          <button type="button" onClick={onClose} className="btn btn-secondary">
+          <button type="button" onClick={onClose} className="btn btn-secondary" disabled={submitting}>
             Hủy
           </button>
-          <button type="submit" className="btn btn-primary">
-            <UserPlus size={16} />
-            Thêm User
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? (
+              <><Loader2 size={14} className="spinner" /> Đang tạo...</>
+            ) : (
+              <><UserPlus size={14} /> Thêm người dùng</>
+            )}
           </button>
         </div>
       </form>

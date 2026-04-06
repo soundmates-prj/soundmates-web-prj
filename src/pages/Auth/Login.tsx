@@ -16,6 +16,7 @@ const Login: React.FC = () => {
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   // EF-02: Field-level error state for empty-input highlighting
   const [fieldErrors, setFieldErrors] = useState({ emailOrUsername: false, password: false });
   const navigate = useNavigate();
@@ -28,13 +29,14 @@ const Login: React.FC = () => {
     const serverMsg: string = error?.response?.data?.message || "";
 
     // EF-03: Account locked / disabled
-    if (
-      status === 403 ||
-      serverMsg.toLowerCase().includes("lock") ||
-      serverMsg.toLowerCase().includes("ban") ||
-      serverMsg.toLowerCase().includes("disabled") ||
-      serverMsg.toLowerCase().includes("blocked")
-    ) {
+    if (status === 403) {
+      // Distinguish between brute-force lockout (temporary) vs deactivated/banned
+      if (serverMsg.toLowerCase().includes("15 minutes") || serverMsg.toLowerCase().includes("locked due to too many")) {
+        return {
+          title: "Tài khoản bị khóa tạm thời",
+          description: "Tài khoản của bạn đã bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút hoặc liên hệ hỗ trợ.",
+        };
+      }
       return {
         title: "Tài khoản bị khóa",
         description: "Tài khoản của bạn đã bị khóa hoặc vô hiệu hóa. Vui lòng liên hệ hỗ trợ.",
@@ -94,6 +96,7 @@ const Login: React.FC = () => {
       const res = await api.post("/auth/login", {
         emailOrUsername: emailOrUsername.trim(),
         password,
+        rememberMe,
       });
 
       const accessToken = res.data?.data?.accessToken;
@@ -121,14 +124,10 @@ const Login: React.FC = () => {
       setFieldErrors({ emailOrUsername: false, password: false });
       showSuccess("Đăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
 
-      // BR-05: Role-based redirection
-      const roleName = userData?.roleName?.toUpperCase();
-      if (roleName === "ADMIN") {
-        navigate("/admin/dashboard");
-      } else if (roleName === "STAFF") {
-        navigate("/staff/dashboard");
-      } else if (roleName === "HOST") {
-        navigate("/host/dashboard");
+      // P5: Use redirectUrl from BE response (source of truth for role-based navigation)
+      const redirectUrl = userData?.redirectUrl;
+      if (redirectUrl) {
+        navigate(redirectUrl);
       } else {
         navigate("/");
       }
@@ -207,6 +206,15 @@ const Login: React.FC = () => {
           </div>
 
           <div className="actions">
+            {/* P4: Remember Me checkbox */}
+            <label className="remember-me">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span>Nhớ tài khoản</span>
+            </label>
             <span className="forgot" onClick={() => navigate("/forget-password")}>Quên mật khẩu?</span>
           </div>
 
@@ -266,9 +274,10 @@ const Login: React.FC = () => {
 
                   showSuccess("Đăng nhập Google thành công!", "Chào mừng bạn quay trở lại SoundMates");
 
-                  const roleName = googleUserData?.roleName?.toUpperCase();
-                  if (roleName === "ADMIN") {
-                    navigate("/admin/dashboard");
+                  // P5: Use redirectUrl from BE response
+                  const redirectUrl = googleUserData?.redirectUrl;
+                  if (redirectUrl) {
+                    navigate(redirectUrl);
                   } else {
                     navigate("/");
                   }

@@ -9,6 +9,7 @@ import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import HostLayout from "./components/layout/HostLayout";
 import { AnalyticsScreen } from "./pages/Admin/Analytics/AnalyticsScreen";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import AdminSettingsPage from "./pages/Admin/AdminSettingsPage";
 import { ToastProvider } from "./components/common/Toast";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
@@ -16,7 +17,6 @@ import ForgetPassword from "./pages/Auth/ForgetPassword";
 import { UserManagementScreen } from "./pages/Admin/UserManagement/UserManagement";
 import { LiveSessionsPage } from "./pages/Livestream/LiveSessionsPage";
 import { LiveRoomPage } from "./pages/Livestream/LiveRoomPage";
-import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { useParams } from "react-router-dom";
 import Subscription from "./pages/Subscription/Subscription";
 import ProtectedRoute from "./components/common/ProtectedRoute";
@@ -65,8 +65,6 @@ import { StaffAnalyticsScreen } from "./pages/Staff/Analytics/StaffAnalyticsScre
 import { LiveStreamScriptEditor } from "./pages/Staff/Schedule/LiveStreamScriptEditor";
 
 // ── New Admin Page Imports ──
-import { RoleManagementScreen } from "./pages/Admin/Roles/RoleManagementScreen";
-import { SystemModerationScreen } from "./pages/Admin/Moderation/SystemModerationScreen";
 import { UserPostsManagementScreen } from "./pages/Admin/Posts/UserPostsManagementScreen";
 import { SystemConfigScreen } from "./pages/Admin/SystemConfig/SystemConfigScreen";
 import PodcastScreen from "./pages/Podcast/PodcastScreen";
@@ -101,7 +99,14 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="analytics" element={<AnalyticsScreen />} />
             <Route path="music" element={<MusicCatalogPage />} />
-            <Route path="users" element={<UserManagementScreen />} />
+            <Route
+              path="users"
+              element={
+                <ErrorBoundary>
+                  <UserManagementScreen />
+                </ErrorBoundary>
+              }
+            />
             <Route path="stations" element={<StationPage />} />
             <Route path="playlists" element={<PlaylistPage />} />
             <Route
@@ -118,10 +123,7 @@ function App() {
             <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
             <Route path="settings" element={<AdminSettingsPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
-            <Route path="roles" element={<RoleManagementScreen />} />
-            <Route path="moderation" element={<SystemModerationScreen />} />
             <Route path="posts" element={<UserPostsManagementScreen />} />
-            <Route path="system-config" element={<SystemConfigScreen />} />
           </Route>
 
           {/* ── Staff Routes ── */}
