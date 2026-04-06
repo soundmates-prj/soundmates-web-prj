@@ -62,7 +62,7 @@ interface User {
 }
 
 function mapUserDtoToUser(dto: UserDto): User {
-  const fullName = [dto.firstName, dto.lastName].filter(Boolean).join(' ') || dto.username || '';
+  const fullName = [dto.lastName, dto.firstName].filter(Boolean).join(' ') || dto.username || '';
   // accountStatus is the canonical source of truth; fallback to legacy isActive/isBanned
   const accountStatus = dto.accountStatus ?? (dto.isActive ? 1 : 3);
   return {

@@ -120,7 +120,7 @@ export default function Profile() {
             navigate('/404');
             return;
           }
-          profileData = res.data as User;
+          profileData = res.data as unknown as User;
           setIsMyProfile(false);
 
           // Load their posts
@@ -156,7 +156,7 @@ export default function Profile() {
 
   if (!user) return <div className="pf-loading">Đang tải...</div>;
 
-  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  const name = `${user.lastName ?? ""} ${user.firstName ?? ""}`.trim();
   const dob = formatDate(user.dateOfBirth);
   const defaultCover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=1000";
   const defaultAv = "https://ui-avatars.com/api/?name=User&background=55C5F1&color=fff";

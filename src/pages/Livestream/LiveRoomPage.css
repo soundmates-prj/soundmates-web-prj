@@ -10,7 +10,7 @@
     background-color: var(--user-theme-bg, var(--lr-bg));
     background-image: var(--user-theme-bg-image, none);
     background-repeat: repeat;
-    background-size: 350px;
+    background-size: var(--user-theme-bg-size, 350px);
     background-attachment: fixed;
 }
 

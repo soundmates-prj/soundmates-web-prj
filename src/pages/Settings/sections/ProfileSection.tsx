@@ -40,7 +40,7 @@ const uploadToCloudinary = async (file: File): Promise<string> => {
 
 /* ─────────── Validation helpers (BR / EF rules) ─────────── */
 const MAX_NAME_LENGTH = 50;
-const MAX_BIO_LENGTH  = 200;
+const MAX_BIO_LENGTH = 200;
 const MAX_PHONE_DIGITS = 10;
 const isValidVietnamPhone = (phone: string): boolean =>
   /^(03|05|07|08|09)[0-9]{8}$/.test(phone);
@@ -90,8 +90,8 @@ const CropModal: React.FC<CropModalProps> = ({
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
     // Scaled image size
-    const scaledW = imgNaturalSize.w * scale * (CANVAS_W / imgNaturalSize.w);
-    const scaledH = imgNaturalSize.h * scale * (CANVAS_W / imgNaturalSize.w);
+    const scaledW = imgNaturalSize.w * scale;
+    const scaledH = imgNaturalSize.h * scale;
 
     // Clamp offset so image always covers canvas
     const minX = Math.min(0, CANVAS_W - scaledW);
@@ -152,8 +152,8 @@ const CropModal: React.FC<CropModalProps> = ({
   };
   const onMouseMove = (e: React.MouseEvent) => {
     if (!dragging) return;
-    const scaledW = imgNaturalSize.w * scale * (CANVAS_W / imgNaturalSize.w);
-    const scaledH = imgNaturalSize.h * scale * (CANVAS_W / imgNaturalSize.w);
+    const scaledW = imgNaturalSize.w * scale;
+    const scaledH = imgNaturalSize.h * scale;
     const minX = Math.min(0, CANVAS_W - scaledW);
     const minY = Math.min(0, CANVAS_H - scaledH);
     setOffset({
@@ -172,8 +172,8 @@ const CropModal: React.FC<CropModalProps> = ({
   const onTouchMove = (e: React.TouchEvent) => {
     if (!dragging) return;
     const t = e.touches[0];
-    const scaledW = imgNaturalSize.w * scale * (CANVAS_W / imgNaturalSize.w);
-    const scaledH = imgNaturalSize.h * scale * (CANVAS_W / imgNaturalSize.w);
+    const scaledW = imgNaturalSize.w * scale;
+    const scaledH = imgNaturalSize.h * scale;
     const minX = Math.min(0, CANVAS_W - scaledW);
     const minY = Math.min(0, CANVAS_H - scaledH);
     setOffset({
@@ -215,8 +215,8 @@ const CropModal: React.FC<CropModalProps> = ({
     exportCanvas.height = outH;
     const ctx = exportCanvas.getContext("2d")!;
 
-    const scaledW = imgNaturalSize.w * scale * (CANVAS_W / imgNaturalSize.w);
-    const scaledH = imgNaturalSize.h * scale * (CANVAS_W / imgNaturalSize.w);
+    const scaledW = imgNaturalSize.w * scale;
+    const scaledH = imgNaturalSize.h * scale;
     const clampedX = Math.max(
       Math.min(0, CANVAS_W - scaledW),
       Math.min(0, offset.x),
@@ -332,7 +332,7 @@ const CropModal: React.FC<CropModalProps> = ({
 };
 
 /* ─────────────────────────────────────────────
-   ProfileSection
+   ProfileSection Component
 ───────────────────────────────────────────── */
 const defaultAv = "https://ui-avatars.com/api/?name=User&background=55C5F1&color=fff";
 const defaultCover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=1000";
@@ -353,10 +353,10 @@ const ProfileSection: React.FC = () => {
 
   // ── Field-level error messages ──
   const [firstNameError, setFirstNameError] = useState<string>("");
-  const [lastNameError,  setLastNameError]  = useState<string>("");
-  const [phoneError,     setPhoneError]      = useState<string>("");
-  const [dobError,       setDobError]        = useState<string>("");
-  const [bioError,       setBioError]        = useState<string>("");
+  const [lastNameError, setLastNameError] = useState<string>("");
+  const [phoneError, setPhoneError] = useState<string>("");
+  const [dobError, setDobError] = useState<string>("");
+  const [bioError, setBioError] = useState<string>("");
 
   // Anti-spam: track last save timestamp
   const lastSaveRef = useRef<number>(0);
@@ -407,7 +407,7 @@ const ProfileSection: React.FC = () => {
       form.phone !== (user.phone || "") ||
       form.gender !== (user.gender || "") ||
       form.dateOfBirth !==
-        (user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "") ||
+      (user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "") ||
       avatarFile !== null ||
       backgroundFile !== null
     );
@@ -600,7 +600,7 @@ const ProfileSection: React.FC = () => {
         phone: form.phone || null,
         gender: form.gender
           ? form.gender.charAt(0).toUpperCase() +
-            form.gender.slice(1).toLowerCase()
+          form.gender.slice(1).toLowerCase()
           : null,
         dateOfBirth: form.dateOfBirth
           ? new Date(form.dateOfBirth).toISOString()
@@ -623,7 +623,7 @@ const ProfileSection: React.FC = () => {
         userInfo.username = updatedUser.username;
         userInfo.email = updatedUser.email;
         userInfo.avatarUrl = updatedUser.profileImageUrl;
-        
+
         localStorage.setItem("userInfo", JSON.stringify(userInfo));
         window.dispatchEvent(new Event("authChange"));
       }

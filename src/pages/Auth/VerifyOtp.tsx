@@ -11,7 +11,7 @@ import { maskEmail } from "../../utils/stringUtils";
 import { useTheme } from "../../context/ThemeContext";
 
 const VerifyOtp: React.FC = () => {
-  const { theme } = useTheme();
+  const { mode } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;

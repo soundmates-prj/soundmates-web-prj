@@ -26,7 +26,9 @@
 
 /* ── Banner ── */
 .profile-banner {
-  height: 160px;
+  width: 100%;
+  aspect-ratio: 16 / 5;
+  height: auto;
   background: linear-gradient(135deg, #1a1f3c 0%, #2d3561 50%, #004395 100%);
   position: relative;
   overflow: visible;

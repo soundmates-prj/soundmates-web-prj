@@ -8,7 +8,7 @@
   background-color: var(--user-theme-bg, #f4f6f9);
   background-image: var(--user-theme-bg-image, none);
   background-repeat: repeat;
-  background-size: 350px;
+  background-size: var(--user-theme-bg-size, 350px);
   background-attachment: fixed;
   min-height: 100vh;
   padding-bottom: 80px;
@@ -25,7 +25,9 @@
    COVER
 ================================================================ */
 .pf-cover {
-  height: 240px;
+  width: 100%;
+  aspect-ratio: 16 / 5;
+  max-height: 400px;
   overflow: hidden;
 }
 
@@ -33,7 +35,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 35%;
+  object-position: center center;
   display: block;
 }
 
@@ -231,6 +233,20 @@
   border-radius: var(--user-theme-radius, 14px);
   padding: 20px 22px;
   box-shadow: var(--user-theme-shadow, none);
+}
+
+/* Kế thừa màu nền theme nhưng với độ trong suốt để nhìn thấy background image */
+[data-theme='light'] .pf-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme='dark'] .pf-card {
+  background: rgba(20, 20, 20, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .pf-card-top {
@@ -493,6 +509,19 @@
   background: var(--user-theme-bg, #fafbfc);
   box-shadow: var(--user-theme-shadow, none);
   transition: box-shadow .18s, filter .18s;
+}
+
+[data-theme='light'] .pf .post-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme='dark'] .pf .post-card {
+  background: rgba(20, 20, 20, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .pf .post-card:hover {

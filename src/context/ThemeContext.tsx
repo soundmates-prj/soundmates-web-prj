@@ -2,9 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { themeApiService } from '../services/themeApiService';
 import type { ThemeResult } from '../services/themeApiService';
 
-// Import local image
-import orangeCatImg from '../assets/themes/Orange cats.jpg';
-
 export type ThemeMode = 'light' | 'dark';
 
 interface ThemeContextType {
@@ -35,26 +32,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     // Load available themes from backend API
     const loadThemes = async () => {
-      let themes = await themeApiService.getActiveThemes();
-
-      // Inject Local Theme (Orange Cat)
-      const orangeCatTheme: ThemeResult = {
-        id: "local-orange-cat",
-        name: "Orange Cat Theme",
-        mode: "light",
-        primaryColor: "#FF8C00",
-        secondaryColor: "#FFB74D",
-        backgroundColor: "#FFF3E0",
-        textColor: "#4E342E",
-        fontFamily: "'Comic Sans MS', 'Comic Neue', 'Nunito', sans-serif",
-        configJson: {
-          borderRadius: "16px",
-          boxShadow: "0 4px 12px rgba(255, 140, 0, 0.15)",
-          backgroundImage: orangeCatImg
-        }
-      };
-
-      themes = [...themes, orangeCatTheme];
+      const themes = await themeApiService.getActiveThemes();
       setAvailableThemes(themes);
 
       // Auto-apply saved theme if it exists in the fetched list
@@ -114,6 +92,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (theme.configJson.backgroundImage) {
         root.style.setProperty('--user-theme-bg-image', `url("${theme.configJson.backgroundImage}")`);
       }
+      if (theme.configJson.backgroundSize) {
+        root.style.setProperty('--user-theme-bg-size', theme.configJson.backgroundSize);
+      }
     }
 
     setModeState(theme.mode); // Sync mode
@@ -134,6 +115,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     root.style.removeProperty('--user-theme-radius');
     root.style.removeProperty('--user-theme-shadow');
     root.style.removeProperty('--user-theme-bg-image');
+    root.style.removeProperty('--user-theme-bg-size');
 
     // We also clear the global ones we used before to restore UI
     root.style.removeProperty('--sm-primary');
