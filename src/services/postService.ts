@@ -1,5 +1,5 @@
 import api from './axios';
-import type { Post, PostsResponse } from '../types/post';
+import type { Post } from '../types/post';
 
 // ============================================================
 // API Response shapes

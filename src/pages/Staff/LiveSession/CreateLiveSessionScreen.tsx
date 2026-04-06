@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Radio, Disc3, Users, Calendar, X, Plus } from 'lucide-react';
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
-import staffService from "../../../services/staffService";
+import { userService } from "../../../services/staffService";
 import type { StationResult, LiveSessionResult } from "../../../services/liveSessionApiService";
-import type { HostUser } from "../../../services/staffService";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
 import './CreateLiveSessionScreen.css';
 
 export function CreateLiveSessionScreen() {
   const [stations, setStations] = useState<StationResult[]>([]);
-  const [hosts, setHosts] = useState<HostUser[]>([]);
+  const [hosts, setHosts] = useState<Awaited<ReturnType<typeof userService.getHosts>>['items']>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
@@ -29,10 +28,10 @@ export function CreateLiveSessionScreen() {
     try {
       const [stationsRes, hostsRes] = await Promise.allSettled([
         liveSessionApiService.getStations(),
-        staffService.getHostUsers(),
+        userService.getHosts(),
       ]);
       if (stationsRes.status === 'fulfilled') setStations(stationsRes.value);
-      if (hostsRes.status === 'fulfilled') setHosts(hostsRes.value);
+      if (hostsRes.status === 'fulfilled') setHosts(hostsRes.value.items);
     } catch {
       showError("Lỗi", "Không thể tải dữ liệu");
     } finally {
@@ -49,12 +48,9 @@ export function CreateLiveSessionScreen() {
     try {
       await liveSessionApiService.createLiveSession({
         stationId,
+        hostUserId: hostUserId || '',
         sessionName: name.trim(),
         description: description.trim() || undefined,
-        hostUserId: hostUserId || undefined,
-        scheduledDateTime: scheduledDate && scheduledTime
-          ? `${scheduledDate}T${scheduledTime}:00`
-          : undefined,
       });
       showSuccess("Thành công!", "Phiên phát sóng đã được tạo");
       // Reset form
@@ -119,7 +115,7 @@ export function CreateLiveSessionScreen() {
             >
               <option value="">-- Chọn đài phát --</option>
               {stations.map(s => (
-                <option key={s.id} value={s.id}>{s.stationName || s.name || s.id}</option>
+                <option key={s.id} value={s.id}>{s.stationName}</option>
               ))}
             </select>
           </div>

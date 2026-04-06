@@ -12,6 +12,7 @@ import {
   Check,
   X as XIcon,
   ImagePlus,
+  ShieldCheck,
 } from "lucide-react";
 
 import api from "../../../services/axios";
@@ -37,7 +38,10 @@ const uploadToCloudinary = async (file: File): Promise<string> => {
   return data.secure_url as string;
 };
 
-/* ─────────── Phone Validation ─────────── */
+/* ─────────── Validation helpers (BR / EF rules) ─────────── */
+const MAX_NAME_LENGTH = 50;
+const MAX_BIO_LENGTH  = 200;
+const MAX_PHONE_DIGITS = 10;
 const isValidVietnamPhone = (phone: string): boolean =>
   /^(03|05|07|08|09)[0-9]{8}$/.test(phone);
 
@@ -343,7 +347,13 @@ const ProfileSection: React.FC = () => {
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [phoneError, setPhoneError] = useState<string>("");
+
+  // ── Field-level error messages ──
+  const [firstNameError, setFirstNameError] = useState<string>("");
+  const [lastNameError,  setLastNameError]  = useState<string>("");
+  const [phoneError,     setPhoneError]      = useState<string>("");
+  const [dobError,       setDobError]        = useState<string>("");
+  const [bioError,       setBioError]        = useState<string>("");
 
   // Anti-spam: track last save timestamp
   const lastSaveRef = useRef<number>(0);
@@ -407,16 +417,62 @@ const ProfileSection: React.FC = () => {
     >,
   ) => {
     const { name, value } = e.target;
+
+    // ── EF-01 + BR-01: First name required, 1–50 chars ──
+    if (name === "firstName") {
+      if (value === "")
+        setFirstNameError("Tên không được để trống!");
+      else if (value.length > MAX_NAME_LENGTH)
+        setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      else
+        setFirstNameError("");
+    }
+
+    // ── EF-01 + BR-01: Last name required, 1–50 chars ──
+    if (name === "lastName") {
+      if (value === "")
+        setLastNameError("Họ không được để trống!");
+      else if (value.length > MAX_NAME_LENGTH)
+        setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      else
+        setLastNameError("");
+    }
+
+    // ── EF-02 + EF-03 + BR-03: Phone — non-numeric, >10 digits ──
     if (name === "phone") {
       if (value === "") setPhoneError("");
       else if (!/^[0-9]*$/.test(value))
-        setPhoneError("Số điện thoại chỉ được chứa chữ số");
-      else if (value.length > 10)
-        setPhoneError("Số điện thoại không được quá 10 số");
-      else if (value.length === 10 && !isValidVietnamPhone(value))
+        setPhoneError("Vui lòng nhập số!");                          // EF-02
+      else if (value.length > MAX_PHONE_DIGITS)
+        setPhoneError("Số điện thoại không quá 10 số!");             // EF-03
+      else if (value.length === MAX_PHONE_DIGITS && !isValidVietnamPhone(value))
         setPhoneError("Số điện thoại không hợp lệ (VD: 0912345678)");
       else setPhoneError("");
     }
+
+    // ── Bio character limit (Usability + BR-02) ──
+    if (name === "bio") {
+      if (value.length > MAX_BIO_LENGTH)
+        setBioError(`Tiểu sử không được quá ${MAX_BIO_LENGTH} ký tự!`);
+      else setBioError("");
+    }
+
+    // ── EF-04: Date of birth cannot be in the future ──
+    if (name === "dateOfBirth") {
+      if (!value) {
+        setDobError(""); // optional field
+      } else {
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        const selected = new Date(value);
+        if (selected > today) {
+          setDobError("Không được nhập năm tương lai!");
+        } else {
+          setDobError("");
+        }
+      }
+    }
+
     setForm({ ...form, [name]: value });
   };
 
@@ -459,19 +515,70 @@ const ProfileSection: React.FC = () => {
     setCropType(null);
   };
 
+  /* ── Centralised pre-save validation ── */
+  const validateAll = (): boolean => {
+    let valid = true;
+
+    // EF-01: required fields
+    if (!form.firstName?.trim()) {
+      setFirstNameError("Tên không được để trống!");
+      valid = false;
+    } else if (form.firstName.length > MAX_NAME_LENGTH) {
+      setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      valid = false;
+    }
+
+    if (!form.lastName?.trim()) {
+      setLastNameError("Họ không được để trống!");
+      valid = false;
+    } else if (form.lastName.length > MAX_NAME_LENGTH) {
+      setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      valid = false;
+    }
+
+    // EF-02 / EF-03: phone format + length
+    if (form.phone) {
+      if (!/^[0-9]+$/.test(form.phone)) {
+        setPhoneError("Vui lòng nhập số!");
+        valid = false;
+      } else if (form.phone.length > MAX_PHONE_DIGITS) {
+        setPhoneError("Số điện thoại không quá 10 số!");
+        valid = false;
+      } else if (form.phone.length === MAX_PHONE_DIGITS && !isValidVietnamPhone(form.phone)) {
+        setPhoneError("Số điện thoại không hợp lệ (VD: 0912345678)");
+        valid = false;
+      }
+    }
+
+    // EF-04: future date of birth
+    if (form.dateOfBirth) {
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      if (new Date(form.dateOfBirth) > today) {
+        setDobError("Không được nhập năm tương lai!");
+        valid = false;
+      }
+    }
+
+    // Bio length
+    if (form.bio && form.bio.length > MAX_BIO_LENGTH) {
+      setBioError(`Tiểu sử không được quá ${MAX_BIO_LENGTH} ký tự!`);
+      valid = false;
+    }
+
+    return valid;
+  };
+
   /* ── Save ── */
   const handleSave = async () => {
-    // Anti-spam guard: prevent saves within cooldown window
+    // Anti-spam guard
     const now = Date.now();
     if (now - lastSaveRef.current < SAVE_COOLDOWN_MS) {
       const remaining = Math.ceil((SAVE_COOLDOWN_MS - (now - lastSaveRef.current)) / 1000);
       showWarning("Vui lòng chờ", `Bạn vừa lưu xong. Vui lòng chờ ${remaining}s trước khi lưu tiếp.`);
       return;
     }
-    if (form.phone && !isValidVietnamPhone(form.phone)) {
-      setPhoneError("Số điện thoại không hợp lệ (VD: 0912345678)");
-      return;
-    }
+    if (!validateAll()) return;
     try {
       setLoading(true);
       let profileImageUrl: string | undefined =
@@ -538,6 +645,10 @@ const ProfileSection: React.FC = () => {
       dateOfBirth: user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "",
     });
     setPhoneError("");
+    setFirstNameError("");
+    setLastNameError("");
+    setDobError("");
+    setBioError("");
     setAvatarFile(null);
     setBackgroundFile(null);
     setAvatarPreview(validateImageUrl(user.profileImageUrl));
@@ -626,33 +737,60 @@ const ProfileSection: React.FC = () => {
           {/* ── FORM ── */}
           <div className="profile-form">
             <div className="form-grid">
+              {/* EF-01 + BR-01: Họ (Last name) required, 1–50 chars */}
               <div className="form-group">
                 <label>Họ</label>
-                <input
-                  name="firstName"
-                  value={form.firstName || ""}
-                  onChange={handleChange}
-                />
+                <div className={lastNameError ? "input-icon input-error" : "input-icon"}>
+                  <input
+                    name="lastName"
+                    value={form.lastName || ""}
+                    onChange={handleChange}
+                    placeholder="VD: Nguyễn"
+                    maxLength={MAX_NAME_LENGTH}
+                  />
+                </div>
+                {lastNameError && (
+                  <span className="error-text">{lastNameError}</span>
+                )}
               </div>
+
+              {/* EF-01 + BR-01: Tên (First name) required, 1–50 chars */}
               <div className="form-group">
                 <label>Tên</label>
-                <input
-                  name="lastName"
-                  value={form.lastName || ""}
-                  onChange={handleChange}
-                />
+                <div className={firstNameError ? "input-icon input-error" : "input-icon"}>
+                  <input
+                    name="firstName"
+                    value={form.firstName || ""}
+                    onChange={handleChange}
+                    placeholder="VD: Minh"
+                    maxLength={MAX_NAME_LENGTH}
+                  />
+                </div>
+                {firstNameError && (
+                  <span className="error-text">{firstNameError}</span>
+                )}
               </div>
             </div>
 
+            {/* BR-02: Tiểu sử (Bio) optional, max 200 chars */}
             <div className="form-group">
-              <label>Tiểu sử</label>
-              <textarea
-                name="bio"
-                rows={3}
-                placeholder="Viết vài dòng giới thiệu..."
-                value={form.bio || ""}
-                onChange={handleChange}
-              />
+              <label>
+                Tiểu sử
+                <span className="char-counter" style={{ marginLeft: 6 }}>
+                  {form.bio?.length ?? 0}/{MAX_BIO_LENGTH}
+                </span>
+              </label>
+              <div className={bioError ? "input-icon input-error" : "input-icon"}>
+                <textarea
+                  name="bio"
+                  rows={3}
+                  placeholder="Viết vài dòng giới thiệu..."
+                  value={form.bio || ""}
+                  onChange={handleChange}
+                  maxLength={MAX_BIO_LENGTH}
+                />
+              </div>
+              {bioError && <span className="error-text">{bioError}</span>}
             </div>
 
             <div className="form-grid">
@@ -692,17 +830,20 @@ const ProfileSection: React.FC = () => {
               </div>
             </div>
 
+            {/* BR-05: Ngày sinh optional; EF-04: cannot be a future date */}
             <div className="form-group small">
               <label>Ngày sinh</label>
-              <div className="input-icon">
+              <div className={`input-icon${dobError ? " input-error" : ""}`}>
                 <Calendar size={15} />
                 <input
                   type="date"
                   name="dateOfBirth"
                   value={form.dateOfBirth || ""}
                   onChange={handleChange}
+                  max={new Date().toISOString().split("T")[0]}
                 />
               </div>
+              {dobError && <span className="error-text">{dobError}</span>}
             </div>
 
             <div className="form-actions">
@@ -712,17 +853,26 @@ const ProfileSection: React.FC = () => {
               <button
                 className="btn primary"
                 onClick={handleSave}
-                disabled={loading || !!phoneError || !hasChanges()}
+                disabled={
+                  loading ||
+                  !!phoneError ||
+                  !!firstNameError ||
+                  !!lastNameError ||
+                  !!dobError ||
+                  !!bioError ||
+                  !hasChanges()
+                }
               >
                 {loading ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
             </div>
 
             <div className="privacy-box">
-              <span>ℹ️</span>
+              <ShieldCheck size={15} className="privacy-icon" />
               <p>
-                Thông tin của bạn được bảo mật và chỉ dùng để cải thiện trải
-                nghiệm cá nhân.
+                Thông tin cá nhân của bạn sẽ được bảo mật và chỉ sử dụng để
+                tăng trải nghiệm cá nhân của bạn. Bạn có thể chỉnh sửa, xóa
+                thông tin của mình bất cứ lúc nào.
               </p>
             </div>
           </div>

@@ -14,6 +14,7 @@ import {
   Clock,
   Disc3,
 } from 'lucide-react';
+import { showToast } from '../../../utils/toast';
 import { useLiveSession } from "../../../context/LiveSessionContext";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import type { LiveSessionResult, SongRequestResult } from "../../../services/liveSessionApiService";
@@ -66,14 +67,14 @@ export function HostLiveController() {
       setSessionData(session);
       // Guard: if session already ended, show error
       if (session.status?.toLowerCase() === 'ended') {
-        showToast.error('Phiên đã kết thúc', 'Phiên này đã được kết thúc trước đó.');
+        showToast.error('Phiên đã kết thúc — Phiên này đã được kết thúc trước đó.');
       }
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 404) {
-        showToast.error('Không tìm thấy phiên', 'Phiên phát sóng không tồn tại.');
+        showToast.error('Không tìm thấy phiên — Phiên phát sóng không tồn tại.');
       } else {
-        showToast.error('Lỗi', 'Không thể tải thông tin phiên phát sóng.');
+        showToast.error('Lỗi — Không thể tải thông tin phiên phát sóng.');
       }
       console.error('[HostLiveController] loadSession error:', err);
     } finally { setLoading(false); }
@@ -99,16 +100,16 @@ export function HostLiveController() {
       if (status === 409) {
         const msg = err?.response?.data?.message || '';
         if (msg.includes('already active') || msg.includes('already started')) {
-          showToast.error('Phiên đã được bắt đầu', 'Phiên này đã đang chạy. Vui lòng làm mới trang.');
+          showToast.error('Phiên đã được bắt đầu — Phiên này đã đang chạy. Vui lòng làm mới trang.');
         } else if (msg.includes('ended')) {
-          showToast.error('Phiên đã kết thúc', 'Không thể bắt đầu phiên đã kết thúc.');
+          showToast.error('Phiên đã kết thúc — Không thể bắt đầu phiên đã kết thúc.');
         } else if (msg.includes('cancelled')) {
-          showToast.error('Phiên đã bị hủy', 'Không thể bắt đầu phiên đã bị hủy.');
+          showToast.error('Phiên đã bị hủy — Không thể bắt đầu phiên đã bị hủy.');
         } else {
-          showToast.error('Không thể bắt đầu', msg || 'Trạng thái phiên không hợp lệ để bắt đầu.');
+          showToast.error('Không thể bắt đầu — ' + (msg || 'Trạng thái phiên không hợp lệ để bắt đầu.'));
         }
       } else {
-        showToast.error('Lỗi', 'Không thể bắt đầu phiên phát sóng.');
+        showToast.error('Lỗi — Không thể bắt đầu phiên phát sóng.');
       }
     }
   };

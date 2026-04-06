@@ -45,12 +45,23 @@ api.interceptors.response.use(
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Avoid refresh loop or logout for login/refresh requests
-      const isLoginRequest = originalRequest.url?.includes("auth/login") || 
-                            originalRequest.url?.includes("auth/google-login");
-      const isRefreshRequest = originalRequest.url?.includes("auth/refresh-token");
+      // Skip token refresh for auth endpoints — let the component handle the error
+      const isAuthRequest =
+        originalRequest.url?.includes("auth/login") ||
+        originalRequest.url?.includes("auth/google-login") ||
+        originalRequest.url?.includes("auth/refresh-token");
 
-      if (isLoginRequest || isRefreshRequest) {
+      if (isAuthRequest) {
+        return Promise.reject(error);
+      }
+
+      // Skip for guest: /me/* endpoints return 401 for unauthenticated users —
+      // just pass the error through so the component can handle it gracefully
+      // (e.g., show empty data instead of redirecting)
+      const isMeEndpoint = originalRequest.url?.startsWith("me/") ||
+                           originalRequest.url?.includes("/me/");
+
+      if (isMeEndpoint && !localStorage.getItem("accessToken")) {
         return Promise.reject(error);
       }
 

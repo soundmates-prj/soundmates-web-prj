@@ -279,8 +279,8 @@ const LivestreamPage: React.FC = () => {
                 lyrics: null, playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
               },
               playingNext: azuraData.playingNext ? {
-                shId: azuraData.playingNext.shId ?? azuraData.playingNext.id ?? 0,
-                text: azuraData.playingNext.text ?? azuraData.playingNext.title ?? '',
+                shId: azuraData.playingNext.shId ?? 0,
+                text: azuraData.playingNext.text ?? '',
                 title: azuraData.playingNext.title ?? 'Unknown',
                 artist: azuraData.playingNext.artist ?? 'Unknown',
                 album: azuraData.playingNext.album ?? '',
@@ -301,7 +301,11 @@ const LivestreamPage: React.FC = () => {
                 genre: azuraData.nextSong.genre ?? '',
                 artUrl: proxyArtUrl(azuraData.nextSong.artUrl ?? ''),
                 lyrics: null, playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
-              } : null,
+              } : {
+                shId: 0, text: '', title: 'Không có bài tiếp theo', artist: '',
+                album: '', genre: '', artUrl: proxyArtUrl(''),
+                lyrics: null, playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
+              },
               songHistory: (azuraData.songHistory || []).map((t: any) => ({
                 shId: t.shId ?? t.id ?? 0,
                 text: t.text ?? t.title ?? '',

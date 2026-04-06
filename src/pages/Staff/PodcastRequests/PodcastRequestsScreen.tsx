@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Mic, Search, CheckCircle, XCircle, Clock, User, Play, RefreshCw } from 'lucide-react';
-import { showSuccess, showError } from "../../../components/common/toastUtils";
+import { showSuccess } from "../../../components/common/toastUtils";
 import './PodcastRequestsScreen.css';
 
 const podcastRequests = [
@@ -30,12 +30,12 @@ export function PodcastRequestsScreen() {
     rejected: requests.filter(r => r.status === 'rejected').length,
   };
 
-  const handleApprove = (id: string) => {
+  const handleApprove = (id: number) => {
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
     showSuccess("Thành công", "Yêu cầu podcast đã được duyệt");
   };
 
-  const handleReject = (id: string) => {
+  const handleReject = (id: number) => {
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected' } : r));
     showSuccess("Thành công", "Yêu cầu podcast đã bị từ chối");
   };

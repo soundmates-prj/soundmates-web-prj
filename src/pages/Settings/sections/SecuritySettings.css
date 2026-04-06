@@ -1,30 +1,57 @@
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
 .security-settings {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
+/* ── Card base ─────────────────────────────────────────────────── */
+
 .security-card {
-  background: var(--bg-primary);
+  background: var(--bg-card, #FAFAFA);
   border: 1px solid var(--border-light);
   border-radius: 16px;
   padding: 32px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.security-card--danger {
+  border-color: rgba(220, 38, 38, 0.3);
 }
 
 .security-card-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
-  margin-bottom: 32px;
-  padding-bottom: 24px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
   border-bottom: 1px solid var(--border-light);
 }
 
-.security-card-header svg {
-  color: #55c5f1;
+.security-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  margin-top: 2px;
+  background: rgba(85, 197, 241, 0.15);
+  color: #55c5f1;
+}
+
+.security-card-icon--danger {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
 }
 
 .security-card-header h3 {
@@ -40,11 +67,27 @@
   margin: 0;
 }
 
+.security-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Form ──────────────────────────────────────────────────────── */
+
 .security-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
   max-width: 500px;
+}
+
+.security-delete-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 500px;
+  position: relative;
 }
 
 .security-field {
@@ -55,9 +98,43 @@
 
 .security-field label {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
 }
+
+.security-field input,
+.security-field select,
+.security-field textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid var(--border-medium);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.security-field input:focus,
+.security-field select:focus,
+.security-field textarea:focus {
+  outline: none;
+  border-color: #55c5f1;
+  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.15);
+}
+
+.security-field input.input-error {
+  border-color: #dc2626;
+}
+
+.security-field-error {
+  font-size: 12px;
+  color: #dc2626;
+}
+
+/* ── Input wrap ─────────────────────────────────────────────── */
 
 .security-input-wrap {
   position: relative;
@@ -66,20 +143,7 @@
 }
 
 .security-input-wrap input {
-  width: 100%;
-  padding: 12px 48px 12px 16px;
-  border: 1.5px solid var(--border-medium);
-  border-radius: 10px;
-  font-size: 14px;
-  color: var(--text-primary);
-  background: var(--bg-secondary);
-  transition: all 0.2s;
-}
-
-.security-input-wrap input:focus {
-  outline: none;
-  border-color: #55c5f1;
-  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.1);
+  padding-right: 48px;
 }
 
 .security-toggle-btn {
@@ -100,8 +164,10 @@
   color: var(--text-primary);
 }
 
+/* ── Submit button ──────────────────────────────────────────── */
+
 .security-submit-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -115,7 +181,7 @@
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 4px 12px rgba(85, 197, 241, 0.3);
-  margin-top: 8px;
+  align-self: flex-start;
 }
 
 .security-submit-btn:hover:not(:disabled) {
@@ -129,12 +195,146 @@
   transform: none;
 }
 
+/* ── Danger section ──────────────────────────────────────────── */
+
+.security-danger-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 13px;
+  color: #9a3412;
+}
+
+.security-danger-alert svg {
+  flex-shrink: 0;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+.security-danger-alert strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.security-danger-alert ul {
+  margin: 0;
+  padding-left: 16px;
+  line-height: 1.7;
+}
+
+.security-danger-alert li {
+  margin-bottom: 2px;
+}
+
+.security-info-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(85, 197, 241, 0.06);
+  border: 1px solid rgba(85, 197, 241, 0.2);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #0369a1;
+  line-height: 1.5;
+}
+
+.security-info-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #55c5f1;
+}
+
+.text-danger {
+  color: #dc2626;
+}
+
+/* ── Danger button ──────────────────────────────────────────── */
+
+.security-danger-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  color: #dc2626;
+  border: 1.5px solid rgba(220, 38, 38, 0.4);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.security-danger-btn:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.06);
+  border-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+.security-danger-btn--confirm {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.security-danger-btn--confirm:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
+}
+
+.security-danger-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Form close ─────────────────────────────────────────────── */
+
+.security-form-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.security-form-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
 @media (max-width: 768px) {
   .security-card {
     padding: 24px 20px;
   }
 
-  .security-form {
+  .security-form,
+  .security-delete-form {
     max-width: 100%;
+  }
+
+  .security-submit-btn,
+  .security-danger-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

@@ -1,10 +1,16 @@
 import api from "./axios";
-import type { ApiResponse } from "./livestreamService";
 
 /* ============================================
    AzuraCast Config Service
    Calls account-content-service via API Gateway
    ============================================ */
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  errorCode: string | null;
+}
 
 export interface AzuraCastConfigResponse {
   baseUrl: string;

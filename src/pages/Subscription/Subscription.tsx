@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/axios";
 import { showToast } from "../../utils/toast";
+import vnpayLogo from "../../assets/vnpay_logo.png";
+import payosLogo from "../../assets/payos_logo.png";
 import "./Subscription.css";
 import { motion, AnimatePresence } from "framer-motion";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Plan {
   id?: string;
@@ -18,81 +22,401 @@ interface Plan {
   description: string;
 }
 
+interface CurrentSubscription {
+  id: string;
+  planId: string;
+  planName: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  subscribeAt: string;
+}
+
+interface SubscriptionHistoryItem {
+  id: string;
+  planId: string;
+  planName: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  subscribeAt: string;
+}
+
+interface TransactionItem {
+  id: string;
+  paymentId: string;
+  paymentProvider: string;
+  paymentMethod: string;
+  amount: number;
+  paymentAt: string;
+  transactionStatus: string;
+  createdAt: string;
+}
+
 type PaymentMethod = "VNPay" | "PayOS";
+type HistoryTab = "current" | "history";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const normalizeText = (value: string) =>
+  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+const detectPlanTier = (plan: Plan): "free" | "premium" | "elite" | "other" => {
+  if (plan.price === 0) return "free";
+  const name = normalizeText(plan.planName);
+  if (name.includes("elite") || name.includes("hoi vien")) return "elite";
+  if (name.includes("premium")) return "premium";
+  return "other";
+};
+
+const getTierOrder = (tier: ReturnType<typeof detectPlanTier>) => {
+  switch (tier) {
+    case "free": return 0;
+    case "elite": return 1;
+    case "premium": return 2;
+    default: return 3;
+  }
+};
+
+const formatDate = (value?: string) => {
+  if (!value) return "N/A";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "N/A";
+  return parsed.toLocaleDateString("vi-VN");
+};
+
+const formatCurrency = (value?: number) => {
+  if (typeof value !== "number" || Number.isNaN(value)) return "N/A";
+  return value.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
+};
+
+const formatStatusLabel = (value?: string) => {
+  const n = (value || "").trim().toLowerCase();
+  if (!n) return "N/A";
+  if (n === "active") return "Đang hoạt động";
+  if (n === "expired") return "Đã hết hạn";
+  if (n === "cancelled" || n === "canceled") return "Đã hủy";
+  if (n === "success") return "Thành công";
+  if (n === "pending") return "Đang xử lý";
+  if (n === "failed") return "Thất bại";
+  return value || "N/A";
+};
+
+const getStatusColor = (value?: string) => {
+  const n = (value || "").trim().toLowerCase();
+  if (n === "active" || n === "success") return "#10B981";
+  if (n === "pending") return "#F59E0B";
+  if (["cancelled", "canceled", "failed", "expired"].includes(n)) return "#EF4444";
+  return "#6B7280";
+};
+
+// ─── FAQ Item ────────────────────────────────────────────────────────────────
+
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="faq-item">
+      <button className="faq-question" onClick={() => setOpen((p) => !p)}>
+        <span>{question}</span>
+        <span className={`faq-chevron${open ? " faq-chevron--open" : ""}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </span>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="faq-answer"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <p>{answer}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── History Modal ──────────────────────────────────────────────────────────
+
+function HistoryModal({
+  current,
+  history,
+  transactions,
+  onClose,
+}: {
+  current: CurrentSubscription | null;
+  history: SubscriptionHistoryItem[];
+  transactions: TransactionItem[];
+  onClose: () => void;
+}) {
+  const [tab, setTab] = useState<HistoryTab>("current");
+  const latestTx = transactions[0] || null;
+
+  const meta = (label: string, value: string, color?: string) => (
+    <div className="history-meta-row">
+      <span className="history-meta-label">{label}</span>
+      <span className="history-meta-value" style={color ? { color } : undefined}>{value}</span>
+    </div>
+  );
+
+  const subCard = (s: CurrentSubscription | SubscriptionHistoryItem, header = false) => (
+    <div className="history-card">
+      {header && <h4 className="history-card-title">Thông tin gói</h4>}
+      {meta("Tên gói", s.planName || "N/A")}
+      {meta("Trạng thái", formatStatusLabel(s.status), getStatusColor(s.status))}
+      {meta("Ngày bắt đầu", formatDate(s.startDate))}
+      {meta("Ngày hết hạn", formatDate(s.endDate))}
+      {meta("Ngày đăng ký", formatDate(s.subscribeAt))}
+    </div>
+  );
+
+  const txCard = (t: TransactionItem, header = false) => (
+    <div className="history-card">
+      {header && <h4 className="history-card-title">Thông tin giao dịch</h4>}
+      {meta("Mã giao dịch", t.id || "N/A")}
+      {meta("Mã payment", t.paymentId || "N/A")}
+      {meta("Nhà cung cấp", t.paymentProvider || "N/A")}
+      {meta("Phương thức", t.paymentMethod || "N/A")}
+      {meta("Số tiền", formatCurrency(t.amount))}
+      {meta("Trạng thái", formatStatusLabel(t.transactionStatus), getStatusColor(t.transactionStatus))}
+      {meta("Ngày thanh toán", formatDate(t.paymentAt))}
+    </div>
+  );
+
+  const empty = (msg: string) => (
+    <div className="history-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+        <rect x="9" y="3" width="6" height="4" rx="2" />
+      </svg>
+      <p>{msg}</p>
+    </div>
+  );
+
+  return (
+    <>
+      <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
+      <motion.div
+        className="history-modal"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+      >
+        <div className="modal-header">
+          <h3>Chi tiết đăng ký &amp; Lịch sử</h3>
+          <button className="modal-close" onClick={onClose}>&times;</button>
+        </div>
+
+        <div className="history-tabs">
+          <button className={`history-tab${tab === "current" ? " history-tab--active" : ""}`} onClick={() => setTab("current")}>Gói hiện tại</button>
+          <button className={`history-tab${tab === "history" ? " history-tab--active" : ""}`} onClick={() => setTab("history")}>Lịch sử</button>
+        </div>
+
+        <div className="history-body">
+          {tab === "current" ? (
+            <div className="history-tab-content">
+              {current ? (
+                <>
+                  {subCard(current, true)}
+                  {latestTx ? txCard(latestTx, true) : empty("Không có giao dịch cho gói hiện tại.")}
+                </>
+              ) : empty("Bạn chưa có gói đăng ký nào đang hoạt động.")}
+            </div>
+          ) : (
+            <div className="history-tab-content">
+              {history.length > 0 && (
+                <div className="history-section">
+                  <h4 className="history-section-title">Lịch sử gói đăng ký</h4>
+                  {history.map((item) => subCard(item))}
+                </div>
+              )}
+              {transactions.length > 0 && (
+                <div className="history-section">
+                  <h4 className="history-section-title">Lịch sử giao dịch</h4>
+                  {transactions.map((t) => txCard(t))}
+                </div>
+              )}
+              {history.length === 0 && transactions.length === 0 && empty("Chưa có lịch sử gói đăng ký hoặc giao dịch.")}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
+// ─── Feature List ────────────────────────────────────────────────────────────
+
+interface FeatureDef { text: string; bold?: string }
+
+function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): FeatureDef[] {
+  const base: FeatureDef[] = [
+    { text: "Thưởng thức âm nhạc & podcast không giới hạn" },
+    { text: "Giao lưu vui vẻ cùng cộng đồng trong phòng Live" },
+  ];
+
+  if (tier === "free") {
+    return [
+      ...base,
+      { text: `${plan.requestLimit} lượt yêu cầu bài hát`, bold: " mỗi ngày" },
+      { text: "Chưa hỗ trợ Podcast & AI Clone" },
+    ];
+  }
+  if (tier === "elite") {
+    return [
+      ...base,
+      { text: `${plan.requestLimit} lượt yêu cầu nhạc + Ưu tiên hàng đợi`, bold: "" },
+      { text: `${plan.podcastRequestLimit} lượt tạo Podcast`, bold: " mỗi ngày" },
+      { text: "Tự do sáng tạo giọng AI", bold: ` tới ${plan.voiceModelLimit} giọng` },
+      { text: "AI đọc văn bản", bold: `${plan.ttsMinuteLimit} phút/tháng` },
+      { text: "Cập nhật mọi Theme mới nhất & 'đặc biệt' nhất" },
+    ];
+  }
+  // premium
+  return [
+    ...base,
+    { text: "Mọi đặc quyền từ gói Miễn Phí" },
+    { text: `${plan.requestLimit} lượt yêu cầu bài hát`, bold: " mỗi ngày" },
+    { text: `${plan.podcastRequestLimit} lượt tạo Podcast`, bold: " mỗi ngày" },
+    { text: "Tự tạo giọng nói AI", bold: `${plan.voiceModelLimit} giọng` },
+    { text: "AI đọc văn bản", bold: `${plan.ttsMinuteLimit} phút/tháng` },
+    { text: "Theme giao diện cơ bản" },
+  ];
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function Subscription() {
   const navigate = useNavigate();
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Payment method selector state
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [currentSub, setCurrentSub] = useState<CurrentSubscription | null>(null);
+  const [subHistory, setSubHistory] = useState<SubscriptionHistoryItem[]>([]);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Payment modal
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [processingMethod, setProcessingMethod] = useState<PaymentMethod | null>(null);
 
-  useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        const response = await api.get("/subscription-plans");
-        if (response.data.success) {
-          const fetchedPlans = response.data.data as Plan[];
-          const sortedPlans = fetchedPlans.sort((a: Plan, b: Plan) => a.price - b.price);
-          setPlans(sortedPlans);
-        } else {
-          setError(response.data.message || "Failed to load plans");
-          showToast.error(response.data.message || "Không thể tải danh sách gói đăng ký");
-        }
-      } catch (err: any) {
-        console.error("Error fetching plans:", err);
-        setError("Có lỗi xảy ra khi tải gói đăng ký.");
-        showToast.error("Có lỗi xảy ra khi tải gói đăng ký.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  // ── Fetch all data ───────────────────────────────────────────────────────
 
-    fetchPlans();
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+
+    const [plansR, subR, histR, txR] = await Promise.allSettled([
+      api.get("/subscription-plans"),
+      api.get("/me/subscriptions"),
+      api.get("/me/subscriptions/history?page=1&pageSize=20"),
+      api.get("/me/transaction/history?page=1&pageSize=50"),
+    ]);
+
+    // Plans
+    if (plansR.status === "fulfilled" && plansR.value.data?.success) {
+      const fetched = plansR.value.data.data as Plan[];
+      setPlans(
+        fetched
+          .filter((p) => p.isActive !== false)
+          .sort((a, b) => {
+            // Sort: free=1, premium=2, elite=3 → renders as [Free, Premium, Elite]
+            // Then CSS order:-1 on Elite moves it to visual column 1 (center on 3-col grid)
+            const orderA = getTierOrder(detectPlanTier(a));
+            const orderB = getTierOrder(detectPlanTier(b));
+            return orderA - orderB;
+          })
+      );
+    } else {
+      const msg = plansR.status === "fulfilled" ? plansR.value.data?.message : (plansR as PromiseRejectedResult).reason?.message;
+      showToast.error(msg || "Không thể tải danh sách gói đăng ký.");
+    }
+
+    // Current sub
+    if (subR.status === "fulfilled" && subR.value.data?.isSuccess) {
+      setCurrentSub(subR.value.data.data);
+    }
+
+    // History
+    if (histR.status === "fulfilled" && histR.value.data?.isSuccess) {
+      setSubHistory(histR.value.data.data?.items || []);
+    }
+
+    // Transactions
+    if (txR.status === "fulfilled" && txR.value.data?.isSuccess) {
+      const items = txR.value.data.data?.items || [];
+      setTransactions([...items].sort((a, b) => {
+        const ta = new Date(a.paymentAt || a.createdAt).getTime();
+        const tb = new Date(b.paymentAt || b.createdAt).getTime();
+        return tb - ta;
+      }));
+    }
+
+    setLoading(false);
   }, []);
 
-  const openPaymentMethodModal = (plan: Plan) => {
-    if (plan.price === 0) {
-      navigate("/register");
-      return;
+  // ── Scroll to top on mount / route change ───────────────────────────────
+  useEffect(() => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+
+    // Also reset any parent scroll containers
+    let el = document.documentElement;
+    while (el) {
+      el.scrollTop = 0;
+      el = el.parentElement as HTMLElement;
     }
+  }, []);
+
+  useEffect(() => { void fetchAll(); }, [fetchAll]);
+
+  // ── Payment ──────────────────────────────────────────────────────────────
+
+  const openModal = (plan: Plan) => {
+    if (plan.price === 0) { navigate("/register"); return; }
     setSelectedPlan(plan);
     setShowMethodModal(true);
   };
 
-  const handleSubscribe = async (plan: Plan, method: PaymentMethod) => {
+  const handlePay = async (plan: Plan, method: PaymentMethod) => {
     setProcessingMethod(method);
     setShowMethodModal(false);
-
     const toastId = showToast.loading("Đang xử lý thanh toán...");
     try {
-      // Luôn gửi returnUrl để backend redirect đúng về frontend
-      const frontendUrl = window.location.origin;
-      const returnUrl = `${frontendUrl}/payment/result`;
-
-      const response = await api.post("/payments", {
+      const returnUrl = `${window.location.origin}/payment/result`;
+      const res = await api.post("/payments", {
         targetType: "Subscription",
         targetId: plan.id ?? plan.planName,
-        method: method,
+        method,
         totalAmount: plan.price,
         returnUrl,
       });
-
       showToast.dismiss(toastId);
-
-      if (response.data && response.data.paymentUrl) {
+      if (res.data?.paymentUrl) {
         showToast.success("Đang chuyển hướng đến cổng thanh toán...");
-        window.location.href = response.data.paymentUrl;
+        window.location.href = res.data.paymentUrl;
       } else {
         showToast.success("Đăng ký thành công!");
+        void fetchAll();
       }
     } catch (err: any) {
       showToast.dismiss(toastId);
-      console.error("Payment error:", err);
+
+      // Guest chưa đăng nhập → redirect sang /login
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        navigate("/login", { replace: true });
+        return;
+      }
+
       showToast.error(err.response?.data?.message || "Có lỗi xảy ra khi tạo thanh toán.");
     } finally {
       setProcessingMethod(null);
@@ -100,246 +424,257 @@ export default function Subscription() {
     }
   };
 
-  const getFeatures = (plan: Plan) => {
-    const tierName = plan.planName.toLowerCase();
-    const isFree = tierName.includes("free") || plan.price === 0;
-    const isPremium = tierName.includes("premium");
-
-    const features = [
-      "Thưởng thức âm nhạc & podcast không giới hạn",
-      "Giao lưu vui vẻ cùng cộng đồng trong phòng Live",
-    ];
-
-    if (isFree) {
-      features.push(`<strong>${plan.requestLimit} lượt yêu cầu bài hát</strong> mỗi ngày (Đủ cho một buổi sáng chill đúng không nè?)`);
-      features.push("Chưa hỗ trợ Podcast & AI Clone (Gói nâng cấp đang chờ bạn khám phá đó!)");
-    } else if (isPremium) {
-      features.push("Mọi đặc quyền từ gói Miễn Phí");
-      features.push(`<strong>${plan.requestLimit} lượt yêu cầu bài hát</strong> mỗi ngày (Thoải mái quẩy cả ngày luôn nhé!)`);
-      features.push(`<strong>${plan.podcastRequestLimit} lượt tạo Podcast</strong> mỗi ngày`);
-      features.push(`Tự tạo <strong>${plan.voiceModelLimit} giọng nói AI</strong> của riêng bạn`);
-      features.push(`<strong>${plan.ttsMinuteLimit} phút</strong> AI đọc văn bản (Tổng thời lượng mỗi tháng)`);
-      features.push("Theme giao diện cơ bản (Nhìn là mê, xài là phê)");
-    } else {
-      features.push("Đẳng cấp tối thượng - dành riêng cho hệ 'VIP'");
-      features.push(`<strong>${plan.requestLimit} lượt yêu cầu nhạc + Ưu tiên hàng đợi</strong> (Chốt đơn là phát ngay!)`);
-      features.push(`<strong>${plan.podcastRequestLimit} lượt tạo Podcast</strong> mỗi ngày`);
-      features.push(`Tự do sáng tạo tới <strong>${plan.voiceModelLimit} giọng AI</strong> từ bất kỳ nguồn nào`);
-      features.push(`<strong>${plan.ttsMinuteLimit} phút</strong> AI đọc văn bản (Tổng thời lượng mỗi tháng)`);
-      features.push("Cập nhật mọi Theme mới nhất & 'chanh sả' nhất");
-    }
-
-    return features;
-  };
+  // ── Render states ────────────────────────────────────────────────────────
 
   if (loading) {
-    return <div className="subscription-page"><div className="subscription-header"><h1 className="subscription-title">Đang tải...</h1></div></div>;
+    return (
+      <div className="subscription-page">
+        <div className="subscription-header">
+          <h1 className="subscription-title">Chọn Gói Dịch Vụ</h1>
+          <p className="subscription-subtitle">Đang Tải Bảng Giá...</p>
+        </div>
+        <div className="subscription-loading">
+          <div className="subscription-spinner" />
+        </div>
+      </div>
+    );
   }
 
-  if (error) {
-    return <div className="subscription-page"><div className="subscription-header"><h1 className="subscription-title">{error}</h1></div></div>;
+  if (loadError) {
+    return (
+      <div className="subscription-page">
+        <div className="subscription-header">
+          <h1 className="subscription-title">Gói Đăng Ký</h1>
+          <p className="subscription-subtitle">{loadError}</p>
+        </div>
+        <div className="subscription-error-actions">
+          <motion.button className="retry-button" onClick={() => void fetchAll()} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            Thử lại
+          </motion.button>
+        </div>
+      </div>
+    );
   }
+
+  if (!plans.length) {
+    return (
+      <div className="subscription-page">
+        <div className="subscription-header">
+          <h1 className="subscription-title">Gói Đăng Ký</h1>
+          <p className="subscription-subtitle">Hiện chưa có gói đăng ký khả dụng. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── JSX ────────────────────────────────────────────────────────────────
+
+  const currentPlanId = currentSub?.planId ?? null;
+  const daysLeft = currentSub?.endDate
+    ? Math.ceil((new Date(currentSub.endDate).getTime() - Date.now()) / 86400000)
+    : null;
 
   return (
     <div className="subscription-page">
-      {/* Page Title */}
-      <motion.div
-        className="subscription-header"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <h1 className="subscription-title">Gói đăng ký</h1>
-        <p className="subscription-subtitle">Chào mừng bạn! Hãy chọn một gói dịch vụ để bắt đầu hành trình âm nhạc tuyệt vời nhé.</p>
+
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <motion.div className="subscription-header"
+        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        <h1 className="subscription-title">Chọn gói dịch vụ</h1>
+        <p className="subscription-subtitle">Nâng cao trải nghiệm âm nhạc và sáng tạo nội dung với các gói dịch vụ linh hoạt, phù hợp với mọi nhu cầu.</p>
       </motion.div>
 
-      {/* Subscription Plans */}
+      {/* ── Current Plan Banner ──────────────────────────────────────── */}
+      {currentSub && (
+        <motion.div
+          className="current-plan-banner"
+          initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+          onClick={() => setShowHistory(true)} role="button" tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && setShowHistory(true)}
+        >
+          <div className="current-plan-banner-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+              <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+            </svg>
+          </div>
+          <div className="current-plan-banner-text">
+            <span className="current-plan-banner-caption">Gói hiện tại của bạn</span>
+            <span className="current-plan-banner-name">
+              {currentSub.planName}
+              <span className="current-plan-banner-status" style={{ color: getStatusColor(currentSub.status) }}>
+                {formatStatusLabel(currentSub.status)}
+              </span>
+            </span>
+          </div>
+          {daysLeft !== null && daysLeft > 0 && (
+            <div className="current-plan-banner-tag">{daysLeft} ngày</div>
+          )}
+          <button className="current-plan-history-btn" onClick={(e) => { e.stopPropagation(); setShowHistory(true); }} aria-label="Xem lịch sử">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+            </svg>
+          </button>
+        </motion.div>
+      )}
+
+      {/* ── Plan Cards ───────────────────────────────────────────────── */}
       <div className="subscription-plans">
-        {plans
-          .sort((a, b) => {
-            const getOrder = (plan: Plan) => {
-              const name = plan.planName.toLowerCase();
-              if (name.includes("free") || plan.price === 0) return 0;
-              if (name.includes("elite")) return 1; // Elite in the center
-              if (name.includes("premium")) return 2;
-              return 3;
-            };
-            return getOrder(a) - getOrder(b);
-          })
-          .map((plan, index) => {
-            const tierName = plan.planName.toLowerCase();
-            const isElite = tierName.includes("elite");
-            const isPremium = tierName.includes("premium");
-            const isCurrentPlan = false;
+        {plans.map((plan, index) => {
+          const tier = detectPlanTier(plan);
+          const cardClass = tier === "elite" ? "elite" : tier === "premium" ? "premium" : "free";
+          const isCurrent = plan.id === currentPlanId;
+          const isProcessing = processingMethod !== null && selectedPlan?.id === plan.id;
 
-            let cardClass = "free";
-            if (isElite) cardClass = "elite";
-            else if (isPremium) cardClass = "premium";
+          return (
+            <motion.div
+              key={plan.id ?? `${plan.planName}-${index}`}
+              className={`subscription-card ${cardClass}${isCurrent ? " current" : ""}${tier === "elite" ? " order-elite" : ""}`}
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{ y: -6, transition: { duration: 0.2 } }}
+            >
+              {/* Badges */}
+              {tier === "elite" && (
+                <div className="popular-badge">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="#fbbf24" stroke="none">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  Yêu thích nhất
+                </div>
+              )}
+              {isCurrent && (
+                <div className="current-badge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="12" height="12">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Đang dùng
+                </div>
+              )}
 
-            const getPlanDescription = (plan: Plan) => {
-              const name = plan.planName.toLowerCase();
-              if (name.includes("free") || plan.price === 0) return "Trải nghiệm cơ bản, không cần thanh toán.";
-              if (name.includes("premium")) return "Nâng cấp giới hạn và mở khóa AI giọng đọc.";
-              if (name.includes("elite")) return "Toàn quyền truy cập, ưu tiên cao nhất.";
-              return plan.description;
-            };
+              {/* Header */}
+              <div className="plan-header">
+                <h2 className="plan-name">{plan.planName}</h2>
+                <div className="plan-pricing">
+                  {plan.price > 0 && <span className="currency">đ</span>}
+                  <span className="price">{plan.price === 0 ? "Miễn Phí" : plan.price.toLocaleString("vi-VN")}</span>
+                  {plan.price > 0 && plan.durationDays > 0 && <span className="period">/{plan.durationDays} Ngày</span>}
+                </div>
+                <p className="plan-description">
+                  {plan.planName.toLowerCase().includes("free") || plan.price === 0
+                    ? "Trải nghiệm cơ bản, không cần thanh toán."
+                    : plan.planName.toLowerCase().includes("premium")
+                      ? "Nâng cấp giới hạn và mở khóa AI giọng đọc."
+                      : plan.planName.toLowerCase().includes("elite")
+                        ? "Toàn quyền truy cập, ưu tiên cao nhất."
+                        : plan.description}
+                </p>
+              </div>
 
-            return (
-              <motion.div
-                key={plan.id ?? `${plan.planName}-${index}`}
-                className={`subscription-card ${cardClass} ${isCurrentPlan ? "current" : ""
-                  }`}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.15 }}
-                whileHover={{ y: -10, transition: { duration: 0.2 } }}
+              {/* Button */}
+              <motion.button
+                className="plan-button"
+                onClick={() => openModal(plan)}
+                disabled={isCurrent || isProcessing}
+                whileHover={!isCurrent && !isProcessing ? { scale: 1.05 } : {}}
+                whileTap={!isCurrent && !isProcessing ? { scale: 0.95 } : {}}
               >
-                {isElite && (
-                  <div className="popular-badge">Elite</div>
-                )}
+                {isCurrent ? "Đang sử dụng" : plan.price === 0 ? "Đăng ký" : isProcessing ? "Đang xử lý..." : "Chọn Gói Này"}
+              </motion.button>
 
-                <div className="plan-header">
-                  <h2 className="plan-name">{plan.planName}</h2>
-                  <div className="plan-pricing">
-                    {plan.price > 0 && <span className="currency">đ</span>}
-                    <span className="price">
-                      {plan.price === 0 ? "Miễn Phí" : plan.price.toLocaleString("vi-VN")}
-                    </span>
-                    {plan.price > 0 && plan.durationDays > 0 && (
-                      <span className="period">/{plan.durationDays} Ngày</span>
-                    )}
-                  </div>
-                  <p className="plan-description">{getPlanDescription(plan)}</p>
-                </div>
+              {/* Features */}
+              <div className="plan-features">
+                <h3 className="features-title">Ưu đãi dành cho bạn:</h3>
+                <ul className="features-list">
+                  {getFeatures(plan, tier).map((f, i) => (
+                    <li key={i}>
+                      {f.bold && <strong>{f.bold}</strong>}{f.text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-                <motion.button
-                  className="plan-button"
-                  onClick={() => openPaymentMethodModal(plan)}
-                  disabled={isCurrentPlan || processingMethod !== null}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {isCurrentPlan
-                    ? "Đang sử dụng"
-                    : plan.price === 0
-                      ? "Đăng ký"
-                      : processingMethod !== null && selectedPlan?.id === plan.id
-                        ? "Đang xử lý..."
-                        : "Chọn Gói Này"}
-                </motion.button>
-
-                <div className="plan-features">
-                  <h3 className="features-title">Ưu đãi dành cho bạn:</h3>
-                  <ul className="features-list">
-                    {getFeatures(plan).map((feature, idx) => (
-                      <li
-                        key={idx}
-                        dangerouslySetInnerHTML={{ __html: feature }}
-                      />
-                    ))}
-                  </ul>
-                </div>
-
-                {plan.price > 0 && (
-                  <p className="included-features">Bao gồm tất cả các tính năng từ gói Miễn Phí</p>
-                )}
-
-                {isCurrentPlan && (
-                  <div className="current-plan-badge">Gói bạn đang đồng hành cùng chúng mình</div>
-                )}
-              </motion.div>
-            );
-          })}
+              {/* Footer */}
+              {plan.price > 0 && (
+                <p className="included-features">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="13" height="13">
+                  </svg>
+                  Bao gồm tất cả tính năng từ gói Miễn Phí
+                </p>
+              )}
+              {isCurrent && <div className="current-plan-badge">Gói bạn đang đồng hành cùng chúng mình</div>}
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Payment Method Modal */}
+      {/* ── FAQ Section ──────────────────────────────────────────────── */}
+      <motion.div className="faq-section" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
+        <div className="faq-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+            <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <h3 className="faq-title">Câu hỏi thường gặp</h3>
+        </div>
+        <div className="faq-list">
+          <FaqItem question="Tôi có thể hủy gói bất kỳ lúc nào không?" answer="Có, bạn có thể hủy gói đăng ký bất kỳ lúc nào. Gói sẽ vẫn hoạt động đến hết kỳ thanh toán hiện tại." />
+          <FaqItem question="Thanh toán có an toàn không?" answer="Hoàn toàn an toàn. Chúng tôi sử dụng các cổng thanh toán uy tín (VNPay, PayOS) và mã hóa SSL 256-bit." />
+          <FaqItem question="Tôi có thể đổi gói không?" answer="Có, bạn có thể nâng cấp hoặc hạ cấp gói bất kỳ lúc nào. Phần chênh lệch sẽ được tính theo ngày sử dụng còn lại." />
+          <FaqItem question="Gói Miễn Phí có giới hạn không?" answer="Gói Miễn Phí cho phép bạn sử dụng các tính năng cơ bản với giới hạn request nhạc mỗi ngày. Các tính năng nâng cao như Podcast AI hay Voice Clone chỉ có ở gói trả phí." />
+        </div>
+      </motion.div>
+
+      {/* ── Payment Modal ────────────────────────────────────────────── */}
       <AnimatePresence>
         {showMethodModal && selectedPlan && (
           <>
-            {/* Backdrop */}
-            <motion.div
-              className="modal-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                setShowMethodModal(false);
-                setSelectedPlan(null);
-              }}
-            />
-
-            {/* Modal */}
-            <motion.div
-              className="payment-method-modal"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            >
+            <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => { setShowMethodModal(false); setSelectedPlan(null); }} />
+            <motion.div className="payment-method-modal"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}>
               <div className="modal-header">
                 <h3>Chọn phương thức thanh toán</h3>
-                <button
-                  className="modal-close"
-                  onClick={() => {
-                    setShowMethodModal(false);
-                    setSelectedPlan(null);
-                  }}
-                >
-                  &times;
-                </button>
+                <button className="modal-close" onClick={() => { setShowMethodModal(false); setSelectedPlan(null); }}>&times;</button>
               </div>
-
               <div className="modal-body">
                 <div className="modal-plan-info">
                   <span className="modal-plan-name">{selectedPlan.planName}</span>
-                  <span className="modal-plan-price">
-                    {selectedPlan.price.toLocaleString("vi-VN")} đ
-                  </span>
+                  <span className="modal-plan-price">{selectedPlan.price.toLocaleString("vi-VN")} đ</span>
                 </div>
-
                 <div className="payment-methods">
-                  {/* VNPay */}
-                  <motion.button
-                    className="payment-method-btn"
-                    onClick={() => handleSubscribe(selectedPlan, "VNPay")}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="payment-method-icon vnpay">
-                      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
-                      </svg>
-                    </div>
+                  <motion.button className="payment-method-btn" onClick={() => handlePay(selectedPlan, "VNPay")} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <img src={vnpayLogo} alt="VNPay" className="payment-method-logo vnpay" />
                     <div className="payment-method-info">
                       <span className="payment-method-name">VNPay</span>
                       <span className="payment-method-desc">Thanh toán qua VNPay QR</span>
                     </div>
-                    <div className="payment-method-arrow">›</div>
+                    <span className="payment-method-arrow">›</span>
                   </motion.button>
-
-                  {/* PayOS */}
-                  <motion.button
-                    className="payment-method-btn"
-                    onClick={() => handleSubscribe(selectedPlan, "PayOS")}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="payment-method-icon payos">
-                      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
-                        <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12z" />
-                        <path d="M7 10h2v4H7zm4-1h2v5h-2zm4 3h2v2h-2z" />
-                      </svg>
-                    </div>
+                  <motion.button className="payment-method-btn" onClick={() => handlePay(selectedPlan, "PayOS")} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <img src={payosLogo} alt="PayOS" className="payment-method-logo payos" />
                     <div className="payment-method-info">
                       <span className="payment-method-name">PayOS</span>
-                      <span className="payment-method-desc">Thanh toán qua PayOS - Ví điện tử</span>
+                      <span className="payment-method-desc">Thanh toán qua PayOS — Ví điện tử</span>
                     </div>
-                    <div className="payment-method-arrow">›</div>
+                    <span className="payment-method-arrow">›</span>
                   </motion.button>
                 </div>
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* ── History Modal ─────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showHistory && (
+          <HistoryModal
+            current={currentSub}
+            history={subHistory}
+            transactions={transactions}
+            onClose={() => setShowHistory(false)}
+          />
         )}
       </AnimatePresence>
     </div>
