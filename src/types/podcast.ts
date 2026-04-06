@@ -7,7 +7,7 @@ export interface Script {
   title?: string;
   content: string;
   contextType?: string;
-  status: 'draft' | 'completed' | 'failed';
+  status: "draft" | "completed" | "failed";
   modelName?: string;
   temperature?: number;
   maxTokens?: number;
@@ -34,12 +34,12 @@ export interface ScriptAudio {
 
 export interface TtsVoice {
   id: string;
-  voiceType: 'BuiltIn' | 'User';
+  voiceType: "BuiltIn" | "User";
   provider: string;
   voiceCode: string;
   displayName: string;
   region?: string;
-  gender?: 'Male' | 'Female' | 'Neutral';
+  gender?: "Male" | "Female" | "Neutral";
   model?: string;
   isActive: boolean;
 }
@@ -79,19 +79,20 @@ export interface GenerateAudioRequest {
 }
 
 export interface CreateVoiceRequest {
-  voiceType: 'BuiltIn' | 'User';
+  voiceType: "BuiltIn" | "User";
   provider: string;
   voiceCode: string;
   displayName: string;
   region?: string;
-  gender?: 'Male' | 'Female' | 'Neutral';
+  gender?: "Male" | "Female" | "Neutral";
   model?: string;
   isActive: boolean;
 }
 
 // Validation helpers
 export const isValidUUID = (uuid: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 };
 
@@ -111,3 +112,30 @@ export const isValidURL = (url: string): boolean => {
     return false;
   }
 };
+
+// ─── Podcast Management Types (CRUD API) ───
+
+export interface PodcastItem {
+  id: string;
+  title: string;
+  description: string;
+  author: string;
+  type: string;
+  banner: string;
+  status: string;
+  createdBy: string;
+  createdAt: string;
+  episodeCount?: number;
+}
+
+export interface PodcastEpisode {
+  id: string;
+  podcastId: string;
+  title: string;
+  description?: string;
+  audioUrl?: string;
+  thumbnailUrl?: string;
+  episodeNumber?: number;
+  publishDate?: string;
+  createdAt?: string;
+}
