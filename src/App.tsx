@@ -69,6 +69,7 @@ import { RoleManagementScreen } from "./pages/Admin/Roles/RoleManagementScreen";
 import { SystemModerationScreen } from "./pages/Admin/Moderation/SystemModerationScreen";
 import { UserPostsManagementScreen } from "./pages/Admin/Posts/UserPostsManagementScreen";
 import { SystemConfigScreen } from "./pages/Admin/SystemConfig/SystemConfigScreen";
+import PodcastScreen from "./pages/Podcast/PodcastScreen";
 
 // ── LiveRoomPageWithKey: force remount when sessionId changes ──
 function LiveRoomPageWithKey() {
@@ -103,9 +104,15 @@ function App() {
             <Route path="users" element={<UserManagementScreen />} />
             <Route path="stations" element={<StationPage />} />
             <Route path="playlists" element={<PlaylistPage />} />
-            <Route path="playlists/:playlistId" element={<PlaylistDetailPage />} />
+            <Route
+              path="playlists/:playlistId"
+              element={<PlaylistDetailPage />}
+            />
             <Route path="sessions" element={<LiveSessionPage />} />
-            <Route path="sessions/:sessionId" element={<LiveSessionDetailPage />} />
+            <Route
+              path="sessions/:sessionId"
+              element={<LiveSessionDetailPage />}
+            />
             <Route path="podcasts" element={<PodcastPage />} />
             <Route path="podcasts/new" element={<PodcastEditor />} />
             <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
@@ -128,10 +135,16 @@ function App() {
           >
             <Route path="dashboard" element={<StaffDashboard />} />
             <Route path="sessions" element={<StaffLiveSessionsScreen />} />
-            <Route path="create-session" element={<CreateLiveSessionScreen />} />
+            <Route
+              path="create-session"
+              element={<CreateLiveSessionScreen />}
+            />
             <Route path="schedule" element={<ScheduleScreen />} />
             <Route path="music-requests" element={<MusicRequestsScreen />} />
-            <Route path="podcast-requests" element={<PodcastRequestsScreen />} />
+            <Route
+              path="podcast-requests"
+              element={<PodcastRequestsScreen />}
+            />
             <Route path="chat-moderation" element={<ChatModerationScreen />} />
             <Route path="ai-scripts" element={<ScriptModerationScreen />} />
             <Route path="script-editor" element={<LiveStreamScriptEditor />} />
@@ -156,11 +169,20 @@ function App() {
             <Route path="dashboard" element={<HostDashboard />} />
             <Route path="sessions" element={<HostSessionDashboard />} />
             <Route path="admin-sessions" element={<LiveSessionPage />} />
-            <Route path="admin-sessions/:sessionId" element={<LiveSessionDetailPage />} />
+            <Route
+              path="admin-sessions/:sessionId"
+              element={<LiveSessionDetailPage />}
+            />
             <Route path="live/:sessionId" element={<HostLiveController />} />
             <Route path="schedule" element={<HostScheduleView />} />
-            <Route path="music-requests" element={<HostMusicRequestsScreen />} />
-            <Route path="podcast-requests" element={<HostPodcastRequestsScreen />} />
+            <Route
+              path="music-requests"
+              element={<HostMusicRequestsScreen />}
+            />
+            <Route
+              path="podcast-requests"
+              element={<HostPodcastRequestsScreen />}
+            />
             <Route path="analytics" element={<HostAnalyticsScreen />} />
             <Route path="settings" element={<HostSettingsPage />} />
           </Route>
@@ -169,20 +191,30 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
             {/* Redirect /livestream → /live */}
-            <Route path="/livestream" element={<Navigate to="/live" replace />} />
+            <Route
+              path="/livestream"
+              element={<Navigate to="/live" replace />}
+            />
             <Route path="/live" element={<LiveSessionsPage />} />
-            <Route path="/live/:sessionId" element={
-              <ErrorBoundary>
-                <LiveRoomPageWithKey />
-              </ErrorBoundary>
-            } />
+            <Route
+              path="/live/:sessionId"
+              element={
+                <ErrorBoundary>
+                  <LiveRoomPageWithKey />
+                </ErrorBoundary>
+              }
+            />
             <Route path="/subscription" element={<Subscription />} />
+            <Route path="/podcast" element={<PodcastScreen />} />
             <Route path="/forum" element={<ForumPage />} />
             <Route path="/schedule-public" element={<SchedulePublicPage />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/payment/result" element={<PaymentResult />} />
-            <Route path="/profile/transactions" element={<TransactionHistory />} />
+            <Route
+              path="/profile/transactions"
+              element={<TransactionHistory />}
+            />
             <Route
               path="/podcast-creator"
               element={

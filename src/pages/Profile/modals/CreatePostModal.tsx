@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, Plus, Smile, Globe, Users, Lock } from "lucide-react";
-
-const MOOD_TAGS = [
-  "Vui vẻ",
-  "Buồn",
-  "Chill",
-  "Năng động",
-  "Lãng mạn",
-  "Tập trung",
-] as const;
+import { MOOD_OPTIONS } from "../../../types/forum";
 
 const PRIVACY_OPTIONS = [
   { value: "public", label: "Công khai", icon: Globe },
@@ -162,15 +154,17 @@ export default function CreatePostModal({
             <Smile size={13} /> Tâm trạng:
           </span>
           <div className="cp-mood-chips">
-            {MOOD_TAGS.map((m) => (
-              <button
-                key={m}
-                className={`cp-mood-chip ${moodTag === m ? "active" : ""}`}
-                onClick={() => setMoodTag(moodTag === m ? "" : m)}
-              >
-                {m}
-              </button>
-            ))}
+            {MOOD_OPTIONS.filter((m) => m.value !== "all").map(
+              ({ value, label }) => (
+                <button
+                  key={value}
+                  className={`cp-mood-chip ${moodTag === value ? "active" : ""}`}
+                  onClick={() => setMoodTag(moodTag === value ? "" : value)}
+                >
+                  {label}
+                </button>
+              ),
+            )}
           </div>
         </div>
 

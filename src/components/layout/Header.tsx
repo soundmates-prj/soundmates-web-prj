@@ -40,7 +40,8 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>(location.pathname);
-  const isLiveRoute = location.pathname === "/live" || location.pathname === "/livestream";
+  const isLiveRoute =
+    location.pathname === "/live" || location.pathname === "/livestream";
   const dropdownRef = useRef<HTMLDivElement>(null);
   const liveDropdownRef = useRef<HTMLDivElement>(null);
   const player = usePlayer();
@@ -62,7 +63,8 @@ const Header: React.FC = () => {
                 lastName: profileData.lastName,
                 username: profileData.username,
                 email: profileData.email,
-                avatarUrl: validateImageUrl(profileData.profileImageUrl) || null,
+                avatarUrl:
+                  validateImageUrl(profileData.profileImageUrl) || null,
               });
             })
             .catch(() => {
@@ -215,16 +217,13 @@ const Header: React.FC = () => {
               )}
             </div>
 
-            <a
-              className={`nav-item${activeTab === "podcast" ? " active" : ""}`}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveTab("podcast");
-              }}
+            <Link
+              className={`nav-item${activeTab === "/podcast" ? " active" : ""}`}
+              to="/podcast"
+              onClick={() => setActiveTab("/podcast")}
             >
               Podcast
-            </a>
+            </Link>
             <Link
               className={`nav-item${activeTab === "/forum" ? " active" : ""}`}
               to="/forum"

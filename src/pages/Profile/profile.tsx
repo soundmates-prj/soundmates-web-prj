@@ -24,6 +24,7 @@ import favoriteService from "../../services/favoriteService";
 import type { FavoriteItem } from "../../services/favoriteService";
 import BlogPostCard from "../../components/blog/BlogPostCard";
 import ShareMusicModal from "../../components/blog/ShareMusicModal";
+import UserPlaylistTab from "./UserPlaylistTab";
 
 type Tab = "overview" | "songs" | "playlists" | "podcasts" | "community";
 
@@ -495,12 +496,17 @@ export default function Profile() {
           </div>
         )}
 
-        {tab !== "overview" && tab !== "community" && tab !== "songs" && (
-          <div className="pf-empty">
-            <Music2 size={28} />
-            <p>Chưa có nội dung nào</p>
-          </div>
-        )}
+        {tab === "playlists" && <UserPlaylistTab />}
+
+        {tab !== "overview" &&
+          tab !== "community" &&
+          tab !== "songs" &&
+          tab !== "playlists" && (
+            <div className="pf-empty">
+              <Music2 size={28} />
+              <p>Chưa có nội dung nào</p>
+            </div>
+          )}
       </div>
 
       {/* CREATE POST MODAL */}
