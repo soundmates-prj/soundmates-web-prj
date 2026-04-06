@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { Crown, Calendar, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CreditCard, Package, Check, Crown, AlertCircle, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../../../services/axios";
+import { showSuccess, showError } from "../../../components/common/toastUtils";
 import "./SubscriptionSettings.css";
 
 interface Subscription {
@@ -37,7 +39,7 @@ export default function SubscriptionSettings() {
         if (res.data.success && res.data.data) {
           const sub = res.data.data;
           setSubscription(sub);
-          
+
           // Fetch plan details
           if (sub.planId) {
             const planRes = await api.get(`/subscription-plans/${sub.planId}`);
@@ -47,9 +49,10 @@ export default function SubscriptionSettings() {
           }
         }
       } catch (error: any) {
-        // Handle 404 gracefully - API not implemented yet
+        // Handle 404 gracefully - API not implemented yet or user has no sub
         if (error?.response?.status === 404) {
-          console.log("Subscription API not implemented yet");
+          console.log("Subscription not found or API not implemented yet");
+          setSubscription(null);
         } else {
           console.error("Failed to fetch subscription", error);
         }

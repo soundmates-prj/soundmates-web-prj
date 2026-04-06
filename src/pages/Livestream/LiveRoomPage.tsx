@@ -645,8 +645,8 @@ export function LiveRoomPage() {
   const progress = duration > 0 ? Math.min((elapsed / duration) * 100, 100) : 0;
 
   return (
-    <div className="lr-page">
-      {/* Top Bar */}
+    <div className="lr-page user-theme-wrapper">
+      {/* Topbar */}
       <div className="lr-topbar">
         <div className="lr-topbar-left">
           <button className="lr-back-btn" onClick={() => handleNavigate("/live")}>

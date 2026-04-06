@@ -30,7 +30,7 @@ interface UserInfo {
 }
 
 const Header: React.FC = () => {
-  const { theme } = useTheme();
+  const { mode } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -150,8 +150,12 @@ const Header: React.FC = () => {
         <div className="header-container">
           <div className="header-left" onClick={() => navigate("/")}>
             <img
-              src={theme === "dark" ? logoDark : logoLight}
-              alt="SoundMates"
+              src={mode === "dark" ? logoDark : logoLight}
+              alt="SoundMates Logo"
+              onError={(e) => {
+                // Fallback to light logo if dark logo fails to load or vice versa
+                e.currentTarget.src = logoLight;
+              }}
             />
             <span className="header-brand">SoundMates</span>
           </div>

@@ -334,6 +334,9 @@ const CropModal: React.FC<CropModalProps> = ({
 /* ─────────────────────────────────────────────
    ProfileSection
 ───────────────────────────────────────────── */
+const defaultAv = "https://ui-avatars.com/api/?name=User&background=55C5F1&color=fff";
+const defaultCover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=1000";
+
 const ProfileSection: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [form, setForm] = useState<Partial<User>>({});
@@ -681,7 +684,7 @@ const ProfileSection: React.FC = () => {
             style={{
               backgroundImage: backgroundPreview
                 ? `url(${backgroundPreview})`
-                : undefined,
+                : `url(${defaultCover})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -712,7 +715,7 @@ const ProfileSection: React.FC = () => {
             <div className="avatar-wrapper">
               <img
                 src={
-                  avatarPreview || "https://via.placeholder.com/150?text=Avatar"
+                  avatarPreview || defaultAv
                 }
                 className="avatar"
                 alt="Profile avatar"

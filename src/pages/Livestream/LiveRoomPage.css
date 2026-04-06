@@ -6,8 +6,12 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    color: var(--lr-text);
-    background: var(--lr-bg);
+    color: var(--user-theme-text, var(--lr-text));
+    background-color: var(--user-theme-bg, var(--lr-bg));
+    background-image: var(--user-theme-bg-image, none);
+    background-repeat: repeat;
+    background-size: 350px;
+    background-attachment: fixed;
 }
 
 /* Top bar */

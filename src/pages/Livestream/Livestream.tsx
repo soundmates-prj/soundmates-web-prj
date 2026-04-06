@@ -196,7 +196,7 @@ const LivestreamPage: React.FC = () => {
   const [showPodcastModal, setShowPodcastModal] = useState(false);
   const [requestSearch, setRequestSearch] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const { mode, setMode } = useTheme();
   const [activeSession, setActiveSession] = useState<LiveSessionResult | null>(null);
   // SignalR real-time
   const [hubConnected, setHubConnected] = useState(false);
@@ -211,13 +211,13 @@ const LivestreamPage: React.FC = () => {
   useEffect(() => {
     const stored = window.localStorage.getItem("livestreamTheme");
     if (stored === "light" || stored === "dark") {
-      setTheme(stored);
+      setMode(stored);
     }
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("livestreamTheme", theme);
-  }, [theme]);
+    window.localStorage.setItem("livestreamTheme", mode);
+  }, [mode]);
 
   useEffect(() => {
     if (hasLoadedLiveSessionRef.current) {
@@ -474,10 +474,10 @@ const LivestreamPage: React.FC = () => {
     return (
       <div className="now-playing-progress">
         <div className="progress-bar-track">
-          <motion.div 
-            className="progress-bar-fill" 
+          <motion.div
+            className="progress-bar-fill"
             initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }} 
+            animate={{ width: `${pct}%` }}
             transition={{ duration: 1, ease: "linear" }}
           />
         </div>
@@ -491,7 +491,7 @@ const LivestreamPage: React.FC = () => {
 
   if (loading) {
     return (
-      <motion.div 
+      <motion.div
         className="livestream-page"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -543,7 +543,7 @@ const LivestreamPage: React.FC = () => {
         {/* ===== LEFT: Main Content ===== */}
         <div className="livestream-main">
           {/* Now Playing Hero */}
-          <motion.div 
+          <motion.div
             className="now-playing-hero"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -617,7 +617,7 @@ const LivestreamPage: React.FC = () => {
           </motion.div>
 
           {/* Live Action Bar */}
-          <motion.div 
+          <motion.div
             className="livestream-action-bar"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -708,7 +708,7 @@ const LivestreamPage: React.FC = () => {
 
               <AnimatePresence>
                 {showEmotionPicker && (
-                  <motion.div 
+                  <motion.div
                     className="emotion-popup"
                     initial={{ opacity: 0, y: 10, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -738,15 +738,15 @@ const LivestreamPage: React.FC = () => {
           </motion.div>
 
           {/* Podcast Cards */}
-          <motion.div 
+          <motion.div
             className="podcast-section"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {DEMO_PODCASTS.map((pc, index) => (
-              <motion.div 
-                className="podcast-card" 
+              <motion.div
+                className="podcast-card"
                 key={pc.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -784,7 +784,7 @@ const LivestreamPage: React.FC = () => {
         </div>
 
         {/* ===== RIGHT: Sidebar ===== */}
-        <motion.div 
+        <motion.div
           className="livestream-sidebar"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -813,7 +813,7 @@ const LivestreamPage: React.FC = () => {
 
           <AnimatePresence mode="wait">
             {sidebarTab === "chat" && (
-              <motion.div 
+              <motion.div
                 className="chat-panel"
                 key="chat"
                 initial={{ opacity: 0, x: 20 }}
@@ -879,7 +879,7 @@ const LivestreamPage: React.FC = () => {
                 >
                   <AnimatePresence>
                     {showEmojiPicker && (
-                      <motion.div 
+                      <motion.div
                         className="emoji-picker-popup"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -926,7 +926,7 @@ const LivestreamPage: React.FC = () => {
 
             {/* Playlist Tab */}
             {sidebarTab === "playlist" && (
-              <motion.div 
+              <motion.div
                 className="playlist-panel"
                 key="playlist"
                 initial={{ opacity: 0, x: 20 }}
@@ -936,7 +936,7 @@ const LivestreamPage: React.FC = () => {
               >
                 {/* Currently Playing */}
                 <div className="playlist-now-label">Đang phát</div>
-                <motion.div 
+                <motion.div
                   className="playlist-item active"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -971,7 +971,7 @@ const LivestreamPage: React.FC = () => {
                 {playingNext && (
                   <>
                     <div className="playlist-next-label">Tiếp theo</div>
-                    <motion.div 
+                    <motion.div
                       className="playlist-item"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -1003,8 +1003,8 @@ const LivestreamPage: React.FC = () => {
                   <>
                     <div className="playlist-history-label">Đã phát</div>
                     {songHistory.map((track: TrackInfo, index: number) => (
-                      <motion.div 
-                        key={track.shId} 
+                      <motion.div
+                        key={track.shId}
                         className="playlist-item history"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1031,7 +1031,7 @@ const LivestreamPage: React.FC = () => {
 
             {/* Podcast Tab */}
             {sidebarTab === "podcast" && (
-              <motion.div 
+              <motion.div
                 className="podcast-tab-panel"
                 key="podcast"
                 initial={{ opacity: 0, x: 20 }}
@@ -1040,8 +1040,8 @@ const LivestreamPage: React.FC = () => {
                 transition={{ duration: 0.2 }}
               >
                 {DEMO_PODCASTS.map((pc, index) => (
-                  <motion.div 
-                    key={pc.id} 
+                  <motion.div
+                    key={pc.id}
                     className="podcast-tab-item"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1129,11 +1129,11 @@ const LivestreamPage: React.FC = () => {
               key={r.id}
               className="floating-emoji"
               initial={{ opacity: 0, y: 0, x: r.x, scale: 0.5 }}
-              animate={{ 
-                opacity: [0, 1, 1, 0], 
-                y: -300 - Math.random() * 100, 
+              animate={{
+                opacity: [0, 1, 1, 0],
+                y: -300 - Math.random() * 100,
                 x: r.x + (Math.random() * 100 - 50),
-                scale: [0.5, 1.5, 1.2, 1] 
+                scale: [0.5, 1.5, 1.2, 1]
               }}
               exit={{ opacity: 0 }}
               transition={{ duration: 2.2, ease: "easeOut" }}
@@ -1267,15 +1267,15 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
   };
 
   return (
-    <motion.div 
-      className="modal-overlay" 
+    <motion.div
+      className="modal-overlay"
       onClick={onClose}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <motion.div 
-        className="request-modal" 
+      <motion.div
+        className="request-modal"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1336,8 +1336,8 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
                   {requestedIds.has(song.mediaFileId)
                     ? "✓ Đã gửi"
                     : !song.mediaFileId
-                    ? "Chưa sync"
-                    : "Request"}
+                      ? "Chưa sync"
+                      : "Request"}
                 </button>
               </div>
             ))
@@ -1360,15 +1360,15 @@ const PodcastSubmitModal: React.FC<PodcastSubmitModalProps> = ({ onClose }) => {
   const [voiceType, setVoiceType] = useState("ai");
 
   return (
-    <motion.div 
-      className="modal-overlay" 
+    <motion.div
+      className="modal-overlay"
       onClick={onClose}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <motion.div 
-        className="podcast-modal" 
+      <motion.div
+        className="podcast-modal"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

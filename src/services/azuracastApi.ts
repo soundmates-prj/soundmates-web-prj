@@ -4,7 +4,7 @@ import axios from "axios";
 // Base AzuraCast API configuration — read from env vars
 const AZURACAST_BASE_URL =
   import.meta.env.VITE_AZURACAST_API_URL ?? "http://localhost:8081/api";
-const AZURACAST_TOKEN = import.meta.env.VITE_AZURACAST_API_TOKEN ?? "";
+const AZURACAST_TOKEN = import.meta.env.VITE_AZURACAST_API_TOKEN ?? "fa5093c6c01985e1:187b5dd46ba5434cccea3c397625e9f3";
 
 if (!AZURACAST_TOKEN) {
   console.warn(
