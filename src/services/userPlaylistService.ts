@@ -25,6 +25,7 @@ export interface MusicCatalogItem {
   duration?: number;
   sourceType?: string;
   uploadedAt?: string;
+  lyrics?: string | null;
 }
 
 export interface PlaylistTrack {

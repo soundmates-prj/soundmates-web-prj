@@ -7,8 +7,9 @@
 .pf {
   background-color: var(--user-theme-bg, #f4f6f9);
   background-image: var(--user-theme-bg-image, none);
-  background-repeat: repeat;
-  background-size: var(--user-theme-bg-size, 350px);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center center;
   background-attachment: fixed;
   min-height: 100vh;
   padding-bottom: 80px;
@@ -29,6 +30,7 @@
   aspect-ratio: 16 / 5;
   max-height: 400px;
   overflow: hidden;
+  position: relative;
 }
 
 .pf-cover img {
@@ -39,11 +41,21 @@
   display: block;
 }
 
+.pf-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+}
+
 /* ================================================================
    PROFILE BAR
 ================================================================ */
 .pf-bar {
-  background: var(--user-theme-bg, #fff);
+  background-color: var(--user-theme-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
 }
@@ -61,17 +73,19 @@
 .pf-left {
   display: flex;
   align-items: flex-end;
-  gap: 20px;
-  margin-top: -44px;
+  gap: 24px;
+  margin-top: -56px;
+  position: relative;
 }
 
 .pf-av {
-  width: 96px !important;
-  height: 96px !important;
-  border: 4px solid var(--user-theme-bg, #fff) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, .14) !important;
+  width: 120px !important;
+  height: 120px !important;
+  border: 5px solid var(--user-theme-bg, #fff) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2) !important;
   flex-shrink: 0;
   border-radius: var(--user-theme-radius, 50%);
+  z-index: 2;
 }
 
 .pf-info {
@@ -86,11 +100,11 @@
 }
 
 .pf-name {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 800;
   color: var(--user-theme-text, #111827);
   margin: 0;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.5px;
 }
 
 .pf-check {
@@ -153,7 +167,9 @@
    TABS
 ================================================================ */
 .pf-tabs-row {
-  background: var(--user-theme-bg, #fff);
+  background-color: var(--user-theme-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   margin-bottom: 28px;
 }
@@ -228,25 +244,13 @@
    CARD
 ================================================================ */
 .pf-card {
-  background: var(--user-theme-bg, #fff);
+  background-color: var(--user-theme-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: var(--user-theme-radius, 14px);
   padding: 20px 22px;
   box-shadow: var(--user-theme-shadow, none);
-}
-
-/* Kế thừa màu nền theme nhưng với độ trong suốt để nhìn thấy background image */
-[data-theme='light'] .pf-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-[data-theme='dark'] .pf-card {
-  background: rgba(20, 20, 20, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .pf-card-top {

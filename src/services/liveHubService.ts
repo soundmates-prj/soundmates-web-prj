@@ -28,6 +28,37 @@ export interface LiveSessionEvent {
   listenersCount: number;
 }
 
+export interface NowPlayingUpdatedEvent {
+  currentTrack: {
+    shId: number;
+    title: string | null;
+    artist: string | null;
+    album: string | null;
+    artUrl: string | null;
+    duration: number;
+    elapsed: number;
+    remaining: number;
+    playedAt: number;
+    isRequest: boolean;
+    lyrics?: string | null;
+  };
+  playingNext: {
+    shId: number;
+    title: string | null;
+    artist: string | null;
+    album: string | null;
+    artUrl: string | null;
+    duration: number;
+    elapsed: number;
+    remaining: number;
+    playedAt: number;
+    isRequest: boolean;
+    lyrics?: string | null;
+  } | null;
+  listenUrl: string | null;
+  totalListeners: number;
+}
+
 export interface SongChangedEvent {
   sessionId: string;
   trackTitle: string;
@@ -39,6 +70,7 @@ export interface SongChangedEvent {
   listenUrl: string | null;
   isRequest: boolean;
   playedAt: string;
+  lyrics?: string | null;
 }
 
 export interface SongRequestCreatedEvent {
@@ -65,7 +97,7 @@ class LiveHubService {
           transport: signalR.HttpTransportType.WebSockets,
         })
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
-        .configureLogging(signalR.LogLevel.Warning)
+        .configureLogging(signalR.LogLevel.Debug)
         .build();
 
       this.connection.onreconnecting(() => {
@@ -104,7 +136,16 @@ class LiveHubService {
   async joinSession(sessionId: string, userId?: string | null): Promise<void> {
     const conn = this.getConnection();
     if (conn.state === signalR.HubConnectionState.Connected) {
-      await conn.invoke("JoinSession", sessionId, userId ?? null);
+      try {
+        await conn.invoke("JoinSession", sessionId, userId ?? null);
+      } catch (err: any) {
+        // Log full error details for debugging
+        console.error("[LiveHub] JoinSession full error:", err);
+        console.error("[LiveHub]  message:", err?.message);
+        console.error("[LiveHub]  error:", err?.error);
+        console.error("[LiveHub]  stack:", err?.stack);
+        throw err;
+      }
     }
   }
 
@@ -173,6 +214,14 @@ class LiveHubService {
     return () => conn.off("SongChanged", callback);
   }
 
+  // Listens for NowPlayingUpdated events broadcast from NowPlayingBroadcastService
+  // via LiveSessionHub. Carries full now-playing data including remaining/elapsed.
+  onNowPlayingUpdated(callback: (data: NowPlayingUpdatedEvent) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("NowPlayingUpdated", callback);
+    return () => conn.off("NowPlayingUpdated", callback);
+  }
+
   onSongRequestCreated(callback: (req: SongRequestCreatedEvent) => void): () => void {
     const conn = this.getConnection();
     conn.on("SongRequestCreated", callback);
@@ -189,6 +238,7 @@ class LiveHubService {
     conn.off("ListenersUpdated");
     conn.off("SongChanged");
     conn.off("SongRequestCreated");
+    conn.off("NowPlayingUpdated");
   }
 }
 

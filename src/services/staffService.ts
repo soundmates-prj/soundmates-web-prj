@@ -81,22 +81,27 @@ export const musicCatalogService = {
 
   // Upload music
   uploadMusic: async (
-    stationId: string,
+    stationId: string | undefined,
     file: File,
-    metadata?: { title?: string; artist?: string; album?: string }
+    metadata?: { title?: string; artist?: string; album?: string; lyrics?: string }
   ): Promise<Music> => {
     const formData = new FormData();
-    formData.append('stationId', stationId);
-    formData.append('file', file);
+    formData.append('File', file);
     
-    if (metadata?.title) formData.append('title', metadata.title);
-    if (metadata?.artist) formData.append('artist', metadata.artist);
-    if (metadata?.album) formData.append('album', metadata.album);
+    if (metadata?.title) formData.append('Title', metadata.title);
+    if (metadata?.artist) formData.append('Artist', metadata.artist);
+    if (metadata?.album) formData.append('Album', metadata.album);
+    if (metadata?.lyrics) formData.append('Lyrics', metadata.lyrics);
 
-    const response = await api.post('/musiccatalog/upload', formData, {
+    const endpoint = stationId 
+      ? `/musiccatalog/station/${stationId}/upload`
+      : `/musiccatalog/system/upload`;
+
+    const response = await api.post(endpoint, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 300000,
     });
     return response.data.data;
   },

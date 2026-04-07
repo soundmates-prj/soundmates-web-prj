@@ -28,6 +28,7 @@ import {
 import { liveSessionApiService } from "../../services/liveSessionApiService";
 import { liveHubService } from "../../services/liveHubService";
 import { usePlayer } from "../../context/PlayerContext";
+import { useTheme } from "../../context/ThemeContext";
 import html2canvas from "html2canvas";
 
 import {
@@ -246,7 +247,7 @@ const LivestreamPage: React.FC = () => {
         // Fetch real now-playing from AzuraCast via backend for album art / track info
         let trackData: NowPlayingData | null = null;
         try {
-          const azuraData: any = await liveSessionApiService.getStationNowPlaying(session.stationId);
+          const azuraData: any = await liveSessionApiService.getStationNowPlaying(session.stationId || "");
           if (azuraData) {
             trackData = {
               externalStationId: azuraData.externalStationId ?? azuraData.station?.id ?? 0,
@@ -300,12 +301,9 @@ const LivestreamPage: React.FC = () => {
                 album: azuraData.nextSong.album ?? '',
                 genre: azuraData.nextSong.genre ?? '',
                 artUrl: proxyArtUrl(azuraData.nextSong.artUrl ?? ''),
-                lyrics: null, playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
-              } : {
-                shId: 0, text: '', title: 'Không có bài tiếp theo', artist: '',
-                album: '', genre: '', artUrl: proxyArtUrl(''),
-                lyrics: null, playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
-              },
+                lyrics: azuraData.nextSong.lyrics ?? null,
+                playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
+              } : null,
               songHistory: (azuraData.songHistory || []).map((t: any) => ({
                 shId: t.shId ?? t.id ?? 0,
                 text: t.text ?? t.title ?? '',
@@ -330,21 +328,24 @@ const LivestreamPage: React.FC = () => {
         // Use AzuraCast data if available, otherwise fallback to session
         const data = trackData || livestreamService.toNowPlaying(session);
         setNowPlaying(data);
-        setElapsed(data.currentTrack.elapsed);
+        setElapsed(data.currentTrack?.elapsed || 0);
 
         // Push track info to global player context
-        player.setTrack({
-          title: data.currentTrack.title,
-          artist: data.currentTrack.artist,
-          album: data.currentTrack.album,
-          artUrl: data.currentTrack.artUrl.replace(
-            "host.docker.internal",
-            "localhost",
-          ),
-          duration: data.currentTrack.duration,
-          elapsed: data.currentTrack.elapsed,
-          listenUrl: livestreamService.getListenUrl(session.streamUrl || data.listenUrl),
-        });
+        if (data.currentTrack) {
+          player.setTrack({
+            title: data.currentTrack.title,
+            artist: data.currentTrack.artist,
+            album: data.currentTrack.album,
+            artUrl: data.currentTrack.artUrl.replace(
+              "host.docker.internal",
+              "localhost",
+            ),
+            duration: data.currentTrack.duration,
+            elapsed: data.currentTrack.elapsed,
+            listenUrl: livestreamService.getListenUrl(session.streamUrl || data.listenUrl),
+            lyrics: data.currentTrack.lyrics ?? null,
+          });
+        }
 
         // Start SignalR real-time
         if (session.id) {
@@ -370,10 +371,10 @@ const LivestreamPage: React.FC = () => {
 
   // Elapsed timer
   useEffect(() => {
-    if (!nowPlaying) return;
+    if (!nowPlaying?.currentTrack) return;
     const timer = setInterval(() => {
       setElapsed((prev) => {
-        if (prev >= nowPlaying.currentTrack.duration) return prev;
+        if (prev >= (nowPlaying.currentTrack?.duration || 0)) return prev;
         return prev + 1;
       });
     }, 1000);
@@ -537,8 +538,10 @@ const LivestreamPage: React.FC = () => {
 
   const stationName = activeSession?.stationName || nowPlaying.stationName;
 
+  if (!currentTrack) return null;
+
   return (
-    <div className={`livestream-page livestream-theme-${theme}`}>
+    <div className={`livestream-page livestream-theme-${mode}`}>
       <div className="livestream-container">
         {/* ===== LEFT: Main Content ===== */}
         <div className="livestream-main">
@@ -641,12 +644,12 @@ const LivestreamPage: React.FC = () => {
               </button>
               <button
                 className="action-bar-icon-btn"
-                title={theme === "dark" ? "Giao diện sáng" : "Giao diện tối"}
+                title={mode === "dark" ? "Giao diện sáng" : "Giao diện tối"}
                 onClick={() =>
-                  setTheme((t) => (t === "dark" ? "light" : "dark"))
+                  setMode(mode === "dark" ? "light" : "dark")
                 }
               >
-                {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+                {mode === "dark" ? <Sun size={17} /> : <Moon size={17} />}
               </button>
               <button
                 className="action-bar-icon-btn"
@@ -1087,7 +1090,7 @@ const LivestreamPage: React.FC = () => {
             setRequestSearch={setRequestSearch}
             songHistory={songHistory}
             liveSessionId={activeSession?.id}
-            stationId={activeSession?.stationId}
+            stationId={activeSession?.stationId || undefined}
             onRequest={(song) => {
               const newMsg: ChatMessage = {
                 id: Date.now().toString(),
@@ -1115,7 +1118,7 @@ const LivestreamPage: React.FC = () => {
         {showShareModal && (
           <ShareNowPlayingModal
             track={currentTrack}
-            stationName={stationName}
+            stationName={stationName || ""}
             onClose={() => setShowShareModal(false)}
           />
         )}

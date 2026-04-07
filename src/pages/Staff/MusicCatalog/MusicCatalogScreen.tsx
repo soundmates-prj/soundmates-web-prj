@@ -22,6 +22,8 @@ export function MusicCatalogScreen() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<"station" | "system">("system");
+  const [lyrics, setLyrics] = useState("");
 
   useEffect(() => {
     loadStations();
@@ -51,7 +53,7 @@ export function MusicCatalogScreen() {
   const loadMusic = async (stationId: string) => {
     setLoadingMusic(true);
     try {
-      const res = await musicCatalogService.getStationMusic(stationId);
+      const res = await liveSessionApiService.getStationMusic(stationId);
       setMusicList(res);
     } catch (err) {
       showError("Lỗi", "Không thể tải danh sách nhạc");
@@ -78,15 +80,32 @@ export function MusicCatalogScreen() {
     if (!selectedStationId || !uploadFile) return;
     setUploading(true);
     try {
-      await musicCatalogService.uploadMusic(selectedStationId, uploadFile);
-      showSuccess("Thành công", "Đã upload nhạc lên hệ thống");
+      const targetStationId = uploadTarget === "station" ? selectedStationId : undefined;
+      await musicCatalogService.uploadMusic(targetStationId, uploadFile, { lyrics });
+      showSuccess("Thành công", `Đã upload nhạc lên ${uploadTarget === "station" ? "Station" : "System Media"}`);
       setShowUploadModal(false);
       setUploadFile(null);
+      setLyrics("");
       await loadMusic(selectedStationId);
     } catch (err) {
       showError("Lỗi", "Upload nhạc thất bại");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDeleteMusic = async (musicId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xoá bài hát này không? Hành động này không thể hoàn tác.")) {
+      return;
+    }
+
+    try {
+      await liveSessionApiService.deleteMusic(musicId);
+      showSuccess("Thành công", "Đã xoá bài hát");
+      // Tải lại danh sách nhạc sau khi xoá
+      await loadMusic(selectedStationId);
+    } catch (err) {
+      showError("Lỗi", "Xoá bài hát thất bại");
     }
   };
 
@@ -190,6 +209,7 @@ export function MusicCatalogScreen() {
                   <th>Thời lượng</th>
                   <th>Loại file</th>
                   <th>Ngày thêm</th>
+                  <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -212,6 +232,15 @@ export function MusicCatalogScreen() {
                       {m.fileType}
                     </td>
                     <td>{new Date(m.uploadedAt).toLocaleDateString("vi-VN")}</td>
+                    <td>
+                      <button
+                        className="mc-btn-icon"
+                        title="Xóa bài hát"
+                        onClick={() => handleDeleteMusic(m.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -230,12 +259,41 @@ export function MusicCatalogScreen() {
               </button>
             </div>
             <div className="staff-modal-body">
-              <div style={{ marginBottom: 16, fontSize: 14, color: "#64748b" }}>
-                Nhạc tải lên sẽ được lưu trữ vào <strong>System Media</strong>. Bạn có thể thêm nhạc này vào Playlist sau.
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Lưu trữ vào:</label>
+                <div style={{ display: "flex", gap: 16 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                    <input
+                      type="radio"
+                      name="uploadTarget"
+                      value="system"
+                      checked={uploadTarget === "system"}
+                      onChange={() => setUploadTarget("system")}
+                    />
+                    System Media (SoundMates)
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                    <input
+                      type="radio"
+                      name="uploadTarget"
+                      value="station"
+                      checked={uploadTarget === "station"}
+                      onChange={() => setUploadTarget("station")}
+                    />
+                    Station Media (AzuraCast)
+                  </label>
+                </div>
+                <div style={{ marginTop: 8, fontSize: 13, color: "#64748b" }}>
+                  {uploadTarget === "system"
+                    ? "Nhạc sẽ được lưu trên Cloudinary và có thể import vào các station sau này."
+                    : "Nhạc sẽ được tải trực tiếp lên AzuraCast station hiện tại."}
+                </div>
               </div>
+
               <div
                 className="file-drop-area"
                 onClick={() => document.getElementById("file-upload")?.click()}
+                style={{ marginBottom: 16 }}
               >
                 <Upload size={32} color="#94a3b8" style={{ marginBottom: 12 }} />
                 {uploadFile ? (
@@ -253,6 +311,18 @@ export function MusicCatalogScreen() {
                       setUploadFile(e.target.files[0]);
                     }
                   }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Lyrics (LRC Format)</label>
+                <textarea
+                  className="staff-input staff-textarea"
+                  value={lyrics}
+                  onChange={(e) => setLyrics(e.target.value)}
+                  placeholder="[00:12.00] Line 1&#10;[00:15.30] Line 2..."
+                  rows={4}
+                  style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid #cbd5e1" }}
                 />
               </div>
             </div>

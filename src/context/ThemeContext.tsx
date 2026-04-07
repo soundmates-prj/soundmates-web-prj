@@ -95,6 +95,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (theme.configJson.backgroundSize) {
         root.style.setProperty('--user-theme-bg-size', theme.configJson.backgroundSize);
       }
+
+      // If the theme wants cover, it probably shouldn't repeat
+      if (theme.configJson.backgroundSize === 'cover') {
+        root.style.setProperty('--user-theme-bg-repeat', 'no-repeat');
+      } else {
+        root.style.setProperty('--user-theme-bg-repeat', 'repeat');
+      }
     }
 
     setModeState(theme.mode); // Sync mode
@@ -116,6 +123,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     root.style.removeProperty('--user-theme-shadow');
     root.style.removeProperty('--user-theme-bg-image');
     root.style.removeProperty('--user-theme-bg-size');
+    root.style.removeProperty('--user-theme-bg-repeat');
 
     // We also clear the global ones we used before to restore UI
     root.style.removeProperty('--sm-primary');

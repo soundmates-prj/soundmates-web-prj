@@ -105,7 +105,7 @@ const VerifyOtp: React.FC = () => {
     <div className="verify-container">
       {/* LEFT */}
       <div className="verify-left">
-        <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
+        <img src={mode === "dark" ? logoDark : logoLight} alt="SoundMates" />
         <h1>SoundMates</h1>
         <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
       </div>

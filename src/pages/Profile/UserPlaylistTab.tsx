@@ -107,6 +107,7 @@ export default function UserPlaylistTab() {
       duration: t.duration ?? 0,
       elapsed: 0,
       listenUrl: fullUrl,
+      lyrics: catalogItem?.lyrics ?? null,
     });
     audio
       .play()

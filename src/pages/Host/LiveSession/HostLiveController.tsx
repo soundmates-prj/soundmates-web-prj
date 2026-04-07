@@ -13,13 +13,22 @@ import {
   CheckCircle,
   Clock,
   Disc3,
+  Plus,
+  X,
 } from 'lucide-react';
 import { showToast } from '../../../utils/toast';
 import { useLiveSession } from "../../../context/LiveSessionContext";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
-import type { LiveSessionResult, SongRequestResult } from "../../../services/liveSessionApiService";
+import type { LiveSessionResult, SongRequestResult, StationNowPlayingResult, ListenerStatsResult, StationResult } from "../../../services/liveSessionApiService";
 import liveHubService from "../../../services/liveHubService";
 import './HostLiveController.css';
+
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds < 0) return '0:00';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
 export function HostLiveController() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -32,8 +41,15 @@ export function HostLiveController() {
   const [chatInput, setChatInput] = useState('');
   const [requests, setRequests] = useState<SongRequestResult[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  const [nowPlaying, setNowPlaying] = useState<StationNowPlayingResult | null>(null);
+  const [listenerStats, setListenerStats] = useState<ListenerStatsResult | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({ sessionName: '', description: '', stationId: '' });
+  const [creating, setCreating] = useState(false);
+  const [stations, setStations] = useState<StationResult[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const npPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load session
   useEffect(() => {
@@ -108,6 +124,29 @@ export function HostLiveController() {
     } finally { setLoading(false); }
   };
 
+  // Poll now-playing + listener stats every 10s when session is live
+  useEffect(() => {
+    if (!sessionId) return;
+    const pollNowPlaying = async () => {
+      try {
+        const [np, stats] = await Promise.all([
+          liveSessionApiService.getNowPlaying(sessionId),
+          liveSessionApiService.getListenerStats(sessionId),
+        ]);
+        setNowPlaying(np);
+        setListenerStats(stats);
+      } catch { /* silent — polling fallback */ }
+    };
+    if (isLive) {
+      void pollNowPlaying();
+      npPollRef.current = setInterval(() => { void pollNowPlaying(); }, 10000);
+    } else {
+      if (npPollRef.current) { clearInterval(npPollRef.current); npPollRef.current = null; }
+      if (!isPaused) { setNowPlaying(null); setListenerStats(null); }
+    }
+    return () => { if (npPollRef.current) { clearInterval(npPollRef.current); npPollRef.current = null; } };
+  }, [isLive, isPaused, sessionId]);
+
   const loadRequests = async () => {
     if (!sessionId) return;
     setLoadingRequests(true);
@@ -119,6 +158,33 @@ export function HostLiveController() {
       showToast.error('Không thể tải yêu cầu nhạc');
       setRequests([]);
     } finally { setLoadingRequests(false); }
+  };
+
+  // Load stations for create modal
+  useEffect(() => {
+    if (!showCreateModal) return;
+    liveSessionApiService.getStations().then(setStations).catch(() => setStations([]));
+  }, [showCreateModal]);
+
+  const handleCreateSession = async () => {
+    if (!createForm.sessionName.trim()) { showToast.error('Vui lòng nhập tên phiên'); return; }
+    if (!createForm.stationId) { showToast.error('Vui lòng chọn đài phát'); return; }
+    setCreating(true);
+    try {
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      await liveSessionApiService.createLiveSession({
+        hostUserId: userInfo.id,
+        stationId: createForm.stationId,
+        sessionName: createForm.sessionName.trim(),
+        description: createForm.description.trim() || undefined,
+      });
+      setShowCreateModal(false);
+      setCreateForm({ sessionName: '', description: '', stationId: '' });
+      showToast.success('Tạo phiên thành công!');
+      navigate('/host/sessions');
+    } catch {
+      showToast.error('Không thể tạo phiên phát sóng');
+    } finally { setCreating(false); }
   };
 
   const handleStart = async () => {
@@ -229,6 +295,14 @@ export function HostLiveController() {
               Offline
             </span>
           )}
+          <button
+            className="host-lc-create-btn"
+            onClick={() => setShowCreateModal(true)}
+            title="Tạo phiên mới"
+          >
+            <Plus size={14} />
+            Tạo phiên mới
+          </button>
         </div>
       </div>
 
@@ -236,6 +310,53 @@ export function HostLiveController() {
       <div className="host-lc-layout">
         {/* ── Left: Session Info ── */}
         <div className="host-lc-panel host-lc-panel--left">
+          {/* Now Playing Panel */}
+          {isLive && nowPlaying?.currentTrack && (
+            <div className="host-lc-panel-card">
+              <h3 className="host-lc-panel-title">
+                <Disc3 size={16} />
+                Đang phát
+              </h3>
+              {nowPlaying.currentTrack.artUrl && (
+                <img
+                  src={nowPlaying.currentTrack.artUrl}
+                  className="host-lc-np-art"
+                  alt="album art"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              )}
+              <div className="host-lc-np-title">{nowPlaying.currentTrack.title || nowPlaying.currentTrack.text}</div>
+              <div className="host-lc-np-artist">{nowPlaying.currentTrack.artist || '—'}</div>
+              {nowPlaying.currentTrack.duration > 0 && (
+                <div className="host-lc-np-elapsed">
+                  {formatDuration(nowPlaying.currentTrack.elapsed)} / {formatDuration(nowPlaying.currentTrack.duration)}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Listener Stats */}
+          {isLive && listenerStats && (
+            <div className="host-lc-panel-card">
+              <h3 className="host-lc-panel-title">
+                <Users size={16} />
+                Thống kê người nghe
+              </h3>
+              <div className="host-lc-stat-row">
+                <span>Hiện tại</span>
+                <strong>{listenerStats.currentListeners}</strong>
+              </div>
+              <div className="host-lc-stat-row">
+                <span>Đỉnh</span>
+                <strong>{listenerStats.peakListeners}</strong>
+              </div>
+              <div className="host-lc-stat-row">
+                <span>Tổng</span>
+                <strong>{listenerStats.totalListeners}</strong>
+              </div>
+            </div>
+          )}
+
           <div className="host-lc-panel-card">
             <h3 className="host-lc-panel-title">Thông tin phiên</h3>
 
@@ -414,6 +535,66 @@ export function HostLiveController() {
           </div>
         </div>
       </div>
+
+      {/* Create Session Modal */}
+      {showCreateModal && (
+        <div className="host-lc-modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="host-lc-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="host-lc-modal-header">
+              <h2>Tạo phiên phát sóng mới</h2>
+              <button className="host-lc-modal-close" onClick={() => setShowCreateModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="host-lc-modal-body">
+              <div className="host-lc-form-group">
+                <label>Tên phiên *</label>
+                <input
+                  className="host-lc-form-input"
+                  placeholder="VD: Ca live cuối tuần"
+                  value={createForm.sessionName}
+                  onChange={(e) => setCreateForm({ ...createForm, sessionName: e.target.value })}
+                />
+              </div>
+              <div className="host-lc-form-group">
+                <label>Đài phát *</label>
+                <select
+                  className="host-lc-form-input"
+                  value={createForm.stationId}
+                  onChange={(e) => setCreateForm({ ...createForm, stationId: e.target.value })}
+                >
+                  <option value="">— Chọn đài —</option>
+                  {stations.map((st) => (
+                    <option key={st.id} value={st.id}>{st.stationName}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="host-lc-form-group">
+                <label>Mô tả</label>
+                <textarea
+                  className="host-lc-form-input host-lc-form-textarea"
+                  placeholder="Mô tả ngắn cho phiên phát sóng..."
+                  value={createForm.description}
+                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="host-lc-modal-footer">
+              <button className="host-lc-modal-cancel" onClick={() => setShowCreateModal(false)}>
+                Hủy
+              </button>
+              <button
+                className="host-lc-modal-submit"
+                onClick={handleCreateSession}
+                disabled={creating}
+              >
+                {creating ? <RefreshCw size={14} className="host-lc-spin" /> : null}
+                {creating ? 'Đang tạo...' : 'Tạo phiên'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
