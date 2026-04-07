@@ -126,6 +126,7 @@ export interface PodcastItem {
   createdBy: string;
   createdAt: string;
   episodeCount?: number;
+  allEpisodes?: PodcastEpisode[];
 }
 
 export interface PodcastEpisode {
