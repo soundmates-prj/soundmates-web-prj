@@ -770,6 +770,19 @@ class LiveSessionApiService {
     await api.delete(`/podcast/${podcastId}/episodes/${episodeId}`);
   }
 
+  async updateEpisode(
+    podcastId: string,
+    episodeId: string,
+    data: FormData,
+  ): Promise<EpisodeResult> {
+    const res = await api.put<ApiResponse<EpisodeResult>>(
+      `/podcast/${podcastId}/episodes/${episodeId}`,
+      data,
+      { headers: { "Content-Type": "multipart/form-data" }, timeout: 300_000 },
+    );
+    return res.data.data;
+  }
+
   /* ── Playlist Update ── */
 
   async updatePlaylist(

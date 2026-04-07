@@ -245,7 +245,7 @@
 
 .ops-textarea {
   resize: vertical;
-  min-height: 90px;
+  min-height: 50px;
 }
 
 .ops-modal-overlay {
@@ -261,6 +261,7 @@
 
 .ops-modal {
   width: min(700px, 100%);
+  max-height: min(90vh, 680px);
   border-radius: 18px;
   border: 1px solid rgba(148, 163, 184, 0.28);
   background: linear-gradient(
@@ -270,6 +271,8 @@
   );
   box-shadow: 0 24px 64px rgba(2, 6, 23, 0.35);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 [data-theme="dark"] .ops-modal {
@@ -282,8 +285,9 @@
 
 .ops-modal-head,
 .ops-modal-foot {
-  padding: 14px 16px;
+  padding: 10px 16px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  flex-shrink: 0;
 }
 
 .ops-modal-foot {
@@ -296,6 +300,8 @@
 
 .ops-modal-body {
   padding: 16px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .ops-dropzone {
@@ -341,7 +347,7 @@
 
 .ops-stack {
   display: grid;
-  gap: 10px;
+  gap: 3px;
 }
 
 .ops-track-item {
@@ -861,7 +867,7 @@
 
 .pe-episodes-header {
   display: grid;
-  grid-template-columns: 40px 1fr 90px 100px 80px;
+  grid-template-columns: 40px 1fr 100px 110px;
   gap: 8px;
   padding: 8px 16px;
   font-size: 11px;
@@ -879,7 +885,7 @@
 
 .pe-episode-item {
   display: grid;
-  grid-template-columns: 40px 1fr 90px 100px 80px;
+  grid-template-columns: 40px 1fr 100px 110px;
   gap: 8px;
   align-items: center;
   padding: 10px 16px;
@@ -998,11 +1004,128 @@
 
   .pe-episodes-header,
   .pe-episode-item {
-    grid-template-columns: 32px 1fr 70px 60px;
+    grid-template-columns: 32px 1fr 80px;
   }
 
-  .pe-episodes-header span:nth-child(4),
+  .pe-episodes-header span:nth-child(3),
   .pe-episode-item .pe-ep-date {
     display: none;
   }
+}
+
+/* Upload status indicator */
+.pe-upload-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(85, 197, 241, 0.06);
+  border: 1px solid rgba(85, 197, 241, 0.15);
+  color: #0e9fd4;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .pe-upload-status {
+  background: rgba(85, 197, 241, 0.08);
+  border-color: rgba(85, 197, 241, 0.18);
+  color: #55c5f1;
+}
+
+.pe-spin {
+  animation: peSpin 0.8s linear infinite;
+}
+
+@keyframes peSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Current file indicator in edit modal */
+.pe-current-file {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  padding: 6px 0;
+}
+
+.pe-current-file a {
+  color: #55c5f1;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pe-current-file a:hover {
+  text-decoration: underline;
+}
+
+/* ── Confirm Dialog ── */
+
+.pe-confirm-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  margin: 0 auto 16px;
+}
+
+[data-theme="dark"] .pe-confirm-icon {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.pe-confirm-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary, #1e293b);
+  margin: 0 0 8px;
+}
+
+[data-theme="dark"] .pe-confirm-title {
+  color: #f1f5f9;
+}
+
+.pe-confirm-message {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary, #64748b);
+  margin: 0 0 24px;
+}
+
+[data-theme="dark"] .pe-confirm-message {
+  color: #94a3b8;
+}
+
+.pe-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.pe-confirm-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 18px;
+  height: 38px;
+  border-radius: 12px;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pe-confirm-delete:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
 }
