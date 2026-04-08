@@ -30,7 +30,7 @@ interface UserInfo {
 }
 
 const Header: React.FC = () => {
-  const { theme } = useTheme();
+  const { mode } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -40,7 +40,8 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>(location.pathname);
-  const isLiveRoute = location.pathname === "/live" || location.pathname === "/livestream";
+  const isLiveRoute =
+    location.pathname === "/live" || location.pathname === "/livestream";
   const dropdownRef = useRef<HTMLDivElement>(null);
   const liveDropdownRef = useRef<HTMLDivElement>(null);
   const player = usePlayer();
@@ -66,7 +67,8 @@ const Header: React.FC = () => {
                 lastName: profileData.lastName,
                 username: profileData.username,
                 email: profileData.email,
-                avatarUrl: validateImageUrl(profileData.profileImageUrl) || null,
+                avatarUrl:
+                  validateImageUrl(profileData.profileImageUrl) || null,
               };
               // Sync back to localStorage so next page load is correct
               localStorage.setItem("userInfo", JSON.stringify(freshUserInfo));
@@ -126,10 +128,8 @@ const Header: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
-    if (player.isPlaying) {
-      player.toggle();
-      showInfo("Nhạc đã dừng", "Bạn đã đăng xuất khỏi SoundMates");
-    }
+    // Dừng nhạc hẳn khi đăng xuất
+    player.leaveSession();
     localStorage.removeItem("accessToken");
     localStorage.removeItem("userInfo");
     setIsLoggedIn(false);
@@ -140,10 +140,8 @@ const Header: React.FC = () => {
   };
 
   const handleProfile = () => {
-    if (player.isPlaying) {
-      player.toggle();
-      showInfo("Nhạc đã dừng", "Chuyển sang trang cá nhân");
-    }
+    // Dừng nhạc hẳn khi chuyển sang trang cá nhân
+    player.leaveSession();
     setShowDropdown(false);
     navigate("/profile");
   };
@@ -154,8 +152,12 @@ const Header: React.FC = () => {
         <div className="header-container">
           <div className="header-left" onClick={() => navigate("/")}>
             <img
-              src={theme === "dark" ? logoDark : logoLight}
-              alt="SoundMates"
+              src={mode === "dark" ? logoDark : logoLight}
+              alt="SoundMates Logo"
+              onError={(e) => {
+                // Fallback to light logo if dark logo fails to load or vice versa
+                e.currentTarget.src = logoLight;
+              }}
             />
             <span className="header-brand">SoundMates</span>
           </div>
@@ -222,16 +224,13 @@ const Header: React.FC = () => {
               )}
             </div>
 
-            <a
-              className={`nav-item${activeTab === "podcast" ? " active" : ""}`}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveTab("podcast");
-              }}
+            <Link
+              className={`nav-item${activeTab === "/podcast" ? " active" : ""}`}
+              to="/podcast"
+              onClick={() => setActiveTab("/podcast")}
             >
               Podcast
-            </a>
+            </Link>
             <Link
               className={`nav-item${activeTab === "/forum" ? " active" : ""}`}
               to="/forum"
@@ -300,7 +299,7 @@ const Header: React.FC = () => {
                         <div>
                           <p className="avatar-dropdown-name">
                             {userInfo?.firstName && userInfo?.lastName
-                              ? `${userInfo.firstName} ${userInfo.lastName}`
+                              ? `${userInfo.lastName} ${userInfo.firstName}`
                               : userInfo?.username || "Người dùng"}
                           </p>
                           <p className="avatar-dropdown-email">

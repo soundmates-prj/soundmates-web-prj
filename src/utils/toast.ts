@@ -1,5 +1,4 @@
-import { toast } from 'react-toastify';
-import type { Id } from 'react-toastify';
+import { toast, type Id } from 'react-toastify';
 
 /**
  * Toast Utility Functions
@@ -44,8 +43,8 @@ export const showToast = {
    * @param message - Tiêu đề thông báo
    * @returns ID của toast để có thể dismiss sau
    */
-  loading: (message: string): Id => {
-    return toast.loading(message);
+  loading: (message: string) => {
+    return toast.loading(message, { autoClose: false });
   },
 
   /**
@@ -68,8 +67,12 @@ export const showToast = {
    * Dismiss toast
    * @param toastId - ID của toast cần dismiss (optional, không truyền sẽ dismiss tất cả)
    */
-  dismiss: (toastId?: Id) => {
-    toast.dismiss(toastId);
+  dismiss: (toastId?: string | number) => {
+    if (toastId !== undefined) {
+      toast.dismiss(toastId as Id);
+    } else {
+      toast.dismiss();
+    }
   },
 };
 

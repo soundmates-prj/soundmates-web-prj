@@ -3,16 +3,16 @@
 ================================================================ */
 
 [data-theme='dark'] .pf {
-  background: var(--bg-primary);
+  background-color: var(--bg-primary);
 }
 
 [data-theme='dark'] .pf-bar {
-  background: var(--bg-secondary);
-  border-bottom: 1px solid #333333;
+  background-color: var(--user-theme-bg, rgba(20, 20, 20, 0.75));
+  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 [data-theme='dark'] .pf-av {
-  border-color: var(--bg-secondary) !important;
+  border-color: var(--user-theme-bg, var(--bg-primary)) !important;
 }
 
 [data-theme='dark'] .pf-name {
@@ -28,8 +28,8 @@
 }
 
 [data-theme='dark'] .pf-tabs-row {
-  background: var(--bg-secondary);
-  border-bottom: 1px solid #333333;
+  background-color: var(--user-theme-bg, rgba(20, 20, 20, 0.75));
+  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 [data-theme='dark'] .pf-tab {
@@ -45,8 +45,8 @@
 }
 
 [data-theme='dark'] .pf-card {
-  background: var(--bg-secondary);
-  border-color: #333333;
+  background-color: var(--user-theme-bg, rgba(20, 20, 20, 0.7));
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 [data-theme='dark'] .pf-card-top h3 {

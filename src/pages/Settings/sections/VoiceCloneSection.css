@@ -508,8 +508,101 @@
   margin-top: 0.4rem;
 }
 
-/* Gender Options */
-.vc-gender-options {
+/* File icon in upload preview */
+.vc-file-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+/* Delete confirm modal */
+.vc-delete-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 380px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  z-index: 1001;
+  padding: 2rem;
+  text-align: center;
+  animation: slideUp 0.25s ease;
+}
+
+.vc-delete-modal-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fee2e2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  color: #ef4444;
+}
+
+.vc-delete-modal h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.vc-delete-modal p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.vc-delete-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.vc-delete-confirm-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.625rem 1.25rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vc-delete-confirm-btn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.vc-delete-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Play button playing state */
+.vc-play-btn.playing {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* Gender button active — fix font weight */
+.vc-gender-btn.active {
+  font-weight: 600;
+}
   display: flex;
   gap: 0.75rem;
 }

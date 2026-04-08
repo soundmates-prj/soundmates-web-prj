@@ -1,0 +1,159 @@
+/* RejectReasonModal shared component styles */
+.reject-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.reject-modal {
+  background: #fff;
+  border: 1px solid var(--neutral-200);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+}
+
+[data-theme="dark"] .reject-modal {
+  background: rgba(30, 40, 60, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.reject-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.reject-modal-header h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--neutral-900);
+  margin: 0;
+}
+
+[data-theme="dark"] .reject-modal-header h4 {
+  color: #fff;
+}
+
+.reject-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--neutral-400);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.reject-modal-close:hover {
+  color: var(--neutral-700);
+  background: var(--neutral-100);
+}
+
+[data-theme="dark"] .reject-modal-close:hover {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.reject-modal-body p {
+  font-size: 14px;
+  color: var(--neutral-600);
+  margin: 0 0 12px;
+}
+
+[data-theme="dark"] .reject-modal-body p {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.reject-modal-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--neutral-700);
+  margin-bottom: 6px;
+}
+
+[data-theme="dark"] .reject-modal-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.reject-modal-textarea {
+  width: 100%;
+  border: 1px solid var(--neutral-200);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--neutral-800);
+  background: var(--neutral-50);
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.reject-modal-textarea:focus {
+  border-color: #1a9fd4;
+}
+
+[data-theme="dark"] .reject-modal-textarea {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.reject-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.reject-modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.reject-modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reject-modal-btn--outline {
+  background: transparent;
+  border: 1.5px solid var(--neutral-200);
+  color: var(--neutral-700);
+}
+
+.reject-modal-btn--outline:hover:not(:disabled) {
+  border-color: #1a9fd4;
+  color: #1a9fd4;
+}
+
+[data-theme="dark"] .reject-modal-btn--outline {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.reject-modal-btn--danger {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #fff;
+}
+
+.reject-modal-btn--danger:hover:not(:disabled) {
+  opacity: 0.9;
+}

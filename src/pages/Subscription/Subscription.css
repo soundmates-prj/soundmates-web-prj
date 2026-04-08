@@ -138,7 +138,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 28px;
   align-items: stretch;
-  padding: 8px 0 40px;
+  padding: 32px 0 60px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -146,22 +146,38 @@
 /* ─── Card Base ───────────────────────────────────────────────────────── */
 .subscription-card {
   position: relative;
-  border-radius: 20px;
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   overflow: visible;
-  transition: transform 0.28s cubic-bezier(0.34, 1.3, 0.64, 1),
-              box-shadow 0.28s ease,
-              border-color 0.28s ease;
-  background: #ffffff;
-  border: 1.5px solid rgba(0, 0, 0, 0.07);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
 }
 
 .subscription-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.13);
-  border-color: rgba(85, 197, 241, 0.25);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  border-color: rgba(255, 255, 255, 1);
+}
+
+/* Position cards in grid */
+.subscription-card.elite {
+  grid-column: 2;
+  margin-bottom: 0;
+}
+
+.subscription-card.free {
+  grid-column: 1;
+}
+
+.subscription-card.premium {
+  grid-column: 3;
 }
 
 /* ─── Card Tier Variants ──────────────────────────────────────────────── */
@@ -170,8 +186,9 @@
   transform: scale(1.05);
   z-index: 2;
   border: none;
-  box-shadow: 0 10px 48px rgba(85, 197, 241, 0.22);
+  box-shadow: 0 16px 48px rgba(85, 197, 241, 0.12);
   background: transparent;
+  padding: 2px;
 }
 
 /* Gradient border trick — no extra DOM elements */
@@ -179,15 +196,12 @@
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 22px;
+  border-radius: 26px;
   padding: 2px;
-  background: linear-gradient(
-    145deg,
-    #55c5f1 0%,
-    #818cf8 38%,
-    #a78bfa 65%,
-    #f472b6 100%
-  );
+  background: linear-gradient(135deg,
+      #55c5f1 0%,
+      #004395 50%,
+      #55c5f1 100%);
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -200,27 +214,35 @@
 .subscription-card.elite::after {
   content: '';
   position: absolute;
-  inset: -24px;
-  border-radius: 44px;
-  background: radial-gradient(
-    ellipse 70% 50% at 50% 50%,
-    rgba(85, 197, 241, 0.16) 0%,
-    rgba(129, 140, 248, 0.08) 45%,
-    transparent 70%
-  );
+  inset: -12px;
+  border-radius: 36px;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%,
+      rgba(85, 197, 241, 0.15) 0%,
+      rgba(0, 67, 149, 0.08) 45%,
+      transparent 70%);
   pointer-events: none;
   z-index: -1;
-  filter: blur(6px);
-  animation: elite-glow-pulse 4s ease-in-out infinite;
+  filter: blur(8px);
+  animation: elite-glow-pulse 6s ease-in-out infinite;
 }
 
 @keyframes elite-glow-pulse {
-  0%, 100% { opacity: 0.65; transform: scale(1); }
-  50%       { opacity: 1;   transform: scale(1.04); }
+
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
 }
 
 .subscription-card.elite:hover {
-  transform: scale(1.05) translateY(-8px);
+  transform: scale(1.05) translateY(-6px);
+  box-shadow: 0 24px 56px rgba(85, 197, 241, 0.18);
 }
 
 .subscription-card.premium {
@@ -241,20 +263,24 @@
   transform: translateX(-50%);
   background: linear-gradient(135deg, #004395 0%, #55c5f1 100%);
   color: #ffffff;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  padding: 5px 16px;
+  padding: 4px 16px;
   border-radius: 9999px;
-  white-space: nowrap;
   z-index: 10;
-  box-shadow: 0 4px 16px rgba(0, 67, 149, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 67, 149, 0.25);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+}
+
+.popular-badge svg {
+  width: 14px;
+  height: 14px;
 }
 
 .current-badge {
@@ -280,19 +306,17 @@
 }
 
 /* ─── Card Inner Surface ──────────────────────────────────────────────── */
-.subscription-card > * {
+.subscription-card>* {
   position: relative;
   z-index: 1;
 }
 
 /* Elite inner gradient fill */
 .subscription-card.elite {
-  background: linear-gradient(
-    160deg,
-    #ffffff 0%,
-    #f8feff 55%,
-    #f2f5ff 100%
-  );
+  background: linear-gradient(160deg,
+      #ffffff 0%,
+      #f8feff 55%,
+      #f2f5ff 100%);
   border-radius: 20px;
 }
 
@@ -371,10 +395,10 @@
   display: block;
   width: calc(100% - 56px);
   transition: transform 0.22s cubic-bezier(0.34, 1.5, 0.64, 1),
-              box-shadow 0.22s ease,
-              background 0.22s ease,
-              color 0.22s ease,
-              border-color 0.22s ease;
+    box-shadow 0.22s ease,
+    background 0.22s ease,
+    color 0.22s ease,
+    border-color 0.22s ease;
   letter-spacing: 0.01em;
 }
 
@@ -405,15 +429,17 @@
 
 /* Elite → gradient pill — most prominent */
 .subscription-card.elite .plan-button {
-  background: linear-gradient(135deg, #55c5f1 0%, #3a9fd8 50%, #2b87c0 100%);
+  background: linear-gradient(135deg, #004395 0%, #3a9fd8 50%, #55c5f1 100%);
   color: #ffffff;
   border: none;
-  box-shadow: 0 4px 20px rgba(85, 197, 241, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 67, 149, 0.3);
+  transition: transform 0.4s cubic-bezier(0.34, 1.5, 0.64, 1), box-shadow 0.22s ease, background 0.22s ease;
 }
 
 .subscription-card.elite .plan-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #6dd4f5 0%, #4ab4e8 50%, #3a9fd8 100%);
-  box-shadow: 0 8px 32px rgba(85, 197, 241, 0.55);
+  background: linear-gradient(135deg, #0056b3 0%, #4ab4e8 50%, #6dd4f5 100%);
+  box-shadow: 0 12px 32px rgba(0, 67, 149, 0.45);
+  transform: scale(1.08) translateY(-4px);
 }
 
 .plan-button:disabled {
@@ -532,7 +558,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .subscription-error-actions {
@@ -928,8 +956,13 @@
     transform: translateY(-8px);
   }
 
-  .subscription-card.free  { order: 0; }
-  .subscription-card.premium { order: 1; }
+  .subscription-card.free {
+    order: 0;
+  }
+
+  .subscription-card.premium {
+    order: 1;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1052,12 +1085,10 @@
 }
 
 [data-theme='dark'] .subscription-card.elite {
-  background: linear-gradient(
-    160deg,
-    rgba(20, 20, 20, 0.95) 0%,
-    rgba(14, 20, 36, 0.95) 55%,
-    rgba(12, 16, 32, 0.95) 100%
-  );
+  background: linear-gradient(160deg,
+      rgba(20, 20, 20, 0.95) 0%,
+      rgba(14, 20, 36, 0.95) 55%,
+      rgba(12, 16, 32, 0.95) 100%);
 }
 
 [data-theme='dark'] .subscription-card.premium {
@@ -1087,15 +1118,26 @@
 }
 
 [data-theme='dark'] .subscription-card.free .plan-button,
-[data-theme='dark'] .subscription-card.elite .plan-button {
+[data-theme='dark'] .subscription-card.premium .plan-button {
   color: #e2e8f0;
   border-color: rgba(255, 255, 255, 0.12);
 }
 
 [data-theme='dark'] .subscription-card.free .plan-button:hover:not(:disabled),
+[data-theme='dark'] .subscription-card.premium .plan-button:hover:not(:disabled) {
+  background: rgba(85, 197, 241, 0.1);
+  box-shadow: 0 4px 16px rgba(85, 197, 241, 0.14);
+}
+
+[data-theme='dark'] .subscription-card.elite .plan-button {
+  background: linear-gradient(135deg, #004395 0%, #3a9fd8 50%, #55c5f1 100%);
+  color: #ffffff;
+  border: none;
+}
+
 [data-theme='dark'] .subscription-card.elite .plan-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #6dd4f5 0%, #4ab4e8 50%, #3a9fd8 100%);
-  box-shadow: 0 8px 32px rgba(85, 197, 241, 0.55);
+  background: linear-gradient(135deg, #0056b3 0%, #4ab4e8 50%, #6dd4f5 100%);
+  box-shadow: 0 12px 32px rgba(0, 67, 149, 0.45);
 }
 
 [data-theme='dark'] .faq-item {

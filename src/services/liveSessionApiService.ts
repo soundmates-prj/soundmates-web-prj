@@ -96,6 +96,7 @@ export interface MusicResult {
   fileType: string;
   fileSize: number;
   uploadedAt: string;
+  lyrics?: string;
 }
 
 export interface SyncMediaFilesResult {
@@ -122,14 +123,26 @@ export interface ImportSystemMediaBatchResult {
   errors: string[];
 }
 
+export interface StationNowPlayingResult {
+  externalStationId: number;
+  stationName: string;
+  stationShortcode: string | null;
+  listenUrl: string | null;
+  publicPlayerUrl: string | null;
+  currentTrack: any;
+  playingNext: any;
+  songHistory: any[];
+}
+
 export interface LiveSessionResult {
   id: string;
   userId: string;
-  stationId: string;
+  stationId: string | null;
   stationName: string | null;
   sessionName: string;
   description: string | null;
   status: string;
+  scheduledStartAt: string | null;
   startedAt: string | null;
   endedAt: string | null;
   totalListeners: number;
@@ -137,9 +150,12 @@ export interface LiveSessionResult {
   totalDuration: number;
   createdAt: string;
   streamUrl: string | null;
+  stationShortcode: string | null;
+  publicPlayerUrl: string | null;
   thumbnailUrl: string | null;
   genre: string | null;
-  listenersCount: number;
+  listenersCount?: number;
+  nowPlaying?: any;
 }
 
 export interface ListenerStatsResult {
@@ -153,12 +169,12 @@ export interface SessionScheduleResult {
   id: string;
   liveSessionId: string;
   title: string | null;
-  startTime: string;     // TimeOnly "HH:mm:ss"
-  endTime: string;       // TimeOnly "HH:mm:ss"
+  startTime: string; // TimeOnly "HH:mm:ss"
+  endTime: string; // TimeOnly "HH:mm:ss"
   status: string | null;
   isRecurring: boolean;
-  daysOfWeek: number;    // DaysOfWeek flags enum
-  startDate: string;    // DateOnly "yyyy-MM-dd"
+  daysOfWeek: number; // DaysOfWeek flags enum
+  startDate: string; // DateOnly "yyyy-MM-dd"
   endDate: string | null;
   createdBy: string | null;
   updatedBy: string | null;
@@ -236,6 +252,17 @@ export interface PodcastResult {
   updatedAt: string | null;
   createdBy: string;
   episodeCount: number;
+}
+
+export interface EpisodeResult {
+  id: string;
+  title: string;
+  description: string | null;
+  audioUrl: string | null;
+  thumbnailUrl: string | null;
+  episodeNumber: number;
+  publishDate: string | null;
+  duration: number;
 }
 
 export interface PagedResult<T> {
@@ -389,24 +416,26 @@ class LiveSessionApiService {
   async uploadMusic(
     stationId: string | undefined,
     file: File,
-    metadata?: { title?: string; artist?: string; album?: string },
+    metadata?: { title?: string; artist?: string; album?: string; lyrics?: string },
     onUploadProgress?: (percent: number) => void,
   ): Promise<MusicResult> {
     const formData = new FormData();
-    formData.append("file", file);
-    if (stationId) {
-      formData.append("stationId", stationId);
-    }
+    formData.append("File", file);
+    if (metadata?.title) formData.append("Title", metadata.title);
+    if (metadata?.artist) formData.append("Artist", metadata.artist);
+    if (metadata?.album) formData.append("Album", metadata.album);
+    if (metadata?.lyrics) formData.append("Lyrics", metadata.lyrics);
 
-    if (metadata?.title) formData.append("title", metadata.title);
-    if (metadata?.artist) formData.append("artist", metadata.artist);
-    if (metadata?.album) formData.append("album", metadata.album);
+    const endpoint = stationId
+      ? `/musiccatalog/station/${stationId}/upload`
+      : `/musiccatalog/system/upload`;
 
     const res = await api.post<ApiResponse<MusicResult>>(
-      "/musiccatalog/upload",
+      endpoint,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: 300_000,
         onUploadProgress: (evt) => {
           if (!onUploadProgress || !evt.total) {
             return;
@@ -427,14 +456,13 @@ class LiveSessionApiService {
     onFileProgress?: (fileName: string, progress: number) => void,
   ): Promise<BulkUploadMusicResult> {
     const formData = new FormData();
-    if (stationId) {
-      formData.append("stationId", stationId);
-    }
-
-    // Append all files with the same field name "Files"
     for (const file of files) {
       formData.append("Files", file);
     }
+
+    const endpoint = stationId
+      ? `/musiccatalog/station/${stationId}/bulk`
+      : `/musiccatalog/system/bulk`;
 
     // Simulate per-file progress by polling a mock progress
     // (Real per-file progress requires custom axios interceptors)
@@ -449,7 +477,7 @@ class LiveSessionApiService {
 
     try {
       const res = await api.post<ApiResponse<BulkUploadMusicResult>>(
-        "/musiccatalog/bulk-upload",
+        endpoint,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -543,13 +571,20 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async getNowPlaying(sessionId: string): Promise<StationNowPlayingResult | null> {
+    const res = await api.get<ApiResponse<StationNowPlayingResult>>(
+      `/livesession/${sessionId}/now-playing`,
+    );
+    return res.data.data;
+  }
+
   async createSchedule(
     id: string,
     data: {
-      startDate: string;   // "yyyy-MM-dd"
-      endDate?: string;    // "yyyy-MM-dd"
-      startTime: string;   // "HH:mm:ss"
-      endTime: string;     // "HH:mm:ss"
+      startDate: string; // "yyyy-MM-dd"
+      endDate?: string; // "yyyy-MM-dd"
+      startTime: string; // "HH:mm:ss"
+      endTime: string; // "HH:mm:ss"
       title?: string;
       isRecurring?: boolean;
       daysOfWeek?: number; // DaysOfWeek flags
@@ -565,9 +600,12 @@ class LiveSessionApiService {
 
   async getSchedules(liveSessionId?: string): Promise<SessionScheduleResult[]> {
     // GET /api/v1/schedule — Get all session schedules
-    const res = await api.get<ApiResponse<SessionScheduleResult[]>>(`/schedule`, {
-      params: liveSessionId ? { liveSessionId } : undefined,
-    });
+    const res = await api.get<ApiResponse<SessionScheduleResult[]>>(
+      `/schedule`,
+      {
+        params: liveSessionId ? { liveSessionId } : undefined,
+      },
+    );
     return res.data.data;
   }
 
@@ -618,15 +656,16 @@ class LiveSessionApiService {
   /* ── Song Requests ── */
 
   async getSongRequests(
-    sessionId: string,
+    sessionId?: string,
     status?: string,
   ): Promise<SongRequestResult[]> {
-    const res = await api.get<ApiResponse<SongRequestResult[]>>(
-      `/livesession/${sessionId}/song-requests`,
-      {
-        params: status ? { status } : undefined,
-      },
-    );
+    // If no sessionId, fetch ALL requests (for Staff dashboard)
+    const url = sessionId
+      ? `/livesession/${sessionId}/song-requests`
+      : `/livesession/song-requests`;
+    const res = await api.get<ApiResponse<SongRequestResult[]>>(url, {
+      params: status ? { status } : undefined,
+    });
     return res.data.data;
   }
 
@@ -704,6 +743,44 @@ class LiveSessionApiService {
 
   async deletePodcast(id: string): Promise<void> {
     await api.delete(`/podcast/${id}`);
+  }
+
+  /* ── Episodes ── */
+
+  async getEpisodes(podcastId: string): Promise<EpisodeResult[]> {
+    const res = await api.get<ApiResponse<EpisodeResult[]>>(
+      `/podcast/${podcastId}/episodes`,
+    );
+    return res.data.data ?? [];
+  }
+
+  async createEpisode(
+    podcastId: string,
+    data: FormData,
+  ): Promise<EpisodeResult> {
+    const res = await api.post<ApiResponse<EpisodeResult>>(
+      `/podcast/${podcastId}/episodes`,
+      data,
+      { headers: { "Content-Type": "multipart/form-data" }, timeout: 300_000 },
+    );
+    return res.data.data;
+  }
+
+  async deleteEpisode(podcastId: string, episodeId: string): Promise<void> {
+    await api.delete(`/podcast/${podcastId}/episodes/${episodeId}`);
+  }
+
+  async updateEpisode(
+    podcastId: string,
+    episodeId: string,
+    data: FormData,
+  ): Promise<EpisodeResult> {
+    const res = await api.put<ApiResponse<EpisodeResult>>(
+      `/podcast/${podcastId}/episodes/${episodeId}`,
+      data,
+      { headers: { "Content-Type": "multipart/form-data" }, timeout: 300_000 },
+    );
+    return res.data.data;
   }
 
   /* ── Playlist Update ── */

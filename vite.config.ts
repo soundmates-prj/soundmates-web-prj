@@ -8,9 +8,13 @@ export default defineConfig({
     proxy: {
       // Proxy AzuraCast audio stream and HLS to avoid CORS issues
       "/listen": {
-        target: "http://localhost:5000",
+        // AzuraCast nginx proxy — both ports tried to find Liquidsoap harbor
+        // localhost:5000 = AzuraCast nginx, localhost:8000 = Liquidsoap harbor direct
+        target: "http://localhost:8000",
         changeOrigin: true,
         ws: true,
+        // Fallback rewrite: if target is unreachable, /listen stays as /listen
+        rewrite: (path) => path,
       },
       "/hls": {
         target: "http://localhost:5000",

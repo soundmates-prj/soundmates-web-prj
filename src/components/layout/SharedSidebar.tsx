@@ -55,6 +55,7 @@ const staffMenuItems: MenuItem[] = [
     { id: 'sessions', icon: <Radio size={20} />, label: 'Phiên phát sóng', path: '/staff/sessions' },
     { id: 'schedule', icon: <Calendar size={20} />, label: 'Lịch trình', path: '/staff/schedule' },
     { id: 'stations', icon: <Antenna size={20} />, label: 'Đài phát', path: '/staff/stations' },
+    { id: 'music-catalog', icon: <Headphones size={20} />, label: 'Kho nhạc', path: '/staff/music-catalog' },
     { id: 'playlists', icon: <ListMusic size={20} />, label: 'Playlist', path: '/staff/playlists' },
     { id: 'music-requests', icon: <Music size={20} />, label: 'Yêu cầu nhạc', path: '/staff/music-requests' },
     { id: 'podcast-requests', icon: <Mic size={20} />, label: 'Yêu cầu podcast', path: '/staff/podcast-requests' },
@@ -67,7 +68,7 @@ const staffMenuItems: MenuItem[] = [
 const hostMenuItems: MenuItem[] = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: '/host/dashboard' },
     { id: 'sessions', icon: <Radio size={20} />, label: 'Phiên phát sóng', path: '/host/sessions' },
-    { id: 'live-control', icon: <Play size={20} />, label: 'Điều khiển Live', path: '/host/live' },
+    { id: 'live-control', icon: <Play size={20} />, label: 'Điều khiển Live', path: '/host/sessions' }, // sessionId required — go to sessions list
     { id: 'schedule', icon: <Calendar size={20} />, label: 'Lịch trình', path: '/host/schedule' },
     { id: 'admin-sessions', icon: <Radio size={20} />, label: 'Quản lý Phiên PS', path: '/host/admin-sessions' },
     { id: 'music-requests', icon: <Music size={20} />, label: 'Yêu cầu nhạc', path: '/host/music-requests' },
@@ -79,7 +80,7 @@ const hostMenuItems: MenuItem[] = [
 export default function SharedSidebar({ role }: SharedSidebarProps) {
     const location = useLocation();
     const navigate = useNavigate();
-    const { theme } = useTheme();
+    const { mode } = useTheme();
 
     const menuItems =
         role === 'ADMIN'
@@ -109,7 +110,13 @@ export default function SharedSidebar({ role }: SharedSidebarProps) {
     return (
         <aside className="shared-sidebar">
             <div className="shared-sidebar-logo" onClick={() => navigate(dashboardPath)}>
-                <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
+                <img
+                    src={mode === "dark" ? logoDark : logoLight}
+                    alt="SoundMates"
+                    onError={(e) => {
+                        e.currentTarget.src = logoLight;
+                    }}
+                />
                 <span className="shared-logo-text">SoundMates</span>
             </div>
 
