@@ -11,11 +11,18 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
+import { usePlayer } from "../../context/PlayerContext";
+import { useTheme } from "../../context/ThemeContext";
+import userService from "../../services/userService";
 import "./profile.css";
 import "./profile-dark.css";
+
+/* ──────────────────────────────────────────
+   TYPES & HELPERS
+────────────────────────────────────────── */
 import type { User } from "../../types/user";
 import type { Post } from "../../types/post";
 import CreatePostModal from "./modals/CreatePostModal";
@@ -63,23 +70,32 @@ const PODCASTS = [
 const formatDate = (d?: string | null) =>
   d
     ? new Date(d).toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
     : null;
 
 /* ──────────────────────────────────────────
    PROFILE
 ────────────────────────────────────────── */
 export default function Profile() {
+  const { userId } = useParams();
+  const navigate = useNavigate();
+  const { availableThemes, applyTheme, resetToDefault } = useTheme();
+
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [tab, setTab] = useState<Tab>("overview");
+  const { leaveSession } = usePlayer();
+
+  // Dừng nhạc đang phát khi vào trang cá nhân
+  useEffect(() => { leaveSession(); }, [leaveSession]);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showShareMusic, setShowShareMusic] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [favTracks, setFavTracks] = useState<FavoriteItem[]>([]);
+  const [isMyProfile, setIsMyProfile] = useState<boolean>(true);
 
   const loadFavorites = useCallback(async () => {
     try {
@@ -93,28 +109,57 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
-    api
-      .get("users/me/profile/full")
-      .then((r) => setUser(r.data.data))
-      .catch((e) => console.error("Load profile failed", e));
+    const loadProfile = async () => {
+      try {
+        let profileData: User;
 
-    api
-      .get("me/posts")
-      .then((r) => setPosts(r.data?.data?.items ?? []))
-      .catch((e) => console.error("Load posts failed", e));
+        if (userId) {
+          // Public profile
+          const res = await userService.getPublicProfile(userId);
+          if (!res.success) {
+            navigate('/404');
+            return;
+          }
+          profileData = res.data as unknown as User;
+          setIsMyProfile(false);
 
+          // Load their posts
+          const postsRes = await api.get(`/posts`, { params: { authorName: profileData.username } });
+          setPosts(postsRes.data?.data?.items ?? []);
+        } else {
+          // My profile
+          const res = await api.get("users/me/profile/full");
+          profileData = res.data.data;
+          setIsMyProfile(true);
+
+          // Load my posts
+          const postsRes = await api.get("me/posts");
+          setPosts(postsRes.data?.data?.items ?? []);
+        }
+
+        setUser(profileData);
+
+        // Apply theme if user has one (mocking logic here until backend supports activeThemeId)
+        // For now we assume if it's our profile we use global context theme, 
+        // if public profile we could read their themeId and apply it just for this page
+        // Since backend doesn't return themeId yet, we keep the user-theme wrapper
+
+      } catch (error) {
+        console.error("Failed to load profile", error);
+      }
+    };
+
+    loadProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFavorites();
-  }, [loadFavorites]);
+  }, [userId, navigate, loadFavorites]);
 
   if (!user) return <div className="pf-loading">Đang tải...</div>;
 
-  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  const name = `${user.lastName ?? ""} ${user.firstName ?? ""}`.trim();
   const dob = formatDate(user.dateOfBirth);
-  const defaultCover =
-    "https://images.unsplash.com/photo-1511376777868-611b54f68947?w=1200&q=80";
-  const defaultAv =
-    "https://i.pinimg.com/736x/3f/94/70/3f9470b34a8e3f526dbdb022f9f19cf7.jpg";
+  const defaultCover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=1000";
+  const defaultAv = "https://ui-avatars.com/api/?name=User&background=55C5F1&color=fff";
 
   const handlePostCreated = (post: Post) => {
     setPosts((prev) => [post, ...prev]);
@@ -129,7 +174,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="pf">
+    <div className="pf user-theme-wrapper">
       {/* COVER */}
       <div className="pf-cover">
         <img src={user.backgroundImageUrl || defaultCover} alt="cover" />
@@ -163,10 +208,12 @@ export default function Profile() {
 
           {/* Stats + edit */}
           <div className="pf-right">
-            <Link to="/settings" className="pf-edit-btn">
-              <SquarePen size={14} />
-              Chỉnh sửa
-            </Link>
+            {isMyProfile && (
+              <Link to="/settings" className="pf-edit-btn">
+                <SquarePen size={14} />
+                Chỉnh sửa
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -402,19 +449,55 @@ export default function Profile() {
             </div>
 
             {/* Quick compose bar */}
-            <div
-              className="pf-compose-bar pf-compose-bar--full"
-              onClick={() => setShowCreatePost(true)}
-            >
-              <Avatar
-                src={user.profileImageUrl || defaultAv}
-                name={name}
-                size="sm"
-              />
-              <span className="pf-compose-placeholder">
-                Bạn đang nghĩ gì về âm nhạc hôm nay?
-              </span>
-            </div>
+            {isMyProfile && (
+              <div
+                className="pf-compose-bar pf-compose-bar--full"
+                onClick={() => setShowCreatePost(true)}
+              >
+                <Avatar
+                  src={user.profileImageUrl || defaultAv}
+                  name={name}
+                  size="sm"
+                />
+                <span className="pf-compose-placeholder">
+                  Bạn đang nghĩ gì về âm nhạc hôm nay?
+                </span>
+                <div className="pf-compose-actions">
+                  <span className="pf-compose-action-btn" title="Thêm ảnh">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                  </span>
+                  <span className="pf-compose-action-btn" title="Thêm audio">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                      <line x1="12" y1="19" x2="12" y2="22" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            )}
 
             {posts.length === 0 ? (
               <div className="pf-empty">

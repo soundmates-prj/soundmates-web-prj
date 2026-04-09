@@ -8,7 +8,7 @@ import { Facebook, Instagram, Twitter } from 'lucide-react';
 import './Footer.css';
 
 const Footer: React.FC = () => {
-  const { theme } = useTheme();
+  const { mode } = useTheme();
 
   return (
     <footer className="home-footer">
@@ -16,7 +16,13 @@ const Footer: React.FC = () => {
         <div className="footer-grid">
           <div className="footer-brand">
             <div className="footer-logo">
-              <img src={theme === 'dark' ? logoDark : logoLight} alt="SoundMates" />
+              <img
+                src={mode === 'dark' ? logoDark : logoLight}
+                alt="SoundMates"
+                onError={(e) => {
+                  e.currentTarget.src = logoLight;
+                }}
+              />
               <div className="footer-logo-info">
                 <h3 className="footer-logo-text">SoundMates</h3>
                 <p className="footer-tagline">Đọc thư phát sóng mỗi ngày</p>

@@ -1,34 +1,67 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Music, Search, CheckCircle, XCircle, Clock, User, Calendar, RefreshCw } from 'lucide-react';
 import { liveSessionApiService } from '../../../services/liveSessionApiService';
 import type { SongRequestResult, LiveSessionResult } from '../../../services/liveSessionApiService';
 import { showToast } from '../../../utils/toast';
+import { RejectReasonModal } from '../../../components/common/RejectReasonModal';
 import './HostMusicRequestsScreen.css';
 
 type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected';
+
+function getCurrentUserId(): string | null {
+  try {
+    const raw = localStorage.getItem("userInfo");
+    if (raw) return JSON.parse(raw).id || JSON.parse(raw).userId || null;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function getStatusLabel(status: string) {
+  switch (status?.toLowerCase()) {
+    case 'approved': return 'Đã duyệt';
+    case 'rejected': return 'Từ chối';
+    case 'pending': return 'Đang chờ';
+    default: return status;
+  }
+}
 
 export function HostMusicRequestsScreen() {
   const [allRequests, setAllRequests] = useState<SongRequestResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterStatus>('pending');
   const [searchQuery, setSearchQuery] = useState('');
+  // Reject modal state
+  const [rejectModal, setRejectModal] = useState<{ isOpen: boolean; requestId: string; songTitle: string }>({
+    isOpen: false,
+    requestId: '',
+    songTitle: '',
+  });
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      // Get all live sessions first
+      // Get sessions belonging to THIS host only
+      const currentUserId = getCurrentUserId();
       const sessionsRes = await liveSessionApiService.getLiveSessions({ pageSize: 50, pageNumber: 1 });
-      const sessions: LiveSessionResult[] = sessionsRes.items;
+      const allSessions: LiveSessionResult[] = sessionsRes.items;
+      // Filter to only this host's sessions
+      const mySessions = currentUserId
+        ? allSessions.filter(s => s.userId === currentUserId)
+        : allSessions;
 
-      // Fetch song requests for each session
+      if (mySessions.length === 0) {
+        setAllRequests([]);
+        return;
+      }
+
+      // FIX: Parallel fetch instead of sequential N+1
+      const results = await Promise.allSettled(
+        mySessions.map(session => liveSessionApiService.getSongRequests(session.id))
+      );
+
       const requestsArr: SongRequestResult[] = [];
-      for (const session of sessions) {
-        try {
-          const reqs = await liveSessionApiService.getSongRequests(session.id);
-          requestsArr.push(...reqs);
-        } catch {
-          // Session might have no requests — skip
-        }
+      for (const result of results) {
+        if (result.status === 'fulfilled') requestsArr.push(...result.value);
       }
 
       setAllRequests(requestsArr);
@@ -39,9 +72,7 @@ export function HostMusicRequestsScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    void fetchRequests();
-  }, [fetchRequests]);
+  useEffect(() => { void fetchRequests(); }, [fetchRequests]);
 
   // Stats
   const stats = {
@@ -66,52 +97,39 @@ export function HostMusicRequestsScreen() {
   const handleApprove = async (id: string) => {
     try {
       await liveSessionApiService.reviewSongRequest(id, { action: 'approve' });
-      setAllRequests(prev =>
-        prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r)
-      );
-      showToast.success('Đã duyệt — Yêu cầu bài hát đã được chấp nhận');
+      setAllRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+      showToast.success('Yêu cầu bài hát đã được chấp nhận');
     } catch {
-      showToast.error('Lỗi — Không thể duyệt yêu cầu. Vui lòng thử lại.');
+      showToast.error('Không thể duyệt yêu cầu. Vui lòng thử lại.');
     }
   };
 
-  const handleReject = async (id: string) => {
-    const reason = prompt('Lý do từ chối (tùy chọn):') || 'Host từ chối';
+  const openRejectModal = (id: string, title: string) => {
+    setRejectModal({ isOpen: true, requestId: id, songTitle: title });
+  };
+
+  const handleRejectConfirm = async (reason: string) => {
     try {
-      await liveSessionApiService.reviewSongRequest(id, {
+      await liveSessionApiService.reviewSongRequest(rejectModal.requestId, {
         action: 'reject',
         rejectReason: reason,
       });
-      setAllRequests(prev =>
-        prev.map(r => r.id === id ? { ...r, status: 'Rejected' } : r)
-      );
-      showToast.success('Đã từ chối — Yêu cầu đã bị từ chối');
+      setAllRequests(prev => prev.map(r => r.id === rejectModal.requestId ? { ...r, status: 'Rejected', rejectReason: reason } : r));
+      showToast.success('Yêu cầu đã bị từ chối');
     } catch {
-      showToast.error('Lỗi — Không thể từ chối yêu cầu. Vui lòng thử lại.');
+      showToast.error('Không thể từ chối yêu cầu. Vui lòng thử lại.');
+    } finally {
+      setRejectModal(prev => ({ ...prev, isOpen: false }));
     }
   };
 
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
       });
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'approved': return 'Đã duyệt';
-      case 'rejected': return 'Từ chối';
-      case 'pending': return 'Đang chờ';
-      default: return status;
-    }
+    } catch { return dateStr; }
   };
 
   return (
@@ -121,11 +139,7 @@ export function HostMusicRequestsScreen() {
           <h1 className="requests-title">Yêu cầu nhạc</h1>
           <p className="requests-subtitle">Xem và duyệt yêu cầu nhạc từ người nghe trong phiên của bạn</p>
         </div>
-        <button
-          className="refresh-btn"
-          onClick={() => void fetchRequests()}
-          disabled={loading}
-        >
+        <button className="refresh-btn" onClick={() => void fetchRequests()} disabled={loading}>
           <RefreshCw size={15} className={loading ? 'spin' : ''} />
           Làm mới
         </button>
@@ -143,7 +157,7 @@ export function HostMusicRequestsScreen() {
           <Clock size={20} />
           <div>
             <span className="stat-value">{stats.pending}</span>
-            <span className="stat-label">�ang chờ</span>
+            <span className="stat-label">Đang chờ</span>
           </div>
         </div>
         <div className="stat-item approved">
@@ -223,9 +237,7 @@ export function HostMusicRequestsScreen() {
                       <div className="song-icon"><Music size={16} /></div>
                       <div className="song-info">
                         <span className="song-title">{request.songTitle}</span>
-                        {request.songAlbum && (
-                          <span className="song-album">{request.songAlbum}</span>
-                        )}
+                        {request.songAlbum && <span className="song-album">{request.songAlbum}</span>}
                       </div>
                     </div>
                   </td>
@@ -265,7 +277,7 @@ export function HostMusicRequestsScreen() {
                         </button>
                         <button
                           className="action-btn reject"
-                          onClick={() => void handleReject(request.id)}
+                          onClick={() => openRejectModal(request.id, request.songTitle)}
                         >
                           <XCircle size={16} />
                           Từ chối
@@ -282,6 +294,14 @@ export function HostMusicRequestsScreen() {
           </table>
         </div>
       )}
+
+      {/* Reject modal — replaces browser prompt() */}
+      <RejectReasonModal
+        isOpen={rejectModal.isOpen}
+        songTitle={rejectModal.songTitle}
+        onConfirm={handleRejectConfirm}
+        onCancel={() => setRejectModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

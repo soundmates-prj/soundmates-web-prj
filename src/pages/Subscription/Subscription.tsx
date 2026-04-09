@@ -537,7 +537,7 @@ export default function Subscription() {
               {/* Badges */}
               {tier === "elite" && (
                 <div className="popular-badge">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="#fbbf24" stroke="none">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="#ffffff" stroke="none">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                   Yêu thích nhất
@@ -562,11 +562,11 @@ export default function Subscription() {
                 </div>
                 <p className="plan-description">
                   {plan.planName.toLowerCase().includes("free") || plan.price === 0
-                    ? "Trải nghiệm cơ bản, không cần thanh toán."
+                    ? "Khởi đầu hoàn hảo. Trải nghiệm âm nhạc cơ bản miễn phí."
                     : plan.planName.toLowerCase().includes("premium")
-                      ? "Nâng cấp giới hạn và mở khóa AI giọng đọc."
+                      ? "Nâng tầm trải nghiệm với đặc quyền AI tạo giọng đọc."
                       : plan.planName.toLowerCase().includes("elite")
-                        ? "Toàn quyền truy cập, ưu tiên cao nhất."
+                        ? "Đẳng cấp thượng lưu. Tự do sáng tạo với toàn bộ tính năng cao cấp nhất."
                         : plan.description}
                 </p>
               </div>

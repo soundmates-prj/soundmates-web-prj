@@ -27,6 +27,7 @@ import { StaffDashboard } from "./pages/Staff/Dashboard/StaffDashboard";
 import StaffSettingsPage from "./pages/Staff/Settings/StaffSettingsPage";
 import { StationsScreen } from "./pages/Staff/Stations/StationsScreen";
 import { PlaylistsScreen } from "./pages/Staff/Playlists/PlaylistsScreen";
+import { MusicCatalogScreen } from "./pages/Staff/MusicCatalog/MusicCatalogScreen";
 import { LiveSessionsScreen as StaffLiveSessionsScreen } from "./pages/Staff/LiveSessions/LiveSessionsScreen";
 import { ScheduleScreen } from "./pages/Staff/Schedule/ScheduleScreen";
 import { MusicRequestsScreen } from "./pages/Staff/MusicRequests/MusicRequestsScreen";
@@ -153,6 +154,7 @@ function App() {
             <Route path="script-editor" element={<LiveStreamScriptEditor />} />
             <Route path="analytics" element={<StaffAnalyticsScreen />} />
             <Route path="podcast-creator" element={<PodcastCreatorPage />} />
+            <Route path="music-catalog" element={<MusicCatalogScreen />} />
             <Route path="playlists" element={<PlaylistsScreen />} />
             <Route path="stations" element={<StationsScreen />} />
             <Route path="settings" element={<StaffSettingsPage />} />
@@ -213,6 +215,7 @@ function App() {
             <Route path="/forum" element={<ForumPage />} />
             <Route path="/schedule-public" element={<SchedulePublicPage />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/payment/result" element={<PaymentResult />} />
             <Route

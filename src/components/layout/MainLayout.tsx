@@ -9,7 +9,9 @@ const NO_FOOTER_ROUTES = ["/livestream"];
 
 const MainLayout = () => {
   const location = useLocation();
-  const hideFooter = NO_FOOTER_ROUTES.includes(location.pathname) || location.pathname.startsWith('/live/');
+  const isLiveRoom = location.pathname.startsWith('/live/');
+  const hideFooter = NO_FOOTER_ROUTES.includes(location.pathname) || isLiveRoom;
+  const hideHeader = isLiveRoom;
 
   // Lock window scroll trên các trang full-screen
   useEffect(() => {
@@ -25,7 +27,7 @@ const MainLayout = () => {
 
   return (
     <>
-      <Header />
+      {!hideHeader && <Header />}
       <Outlet />
       {!hideFooter && <Footer />}
       <MusicPlayer />

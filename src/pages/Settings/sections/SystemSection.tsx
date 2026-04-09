@@ -21,7 +21,7 @@ interface PwForm {
 }
 
 const SystemSection: React.FC = () => {
-  const { theme, setTheme } = useTheme();
+  const { mode, setMode } = useTheme();
 
   /* ── Favorites music ── */
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
@@ -41,7 +41,7 @@ const SystemSection: React.FC = () => {
   useEffect(() => { loadFavorites(); }, [loadFavorites]);
 
   const [systemForm, setSystemForm] = useState<SystemForm>({
-    theme: theme === 'dark' ? "Tối" : "Sáng",
+    theme: mode === 'dark' ? "Tối" : "Sáng",
     language: "Tiếng Việt",
   });
 
@@ -114,13 +114,13 @@ const SystemSection: React.FC = () => {
         <div className="form-group">
           <label>Themes</label>
           <div className="select-wrap">
-            <span className="select-prefix-icon">{theme === 'dark' ? '🌙' : '☀️'}</span>
+            <span className="select-prefix-icon">{mode === 'dark' ? '🌙' : '☀️'}</span>
             <select
               value={systemForm.theme}
               onChange={(e) => {
                 const newThemeStr = e.target.value;
                 setSystemForm({ ...systemForm, theme: newThemeStr });
-                setTheme(newThemeStr === 'Tối' ? 'dark' : 'light');
+                setMode(newThemeStr === 'Tối' ? 'dark' : 'light');
               }}
             >
               <option>Sáng</option>

@@ -320,43 +320,9 @@ class MusicCatalogService {
         throw new Error('File upload format không phù hợp với AzuraCast API. Vui lòng thử lại.');
       }
       
-      // When API is not available, create a mock uploaded track for testing
-      if (error.message?.includes('Network Error') || 
-          error.message?.includes('ECONNREFUSED') ||
-          error.code === 'ECONNREFUSED') {
-        console.warn('AzuraCast API not available, creating mock upload result');
-        const mockTrack: MusicTrack = {
-          id: Date.now(), // Use timestamp as mock ID
-          title: this.extractTitleFromFilename(file.name),
-          artist: this.extractArtistFromFilename(file.name) || 'Unknown Artist',
-          album: 'Unknown Album',
-          duration: this.estimateDurationFromFileSize(file.size),
-          genre: this.guessGenreFromFilename(file.name) || 'Unknown',
-          plays: 0,
-          likes: 0,
-          uploadDate: new Date().toLocaleDateString('vi-VN'),
-          unique_id: `mock_${Date.now()}`,
-          song_id: `mock_${Date.now()}`,
-          text: `${this.extractTitleFromFilename(file.name)} - ${this.extractArtistFromFilename(file.name) || 'Unknown Artist'}`,
-          lyrics: '',
-          length: Math.floor(file.size / 1000), // Rough estimation
-          path: `/mock/${file.name}`,
-          custom_fields: [],
-        };
-        
-        // Simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        console.log('Mock upload completed:', mockTrack);
-        return mockTrack;
-      }
-      
-    //   throw new Error(`Failed to upload track: ${error.message}`);
-    // }
-    // } catch (error) {
-      console.error('Error uploading track:', error);
+      // Let errors propagate so the caller can show a user-facing toast
       if (error instanceof Error) {
-        throw error; // Re-throw the original error with its message
+        throw error;
       } else {
         throw new Error('Failed to upload track');
       }
@@ -440,14 +406,7 @@ class MusicCatalogService {
 
   async addTracksToPlaylist(playlistId: number, trackIds: number[]): Promise<void> {
     try {
-      // Add tracks to playlist one by one since bulk operation might not be available
-      for (const _ of trackIds) {
-        // This is a simplified approach - the actual AzuraCast API might have different methods
-        // You may need to adjust this based on the actual API endpoints available
-        await musicCatalogApi.updatePlaylist(this.defaultStationId, playlistId, {
-          // Add track to playlist - this might need adjustment based on actual API
-        });
-      }
+      await musicCatalogApi.addMediaToPlaylist(this.defaultStationId, playlistId, trackIds);
     } catch (error) {
       console.error('Error adding tracks to playlist:', error);
       throw new Error('Failed to add tracks to playlist');
@@ -457,7 +416,7 @@ class MusicCatalogService {
   async getGenres(): Promise<string[]> {
     try {
       // Get all tracks and extract unique genres
-      const { tracks } = await this.getTracks({ limit: 1000 });
+      const { tracks } = await this.getTracks({ limit: 100 });
       const genres = [...new Set(tracks.map(track => track.genre).filter(Boolean))];
       return ['Tất cả', ...genres.sort()];
     } catch (error) {

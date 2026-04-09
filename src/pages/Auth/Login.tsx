@@ -11,7 +11,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { useTheme } from "../../context/ThemeContext";
 
 const Login: React.FC = () => {
-  const { theme } = useTheme();
+  const { mode } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -155,7 +155,7 @@ const Login: React.FC = () => {
       {/* LEFT */}
       <div className="login-left">
         <div className="brand">
-          <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
+          <img src={mode === "dark" ? logoDark : logoLight} alt="SoundMates" />
           <h1>SoundMates</h1>
           <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
         </div>

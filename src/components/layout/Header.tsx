@@ -30,7 +30,7 @@ interface UserInfo {
 }
 
 const Header: React.FC = () => {
-  const { theme } = useTheme();
+  const { mode } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -128,10 +128,8 @@ const Header: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
-    if (player.isPlaying) {
-      player.toggle();
-      showInfo("Nhạc đã dừng", "Bạn đã đăng xuất khỏi SoundMates");
-    }
+    // Dừng nhạc hẳn khi đăng xuất
+    player.leaveSession();
     localStorage.removeItem("accessToken");
     localStorage.removeItem("userInfo");
     setIsLoggedIn(false);
@@ -142,10 +140,8 @@ const Header: React.FC = () => {
   };
 
   const handleProfile = () => {
-    if (player.isPlaying) {
-      player.toggle();
-      showInfo("Nhạc đã dừng", "Chuyển sang trang cá nhân");
-    }
+    // Dừng nhạc hẳn khi chuyển sang trang cá nhân
+    player.leaveSession();
     setShowDropdown(false);
     navigate("/profile");
   };
@@ -156,8 +152,12 @@ const Header: React.FC = () => {
         <div className="header-container">
           <div className="header-left" onClick={() => navigate("/")}>
             <img
-              src={theme === "dark" ? logoDark : logoLight}
-              alt="SoundMates"
+              src={mode === "dark" ? logoDark : logoLight}
+              alt="SoundMates Logo"
+              onError={(e) => {
+                // Fallback to light logo if dark logo fails to load or vice versa
+                e.currentTarget.src = logoLight;
+              }}
             />
             <span className="header-brand">SoundMates</span>
           </div>
@@ -299,7 +299,7 @@ const Header: React.FC = () => {
                         <div>
                           <p className="avatar-dropdown-name">
                             {userInfo?.firstName && userInfo?.lastName
-                              ? `${userInfo.firstName} ${userInfo.lastName}`
+                              ? `${userInfo.lastName} ${userInfo.firstName}`
                               : userInfo?.username || "Người dùng"}
                           </p>
                           <p className="avatar-dropdown-email">

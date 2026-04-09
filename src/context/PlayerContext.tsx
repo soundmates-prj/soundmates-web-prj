@@ -6,14 +6,19 @@ import React, {
   useCallback,
 } from "react";
 
-export interface PlayerTrack {
+export interface TrackData {
   title: string;
   artist: string;
   album?: string;
   artUrl: string;
   duration: number;
-  elapsed: number;
+  elapsed?: number;
   listenUrl?: string;
+  lyrics?: string | null;
+}
+
+export interface PlayerTrack extends TrackData {
+  elapsed: number;
 }
 
 interface PlayerContextValue {
@@ -22,7 +27,7 @@ interface PlayerContextValue {
   volume: number;
   isMuted: boolean;
   elapsed: number;
-  setTrack: (track: PlayerTrack) => void;
+  setTrack: (track: TrackData | null) => void;
   setIsPlaying: (playing: boolean) => void;
   setVolume: (v: number) => void;
   setElapsed: (e: number) => void;
@@ -44,10 +49,19 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [elapsed, setElapsedState] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const setTrack = useCallback((newTrack: PlayerTrack) => {
-    setTrackState(newTrack);
-    if (audioRef.current && newTrack.listenUrl) {
-      const nextSrc = newTrack.listenUrl.replace(/^https?:\/\/[^/]+/, "");
+  const setTrack = useCallback((newTrack: TrackData | null) => {
+    if (!newTrack) {
+      setTrackState(null);
+      setElapsedState(0);
+      return;
+    }
+    const playerTrack: PlayerTrack = { ...newTrack, elapsed: newTrack.elapsed || 0 };
+    setTrackState(playerTrack);
+    if (newTrack.elapsed !== undefined) {
+      setElapsedState(newTrack.elapsed);
+    }
+    if (audioRef.current && playerTrack.listenUrl) {
+      const nextSrc = playerTrack.listenUrl.replace(/^https?:\/\/[^/]+/, "");
       if (audioRef.current.src !== window.location.origin + nextSrc) {
         audioRef.current.pause();
         audioRef.current = null;

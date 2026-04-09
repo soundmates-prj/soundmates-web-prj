@@ -100,7 +100,7 @@ export default function SharedHeader({ role }: SharedHeaderProps) {
                     <div className="shared-user-info">
                         <span className="shared-user-name">
                             {userInfo?.firstName && userInfo?.lastName
-                                ? `${userInfo.firstName} ${userInfo.lastName}`
+                                ? `${userInfo.lastName} ${userInfo.firstName}`
                                 : userInfo?.username || (role === 'ADMIN' ? 'Admin' : role === 'STAFF' ? 'Staff' : 'Host')}
                         </span>
                         <span className="shared-user-role">{getRoleLabel()}</span>

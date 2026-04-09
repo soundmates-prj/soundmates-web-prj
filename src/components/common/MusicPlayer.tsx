@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Play,
   Pause,
@@ -10,9 +10,10 @@ import {
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { usePlayer } from "../../context/PlayerContext";
+import { showToast } from "../../utils/toast";
 import "./MusicPlayer.css";
 
-// Ảnh placeholder khi chưa vào live session nào
+// Placeholder art when not in a session
 const PLACEHOLDER_ART =
   "https://i.pinimg.com/736x/e2/8e/8c/e28e8c45eed55b1ffca39e0666be1f86.jpg";
 
@@ -31,20 +32,40 @@ export function MusicPlayer() {
 
   const location = useLocation();
 
-  /* ── Pause khi navigate sang trang khác ──────────────────────────────── */
+  // ─── Theme detection via MutationObserver (not on every render) ────────────
+  const [isDark, setIsDark] = useState(
+    document.documentElement.getAttribute("data-theme") === "dark",
+  );
+
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setIsDark(document.documentElement.getAttribute("data-theme") === "dark");
+    });
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => obs.disconnect();
+  }, []);
+
+  // ─── Theme-aware icon colors ─────────────────────────────────────────────
+  const iconAccent = isDark ? "#60a5fa" : "#3b82f6";
+  const iconMuted = isDark ? "rgba(255,255,255,0.35)" : "#9CA3AF";
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [showPlaylist, setShowPlaylist] = useState(false);
+
+  // Reset favorite when track changes
+  useEffect(() => { setIsFavorite(false); }, [track?.title]);
+
+  /* ── Pause when navigating to auth pages ─────────────────────────────── */
   useEffect(() => {
     const shouldPauseForAuthPage =
       location.pathname === "/login" || location.pathname === "/register";
-
-    // Chỉ auto pause tại login/register, giữ nguyên nhạc ở các trang còn lại.
     if (shouldPauseForAuthPage && isPlaying && !isMuted) {
       toggleMute();
     }
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
-
-  /* ── Realtime elapsed counter (synced from LiveRoomPage via context) ──── */
 
   /* ── Helpers ─────────────────────────────────────────────────────────── */
   const fmt = (s: number) => {
@@ -58,20 +79,22 @@ export function MusicPlayer() {
   const progressPct =
     duration > 0 ? Math.min((elapsed / duration) * 100, 100) : 0;
 
-  /* ── Data hiển thị ───────────────────────────────────────────────────── */
   const title = track?.title ?? "Chưa có bài phát";
   const artist = track?.artist ?? "Vào một Live Session để nghe nhạc";
   const artUrl = track?.artUrl ?? PLACEHOLDER_ART;
   const displayVolume = isMuted ? 0 : volume;
-
-  // Nút play hiển thị icon Play khi: chưa phát, đang mute, hoặc volume = 0
   const showPlayIcon = !isPlaying || isMuted || volume === 0;
 
-  // Detect dark theme to set icon color
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const iconAccent = isDark ? '#55C5F1' : '#55C5F1';
-  const iconMuted  = isDark ? 'rgba(255,255,255,0.35)' : '#9CA3AF';
-  const iconHeart  = isDark ? '#818cf8' : '#5F6EE0';
+  const handleFavorite = async () => {
+    if (!track) return;
+    try {
+      // TODO: wire up favoriteService.addFavorite() once the API is ready
+      setIsFavorite(prev => !prev);
+      showToast.success(isFavorite ? "Đã bỏ yêu thích" : "Đã thêm vào yêu thích");
+    } catch {
+      showToast.error("Không thể cập nhật yêu thích");
+    }
+  };
 
   return (
     <div className="music-player">
@@ -103,14 +126,20 @@ export function MusicPlayer() {
               <p className="track-artist">{artist}</p>
             </div>
 
-            {/* Nút Heart — chỉ hiện khi đang trong session */}
+            {/* Heart — wired up */}
             {track && (
               <div
                 className="heart-icon-container"
-                title="Yêu thích"
+                title={isFavorite ? "Bỏ yêu thích" : "Yêu thích"}
                 style={{ cursor: "pointer" }}
+                onClick={handleFavorite}
               >
-                <Heart size={16} strokeWidth={1.8} color={iconHeart} />
+                <Heart
+                  size={16}
+                  strokeWidth={1.8}
+                  fill={isFavorite ? "#ef4444" : "none"}
+                  color={isFavorite ? "#ef4444" : iconMuted}
+                />
               </div>
             )}
           </div>
@@ -139,10 +168,12 @@ export function MusicPlayer() {
 
           {/* Right Section */}
           <div className="right-section">
+            {/* Playlist button — wired up */}
             <div
               className="download-list-icon-container"
               title="Danh sách phát"
               style={{ cursor: "pointer" }}
+              onClick={() => setShowPlaylist(prev => !prev)}
             >
               <ListMusic size={20} strokeWidth={1.8} color={iconAccent} />
             </div>
@@ -176,7 +207,7 @@ export function MusicPlayer() {
               </div>
             </div>
 
-            {/* Nút thoát live session — chỉ hiện khi đang trong session */}
+            {/* Leave session button */}
             {track && (
               <div
                 className="leave-session-btn"
@@ -189,6 +220,23 @@ export function MusicPlayer() {
             )}
           </div>
         </div>
+
+        {/* Playlist drawer (placeholder — wire up to session queue later) */}
+        {showPlaylist && (
+          <div className="music-player-playlist-drawer">
+            <div className="playlist-drawer-header">
+              <span>Danh sách phát</span>
+              <button onClick={() => setShowPlaylist(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="playlist-drawer-body">
+              <p className="playlist-drawer-placeholder">
+                Tính năng đang phát triển — sẽ hiển thị queue nhạc của phiên.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

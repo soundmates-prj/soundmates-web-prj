@@ -29,7 +29,7 @@ export interface NowPlayingData {
   totalListeners: number;
   uniqueListeners: number;
   currentTrack: TrackInfo;
-  playingNext: TrackInfo;
+  playingNext: TrackInfo | null;
   songHistory: TrackInfo[];
 }
 
@@ -51,11 +51,12 @@ interface PagedResult<T> {
 export interface LiveSessionResult {
   id: string;
   userId: string;
-  stationId: string;
+  stationId: string | null;
   stationName: string | null;
   sessionName: string;
   description: string | null;
   status: string;
+  scheduledStartAt: string | null;
   startedAt: string | null;
   endedAt: string | null;
   totalListeners: number;
@@ -63,9 +64,12 @@ export interface LiveSessionResult {
   totalDuration: number;
   createdAt: string;
   streamUrl: string | null;
+  stationShortcode: string | null;
+  publicPlayerUrl: string | null;
   thumbnailUrl: string | null;
   genre: string | null;
-  listenersCount: number;
+  listenersCount?: number;
+  nowPlaying?: any;
 }
 
 const FALLBACK_ART_URL = "https://placehold.co/600x600/111827/FFFFFF?text=LIVE";

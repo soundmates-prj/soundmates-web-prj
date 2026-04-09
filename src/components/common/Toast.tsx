@@ -4,7 +4,7 @@ import './toast.css';
 import { useTheme } from '../../context/ThemeContext';
 
 export function ToastProvider() {
-  const { theme } = useTheme();
+  const { mode } = useTheme();
   
   return (
     <ToastContainer
@@ -15,7 +15,7 @@ export function ToastProvider() {
       closeOnClick
       pauseOnHover
       draggable
-      theme={theme}
+      theme={mode}
       toastClassName="custom-toast"
     />
   );
