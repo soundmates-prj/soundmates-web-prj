@@ -10,7 +10,7 @@ import { showError, showSuccess } from "../../components/common/toastUtils";
 import { useTheme } from "../../context/ThemeContext";
 
 const Register: React.FC = () => {
-  const { theme } = useTheme();
+  const { mode } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
@@ -27,19 +27,19 @@ const Register: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // ── Field-level inline errors (EF-01) ──
-  const [firstNameError,    setFirstNameError]    = useState("");
-  const [lastNameError,     setLastNameError]     = useState("");
-  const [usernameError,     setUsernameError]     = useState("");
-  const [emailError,        setEmailError]        = useState("");
-  const [passwordError,      setPasswordError]    = useState("");
+  const [firstNameError, setFirstNameError] = useState("");
+  const [lastNameError, setLastNameError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
   // ── Constants (BR-02, BR-03) ──
-  const MAX_NAME_LENGTH   = 50;
-  const MIN_NAME_LENGTH   = 1;
-  const MAX_USERNAME_LEN  = 30;
-  const MIN_USERNAME_LEN   = 3;
-  const PASSWORD_REGEX     =
+  const MAX_NAME_LENGTH = 50;
+  const MIN_NAME_LENGTH = 1;
+  const MAX_USERNAME_LEN = 30;
+  const MIN_USERNAME_LEN = 3;
+  const PASSWORD_REGEX =
     /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -200,7 +200,7 @@ const Register: React.FC = () => {
     <div className="register-container">
       <div className="register-left">
         <div className="brand">
-          <img src={theme === "dark" ? logoDark : logoLight} alt="SoundMates" />
+          <img src={mode === "dark" ? logoDark : logoLight} alt="SoundMates" />
           <h1>SoundMates</h1>
           <p>Chia sẻ cảm xúc. Kết nối trái tim.</p>
         </div>

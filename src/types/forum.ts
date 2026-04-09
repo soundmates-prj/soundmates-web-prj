@@ -79,12 +79,14 @@ export interface TrendingPostsResponse {
   success: boolean;
   message: string;
   // Backend may return data.items or data.data.items depending on PaginationResult wrapper
-  data: {
-    items?: TrendingPost[];
-    page?: number;
-    pageSize?: number;
-    totalCount?: number;
-  } | TrendingPost[];
+  data:
+    | {
+        items?: TrendingPost[];
+        page?: number;
+        pageSize?: number;
+        totalCount?: number;
+      }
+    | TrendingPost[];
 }
 
 /** Query params cho GET /api/v1/posts/published */
@@ -110,10 +112,17 @@ export const MOOD_OPTIONS: { value: MoodTag | "all"; label: string }[] = [
   { value: "happy", label: "Vui vẻ" },
   { value: "sad", label: "Buồn" },
   { value: "chill", label: "Chill" },
+  { value: "hype", label: "Hype" },
   { value: "energetic", label: "Năng động" },
   { value: "romantic", label: "Lãng mạn" },
   { value: "focus", label: "Tập trung" },
 ];
+
+/** Chuyển giá trị mood (vd: "happy") sang nhãn hiển thị tiếng Việt (vd: "Vui vẻ") */
+export const getMoodLabel = (tag: string | null | undefined): string => {
+  if (!tag) return "";
+  return MOOD_OPTIONS.find((m) => m.value === tag)?.label ?? tag;
+};
 
 export const MOOD_COLOR_MAP: Record<string, string> = {
   happy: "#f59e0b",

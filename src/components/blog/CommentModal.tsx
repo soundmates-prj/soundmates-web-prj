@@ -21,6 +21,7 @@ import reactionService, {
 import type { Comment } from "../../types/comment";
 import ShareCard from "./ShareCard";
 import type { ShareCardData } from "./ShareCard";
+import { getMoodLabel } from "../../types/forum";
 import "./CommentModal.css";
 
 /* ── Reaction config ── */
@@ -618,7 +619,7 @@ export default function CommentModal({
                   className="cm-preview-mood"
                   style={{ background: `${moodColor}18`, color: moodColor }}
                 >
-                  #{post.moodTag}
+                  #{getMoodLabel(post.moodTag ?? null)}
                 </span>
               )}
             </div>

@@ -21,6 +21,7 @@ import {
   type PublishedPostsResponse,
   MOOD_OPTIONS,
   getMoodColor,
+  getMoodLabel,
 } from "../../types/forum";
 import "./ForumPage.css";
 import CommentModal from "../../components/blog/CommentModal";
@@ -95,7 +96,7 @@ function PostCard({ post }: { post: PublishedPost }) {
                 className="fp-badge fp-badge--mood"
                 style={{ background: `${moodColor}1a`, color: moodColor }}
               >
-                {post.moodTag}
+                {getMoodLabel(post.moodTag)}
               </span>
             )}
           </div>
@@ -229,9 +230,96 @@ export default function ForumPage() {
   return (
     <div className="fp-page">
       <div className="fp-hero">
-        <div className="fp-hero-glow" />
+        {/* ── Animated background ── */}
+        <div className="fp-hero-bg" />
+        <div className="fp-orb fp-orb--1" />
+        <div className="fp-orb fp-orb--2" />
+        <div className="fp-orb fp-orb--3" />
+
+        {/* ── Floating mood tags (decorative) ── */}
+        <div className="fp-tag-cloud" aria-hidden="true">
+          <span
+            className="fp-cloud-tag fp-cloud-tag--1"
+            style={{
+              color: "#fbbf24",
+              borderColor: "rgba(251,191,36,0.35)",
+              background: "rgba(251,191,36,0.12)",
+            }}
+          >
+            #Vui vẻ
+          </span>
+          <span
+            className="fp-cloud-tag fp-cloud-tag--2"
+            style={{
+              color: "#34d399",
+              borderColor: "rgba(52,211,153,0.35)",
+              background: "rgba(52,211,153,0.12)",
+            }}
+          >
+            #Chill
+          </span>
+          <span
+            className="fp-cloud-tag fp-cloud-tag--3"
+            style={{
+              color: "#f472b6",
+              borderColor: "rgba(244,114,182,0.35)",
+              background: "rgba(244,114,182,0.12)",
+            }}
+          >
+            #Lãng mạn
+          </span>
+          <span
+            className="fp-cloud-tag fp-cloud-tag--4"
+            style={{
+              color: "#fb923c",
+              borderColor: "rgba(251,146,60,0.35)",
+              background: "rgba(251,146,60,0.12)",
+            }}
+          >
+            #Năng động
+          </span>
+          <span
+            className="fp-cloud-tag fp-cloud-tag--5"
+            style={{
+              color: "#a78bfa",
+              borderColor: "rgba(167,139,250,0.35)",
+              background: "rgba(167,139,250,0.12)",
+            }}
+          >
+            #Tập trung
+          </span>
+          <span
+            className="fp-cloud-tag fp-cloud-tag--6"
+            style={{
+              color: "#60a5fa",
+              borderColor: "rgba(96,165,250,0.35)",
+              background: "rgba(96,165,250,0.12)",
+            }}
+          >
+            #Buồn
+          </span>
+          <span
+            className="fp-cloud-tag fp-cloud-tag--7"
+            style={{
+              color: "#f87171",
+              borderColor: "rgba(248,113,113,0.35)",
+              background: "rgba(248,113,113,0.12)",
+            }}
+          >
+            #Hype
+          </span>
+        </div>
+
+        {/* ── Content ── */}
         <div className="fp-hero-inner">
           <span className="fp-hero-badge">
+            <span className="fp-badge-bars" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
             <TrendingUp size={13} /> Bài viết nổi bật
           </span>
           <h1 className="fp-hero-title">Diễn đàn cộng đồng</h1>
@@ -248,6 +336,23 @@ export default function ForumPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          {totalCount > 0 && (
+            <div className="fp-hero-stats">
+              <Music2 size={12} />
+              <span>{totalCount} bài viết</span>
+              <span className="fp-hero-stats-dot" />
+              <span>7 tâm trạng</span>
+              <span className="fp-hero-stats-dot" />
+              <span>Cộng đồng SoundMates</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Particles ── */}
+        <div className="fp-particles" aria-hidden="true">
+          {Array.from({ length: 14 }).map((_, i) => (
+            <div key={i} className={`fp-particle fp-particle--${i + 1}`} />
+          ))}
         </div>
       </div>
 

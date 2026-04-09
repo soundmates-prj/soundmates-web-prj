@@ -1,6 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CloudUpload, Music, RefreshCw, Trash2, Upload, X, Check, AlertCircle } from "lucide-react";
-import { liveSessionApiService, type MusicResult, type BulkUploadMusicResult } from "../../../services/liveSessionApiService";
+import {
+  CloudUpload,
+  Music,
+  RefreshCw,
+  Trash2,
+  Upload,
+  X,
+  Check,
+  AlertCircle,
+} from "lucide-react";
+import {
+  liveSessionApiService,
+  type MusicResult,
+  type BulkUploadMusicResult,
+  type StationResult,
+} from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import {
   ALLOWED_AUDIO_EXTENSIONS,
@@ -13,11 +27,16 @@ export default function MusicCatalogPage() {
   const [tracks, setTracks] = useState<MusicResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const [stationId, setStationId] = useState<string | undefined>(undefined);
 
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [bulkResult, setBulkResult] = useState<BulkUploadMusicResult | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
+    {},
+  );
+  const [bulkResult, setBulkResult] = useState<BulkUploadMusicResult | null>(
+    null,
+  );
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isMountedRef = useRef(true);
@@ -43,6 +62,11 @@ export default function MusicCatalogPage() {
     isMountedRef.current = true;
     const init = async () => {
       try {
+        // Lấy stationId mặc định cho bulk upload
+        const stations = await liveSessionApiService.getStations();
+        if (stations && stations.length > 0) {
+          setStationId(stations[0].id);
+        }
         await loadTracks();
       } catch {
         setLoading(false);
@@ -71,9 +95,16 @@ export default function MusicCatalogPage() {
 
   const validateFile = useCallback((input: File) => {
     const ext = input.name.split(".").pop()?.toLowerCase() || "";
-    const extAllowed = ALLOWED_AUDIO_EXTENSIONS.includes(ext as (typeof ALLOWED_AUDIO_EXTENSIONS)[number]);
+    const extAllowed = ALLOWED_AUDIO_EXTENSIONS.includes(
+      ext as (typeof ALLOWED_AUDIO_EXTENSIONS)[number],
+    );
 
-    if (!extAllowed && !ALLOWED_AUDIO_MIME_TYPES.includes(input.type as (typeof ALLOWED_AUDIO_MIME_TYPES)[number])) {
+    if (
+      !extAllowed &&
+      !ALLOWED_AUDIO_MIME_TYPES.includes(
+        input.type as (typeof ALLOWED_AUDIO_MIME_TYPES)[number],
+      )
+    ) {
       showError("File không hợp lệ", "Chỉ hỗ trợ MP3, FLAC, WAV, OGG");
       return false;
     }
@@ -86,30 +117,36 @@ export default function MusicCatalogPage() {
     return true;
   }, []);
 
-  const handleFileSelect = useCallback((input: File | null) => {
-    if (!input) return;
-    if (!validateFile(input)) return;
-    setFiles((prev) => {
-      if (prev.some((f) => f.name === input.name)) return prev;
-      return [...prev, input];
-    });
-  }, [validateFile]);
+  const handleFileSelect = useCallback(
+    (input: File | null) => {
+      if (!input) return;
+      if (!validateFile(input)) return;
+      setFiles((prev) => {
+        if (prev.some((f) => f.name === input.name)) return prev;
+        return [...prev, input];
+      });
+    },
+    [validateFile],
+  );
 
-  const handleMultiFileSelect = useCallback((inputFiles: FileList | null) => {
-    if (!inputFiles || inputFiles.length === 0) return;
-    const validFiles: File[] = [];
-    for (const file of Array.from(inputFiles)) {
-      if (validateFile(file)) {
-        validFiles.push(file);
+  const handleMultiFileSelect = useCallback(
+    (inputFiles: FileList | null) => {
+      if (!inputFiles || inputFiles.length === 0) return;
+      const validFiles: File[] = [];
+      for (const file of Array.from(inputFiles)) {
+        if (validateFile(file)) {
+          validFiles.push(file);
+        }
       }
-    }
-    if (validFiles.length === 0) return;
-    setFiles((prev) => {
-      const existing = new Set(prev.map((f) => f.name));
-      const newFiles = validFiles.filter((f) => !existing.has(f.name));
-      return [...prev, ...newFiles];
-    });
-  }, [validateFile]);
+      if (validFiles.length === 0) return;
+      setFiles((prev) => {
+        const existing = new Set(prev.map((f) => f.name));
+        const newFiles = validFiles.filter((f) => !existing.has(f.name));
+        return [...prev, ...newFiles];
+      });
+    },
+    [validateFile],
+  );
 
   const removeFile = useCallback((fileName: string) => {
     setFiles((prev) => prev.filter((f) => f.name !== fileName));
@@ -144,7 +181,10 @@ export default function MusicCatalogPage() {
     }
 
     try {
-      const result = await liveSessionApiService.bulkUploadMusic(undefined, files);
+      const result = await liveSessionApiService.bulkUploadMusic(
+        stationId,
+        files,
+      );
 
       // Mark all as 100%
       setUploadProgress((prev) => {
@@ -156,9 +196,15 @@ export default function MusicCatalogPage() {
       setBulkResult(result);
 
       if (result.isSuccess) {
-        showSuccess("Upload thành công", `${result.successCount} file đã được thêm vào catalog`);
+        showSuccess(
+          "Upload thành công",
+          `${result.successCount} file đã được thêm vào catalog`,
+        );
       } else {
-        showError("Upload hoàn tất (một phần)", `${result.successCount}/${result.totalFiles} file thành công`);
+        showError(
+          "Upload hoàn tất (một phần)",
+          `${result.successCount}/${result.totalFiles} file thành công`,
+        );
       }
 
       await loadTracks();
@@ -201,14 +247,22 @@ export default function MusicCatalogPage() {
       <div className="ops-header">
         <div>
           <h1 className="ops-title">Kho Nhạc Hệ Thống</h1>
-          <p className="ops-subtitle">Quản lý System Media (kho nhạc hệ thống)</p>
+          <p className="ops-subtitle">
+            Quản lý System Media (kho nhạc hệ thống)
+          </p>
         </div>
         <div className="ops-actions">
-          <button className="ops-btn ops-btn--ghost" onClick={handleRefreshClick}>
+          <button
+            className="ops-btn ops-btn--ghost"
+            onClick={handleRefreshClick}
+          >
             <RefreshCw size={15} />
             Làm mới
           </button>
-          <button className="ops-btn ops-btn--primary" onClick={() => setShowUpload(true)}>
+          <button
+            className="ops-btn ops-btn--primary"
+            onClick={() => setShowUpload(true)}
+          >
             <Upload size={15} />
             Upload media
           </button>
@@ -245,9 +299,17 @@ export default function MusicCatalogPage() {
                   <tr key={track.id}>
                     <td>
                       {track.artworkUrl ? (
-                        <img src={track.artworkUrl} alt={track.title} width={40} height={40} style={{ borderRadius: 8, objectFit: "cover" }} />
+                        <img
+                          src={track.artworkUrl}
+                          alt={track.title}
+                          width={40}
+                          height={40}
+                          style={{ borderRadius: 8, objectFit: "cover" }}
+                        />
                       ) : (
-                        <span className="ops-badge"><Music size={12} /> Không có ảnh</span>
+                        <span className="ops-badge">
+                          <Music size={12} /> Không có ảnh
+                        </span>
                       )}
                     </td>
                     <td>{track.title}</td>
@@ -255,7 +317,10 @@ export default function MusicCatalogPage() {
                     <td>{formatDuration(track.duration)}</td>
                     <td>{formatFileSize(track.fileSize)}</td>
                     <td>
-                      <button className="ops-btn ops-btn--ghost" onClick={() => void handleDelete(track.id)}>
+                      <button
+                        className="ops-btn ops-btn--ghost"
+                        onClick={() => void handleDelete(track.id)}
+                      >
                         <Trash2 size={14} />
                         Xóa
                       </button>
@@ -269,8 +334,15 @@ export default function MusicCatalogPage() {
       </div>
 
       {showUpload ? (
-        <div className="ops-modal-overlay" onClick={() => !uploading && handleCloseUpload()}>
-          <div className="ops-modal" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
+        <div
+          className="ops-modal-overlay"
+          onClick={() => !uploading && handleCloseUpload()}
+        >
+          <div
+            className="ops-modal"
+            style={{ maxWidth: 560 }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="ops-modal-head">
               <h3 style={{ margin: 0 }}>Tải Lên Nhiều File Nhạc</h3>
             </div>
@@ -286,12 +358,22 @@ export default function MusicCatalogPage() {
                   }}
                 >
                   <div>
-                    <CloudUpload size={36} style={{ marginBottom: 8, color: "#1a9fd4" }} />
+                    <CloudUpload
+                      size={36}
+                      style={{ marginBottom: 8, color: "#1a9fd4" }}
+                    />
                     <p style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>
                       Chọn nhiều file nhạc cùng lúc
                     </p>
-                    <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8" }}>
-                      MP3, FLAC, WAV, OGG, M4A • Tối đa 100 file • Mỗi file tối đa 100MB
+                    <p
+                      style={{
+                        margin: "6px 0 0",
+                        fontSize: 12,
+                        color: "#94a3b8",
+                      }}
+                    >
+                      MP3, FLAC, WAV, OGG, M4A • Tối đa 100 file • Mỗi file tối
+                      đa 100MB
                     </p>
 
                     {/* Primary button to open file picker */}
@@ -318,8 +400,9 @@ export default function MusicCatalogPage() {
                       Chọn file nhạc
                     </button>
                     <p style={{ marginTop: 8, fontSize: 12, color: "#94a3b8" }}>
-                      ✨ Giữ <strong style={{ color: "#1a9fd4" }}>Shift</strong> hoặc{" "}
-                      <strong style={{ color: "#1a9fd4" }}>Ctrl</strong> để chọn nhiều file cùng lúc
+                      ✨ Giữ <strong style={{ color: "#1a9fd4" }}>Shift</strong>{" "}
+                      hoặc <strong style={{ color: "#1a9fd4" }}>Ctrl</strong> để
+                      chọn nhiều file cùng lúc
                     </p>
                   </div>
                 </div>
@@ -337,20 +420,47 @@ export default function MusicCatalogPage() {
               {/* File List */}
               {files.length > 0 && !bulkResult && (
                 <div style={{ marginTop: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#1a9fd4" }}>
-                      {files.length} file(s) • {formatFileSize(files.reduce((s, f) => s + f.size, 0))}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "#1a9fd4",
+                      }}
+                    >
+                      {files.length} file(s) •{" "}
+                      {formatFileSize(files.reduce((s, f) => s + f.size, 0))}
                     </span>
                     <button
                       type="button"
-                      style={{ fontSize: 12, color: "#94a3b8", background: "none", border: "none", cursor: "pointer" }}
+                      style={{
+                        fontSize: 12,
+                        color: "#94a3b8",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
                       onClick={() => fileInputRef.current?.click()}
                     >
                       + Thêm file
                     </button>
                   </div>
 
-                  <div style={{ maxHeight: 240, overflowY: "auto", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10 }}>
+                  <div
+                    style={{
+                      maxHeight: 240,
+                      overflowY: "auto",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 10,
+                    }}
+                  >
                     {files.map((f, i) => {
                       const progress = uploadProgress[f.name] ?? 0;
                       const isFailed = progress === -1;
@@ -363,35 +473,96 @@ export default function MusicCatalogPage() {
                             alignItems: "center",
                             gap: 10,
                             padding: "8px 12px",
-                            borderBottom: i < files.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                            background: isFailed ? "rgba(239,68,68,0.06)" : isDone ? "rgba(16,185,129,0.04)" : "transparent",
+                            borderBottom:
+                              i < files.length - 1
+                                ? "1px solid rgba(255,255,255,0.04)"
+                                : "none",
+                            background: isFailed
+                              ? "rgba(239,68,68,0.06)"
+                              : isDone
+                                ? "rgba(16,185,129,0.04)"
+                                : "transparent",
                           }}
                         >
                           <div style={{ color: "#1a9fd4" }}>
                             <Music size={18} />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <div
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 500,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
                               {f.name}
                             </div>
-                            <div style={{ display: "flex", gap: 8, fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                fontSize: 11,
+                                color: "#94a3b8",
+                                marginTop: 2,
+                              }}
+                            >
                               <span>{formatFileSize(f.size)}</span>
-                              {isFailed && <span style={{ color: "#ef4444", fontWeight: 600 }}>Thất bại</span>}
-                              {isDone && <span style={{ color: "#10b981", fontWeight: 600 }}>Hoàn tất</span>}
+                              {isFailed && (
+                                <span
+                                  style={{ color: "#ef4444", fontWeight: 600 }}
+                                >
+                                  Thất bại
+                                </span>
+                              )}
+                              {isDone && (
+                                <span
+                                  style={{ color: "#10b981", fontWeight: 600 }}
+                                >
+                                  Hoàn tất
+                                </span>
+                              )}
                               {!isFailed && !isDone && progress > 0 && (
-                                <span style={{ color: "#1a9fd4", fontWeight: 600 }}>{progress}%</span>
+                                <span
+                                  style={{ color: "#1a9fd4", fontWeight: 600 }}
+                                >
+                                  {progress}%
+                                </span>
                               )}
                             </div>
                             {!isFailed && !isDone && progress >= 0 && (
-                              <div style={{ height: 4, background: "rgba(124,58,237,0.15)", borderRadius: 2, marginTop: 4 }}>
-                                <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #1a9fd4, #55c5f1)", borderRadius: 2, transition: "width 0.3s" }} />
+                              <div
+                                style={{
+                                  height: 4,
+                                  background: "rgba(124,58,237,0.15)",
+                                  borderRadius: 2,
+                                  marginTop: 4,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    height: "100%",
+                                    width: `${progress}%`,
+                                    background:
+                                      "linear-gradient(90deg, #1a9fd4, #55c5f1)",
+                                    borderRadius: 2,
+                                    transition: "width 0.3s",
+                                  }}
+                                />
                               </div>
                             )}
                           </div>
                           {!uploading && (
                             <button
                               type="button"
-                              style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 4 }}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "#94a3b8",
+                                cursor: "pointer",
+                                padding: 4,
+                              }}
                               onClick={() => removeFile(f.name)}
                             >
                               <X size={16} />
@@ -414,32 +585,62 @@ export default function MusicCatalogPage() {
                       gap: 14,
                       padding: 16,
                       borderRadius: 10,
-                      background: bulkResult.isSuccess ? "rgba(16,185,129,0.1)" : "rgba(234,179,8,0.1)",
+                      background: bulkResult.isSuccess
+                        ? "rgba(16,185,129,0.1)"
+                        : "rgba(234,179,8,0.1)",
                       border: `1px solid ${bulkResult.isSuccess ? "rgba(16,185,129,0.2)" : "rgba(234,179,8,0.2)"}`,
                       color: bulkResult.isSuccess ? "#10b981" : "#eab308",
                       marginBottom: 12,
                     }}
                   >
-                    {bulkResult.isSuccess ? <Check size={28} /> : <AlertCircle size={28} />}
+                    {bulkResult.isSuccess ? (
+                      <Check size={28} />
+                    ) : (
+                      <AlertCircle size={28} />
+                    )}
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 700 }}>
-                        {bulkResult.isSuccess ? "Tải lên thành công!" : "Upload hoàn tất (một phần)"}
+                        {bulkResult.isSuccess
+                          ? "Tải lên thành công!"
+                          : "Upload hoàn tất (một phần)"}
                       </div>
                       <div style={{ fontSize: 12, opacity: 0.85 }}>
-                        {bulkResult.successCount}/{bulkResult.totalFiles} file thành công
-                        {bulkResult.failedCount > 0 && ` • ${bulkResult.failedCount} file thất bại`}
+                        {bulkResult.successCount}/{bulkResult.totalFiles} file
+                        thành công
+                        {bulkResult.failedCount > 0 &&
+                          ` • ${bulkResult.failedCount} file thất bại`}
                       </div>
                     </div>
                   </div>
 
                   {bulkResult.uploadedFiles.length > 0 && (
                     <div style={{ marginBottom: 8 }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#10b981", display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                        <Check size={14} /> Đã upload ({bulkResult.uploadedFiles.length})
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "#10b981",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          marginBottom: 6,
+                        }}
+                      >
+                        <Check size={14} /> Đã upload (
+                        {bulkResult.uploadedFiles.length})
                       </div>
                       <div style={{ maxHeight: 120, overflowY: "auto" }}>
                         {bulkResult.uploadedFiles.map((f) => (
-                          <div key={f.id} style={{ fontSize: 12, color: "#10b981", padding: "3px 0", display: "flex", gap: 6 }}>
+                          <div
+                            key={f.id}
+                            style={{
+                              fontSize: 12,
+                              color: "#10b981",
+                              padding: "3px 0",
+                              display: "flex",
+                              gap: 6,
+                            }}
+                          >
                             <Music size={12} style={{ marginTop: 2 }} />
                             <span style={{ fontWeight: 500 }}>{f.title}</span>
                             <span style={{ opacity: 0.7 }}>— {f.artist}</span>
@@ -451,11 +652,29 @@ export default function MusicCatalogPage() {
 
                   {bulkResult.failedFiles.length > 0 && (
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                        <X size={14} /> Thất bại ({bulkResult.failedFiles.length})
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "#ef4444",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          marginBottom: 6,
+                        }}
+                      >
+                        <X size={14} /> Thất bại (
+                        {bulkResult.failedFiles.length})
                       </div>
                       {bulkResult.failedFiles.map((f) => (
-                        <div key={f.fileName} style={{ fontSize: 12, color: "#ef4444", padding: "3px 0" }}>
+                        <div
+                          key={f.fileName}
+                          style={{
+                            fontSize: 12,
+                            color: "#ef4444",
+                            padding: "3px 0",
+                          }}
+                        >
                           • {f.fileName}: {f.errorMessage}
                         </div>
                       ))}

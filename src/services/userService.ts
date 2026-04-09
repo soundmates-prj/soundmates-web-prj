@@ -126,6 +126,17 @@ class UserService {
     }
   }
 
+  // GET /users/{id}/profile/full
+  async getPublicProfile(id: string): Promise<ApiResponse<UserDto>> {
+    try {
+      const res = await api.get<ApiResponse<UserDto>>(`/users/${id}/profile/full`);
+      return res.data;
+    } catch (err: any) {
+      console.error('[UserService] getPublicProfile error:', err);
+      return this.fail(err, 'Lỗi khi tải trang cá nhân');
+    }
+  }
+
   // POST /users — create user (Admin)
   async createUser(payload: {
     username: string;

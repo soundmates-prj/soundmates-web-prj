@@ -1,241 +1,292 @@
-import { useState, useRef, useEffect } from "react";
-import { Mic, Upload, Trash2, Play, Pause, Loader2, Info, Volume2 } from "lucide-react";
-import api from "../../../services/axios";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Mic,
+  Upload,
+  Trash2,
+  Play,
+  Pause,
+  Loader2,
+  Info,
+  Volume2,
+  X,
+  Waves,
+} from "lucide-react";
+import { voiceCloneService, type ClonedVoice, type SubscriptionPlan } from "../../../services/voiceCloneService";
 import { showToast } from "../../../utils/toast";
 import "./VoiceCloneSection.css";
-
-interface ClonedVoice {
-  id: string;
-  voiceCode: string;
-  displayName: string;
-  provider: string;
-  gender?: string;
-  model?: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
-interface SubscriptionPlan {
-  id: string;
-  planName: string;
-  voiceModelLimit: number;
-  ttsMinuteLimit: number;
-  podcastRequestLimit: number;
-  price: number;
-}
 
 interface VoiceCloneSectionProps {
   onUpgradeClick?: () => void;
 }
 
+const ALLOWED_TYPES = ["audio/wav", "audio/mpeg", "audio/mp3", "audio/m4a", "audio/flac", "audio/ogg"];
+const ALLOWED_EXTENSIONS = [".wav", ".mp3", ".m4a", ".flac", ".ogg"];
+const MAX_FILE_SIZE_MB = 10;
+const MIN_REF_TEXT_CHARS = 5;
+
+/* ─── Helpers ───────────────────────────────────────────────────────────── */
+
+function formatFileSize(bytes: number): string {
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    return new Date(dateStr).toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function validateFile(file: File): string | null {
+  const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+  if (!ALLOWED_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) {
+    return "Định dạng không được hỗ trợ. Vui lòng upload file WAV, MP3, M4A, FLAC, hoặc OGG.";
+  }
+  if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+    return `File quá lớn (${formatFileSize(file.size)}). Tối đa ${MAX_FILE_SIZE_MB}MB.`;
+  }
+  return null;
+}
+
+/* ─── Delete Confirm Modal ───────────────────────────────────────────────── */
+
+function DeleteConfirmModal({
+  voiceName,
+  onConfirm,
+  onCancel,
+  loading,
+}: {
+  voiceName: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
+}) {
+  return (
+    <>
+      <div className="vc-modal-backdrop" onClick={onCancel} />
+      <div className="vc-delete-modal">
+        <div className="vc-delete-modal-icon">
+          <Trash2 size={28} />
+        </div>
+        <h3>Xóa giọng đọc?</h3>
+        <p>
+          Bạn có chắc muốn xóa <strong>&quot;{voiceName}&quot;</strong>? Hành động này không
+          thể hoàn tác.
+        </p>
+        <div className="vc-delete-modal-actions">
+          <button className="vc-cancel-btn" onClick={onCancel} disabled={loading}>
+            Hủy
+          </button>
+          <button className="vc-delete-confirm-btn" onClick={onConfirm} disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 size={14} className="vc-spinner" />
+                Đang xóa...
+              </>
+            ) : (
+              <>
+                <Trash2 size={14} />
+                Xóa
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Main Component ─────────────────────────────────────────────────────── */
+
 export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionProps) {
   const [voices, setVoices] = useState<ClonedVoice[]>([]);
-  const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   // Upload form state
   const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [audioPreview, setAudioPreview] = useState<string | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [refText, setRefText] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [gender, setGender] = useState("Unknown");
   const [dragActive, setDragActive] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Audio element ref
+  const audioRef = useCallback((node: HTMLAudioElement | null) => {
+    if (node && audioPreviewUrl) {
+      node.src = audioPreviewUrl;
+      node.onplay = () => setIsPlaying(true);
+      node.onpause = () => setIsPlaying(false);
+      node.onended = () => setIsPlaying(false);
+    }
+  }, [audioPreviewUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchData = async () => {
+  // Delete confirm modal
+  const [deleteTarget, setDeleteTarget] = useState<ClonedVoice | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  /* ─── Load data ─────────────────────────────────────────────────────── */
+
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch user's voices
-      const voicesRes = await api.get("/voice-clone/my-voices");
-      if (voicesRes.data.success && voicesRes.data.data?.voices) {
-        setVoices(voicesRes.data.data.voices);
-      }
-
-      // Fetch subscription plan for limits
-      const planRes = await api.get("/me/subscriptions");
-      if (planRes.data.success && planRes.data.data?.planId) {
-        const planDetailRes = await api.get(`/subscription-plans/${planRes.data.data.planId}`);
-        if (planDetailRes.data.success && planDetailRes.data.data) {
-          setPlan(planDetailRes.data.data);
-        }
-      }
-    } catch (error: any) {
-      console.error("Failed to fetch voice data:", error);
-      if (error?.response?.status === 401) {
-        // Not logged in
-      }
+      const [voicesData, planData] = await Promise.all([
+        voiceCloneService.getMyVoices(),
+        voiceCloneService.getMySubscriptionPlan(),
+      ]);
+      setVoices(voicesData);
+      setPlan(planData);
+    } catch (err) {
+      console.error("[VoiceCloneSection] fetchData error:", err);
+      showToast.error("Không thể tải dữ liệu giọng đọc");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => { void fetchData(); }, [fetchData]);
+
+  /* ─── Cleanup audio preview URL on unmount ───────────────────────────── */
+
+  useEffect(() => {
+    return () => {
+      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    };
+  }, [audioPreviewUrl]);
+
+  /* ─── Audio playback ────────────────────────────────────────────────── */
+
+  const togglePlayPause = () => {
+    if (!audioRef || !audioPreviewUrl) return;
+    const audio = document.querySelector("audio") as HTMLAudioElement | null;
+    if (!audio) return;
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play().catch(() => {
+        showToast.error("Trình duyệt chặn phát tự động. Vui lòng tương tác thủ công.");
+      });
+    }
   };
+
+  /* ─── Drag & Drop ───────────────────────────────────────────────────── */
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === "dragleave") {
+    } else {
       setDragActive(false);
     }
+  };
+
+  const applyFile = (file: File) => {
+    const err = validateFile(file);
+    if (err) {
+      showToast.error(err);
+      return;
+    }
+    setAudioFile(file);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    setAudioPreviewUrl(URL.createObjectURL(file));
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
+    if (e.dataTransfer.files?.[0]) applyFile(e.dataTransfer.files[0]);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0]);
-    }
+    if (e.target.files?.[0]) applyFile(e.target.files[0]);
   };
 
-  const handleFile = (file: File) => {
-    const allowedTypes = ["audio/wav", "audio/mpeg", "audio/mp3", "audio/m4a", "audio/flac", "audio/ogg"];
-    const allowedExtensions = [".wav", ".mp3", ".m4a", ".flac", ".ogg"];
-    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+  /* ─── Upload ────────────────────────────────────────────────────────── */
 
-    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(ext)) {
-      showToast.error("Định dạng không được hỗ trợ. Vui lòng upload file WAV, MP3, M4A, FLAC, hoặc OGG.");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      showToast.error("File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.");
-      return;
-    }
-
-    setAudioFile(file);
-
-    // Create preview URL
-    const url = URL.createObjectURL(file);
-    setAudioPreview(url);
-  };
-
-  const togglePlayPause = () => {
-    if (!audioRef.current || !audioPreview) return;
-
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
+  const validateForm = (): string | null => {
+    if (!audioFile) return "Vui lòng chọn file audio mẫu.";
+    if (!refText.trim() || refText.trim().length < MIN_REF_TEXT_CHARS)
+      return `Nội dung bạn nhập quá ngắn (ít nhất ${MIN_REF_TEXT_CHARS} ký tự).`;
+    if (!displayName.trim()) return "Vui lòng nhập tên cho giọng đọc.";
+    return null;
   };
 
   const handleUpload = async () => {
-    if (!audioFile) {
-      showToast.error("Vui lòng chọn file audio");
-      return;
-    }
-    if (!refText.trim()) {
-      showToast.error("Vui lòng nhập nội dung bạn đã nói trong file audio");
-      return;
-    }
-    if (!displayName.trim()) {
-      showToast.error("Vui lòng nhập tên cho giọng đọc");
-      return;
-    }
-
-    // Validate refText length (should roughly match audio duration)
-    if (refText.trim().length < 5) {
-      showToast.error("Nội dung bạn nhập quá ngắn. Vui lòng nhập đoạn văn bản bạn đã nói trong audio.");
+    const err = validateForm();
+    if (err) {
+      showToast.error(err);
       return;
     }
 
     setUploading(true);
-    const toastId = showToast.loading("Đang clone giọng... Vui lòng chờ 10-30 giây.");
+    const toastId = showToast.loading("Đang clone giọng... Vui lòng chờ 10–30 giây.");
 
     try {
-      const formData = new FormData();
-      formData.append("displayName", displayName.trim());
-      formData.append("refText", refText.trim());
-      formData.append("gender", gender);
-      formData.append("file", audioFile);
-
-      const response = await api.post("/voice-clone/clone", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        timeout: 120000, // 2 minutes for voice cloning
+      await voiceCloneService.cloneVoice({
+        displayName: displayName.trim(),
+        refText: refText.trim(),
+        gender,
+        audioFile: audioFile!,
       });
 
       showToast.dismiss(toastId);
-
-      if (response.data.success) {
-        showToast.success("Clone giọng thành công! Giờ bạn có thể dùng giọng này để tạo podcast.");
-        setShowUploadModal(false);
-        resetForm();
-        fetchData(); // Refresh list
-      } else {
-        showToast.error(response.data.message || "Clone giọng thất bại");
-      }
-    } catch (error: any) {
+      showToast.success("Clone giọng thành công! Giờ bạn có thể dùng giọng này để tạo podcast.");
+      resetForm();
+      setShowUploadModal(false);
+      void fetchData();
+    } catch (err: any) {
       showToast.dismiss(toastId);
-      console.error("Voice clone error:", error);
-      showToast.error(
-        error.response?.data?.message ||
-        error.message ||
-        "Đã xảy ra lỗi khi clone giọng. Vui lòng thử lại."
-      );
+      showToast.error(err?.response?.data?.message ?? err?.message ?? "Clone giọng thất bại. Vui lòng thử lại.");
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDelete = async (voiceId: string) => {
-    if (!confirm("Bạn có chắc muốn xóa giọng đọc này? Hành động này không thể hoàn tác.")) {
-      return;
-    }
+  /* ─── Delete ────────────────────────────────────────────────────────── */
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const response = await api.delete(`/voice-clone/${voiceId}`);
-      if (response.data.success) {
-        showToast.success("Đã xóa giọng đọc");
-        fetchData();
-      } else {
-        showToast.error(response.data.message || "Xóa thất bại");
-      }
-    } catch (error: any) {
-      showToast.error(error.response?.data?.message || "Đã xảy ra lỗi khi xóa");
+      await voiceCloneService.deleteVoice(deleteTarget.id);
+      showToast.success("Đã xóa giọng đọc");
+      setVoices(prev => prev.filter(v => v.id !== deleteTarget.id));
+    } catch (err: any) {
+      showToast.error(err?.response?.data?.message ?? err?.message ?? "Xóa thất bại");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
     }
   };
+
+  /* ─── Reset form ────────────────────────────────────────────────────── */
 
   const resetForm = () => {
     setAudioFile(null);
-    setAudioPreview(null);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    setAudioPreviewUrl(null);
     setRefText("");
     setDisplayName("");
     setGender("Unknown");
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
     setIsPlaying(false);
   };
 
-  const canCreateMoreVoices = plan ? voices.length < plan.voiceModelLimit : false;
-  const isVoiceCloneEnabled = plan && plan.voiceModelLimit > 0;
+  /* ─── Derived state ─────────────────────────────────────────────────── */
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  const isVoiceCloneEnabled = plan != null && plan.voiceModelLimit > 0;
+  const canCreateMoreVoices = !plan || voices.length < plan.voiceModelLimit;
+
+  /* ─── Render ────────────────────────────────────────────────────────── */
 
   if (loading) {
     return (
@@ -260,14 +311,15 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
       </div>
 
       {!isVoiceCloneEnabled ? (
+        /* ── Upgrade prompt ── */
         <div className="vc-upgrade-prompt">
           <div className="vc-upgrade-icon">
             <Volume2 size={48} />
           </div>
           <h3>Tính năng Voice Clone</h3>
           <p>
-            Nâng cấp lên <strong>Premium</strong> hoặc <strong>Elite</strong> để tạo giọng đọc AI
-            từ chính giọng nói của bạn. Dùng nó để tạo podcast với giọng của bạn!
+            Nâng cấp lên <strong>Premium</strong> hoặc <strong>Elite</strong> để tạo giọng đọc
+            AI từ chính giọng nói của bạn. Dùng nó để tạo podcast với giọng của bạn!
           </p>
           {onUpgradeClick && (
             <button className="vc-upgrade-btn" onClick={onUpgradeClick}>
@@ -277,7 +329,7 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
         </div>
       ) : (
         <>
-          {/* Stats Bar */}
+          {/* ── Stats bar ── */}
           <div className="vc-stats-bar">
             <div className="vc-stat">
               <span className="vc-stat-value">{voices.length}</span>
@@ -285,11 +337,14 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
             </div>
             <div className="vc-stat-info">
               <Info size={16} />
-              <span>Clone giọng cần 3-10 giây audio. Upload file có giọng nói rõ ràng để có kết quả tốt nhất.</span>
+              <span>
+                Clone giọng cần 3–10 giây audio. Upload file có giọng nói rõ ràng để có kết
+                quả tốt nhất.
+              </span>
             </div>
           </div>
 
-          {/* Voice List */}
+          {/* ── Voice list ── */}
           <div className="vc-voices-list">
             {voices.length === 0 ? (
               <div className="vc-empty">
@@ -298,24 +353,26 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
                 <p>Tạo giọng đọc AI đầu tiên của bạn bằng cách upload một đoạn audio ngắn</p>
               </div>
             ) : (
-              voices.map((voice) => (
+              voices.map(voice => (
                 <div key={voice.id} className="vc-voice-card">
                   <div className="vc-voice-info">
                     <div className="vc-voice-header">
                       <h4>{voice.displayName}</h4>
-                      <span className={`vc-voice-gender ${voice.gender?.toLowerCase() || 'unknown'}`}>
-                        {voice.gender || "Không xác định"}
+                      <span className={`vc-voice-gender ${voice.gender?.toLowerCase() ?? "unknown"}`}>
+                        {voice.gender ?? "Không rõ"}
                       </span>
                     </div>
                     <div className="vc-voice-meta">
-                      <span>Provider: {voice.provider}</span>
+                      <span>
+                        <Waves size={12} /> {voice.provider}
+                      </span>
                       <span>Tạo: {formatDate(voice.createdAt)}</span>
                     </div>
                   </div>
                   <div className="vc-voice-actions">
                     <button
                       className="vc-delete-btn"
-                      onClick={() => handleDelete(voice.id)}
+                      onClick={() => setDeleteTarget(voice)}
                       title="Xóa giọng đọc"
                     >
                       <Trash2 size={16} />
@@ -326,7 +383,7 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
             )}
           </div>
 
-          {/* Create Button */}
+          {/* ── Create button ── */}
           {canCreateMoreVoices && (
             <button
               className="vc-create-btn"
@@ -339,7 +396,7 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
         </>
       )}
 
-      {/* Upload Modal */}
+      {/* ── Upload modal ── */}
       {showUploadModal && (
         <>
           <div className="vc-modal-backdrop" onClick={() => !uploading && setShowUploadModal(false)} />
@@ -347,24 +404,26 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
             <div className="vc-modal-header">
               <h3>Tạo giọng đọc AI</h3>
               {!uploading && (
-                <button className="vc-modal-close" onClick={() => setShowUploadModal(false)}>×</button>
+                <button className="vc-modal-close" onClick={() => setShowUploadModal(false)}>
+                  <X size={18} />
+                </button>
               )}
             </div>
 
             <div className="vc-modal-body">
-              {/* Audio Upload Zone */}
+              {/* Step 1: Audio upload */}
               <div className="vc-upload-section">
-                <label>1. Upload audio mẫu (3-10 giây)</label>
+                <label>1. Upload audio mẫu (3–10 giây)</label>
                 <div
                   className={`vc-dropzone ${dragActive ? "active" : ""} ${audioFile ? "has-file" : ""}`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
-                  onClick={() => !uploading && fileInputRef.current?.click()}
+                  onClick={() => !uploading && document.getElementById("vc-audio-input")?.click()}
                 >
                   <input
-                    ref={fileInputRef}
+                    id="vc-audio-input"
                     type="file"
                     accept=".wav,.mp3,.m4a,.flac,.ogg,audio/*"
                     onChange={handleFileChange}
@@ -374,40 +433,54 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
 
                   {audioFile ? (
                     <div className="vc-file-preview">
+                      <div className="vc-file-icon">
+                        <Waves size={20} />
+                      </div>
                       <div className="vc-file-info">
                         <span className="vc-file-name">{audioFile.name}</span>
-                        <span className="vc-file-size">
-                          {(audioFile.size / 1024 / 1024).toFixed(2)} MB
-                        </span>
+                        <span className="vc-file-size">{formatFileSize(audioFile.size)}</span>
                       </div>
+                      {/* Hidden audio — controlled via ref callback */}
+                      <audio
+                        ref={audioRef}
+                        onEnded={() => setIsPlaying(false)}
+                        onError={() => {
+                          setIsPlaying(false);
+                          showToast.error("Không thể phát file audio này");
+                        }}
+                      />
                       <button
-                        className="vc-play-btn"
-                        onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
+                        className={`vc-play-btn ${isPlaying ? "playing" : ""}`}
+                        onClick={e => {
+                          e.stopPropagation();
+                          togglePlayPause();
+                        }}
                         disabled={uploading}
+                        title={isPlaying ? "Dừng" : "Phát"}
                       >
-                        {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                        {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                       </button>
-                      <audio ref={audioRef} src={audioPreview || ""} onEnded={() => setIsPlaying(false)} />
                     </div>
                   ) : (
                     <div className="vc-dropzone-content">
                       <Upload size={32} />
                       <p>Kéo thả file audio hoặc click để chọn</p>
-                      <span>WAV, MP3, M4A, FLAC, OGG (tối đa 10MB)</span>
+                      <span>WAV, MP3, M4A, FLAC, OGG (tối đa {MAX_FILE_SIZE_MB}MB)</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Reference Text */}
+              {/* Step 2: Reference text */}
               <div className="vc-form-group">
                 <label>2. Nội dung bạn đã nói trong audio</label>
                 <textarea
                   value={refText}
-                  onChange={(e) => setRefText(e.target.value)}
+                  onChange={e => setRefText(e.target.value)}
                   placeholder="Nhập chính xác những gì bạn đã nói trong file audio. Đây là văn bản mẫu để hệ thống học cách phát âm của bạn."
                   rows={3}
                   disabled={uploading}
+                  maxLength={1000}
                 />
                 <span className="vc-form-hint">
                   <Info size={14} />
@@ -415,24 +488,24 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
                 </span>
               </div>
 
-              {/* Display Name */}
+              {/* Step 3: Display name */}
               <div className="vc-form-group">
                 <label>3. Tên giọng đọc</label>
                 <input
                   type="text"
                   value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  onChange={e => setDisplayName(e.target.value)}
                   placeholder="VD: Giọng Bác sĩ, Giọng MC..."
                   maxLength={100}
                   disabled={uploading}
                 />
               </div>
 
-              {/* Gender */}
+              {/* Step 4: Gender */}
               <div className="vc-form-group">
                 <label>4. Giới tính giọng nói</label>
                 <div className="vc-gender-options">
-                  {["Male", "Female", "Unknown"].map((g) => (
+                  {(["Male", "Female", "Unknown"] as const).map(g => (
                     <button
                       key={g}
                       type="button"
@@ -457,8 +530,13 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
               </button>
               <button
                 className="vc-submit-btn"
-                onClick={handleUpload}
-                disabled={uploading || !audioFile || !refText.trim() || !displayName.trim()}
+                onClick={() => void handleUpload()}
+                disabled={
+                  uploading ||
+                  !audioFile ||
+                  refText.trim().length < MIN_REF_TEXT_CHARS ||
+                  !displayName.trim()
+                }
               >
                 {uploading ? (
                   <>
@@ -475,6 +553,16 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
             </div>
           </div>
         </>
+      )}
+
+      {/* ── Delete confirm modal ── */}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          voiceName={deleteTarget.displayName}
+          onConfirm={() => void handleDeleteConfirm()}
+          onCancel={() => setDeleteTarget(null)}
+          loading={deleting}
+        />
       )}
     </div>
   );

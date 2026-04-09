@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
   FileText,
   Search,
@@ -12,30 +12,31 @@ import {
   Globe,
   Archive,
   X,
-} from 'lucide-react';
-import { showSuccess, showError } from '../../../components/common/toastUtils';
-import postService from '../../../services/postService';
-import type { Post } from '../../../types/post';
-import './UserPostsManagementScreen.css';
+} from "lucide-react";
+import { showSuccess, showError } from "../../../components/common/toastUtils";
+import postService from "../../../services/postService";
+import type { Post } from "../../../types/post";
+import { getMoodLabel } from "../../../types/forum";
+import "./UserPostsManagementScreen.css";
 
 // ── Status helpers ─────────────────────────────────────────
 const STATUS_LABELS: Record<string, string> = {
-  Published: 'Đã đăng',
-  Draft: 'Bản nháp',
-  Archived: 'Đã lưu trữ',
+  Published: "Đã đăng",
+  Draft: "Bản nháp",
+  Archived: "Đã lưu trữ",
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  Published: 'published',
-  Draft: 'draft',
-  Archived: 'archived',
+  Published: "published",
+  Draft: "draft",
+  Archived: "archived",
 };
 
 const STATUS_FILTERS = [
-  { value: '', label: 'Tất cả trạng thái' },
-  { value: 'Published', label: 'Đã đăng' },
-  { value: 'Draft', label: 'Bản nháp' },
-  { value: 'Archived', label: 'Đã lưu trữ' },
+  { value: "", label: "Tất cả trạng thái" },
+  { value: "Published", label: "Đã đăng" },
+  { value: "Draft", label: "Bản nháp" },
+  { value: "Archived", label: "Đã lưu trữ" },
 ] as const;
 
 export function UserPostsManagementScreen() {
@@ -45,8 +46,8 @@ export function UserPostsManagementScreen() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -57,26 +58,32 @@ export function UserPostsManagementScreen() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   // ── Fetch ────────────────────────────────────────────────
-  const fetchPosts = useCallback(async (pageNum = 1) => {
-    setLoading(true);
-    try {
-      const res = await postService.getAllPosts({
-        page: pageNum,
-        pageSize: 20,
-        search: searchQuery.trim() || undefined,
-        status: statusFilter || undefined,
-      });
-      setPosts(res.items);
-      setTotalPages(res.meta.totalPages);
-      setTotalCount(res.meta.totalCount);
-      setPage(pageNum);
-    } catch (err: any) {
-      showError('Lỗi tải dữ liệu', err?.response?.data?.message ?? 'Không thể tải danh sách bài viết');
-      setPosts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery, statusFilter]);
+  const fetchPosts = useCallback(
+    async (pageNum = 1) => {
+      setLoading(true);
+      try {
+        const res = await postService.getAllPosts({
+          page: pageNum,
+          pageSize: 20,
+          search: searchQuery.trim() || undefined,
+          status: statusFilter || undefined,
+        });
+        setPosts(res.items);
+        setTotalPages(res.meta.totalPages);
+        setTotalCount(res.meta.totalCount);
+        setPage(pageNum);
+      } catch (err: any) {
+        showError(
+          "Lỗi tải dữ liệu",
+          err?.response?.data?.message ?? "Không thể tải danh sách bài viết",
+        );
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchQuery, statusFilter],
+  );
 
   // Reload on filter change
   useEffect(() => {
@@ -86,43 +93,48 @@ export function UserPostsManagementScreen() {
 
   // ── Actions ─────────────────────────────────────────────
   const handleHide = async (postId: string) => {
-    if (!window.confirm('Ẩn bài viết này khỏi người dùng?')) return;
+    if (!window.confirm("Ẩn bài viết này khỏi người dùng?")) return;
     setActionLoading(postId);
     try {
       await postService.archivePost(postId);
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: 'Archived' } : p));
-      showSuccess('Đã ẩn', 'Bài viết đã được ẩn khỏi người dùng');
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, status: "Archived" } : p)),
+      );
+      showSuccess("Đã ẩn", "Bài viết đã được ẩn khỏi người dùng");
     } catch {
-      showError('Lỗi', 'Không thể ẩn bài viết');
+      showError("Lỗi", "Không thể ẩn bài viết");
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleUnhide = async (postId: string) => {
-    if (!window.confirm('Khôi phục bài viết này?')) return;
+    if (!window.confirm("Khôi phục bài viết này?")) return;
     setActionLoading(postId);
     try {
       await postService.publishPost(postId);
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: 'Published' } : p));
-      showSuccess('Đã khôi phục', 'Bài viết đã được khôi phục');
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, status: "Published" } : p)),
+      );
+      showSuccess("Đã khôi phục", "Bài viết đã được khôi phục");
     } catch {
-      showError('Lỗi', 'Không thể khôi phục bài viết');
+      showError("Lỗi", "Không thể khôi phục bài viết");
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleDelete = async (postId: string) => {
-    if (!window.confirm('Xoá bài viết này? Hành động không thể hoàn tác.')) return;
+    if (!window.confirm("Xoá bài viết này? Hành động không thể hoàn tác."))
+      return;
     setActionLoading(postId);
     try {
       await postService.deletePost(postId);
-      setPosts(prev => prev.filter(p => p.id !== postId));
-      setTotalCount(prev => prev - 1);
-      showSuccess('Đã xoá', 'Bài viết đã được xoá');
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      setTotalCount((prev) => prev - 1);
+      showSuccess("Đã xoá", "Bài viết đã được xoá");
     } catch {
-      showError('Lỗi', 'Không thể xoá bài viết');
+      showError("Lỗi", "Không thể xoá bài viết");
     } finally {
       setActionLoading(null);
     }
@@ -132,10 +144,12 @@ export function UserPostsManagementScreen() {
     setActionLoading(postId);
     try {
       await postService.publishPost(postId);
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: 'Published' } : p));
-      showSuccess('Đã đăng', 'Bài viết đã được xuất bản');
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, status: "Published" } : p)),
+      );
+      showSuccess("Đã đăng", "Bài viết đã được xuất bản");
     } catch {
-      showError('Lỗi', 'Không thể xuất bản bài viết');
+      showError("Lỗi", "Không thể xuất bản bài viết");
     } finally {
       setActionLoading(null);
     }
@@ -145,10 +159,12 @@ export function UserPostsManagementScreen() {
     setActionLoading(postId);
     try {
       await postService.revertToDraft(postId);
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: 'Draft' } : p));
-      showSuccess('Đã chuyển', 'Bài viết đã được chuyển về bản nháp');
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, status: "Draft" } : p)),
+      );
+      showSuccess("Đã chuyển", "Bài viết đã được chuyển về bản nháp");
     } catch {
-      showError('Lỗi', 'Không thể chuyển bài viết về bản nháp');
+      showError("Lỗi", "Không thể chuyển bài viết về bản nháp");
     } finally {
       setActionLoading(null);
     }
@@ -173,13 +189,23 @@ export function UserPostsManagementScreen() {
 
   // ── Helpers ─────────────────────────────────────────────
   const getStatusLabel = (s: string) => STATUS_LABELS[s] ?? s;
-  const getStatusBadge = (s: string) => STATUS_BADGE[s] ?? 'published';
+  const getStatusBadge = (s: string) => STATUS_BADGE[s] ?? "published";
 
   const fmt = (iso: string) =>
-    new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    new Date(iso).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
 
   const fmtDt = (iso: string) =>
-    new Date(iso).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    new Date(iso).toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   return (
     <div className="posts-mgmt-page">
@@ -200,7 +226,7 @@ export function UserPostsManagementScreen() {
           disabled={loading}
           title="Làm mới"
         >
-          <RefreshCw size={16} className={loading ? 'posts-spin' : ''} />
+          <RefreshCw size={16} className={loading ? "posts-spin" : ""} />
         </button>
       </div>
 
@@ -212,10 +238,19 @@ export function UserPostsManagementScreen() {
             type="text"
             placeholder="Tìm bài viết theo tiêu đề hoặc tác giả..."
             value={searchQuery}
-            onChange={e => { setSearchQuery(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
           />
           {searchQuery && (
-            <button className="posts-search-clear" onClick={() => { setSearchQuery(''); setPage(1); }}>
+            <button
+              className="posts-search-clear"
+              onClick={() => {
+                setSearchQuery("");
+                setPage(1);
+              }}
+            >
               <X size={14} />
             </button>
           )}
@@ -224,10 +259,15 @@ export function UserPostsManagementScreen() {
         <select
           className="posts-status-filter"
           value={statusFilter}
-          onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
         >
-          {STATUS_FILTERS.map(f => (
-            <option key={f.value} value={f.value}>{f.label}</option>
+          {STATUS_FILTERS.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
           ))}
         </select>
       </div>
@@ -243,7 +283,9 @@ export function UserPostsManagementScreen() {
           <div className="posts-empty">
             <FileText size={40} />
             <p>Không có bài viết nào</p>
-            <p className="posts-empty-sub">Thử thay đổi bộ lọc hoặc tìm kiếm khác</p>
+            <p className="posts-empty-sub">
+              Thử thay đổi bộ lọc hoặc tìm kiếm khác
+            </p>
           </div>
         ) : (
           <table className="posts-mgmt-table">
@@ -258,8 +300,13 @@ export function UserPostsManagementScreen() {
               </tr>
             </thead>
             <tbody>
-              {posts.map(post => (
-                <tr key={post.id} className={actionLoading === post.id ? 'posts-row-loading' : ''}>
+              {posts.map((post) => (
+                <tr
+                  key={post.id}
+                  className={
+                    actionLoading === post.id ? "posts-row-loading" : ""
+                  }
+                >
                   {/* Title */}
                   <td>
                     <div className="post-title-cell">
@@ -269,7 +316,9 @@ export function UserPostsManagementScreen() {
                           {post.title || <em>(Không có tiêu đề)</em>}
                         </span>
                         {post.moodTag && (
-                          <span className="post-mood-tag">#{post.moodTag}</span>
+                          <span className="post-mood-tag">
+                            #{getMoodLabel(post.moodTag)}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -285,7 +334,9 @@ export function UserPostsManagementScreen() {
 
                   {/* Status */}
                   <td>
-                    <span className={`post-status-badge ${getStatusBadge(post.status)}`}>
+                    <span
+                      className={`post-status-badge ${getStatusBadge(post.status)}`}
+                    >
                       {getStatusLabel(post.status)}
                     </span>
                   </td>
@@ -313,7 +364,7 @@ export function UserPostsManagementScreen() {
                         <Eye size={14} />
                       </button>
 
-                      {post.status === 'Published' && (
+                      {post.status === "Published" && (
                         <>
                           <button
                             className="post-action-btn post-action-btn--hide"
@@ -334,7 +385,8 @@ export function UserPostsManagementScreen() {
                         </>
                       )}
 
-                      {(post.status === 'Archived' || post.status === 'Draft') && (
+                      {(post.status === "Archived" ||
+                        post.status === "Draft") && (
                         <button
                           className="post-action-btn post-action-btn--publish"
                           onClick={() => handlePublish(post.id)}
@@ -345,7 +397,7 @@ export function UserPostsManagementScreen() {
                         </button>
                       )}
 
-                      {post.status === 'Archived' && (
+                      {post.status === "Archived" && (
                         <button
                           className="post-action-btn post-action-btn--restore"
                           onClick={() => handleUnhide(post.id)}
@@ -362,10 +414,11 @@ export function UserPostsManagementScreen() {
                         title="Xoá bài viết"
                         disabled={!!actionLoading}
                       >
-                        {actionLoading === post.id
-                          ? <Loader2 size={14} className="posts-spin" />
-                          : <Trash2 size={14} />
-                        }
+                        {actionLoading === post.id ? (
+                          <Loader2 size={14} className="posts-spin" />
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
                       </button>
                     </div>
                   </td>
@@ -380,8 +433,12 @@ export function UserPostsManagementScreen() {
       {!loading && totalPages > 1 && (
         <div className="posts-pagination">
           <span className="posts-pagination-info">
-            Hiển thị <strong>{(page - 1) * 20 + 1}–{Math.min(page * 20, totalCount)}</strong> trong{' '}
-            <strong>{totalCount}</strong> bài viết · Trang <strong>{page}</strong>/<strong>{totalPages}</strong>
+            Hiển thị{" "}
+            <strong>
+              {(page - 1) * 20 + 1}–{Math.min(page * 20, totalCount)}
+            </strong>{" "}
+            trong <strong>{totalCount}</strong> bài viết · Trang{" "}
+            <strong>{page}</strong>/<strong>{totalPages}</strong>
           </span>
           <div className="posts-pagination-controls">
             <button
@@ -407,7 +464,7 @@ export function UserPostsManagementScreen() {
               return (
                 <button
                   key={pageNum}
-                  className={`posts-pagination-btn ${page === pageNum ? 'active' : ''}`}
+                  className={`posts-pagination-btn ${page === pageNum ? "active" : ""}`}
                   onClick={() => fetchPosts(pageNum)}
                 >
                   {pageNum}
@@ -429,21 +486,28 @@ export function UserPostsManagementScreen() {
 
       {/* ── Detail Modal ── */}
       {selectedPost && (
-        <div className="posts-modal-overlay" onClick={() => setSelectedPost(null)}>
-          <div className="posts-modal" onClick={e => e.stopPropagation()}>
+        <div
+          className="posts-modal-overlay"
+          onClick={() => setSelectedPost(null)}
+        >
+          <div className="posts-modal" onClick={(e) => e.stopPropagation()}>
             <div className="posts-modal-header">
-              <h3>{selectedPost.title || '(Không có tiêu đề)'}</h3>
+              <h3>{selectedPost.title || "(Không có tiêu đề)"}</h3>
               <button onClick={() => setSelectedPost(null)}>×</button>
             </div>
             <div className="posts-modal-body">
               <div className="posts-detail-row">
                 <span>Tác giả:</span>
-                <strong>@{selectedPost.userFullName ?? selectedPost.userId}</strong>
+                <strong>
+                  @{selectedPost.userFullName ?? selectedPost.userId}
+                </strong>
               </div>
 
               <div className="posts-detail-row">
                 <span>Trạng thái:</span>
-                <span className={`post-status-badge ${getStatusBadge(selectedPost.status)}`}>
+                <span
+                  className={`post-status-badge ${getStatusBadge(selectedPost.status)}`}
+                >
                   {getStatusLabel(selectedPost.status)}
                 </span>
               </div>
@@ -451,13 +515,13 @@ export function UserPostsManagementScreen() {
               {selectedPost.moodTag && (
                 <div className="posts-detail-row">
                   <span>Mood:</span>
-                  <strong>#{selectedPost.moodTag}</strong>
+                  <strong>#{getMoodLabel(selectedPost.moodTag)}</strong>
                 </div>
               )}
 
               <div className="posts-detail-row">
                 <span>Quyền riêng tư:</span>
-                <strong>{selectedPost.privacyScope ?? '—'}</strong>
+                <strong>{selectedPost.privacyScope ?? "—"}</strong>
               </div>
 
               <div className="posts-detail-row">
@@ -475,38 +539,47 @@ export function UserPostsManagementScreen() {
               <div className="posts-detail-row">
                 <span>Tương tác:</span>
                 <strong>
-                  ❤️ {selectedPost.reactionCount ?? 0} &nbsp;
-                  💬 {selectedPost.commentCount ?? 0} &nbsp;
-                  👁 {selectedPost.viewCount ?? 0}
+                  ❤️ {selectedPost.reactionCount ?? 0} &nbsp; 💬{" "}
+                  {selectedPost.commentCount ?? 0} &nbsp; 👁{" "}
+                  {selectedPost.viewCount ?? 0}
                 </strong>
               </div>
 
-              {selectedPost.postType === 'share-music' && selectedPost.shareMusic && (
-                <div className="posts-detail-row">
-                  <span>Loại:</span>
-                  <strong>🎵 Chia sẻ nhạc — {selectedPost.shareMusic.title}</strong>
-                </div>
-              )}
+              {selectedPost.postType === "share-music" &&
+                selectedPost.shareMusic && (
+                  <div className="posts-detail-row">
+                    <span>Loại:</span>
+                    <strong>
+                      🎵 Chia sẻ nhạc — {selectedPost.shareMusic.title}
+                    </strong>
+                  </div>
+                )}
 
               <div className="posts-content-preview">
                 <span>Nội dung:</span>
-                <p>{selectedPost.contentText || '(Không có nội dung)'}</p>
+                <p>{selectedPost.contentText || "(Không có nội dung)"}</p>
               </div>
             </div>
 
             <div className="posts-modal-footer">
-              {selectedPost.status === 'Published' && (
+              {selectedPost.status === "Published" && (
                 <>
                   <button
                     className="post-action-btn post-action-btn--hide"
-                    onClick={() => { handleHide(selectedPost.id); setSelectedPost(null); }}
+                    onClick={() => {
+                      handleHide(selectedPost.id);
+                      setSelectedPost(null);
+                    }}
                   >
                     <EyeOff size={14} />
                     Ẩn bài viết
                   </button>
                   <button
                     className="post-action-btn post-action-btn--draft"
-                    onClick={() => { handleDraft(selectedPost.id); setSelectedPost(null); }}
+                    onClick={() => {
+                      handleDraft(selectedPost.id);
+                      setSelectedPost(null);
+                    }}
                   >
                     <Archive size={14} />
                     Chuyển nháp
@@ -514,10 +587,14 @@ export function UserPostsManagementScreen() {
                 </>
               )}
 
-              {(selectedPost.status === 'Archived' || selectedPost.status === 'Draft') && (
+              {(selectedPost.status === "Archived" ||
+                selectedPost.status === "Draft") && (
                 <button
                   className="post-action-btn post-action-btn--publish"
-                  onClick={() => { handlePublish(selectedPost.id); setSelectedPost(null); }}
+                  onClick={() => {
+                    handlePublish(selectedPost.id);
+                    setSelectedPost(null);
+                  }}
                 >
                   <Globe size={14} />
                   Xuất bản
@@ -526,7 +603,10 @@ export function UserPostsManagementScreen() {
 
               <button
                 className="post-action-btn post-action-btn--delete"
-                onClick={() => { handleDelete(selectedPost.id); setSelectedPost(null); }}
+                onClick={() => {
+                  handleDelete(selectedPost.id);
+                  setSelectedPost(null);
+                }}
               >
                 <Trash2 size={14} />
                 Xoá bài viết

@@ -1,16 +1,25 @@
 // AzuraCast Music Catalog API Service
 import axios from "axios";
 
-// Base AzuraCast API configuration
-const AZURACAST_BASE_URL = "http://localhost:5000"; // Thay đổi URL theo cấu hình của bạn
-const AZURACAST_TOKEN = "d1c0e66cfa695bbc:2f1e7e23258125076527a2c99325a1bc";
+// Base AzuraCast API configuration — read from env vars
+const AZURACAST_BASE_URL =
+  import.meta.env.VITE_AZURACAST_API_URL ?? "http://localhost:8081/api";
+const AZURACAST_TOKEN = import.meta.env.VITE_AZURACAST_API_TOKEN ?? "fa5093c6c01985e1:187b5dd46ba5434cccea3c397625e9f3";
+
+if (!AZURACAST_TOKEN) {
+  console.warn(
+    "[AzuraCast] VITE_AZURACAST_API_TOKEN is not set. API calls will likely fail.",
+  );
+}
 
 // Create axios instance for AzuraCast
 const azuracastApi = axios.create({
   baseURL: AZURACAST_BASE_URL,
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${AZURACAST_TOKEN}`,
+    ...(AZURACAST_TOKEN
+      ? { Authorization: `Bearer ${AZURACAST_TOKEN}` }
+      : {}),
   },
   timeout: 30000,
 });

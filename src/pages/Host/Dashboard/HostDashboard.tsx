@@ -87,7 +87,7 @@ export function HostDashboard() {
           <h1 className="host-dashboard-title">Bảng Điều Khiển Host</h1>
           <p className="host-dashboard-subtitle">Xin chào, MC! Theo dõi lịch phát sóng và yêu cầu của bạn.</p>
         </div>
-        <button className="host-btn host-btn--primary" onClick={() => navigate('/host/live')}>
+        <button className="host-btn host-btn--primary" onClick={() => navigate('/host/sessions')}>
           <Radio size={16} />
           Điều khiển Live
         </button>
