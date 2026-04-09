@@ -37,7 +37,7 @@ export interface PlaylistTrack {
   album?: string | null;
   artworkUrl?: string | null;
   fileUrl?: string | null;
-  duration?: number;
+  durationSeconds?: number;
   addedAt?: string;
 }
 

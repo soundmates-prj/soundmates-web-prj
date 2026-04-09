@@ -477,7 +477,7 @@ class LiveSessionApiService {
 
     try {
       const res = await api.post<ApiResponse<BulkUploadMusicResult>>(
-        endpoint,
+        "/musiccatalog/bulk",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
