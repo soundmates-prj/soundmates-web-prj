@@ -477,19 +477,31 @@ function EditEpisodeModal({
     setSaving(true);
     try {
       let audioUrl = "";
-      let audioDuration = 0;
       let thumbnailUrl = "";
 
       if (audioFile) {
         setUploadStatus("Đang upload audio...");
-        const result = await uploadAudio(audioFile);
-        audioUrl = result.url;
-        audioDuration = result.duration ?? 0;
+        try {
+          const result = await uploadAudio(audioFile);
+          audioUrl = result.url;
+        } catch (e) {
+          console.warn(
+            "Cloudinary audio upload failed, sẽ gửi file trực tiếp:",
+            e,
+          );
+        }
       }
 
       if (thumbnailFile) {
         setUploadStatus("Đang upload ảnh...");
-        thumbnailUrl = await uploadImage(thumbnailFile);
+        try {
+          thumbnailUrl = await uploadImage(thumbnailFile);
+        } catch (e) {
+          console.warn(
+            "Cloudinary image upload failed, sẽ gửi file trực tiếp:",
+            e,
+          );
+        }
       }
 
       setUploadStatus("Đang cập nhật...");
@@ -500,9 +512,18 @@ function EditEpisodeModal({
         formData.append("EpisodeNumber", String(episodeNumber));
       if (publishDate)
         formData.append("PublishDate", new Date(publishDate).toISOString());
-      if (audioUrl) formData.append("AudioUrl", audioUrl);
-      if (thumbnailUrl) formData.append("ThumbnailUrl", thumbnailUrl);
-      if (audioDuration > 0) formData.append("Duration", String(audioDuration));
+
+      if (audioUrl) {
+        formData.append("AudioUrl", audioUrl);
+      } else if (audioFile) {
+        formData.append("AudioFile", audioFile);
+      }
+
+      if (thumbnailUrl) {
+        formData.append("ThumbnailUrl", thumbnailUrl);
+      } else if (thumbnailFile) {
+        formData.append("ThumbnailFile", thumbnailFile);
+      }
 
       await liveSessionApiService.updateEpisode(
         podcastId,
@@ -555,7 +576,7 @@ function EditEpisodeModal({
         </div>
 
         <div className="ops-modal-body">
-          <div className="ops-stack">
+          <div className="ops-stack" style={{ gap: 14 }}>
             <div className="pe-field">
               <label className="pe-label">
                 Tiêu đề <span className="pe-required">*</span>
@@ -627,7 +648,7 @@ function EditEpisodeModal({
                     {(audioFile.size / 1024 / 1024).toFixed(1)} MB)
                   </span>
                 ) : (
-                  <span>Chọn file mới </span>
+                  <span>Chọn file mới (bỏ trống = giữ nguyên)</span>
                 )}
               </div>
               <input
@@ -649,7 +670,7 @@ function EditEpisodeModal({
                 {thumbnailFile ? (
                   <span>{thumbnailFile.name}</span>
                 ) : (
-                  <span>Chọn ảnh mới </span>
+                  <span>Chọn ảnh mới (bỏ trống = giữ nguyên)</span>
                 )}
               </div>
               <input
@@ -724,24 +745,36 @@ function CreateEpisodeModal({
 
     setSaving(true);
     try {
-      // 1. Upload files lên Cloudinary trước
       let audioUrl = "";
-      let audioDuration = 0;
       let thumbnailUrl = "";
 
+      // 1. Thử upload Cloudinary, nếu fail → gửi file trực tiếp
       if (audioFile) {
         setUploadStatus("Đang upload audio...");
-        const result = await uploadAudio(audioFile);
-        audioUrl = result.url;
-        audioDuration = result.duration ?? 0;
+        try {
+          const result = await uploadAudio(audioFile);
+          audioUrl = result.url;
+        } catch (e) {
+          console.warn(
+            "Cloudinary audio upload failed, sẽ gửi file trực tiếp:",
+            e,
+          );
+        }
       }
 
       if (thumbnailFile) {
         setUploadStatus("Đang upload ảnh...");
-        thumbnailUrl = await uploadImage(thumbnailFile);
+        try {
+          thumbnailUrl = await uploadImage(thumbnailFile);
+        } catch (e) {
+          console.warn(
+            "Cloudinary image upload failed, sẽ gửi file trực tiếp:",
+            e,
+          );
+        }
       }
 
-      // 2. Gửi URLs + duration đến API
+      // 2. Tạo FormData
       setUploadStatus("Đang tạo tập...");
       const formData = new FormData();
       formData.append("Title", title);
@@ -750,9 +783,20 @@ function CreateEpisodeModal({
         formData.append("EpisodeNumber", String(episodeNumber));
       if (publishDate)
         formData.append("PublishDate", new Date(publishDate).toISOString());
-      if (audioUrl) formData.append("AudioUrl", audioUrl);
-      if (thumbnailUrl) formData.append("ThumbnailUrl", thumbnailUrl);
-      if (audioDuration > 0) formData.append("Duration", String(audioDuration));
+
+      // Audio: ưu tiên URL từ Cloudinary, fallback gửi file trực tiếp
+      if (audioUrl) {
+        formData.append("AudioUrl", audioUrl);
+      } else if (audioFile) {
+        formData.append("AudioFile", audioFile);
+      }
+
+      // Thumbnail: tương tự
+      if (thumbnailUrl) {
+        formData.append("ThumbnailUrl", thumbnailUrl);
+      } else if (thumbnailFile) {
+        formData.append("ThumbnailFile", thumbnailFile);
+      }
 
       await liveSessionApiService.createEpisode(podcastId, formData);
       showSuccess("Tạo tập thành công");
@@ -852,7 +896,6 @@ function CreateEpisodeModal({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Mô tả ngắn về tập này..."
                 rows={3}
-                maxLength={100}
               />
             </div>
 

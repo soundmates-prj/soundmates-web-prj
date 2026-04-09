@@ -104,7 +104,7 @@ export default function UserPlaylistTab() {
       artist: t.artist,
       album: t.album ?? undefined,
       artUrl: t.artworkUrl ?? "",
-      duration: t.duration ?? 0,
+      duration: t.durationSeconds ?? 0,
       elapsed: 0,
       listenUrl: fullUrl,
       lyrics: catalogItem?.lyrics ?? null,
@@ -465,7 +465,7 @@ export default function UserPlaylistTab() {
                         </p>
                       </div>
                       <span className="upl-track-dur">
-                        {fmtDur(t.duration)}
+                        {fmtDur(t.durationSeconds)}
                       </span>
                       <button
                         className="upl-track-del"
