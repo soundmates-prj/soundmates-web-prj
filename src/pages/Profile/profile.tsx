@@ -9,26 +9,26 @@ import {
   AudioLines,
   Plus,
   Sparkles,
+  Mic2,
+  Bookmark,
+  ListMusic,
 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
-import { usePlayer } from "../../context/PlayerContext";
-import { useTheme } from "../../context/ThemeContext";
-import userService from "../../services/userService";
 import "./profile.css";
 import "./profile-dark.css";
-
-/* ──────────────────────────────────────────
-   TYPES & HELPERS
-────────────────────────────────────────── */
 import type { User } from "../../types/user";
 import type { Post } from "../../types/post";
 import CreatePostModal from "./modals/CreatePostModal";
 import EditPostModal from "./modals/EditPostModal";
 import favoriteService from "../../services/favoriteService";
 import type { FavoriteItem } from "../../services/favoriteService";
+import podcastService from "../../services/podcastService";
+import type { PodcastItem } from "../../types/podcast";
+import userPlaylistService from "../../services/userPlaylistService";
+import type { UserPlaylist } from "../../services/userPlaylistService";
 import BlogPostCard from "../../components/blog/BlogPostCard";
 import ShareMusicModal from "../../components/blog/ShareMusicModal";
 import UserPlaylistTab from "./UserPlaylistTab";
@@ -50,52 +50,29 @@ const formatDuration = (ms: number) => {
   return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
-const PODCASTS = [
-  {
-    id: 1,
-    title: "Tech Talk Daily",
-    ep: "Ep.245: AI Revolution",
-    cover:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=48&h=48&fit=crop",
-  },
-  {
-    id: 2,
-    title: "Startup Stories",
-    ep: "Building a Unicorn",
-    cover:
-      "https://images.unsplash.com/photo-1492724441997-5dc865305da7?w=48&h=48&fit=crop",
-  },
-];
-
 const formatDate = (d?: string | null) =>
   d
     ? new Date(d).toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
     : null;
 
 /* ──────────────────────────────────────────
    PROFILE
 ────────────────────────────────────────── */
 export default function Profile() {
-  const { userId } = useParams();
-  const navigate = useNavigate();
-  const { availableThemes, applyTheme, resetToDefault } = useTheme();
-
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [tab, setTab] = useState<Tab>("overview");
-  const { leaveSession } = usePlayer();
-
-  // Dừng nhạc đang phát khi vào trang cá nhân
-  useEffect(() => { leaveSession(); }, [leaveSession]);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showShareMusic, setShowShareMusic] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
+  const navigate = useNavigate();
   const [favTracks, setFavTracks] = useState<FavoriteItem[]>([]);
-  const [isMyProfile, setIsMyProfile] = useState<boolean>(true);
+  const [savedPodcasts, setSavedPodcasts] = useState<PodcastItem[]>([]);
+  const [userPlaylists, setUserPlaylists] = useState<UserPlaylist[]>([]);
 
   const loadFavorites = useCallback(async () => {
     try {
@@ -108,58 +85,58 @@ export default function Profile() {
     }
   }, []);
 
+  const loadSavedPodcasts = useCallback(async () => {
+    try {
+      const data = await podcastService.getSavedPodcasts();
+      setSavedPodcasts(data);
+    } catch (err) {
+      console.error("Load saved podcasts failed", err);
+    }
+  }, []);
+
+  const loadPlaylists = useCallback(async () => {
+    try {
+      const data = await userPlaylistService.getAll();
+      setUserPlaylists(data);
+    } catch (err) {
+      console.error("Load playlists failed", err);
+    }
+  }, []);
+
+  const handleUnsavePodcast = async (podcastId: string) => {
+    setSavedPodcasts((prev) => prev.filter((p) => p.id !== podcastId));
+    try {
+      await podcastService.unsavePodcast(podcastId);
+    } catch {
+      loadSavedPodcasts();
+    }
+  };
+
   useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        let profileData: User;
+    api
+      .get("users/me/profile/full")
+      .then((r) => setUser(r.data.data))
+      .catch((e) => console.error("Load profile failed", e));
 
-        if (userId) {
-          // Public profile
-          const res = await userService.getPublicProfile(userId);
-          if (!res.success) {
-            navigate('/404');
-            return;
-          }
-          profileData = res.data as unknown as User;
-          setIsMyProfile(false);
+    api
+      .get("me/posts")
+      .then((r) => setPosts(r.data?.data?.items ?? []))
+      .catch((e) => console.error("Load posts failed", e));
 
-          // Load their posts
-          const postsRes = await api.get(`/posts`, { params: { authorName: profileData.username } });
-          setPosts(postsRes.data?.data?.items ?? []);
-        } else {
-          // My profile
-          const res = await api.get("users/me/profile/full");
-          profileData = res.data.data;
-          setIsMyProfile(true);
-
-          // Load my posts
-          const postsRes = await api.get("me/posts");
-          setPosts(postsRes.data?.data?.items ?? []);
-        }
-
-        setUser(profileData);
-
-        // Apply theme if user has one (mocking logic here until backend supports activeThemeId)
-        // For now we assume if it's our profile we use global context theme, 
-        // if public profile we could read their themeId and apply it just for this page
-        // Since backend doesn't return themeId yet, we keep the user-theme wrapper
-
-      } catch (error) {
-        console.error("Failed to load profile", error);
-      }
-    };
-
-    loadProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFavorites();
-  }, [userId, navigate, loadFavorites]);
+    loadSavedPodcasts();
+    loadPlaylists();
+  }, [loadFavorites, loadSavedPodcasts, loadPlaylists]);
 
   if (!user) return <div className="pf-loading">Đang tải...</div>;
 
-  const name = `${user.lastName ?? ""} ${user.firstName ?? ""}`.trim();
+  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
   const dob = formatDate(user.dateOfBirth);
-  const defaultCover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=1000";
-  const defaultAv = "https://ui-avatars.com/api/?name=User&background=55C5F1&color=fff";
+  const defaultCover =
+    "https://images.unsplash.com/photo-1511376777868-611b54f68947?w=1200&q=80";
+  const defaultAv =
+    "https://i.pinimg.com/736x/3f/94/70/3f9470b34a8e3f526dbdb022f9f19cf7.jpg";
 
   const handlePostCreated = (post: Post) => {
     setPosts((prev) => [post, ...prev]);
@@ -174,7 +151,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="pf user-theme-wrapper">
+    <div className="pf">
       {/* COVER */}
       <div className="pf-cover">
         <img src={user.backgroundImageUrl || defaultCover} alt="cover" />
@@ -208,12 +185,10 @@ export default function Profile() {
 
           {/* Stats + edit */}
           <div className="pf-right">
-            {isMyProfile && (
-              <Link to="/settings" className="pf-edit-btn">
-                <SquarePen size={14} />
-                Chỉnh sửa
-              </Link>
-            )}
+            <Link to="/settings" className="pf-edit-btn">
+              <SquarePen size={14} />
+              Chỉnh sửa
+            </Link>
           </div>
         </div>
       </div>
@@ -403,23 +378,116 @@ export default function Profile() {
             </div>
 
             {/* Right */}
-            <div className="pf-col">
+            <div className="pf-col pf-col--sticky">
               <div className="pf-card">
                 <div className="pf-card-top">
                   <h3>Podcast đã lưu</h3>
-                </div>
-                {PODCASTS.map((p) => (
-                  <div key={p.id} className="pod">
-                    <img className="pod-img" src={p.cover} alt={p.title} />
-                    <div className="pod-info">
-                      <p className="pod-title">{p.title}</p>
-                      <p className="pod-ep">{p.ep}</p>
-                    </div>
-                    <button className="pod-play">
-                      <Play size={12} fill="currentColor" />
+                  {savedPodcasts.length > 0 && (
+                    <button
+                      className="pf-link"
+                      onClick={() => setTab("podcasts")}
+                    >
+                      Xem tất cả
                     </button>
-                  </div>
-                ))}
+                  )}
+                </div>
+                {savedPodcasts.length > 0 ? (
+                  savedPodcasts.slice(0, 4).map((p) => (
+                    <div
+                      key={p.id}
+                      className="pod"
+                      onClick={() => navigate(`/podcast/${p.id}`)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {p.banner ? (
+                        <img className="pod-img" src={p.banner} alt={p.title} />
+                      ) : (
+                        <div className="pod-img pod-img--fallback">
+                          <Mic2 size={16} />
+                        </div>
+                      )}
+                      <div className="pod-info">
+                        <p className="pod-title">{p.title}</p>
+                        <p className="pod-ep">{p.author}</p>
+                      </div>
+                      <button
+                        className="pod-play"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/podcast/${p.id}`);
+                        }}
+                      >
+                        <Play size={12} fill="currentColor" />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p
+                    className="music-empty"
+                    style={{
+                      textAlign: "center",
+                      padding: "16px 0",
+                      color: "var(--neutral-400, #a3a3a3)",
+                      fontSize: 13,
+                    }}
+                  >
+                    Chưa lưu podcast nào
+                  </p>
+                )}
+              </div>
+
+              {/* Playlist của tôi */}
+              <div className="pf-card">
+                <div className="pf-card-top">
+                  <h3>Playlist của tôi</h3>
+                  {userPlaylists.length > 0 && (
+                    <button
+                      className="pf-link"
+                      onClick={() => setTab("playlists")}
+                    >
+                      Xem tất cả
+                    </button>
+                  )}
+                </div>
+                {userPlaylists.length > 0 ? (
+                  userPlaylists.slice(0, 4).map((pl) => (
+                    <div key={pl.id} className="pod">
+                      {pl.thumbnailUrl ? (
+                        <img
+                          className="pod-img"
+                          src={pl.thumbnailUrl}
+                          alt={pl.playlistName}
+                        />
+                      ) : (
+                        <div className="pod-img pod-img--fallback">
+                          <ListMusic size={16} />
+                        </div>
+                      )}
+                      <div className="pod-info">
+                        <p className="pod-title">{pl.playlistName}</p>
+                        <p className="pod-ep">{pl.totalTracks ?? 0} bài hát</p>
+                      </div>
+                      <button
+                        className="pod-play"
+                        onClick={() => setTab("playlists")}
+                      >
+                        <Play size={12} fill="currentColor" />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p
+                    className="music-empty"
+                    style={{
+                      textAlign: "center",
+                      padding: "16px 0",
+                      color: "var(--neutral-400, #a3a3a3)",
+                      fontSize: 13,
+                    }}
+                  >
+                    Chưa có playlist nào
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -449,55 +517,19 @@ export default function Profile() {
             </div>
 
             {/* Quick compose bar */}
-            {isMyProfile && (
-              <div
-                className="pf-compose-bar pf-compose-bar--full"
-                onClick={() => setShowCreatePost(true)}
-              >
-                <Avatar
-                  src={user.profileImageUrl || defaultAv}
-                  name={name}
-                  size="sm"
-                />
-                <span className="pf-compose-placeholder">
-                  Bạn đang nghĩ gì về âm nhạc hôm nay?
-                </span>
-                <div className="pf-compose-actions">
-                  <span className="pf-compose-action-btn" title="Thêm ảnh">
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                  </span>
-                  <span className="pf-compose-action-btn" title="Thêm audio">
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                      <line x1="12" y1="19" x2="12" y2="22" />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            )}
+            <div
+              className="pf-compose-bar pf-compose-bar--full"
+              onClick={() => setShowCreatePost(true)}
+            >
+              <Avatar
+                src={user.profileImageUrl || defaultAv}
+                name={name}
+                size="sm"
+              />
+              <span className="pf-compose-placeholder">
+                Bạn đang nghĩ gì về âm nhạc hôm nay?
+              </span>
+            </div>
 
             {posts.length === 0 ? (
               <div className="pf-empty">
@@ -581,10 +613,79 @@ export default function Profile() {
 
         {tab === "playlists" && <UserPlaylistTab />}
 
+        {tab === "podcasts" && (
+          <div className="pf-card">
+            <div className="pf-card-top">
+              <h3>
+                <Mic2 size={18} /> Podcast đã lưu
+              </h3>
+              <span
+                style={{ fontSize: 13, color: "var(--neutral-400, #a3a3a3)" }}
+              >
+                {savedPodcasts.length} podcast
+              </span>
+            </div>
+            {savedPodcasts.length > 0 ? (
+              <div className="pf-saved-podcasts-grid">
+                {savedPodcasts.map((p) => (
+                  <div
+                    key={p.id}
+                    className="pf-podcast-card"
+                    onClick={() => navigate(`/podcast/${p.id}`)}
+                  >
+                    <div className="pf-podcast-card-banner">
+                      {p.banner ? (
+                        <img src={p.banner} alt={p.title} />
+                      ) : (
+                        <div className="pf-podcast-card-fallback">
+                          <Mic2 size={28} />
+                        </div>
+                      )}
+                      <div className="pf-podcast-card-overlay">
+                        <button className="pf-podcast-card-play">
+                          <Play size={16} fill="#fff" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="pf-podcast-card-body">
+                      <h4 className="pf-podcast-card-title">{p.title}</h4>
+                      <p className="pf-podcast-card-author">{p.author}</p>
+                      {p.episodeCount != null && (
+                        <p className="pf-podcast-card-eps">
+                          {p.episodeCount} tập
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      className="pf-podcast-card-unsave"
+                      title="Bỏ lưu"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnsavePodcast(p.id);
+                      }}
+                    >
+                      <Bookmark size={14} fill="currentColor" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="pf-empty">
+                <Mic2 size={28} />
+                <p>Chưa lưu podcast nào</p>
+                <Link to="/podcast" className="pf-link">
+                  Khám phá podcast
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
         {tab !== "overview" &&
           tab !== "community" &&
           tab !== "songs" &&
-          tab !== "playlists" && (
+          tab !== "playlists" &&
+          tab !== "podcasts" && (
             <div className="pf-empty">
               <Music2 size={28} />
               <p>Chưa có nội dung nào</p>

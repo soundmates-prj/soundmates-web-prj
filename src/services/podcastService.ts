@@ -6,9 +6,6 @@ import type {
   PodcastEpisode,
 } from "../types/podcast";
 
-/**
- * API Response wrapper
- */
 interface ApiResponse<T> {
   success: boolean;
   message?: string;
@@ -16,15 +13,7 @@ interface ApiResponse<T> {
   errorCode?: number;
 }
 
-/**
- * Podcast Service - handles full podcast generation (script + audio)
- */
 class PodcastService {
-  /**
-   * Generate full podcast (script + audio) in one step
-   * @param params Podcast generation parameters
-   * @returns Generated podcast with script and audio
-   */
   async generateFullPodcast(
     params: PodcastGenerateRequest,
   ): Promise<PodcastGenerateResult> {
@@ -33,11 +22,9 @@ class PodcastService {
         "/podcasts/generate-full",
         params,
       );
-
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.message || "Không thể tạo podcast");
       }
-
       return response.data.data;
     } catch (error: any) {
       console.error("Error generating full podcast:", error);
@@ -47,11 +34,6 @@ class PodcastService {
     }
   }
 
-  // ─── Podcast Management (CRUD) ───
-
-  /**
-   * Lấy tất cả podcast đã xuất bản
-   */
   async getPublishedPodcasts(): Promise<PodcastItem[]> {
     try {
       const response = await api.get<ApiResponse<PodcastItem[]>>("/podcast");
@@ -67,9 +49,6 @@ class PodcastService {
     }
   }
 
-  /**
-   * Lấy chi tiết một podcast
-   */
   async getPodcastById(id: string): Promise<PodcastItem> {
     try {
       const response = await api.get<ApiResponse<PodcastItem>>(
@@ -89,9 +68,6 @@ class PodcastService {
     }
   }
 
-  /**
-   * Lấy danh sách episode của một podcast
-   */
   async getEpisodes(podcastId: string): Promise<PodcastEpisode[]> {
     try {
       const response = await api.get<ApiResponse<PodcastEpisode[]>>(
@@ -104,6 +80,49 @@ class PodcastService {
         error.response?.data?.message ||
           error.message ||
           "Không thể tải danh sách tập",
+      );
+    }
+  }
+
+  // ─── Saved Podcasts ───
+
+  async getSavedPodcasts(): Promise<PodcastItem[]> {
+    try {
+      const response =
+        await api.get<ApiResponse<PodcastItem[]>>("/me/saved-podcasts");
+      return response.data.data ?? [];
+    } catch (error: any) {
+      console.error("Error fetching saved podcasts:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tải podcast đã lưu",
+      );
+    }
+  }
+
+  async savePodcast(podcastId: string): Promise<void> {
+    try {
+      await api.post(`/me/saved-podcasts/${podcastId}`);
+    } catch (error: any) {
+      console.error("Error saving podcast:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể lưu podcast",
+      );
+    }
+  }
+
+  async unsavePodcast(podcastId: string): Promise<void> {
+    try {
+      await api.delete(`/me/saved-podcasts/${podcastId}`);
+    } catch (error: any) {
+      console.error("Error unsaving podcast:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể bỏ lưu podcast",
       );
     }
   }

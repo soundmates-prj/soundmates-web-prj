@@ -2,140 +2,140 @@
    profile-dark.css  ·  Dark Theme Support for Profile Page
 ================================================================ */
 
-[data-theme='dark'] .pf {
+[data-theme="dark"] .pf {
   background-color: var(--bg-primary);
 }
 
-[data-theme='dark'] .pf-bar {
+[data-theme="dark"] .pf-bar {
   background-color: var(--user-theme-bg, rgba(20, 20, 20, 0.75));
   border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme='dark'] .pf-av {
+[data-theme="dark"] .pf-av {
   border-color: var(--user-theme-bg, var(--bg-primary)) !important;
 }
 
-[data-theme='dark'] .pf-name {
+[data-theme="dark"] .pf-name {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .pf-bio {
+[data-theme="dark"] .pf-bio {
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .pf-dob {
+[data-theme="dark"] .pf-dob {
   color: var(--text-muted);
 }
 
-[data-theme='dark'] .pf-tabs-row {
+[data-theme="dark"] .pf-tabs-row {
   background-color: var(--user-theme-bg, rgba(20, 20, 20, 0.75));
   border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme='dark'] .pf-tab {
+[data-theme="dark"] .pf-tab {
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .pf-tab:hover {
+[data-theme="dark"] .pf-tab:hover {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .pf-tab.active {
+[data-theme="dark"] .pf-tab.active {
   color: #55c5f1;
 }
 
-[data-theme='dark'] .pf-card {
+[data-theme="dark"] .pf-card {
   background-color: var(--user-theme-bg, rgba(20, 20, 20, 0.7));
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme='dark'] .pf-card-top h3 {
+[data-theme="dark"] .pf-card-top h3 {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .pf-compose-bar {
+[data-theme="dark"] .pf-compose-bar {
   background: rgba(30, 30, 40, 0.5);
   border-color: #333333;
 }
 
-[data-theme='dark'] .pf-compose-bar:hover {
+[data-theme="dark"] .pf-compose-bar:hover {
   background: rgba(30, 30, 40, 0.8);
   border-color: #55c5f1;
 }
 
-[data-theme='dark'] .pf-compose-placeholder {
+[data-theme="dark"] .pf-compose-placeholder {
   color: var(--text-muted);
 }
 
-[data-theme='dark'] .track:hover {
+[data-theme="dark"] .track:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme='dark'] .track-title {
+[data-theme="dark"] .track-title {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .track-artist,
-[data-theme='dark'] .track-dur,
-[data-theme='dark'] .track-likes {
+[data-theme="dark"] .track-artist,
+[data-theme="dark"] .track-dur,
+[data-theme="dark"] .track-likes {
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .post-card {
+[data-theme="dark"] .post-card {
   background: rgba(30, 30, 40, 0.5);
   border-color: #333333;
 }
 
-[data-theme='dark'] .post-card:hover {
+[data-theme="dark"] .post-card:hover {
   background: var(--bg-secondary);
   box-shadow: 0 4px 16px rgba(85, 197, 241, 0.15);
 }
 
-[data-theme='dark'] .post-name {
+[data-theme="dark"] .post-name {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .post-time {
+[data-theme="dark"] .post-time {
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .post-title {
+[data-theme="dark"] .post-title {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .post-body {
+[data-theme="dark"] .post-body {
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .post-btn {
+[data-theme="dark"] .post-btn {
   border-color: #333333;
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .post-btn:hover {
+[data-theme="dark"] .post-btn:hover {
   background: rgba(85, 197, 241, 0.1);
   border-color: #55c5f1;
   color: #55c5f1;
 }
 
-[data-theme='dark'] .post-actions {
+[data-theme="dark"] .post-actions {
   border-top-color: #333333;
 }
 
-[data-theme='dark'] .pf-empty {
+[data-theme="dark"] .pf-empty {
   background: var(--bg-secondary);
   border-color: #333333;
   color: var(--text-muted);
 }
 
-[data-theme='dark'] .pod:hover {
+[data-theme="dark"] .pod:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme='dark'] .pod-title {
+[data-theme="dark"] .pod-title {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .pod-ep {
+[data-theme="dark"] .pod-ep {
   color: var(--text-secondary);
 }

@@ -1340,3 +1340,71 @@
     );
   }
 }
+
+/* ── Save / Bookmark buttons ── */
+.pds-featured-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pds-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(4px);
+}
+.pds-save-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.pds-save-btn.saved {
+  color: #a78bfa;
+  border-color: #a78bfa;
+  background: rgba(167, 139, 250, 0.15);
+}
+
+.pds-card-save {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.25s ease;
+  z-index: 5;
+  backdrop-filter: blur(4px);
+}
+.pds-card:hover .pds-card-save {
+  opacity: 1;
+  transform: scale(1);
+}
+.pds-card-save:hover {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+}
+.pds-card-save.saved {
+  opacity: 1;
+  transform: scale(1);
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.2);
+}

@@ -416,7 +416,12 @@ class LiveSessionApiService {
   async uploadMusic(
     stationId: string | undefined,
     file: File,
-    metadata?: { title?: string; artist?: string; album?: string; lyrics?: string },
+    metadata?: {
+      title?: string;
+      artist?: string;
+      album?: string;
+      lyrics?: string;
+    },
     onUploadProgress?: (percent: number) => void,
   ): Promise<MusicResult> {
     const formData = new FormData();
@@ -430,21 +435,17 @@ class LiveSessionApiService {
       ? `/musiccatalog/station/${stationId}/upload`
       : `/musiccatalog/system/upload`;
 
-    const res = await api.post<ApiResponse<MusicResult>>(
-      endpoint,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 300_000,
-        onUploadProgress: (evt) => {
-          if (!onUploadProgress || !evt.total) {
-            return;
-          }
-          const percent = Math.round((evt.loaded * 100) / evt.total);
-          onUploadProgress(percent);
-        },
+    const res = await api.post<ApiResponse<MusicResult>>(endpoint, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 300_000,
+      onUploadProgress: (evt) => {
+        if (!onUploadProgress || !evt.total) {
+          return;
+        }
+        const percent = Math.round((evt.loaded * 100) / evt.total);
+        onUploadProgress(percent);
       },
-    );
+    });
     return res.data.data;
   }
 
@@ -477,7 +478,7 @@ class LiveSessionApiService {
 
     try {
       const res = await api.post<ApiResponse<BulkUploadMusicResult>>(
-        "/musiccatalog/bulk",
+        endpoint,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -571,7 +572,9 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
-  async getNowPlaying(sessionId: string): Promise<StationNowPlayingResult | null> {
+  async getNowPlaying(
+    sessionId: string,
+  ): Promise<StationNowPlayingResult | null> {
     const res = await api.get<ApiResponse<StationNowPlayingResult>>(
       `/livesession/${sessionId}/now-playing`,
     );

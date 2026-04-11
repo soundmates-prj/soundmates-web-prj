@@ -1,16 +1,20 @@
 import { useState, useEffect } from "react";
-import { FileText, Edit, Trash2, Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  FileText,
+  Edit,
+  Trash2,
+  Eye,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  AlertTriangle,
+  Save,
+} from "lucide-react";
 import api from "../../../services/axios";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
+import type { Post } from "../../../types/post";
 import "./MyPostsSettings.css";
-
-interface Post {
-  id: string;
-  title: string;
-  status: string;
-  createdAt: string;
-  publishedAt?: string;
-}
 
 export default function MyPostsSettings() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -18,6 +22,15 @@ export default function MyPostsSettings() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
+
+  // Modal states
+  const [viewPost, setViewPost] = useState<Post | null>(null);
+  const [editPost, setEditPost] = useState<Post | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Post | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchPosts = async (currentPage: number) => {
     try {
@@ -40,16 +53,65 @@ export default function MyPostsSettings() {
     fetchPosts(page);
   }, [page]);
 
-  const handleDelete = async (postId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa bài viết này?")) return;
-
+  // ─── Fetch full post for view/edit ───
+  const fetchFullPost = async (postId: string): Promise<Post | null> => {
     try {
-      await api.delete(`/posts/${postId}`);
+      const res = await api.get(`/posts/${postId}`);
+      return res.data.data ?? null;
+    } catch {
+      showError("Lỗi", "Không thể tải bài viết");
+      return null;
+    }
+  };
+
+  const handleView = async (post: Post) => {
+    const full = await fetchFullPost(post.id);
+    if (full) setViewPost(full);
+  };
+
+  const handleEditOpen = async (post: Post) => {
+    const full = await fetchFullPost(post.id);
+    if (full) {
+      setEditPost(full);
+      setEditTitle(full.title);
+      setEditContent(full.contentText ?? "");
+    }
+  };
+
+  const handleEditSave = async () => {
+    if (!editPost) return;
+    setEditSaving(true);
+    try {
+      const payload = {
+        title: editTitle,
+        contentText: editContent,
+      };
+      await api.put(`posts/${editPost.id}`, payload);
+      showSuccess("Thành công", "Đã cập nhật bài viết");
+      setEditPost(null);
+      fetchPosts(page);
+    } catch (error: any) {
+      const msg =
+        error.response?.data?.message || "Không thể cập nhật bài viết";
+      showError("Lỗi", msg);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/posts/${deleteTarget.id}`);
       showSuccess("Đã xóa", "Xóa bài viết thành công");
+      setDeleteTarget(null);
       fetchPosts(page);
     } catch (error: any) {
       const msg = error.response?.data?.message || "Không thể xóa bài viết";
       showError("Lỗi", msg);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -131,16 +193,24 @@ export default function MyPostsSettings() {
             </div>
 
             <div className="post-card-actions">
-              <button className="post-action-btn view" title="Xem">
+              <button
+                className="post-action-btn view"
+                title="Xem"
+                onClick={() => handleView(post)}
+              >
                 <Eye size={16} />
               </button>
-              <button className="post-action-btn edit" title="Chỉnh sửa">
+              <button
+                className="post-action-btn edit"
+                title="Chỉnh sửa"
+                onClick={() => handleEditOpen(post)}
+              >
                 <Edit size={16} />
               </button>
               <button
                 className="post-action-btn delete"
                 title="Xóa"
-                onClick={() => handleDelete(post.id)}
+                onClick={() => setDeleteTarget(post)}
               >
                 <Trash2 size={16} />
               </button>
@@ -170,6 +240,152 @@ export default function MyPostsSettings() {
             Sau
             <ChevronRight size={18} />
           </button>
+        </div>
+      )}
+
+      {/* ── View Modal ── */}
+      {viewPost && (
+        <div className="mps-overlay" onClick={() => setViewPost(null)}>
+          <div className="mps-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mps-modal-header">
+              <h2>Chi tiết bài viết</h2>
+              <button className="mps-close" onClick={() => setViewPost(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mps-modal-body">
+              <h3 className="mps-view-title">{viewPost.title}</h3>
+              <div className="mps-view-meta">
+                {getStatusBadge(viewPost.status)}
+                <span className="post-date">
+                  {viewPost.publishedAt
+                    ? `Xuất bản ${formatDate(viewPost.publishedAt)}`
+                    : `Tạo ${formatDate(viewPost.createdAt)}`}
+                </span>
+              </div>
+              {viewPost.imageUrl && (
+                <img
+                  className="mps-view-image"
+                  src={viewPost.imageUrl}
+                  alt=""
+                />
+              )}
+              <p className="mps-view-content">
+                {viewPost.contentText || "Không có nội dung."}
+              </p>
+              {viewPost.audioUrl && (
+                <audio
+                  className="mps-view-audio"
+                  controls
+                  src={viewPost.audioUrl}
+                />
+              )}
+              <div className="mps-view-stats">
+                {viewPost.viewCount != null && (
+                  <span>{viewPost.viewCount} lượt xem</span>
+                )}
+                {viewPost.reactionCount != null && (
+                  <span>{viewPost.reactionCount} phản ứng</span>
+                )}
+                {viewPost.commentCount != null && (
+                  <span>{viewPost.commentCount} bình luận</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Modal ── */}
+      {editPost && (
+        <div className="mps-overlay" onClick={() => setEditPost(null)}>
+          <div className="mps-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mps-modal-header">
+              <h2>Chỉnh sửa bài viết</h2>
+              <button className="mps-close" onClick={() => setEditPost(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mps-modal-body">
+              <label className="mps-label">Tiêu đề</label>
+              <input
+                className="mps-input"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Tiêu đề bài viết"
+              />
+              <label className="mps-label">Nội dung</label>
+              <textarea
+                className="mps-textarea"
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="Nội dung bài viết..."
+                rows={8}
+              />
+            </div>
+            <div className="mps-modal-footer">
+              <button
+                className="mps-btn mps-btn--cancel"
+                onClick={() => setEditPost(null)}
+              >
+                Hủy
+              </button>
+              <button
+                className="mps-btn mps-btn--save"
+                onClick={handleEditSave}
+                disabled={editSaving || !editTitle.trim()}
+              >
+                {editSaving ? (
+                  <Loader2 size={16} className="posts-spinner" />
+                ) : (
+                  <Save size={16} />
+                )}
+                {editSaving ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirm Modal ── */}
+      {deleteTarget && (
+        <div className="mps-overlay" onClick={() => setDeleteTarget(null)}>
+          <div
+            className="mps-modal mps-modal--sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mps-delete-body">
+              <div className="mps-delete-icon">
+                <AlertTriangle size={32} />
+              </div>
+              <h3>Xóa bài viết?</h3>
+              <p>
+                Bạn có chắc chắn muốn xóa bài viết "
+                <strong>{deleteTarget.title}</strong>"? Hành động này không thể
+                hoàn tác.
+              </p>
+              <div className="mps-delete-actions">
+                <button
+                  className="mps-btn mps-btn--cancel"
+                  onClick={() => setDeleteTarget(null)}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="mps-btn mps-btn--delete"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <Loader2 size={16} className="posts-spinner" />
+                  ) : (
+                    <Trash2 size={16} />
+                  )}
+                  {deleting ? "Đang xóa..." : "Xóa"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
