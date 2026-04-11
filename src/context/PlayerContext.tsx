@@ -5,6 +5,7 @@ import React, {
   useRef,
   useCallback,
 } from "react";
+import { normalizeMediaUrl } from "../utils/mediaUrl";
 
 export interface TrackData {
   title: string;
@@ -55,7 +56,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       setElapsedState(0);
       return;
     }
-    const playerTrack: PlayerTrack = { ...newTrack, elapsed: newTrack.elapsed || 0 };
+    const playerTrack: PlayerTrack = { 
+      ...newTrack,
+      artUrl: normalizeMediaUrl(newTrack.artUrl),
+      elapsed: newTrack.elapsed || 0,
+    };
     setTrackState(playerTrack);
     if (newTrack.elapsed !== undefined) {
       setElapsedState(newTrack.elapsed);

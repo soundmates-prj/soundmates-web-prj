@@ -39,6 +39,7 @@ import {
 import { Loading } from "../../components/common";
 import brandLogo from "../../assets/logo_notext.png";
 import "./Livestream.css";
+import { normalizeMediaUrl } from "../../utils/mediaUrl";
 
 // ===== TYPES =====
 interface ChatMessage {
@@ -170,9 +171,7 @@ function formatPlayedAt(timestamp: number): string {
 }
 
 function proxyArtUrl(url: string): string {
-  if (!url) return "";
-  // Replace host.docker.internal with localhost for browser access
-  return url.replace("host.docker.internal", "localhost");
+  return normalizeMediaUrl(url);
 }
 
 // ===== MAIN COMPONENT =====
@@ -336,10 +335,7 @@ const LivestreamPage: React.FC = () => {
             title: data.currentTrack.title,
             artist: data.currentTrack.artist,
             album: data.currentTrack.album,
-            artUrl: data.currentTrack.artUrl.replace(
-              "host.docker.internal",
-              "localhost",
-            ),
+            artUrl: proxyArtUrl(data.currentTrack.artUrl),
             duration: data.currentTrack.duration,
             elapsed: data.currentTrack.elapsed,
             listenUrl: livestreamService.getListenUrl(session.streamUrl || data.listenUrl),
