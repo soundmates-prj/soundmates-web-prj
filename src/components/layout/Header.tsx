@@ -12,6 +12,13 @@ import {
   Mic2,
   Calendar,
   Zap,
+  Menu,
+  X,
+  Home,
+  Podcast,
+  MessageSquare,
+  CreditCard,
+  Search,
 } from "lucide-react";
 import { usePlayer } from "../../context/PlayerContext";
 import { showInfo } from "../common/toastUtils";
@@ -35,8 +42,9 @@ const Header: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
   const [showLiveDropdown, setShowLiveDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>(location.pathname);
@@ -131,6 +139,7 @@ const Header: React.FC = () => {
     // Dừng nhạc hẳn khi đăng xuất
     player.leaveSession();
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("userInfo");
     setIsLoggedIn(false);
     setUserInfo(null);
@@ -248,7 +257,7 @@ const Header: React.FC = () => {
           </nav>
 
           <div className="header-right">
-            <button className="icon-btn" onClick={() => setShowSearch(true)}>
+            <button className="icon-btn hide-on-mobile" onClick={() => setShowSearch(true)}>
               <Icon name="search" size={18} />
             </button>
 
@@ -354,8 +363,51 @@ const Header: React.FC = () => {
               </Button>
             )}
           </div>
+
+          {/* Mobile menu toggle — placed outside .header-right for clean layout */}
+          <button
+            className="icon-btn mobile-menu-btn"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+          >
+            {showMobileMenu ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </header>
+
+        {/* Mobile Navigation Overlay */}
+        {showMobileMenu && (
+          <div className="mobile-nav-overlay">
+            <nav className="mobile-nav">
+              <Link to="/" onClick={() => setShowMobileMenu(false)} className={activeTab === "/" ? "active" : ""}>
+                <Home size={18} />Trang Chủ
+              </Link>
+              <Link to="/live" onClick={() => setShowMobileMenu(false)} className={activeTab === "/live" ? "active" : ""}>
+                <Radio size={18} />Live Sessions
+              </Link>
+              <Link to="/schedule-public" onClick={() => setShowMobileMenu(false)} className={activeTab === "/schedule-public" ? "active" : ""}>
+                <Calendar size={18} />Lịch Phát Sóng
+              </Link>
+              <Link to="/podcast" onClick={() => setShowMobileMenu(false)} className={activeTab === "/podcast" ? "active" : ""}>
+                <Podcast size={18} />Podcast
+              </Link>
+              <Link to="/forum" onClick={() => setShowMobileMenu(false)} className={activeTab === "/forum" ? "active" : ""}>
+                <MessageSquare size={18} />Diễn Đàn
+              </Link>
+              <Link to="/subscription" onClick={() => setShowMobileMenu(false)} className={activeTab === "/subscription" ? "active" : ""}>
+                <CreditCard size={18} />Gói Dịch Vụ
+              </Link>
+              <button
+                className="mobile-search-btn"
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  setShowSearch(true);
+                }}
+              >
+                <Search size={18} />Tìm kiếm...
+              </button>
+            </nav>
+          </div>
+        )}
 
       <SearchBar isOpen={showSearch} onClose={() => setShowSearch(false)} />
     </div>

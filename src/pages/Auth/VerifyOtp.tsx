@@ -82,11 +82,13 @@ const VerifyOtp: React.FC = () => {
       }
 
       const userInfo = {
+        id: user?.id || "",
         firstName: user?.firstName || stateFirstName || "",
         lastName: user?.lastName || stateLastName || "",
         username: user?.username || stateUsername || "",
         email: user?.email || email || "",
         avatarUrl: user?.avatarUrl || null,
+        roleName: user?.roleName || "USER",
       };
       localStorage.setItem("userInfo", JSON.stringify(userInfo));
 

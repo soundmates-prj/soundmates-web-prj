@@ -3,6 +3,11 @@
        ROOT HEADER
     =========================== */
 
+    .header {
+        width: 100%;
+        overflow: hidden;
+    }
+
     .home-header {
         position: sticky;
         top: 0;
@@ -10,6 +15,7 @@
         background: var(--header-bg);
         border-bottom: 1px solid var(--header-border);
         transition: background 0.3s ease, border-color 0.3s ease;
+        width: 100%;
     }
 
     .home-header.scrolled {
@@ -47,6 +53,7 @@
     .header-left img {
         height: 70px;
         width: auto;
+        max-height: 70px;
         object-fit: contain;
     }
 
@@ -778,6 +785,108 @@
        RESPONSIVE
     =========================== */
 
+    .cta-live-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: white;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        font-family: inherit;
+    }
+
+    .cta-live-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+    }
+    
+    .mobile-menu-btn {
+        display: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1.5px solid var(--nav-border);
+        background: var(--nav-bg);
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        flex-shrink: 0;
+        color: var(--header-text);
+    }
+
+    .mobile-menu-btn:hover {
+        border-color: #55C5F1;
+        background: var(--dropdown-hover);
+    }
+
+    /* Mobile Overlay Menu */
+    .mobile-nav-overlay {
+        position: fixed;
+        top: 71px; /* Below header */
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(8px);
+        z-index: 99;
+        display: flex;
+        flex-direction: column;
+        animation: dropdownFadeIn 0.2s ease;
+    }
+
+    .mobile-nav {
+        background: var(--header-bg);
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        gap: 12px;
+        border-bottom: 1px solid var(--header-border);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .mobile-nav a,
+    .mobile-nav button {
+        padding: 14px 16px 14px 14px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--header-text);
+        background: var(--nav-bg);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        text-align: left;
+    }
+
+    .mobile-nav a svg,
+    .mobile-nav button svg {
+        flex-shrink: 0;
+        color: #55C5F1;
+    }
+
+    .mobile-nav a.active {
+        color: #55c5f1;
+        background: rgba(85, 197, 241, 0.1);
+    }
+
+    .mobile-nav .mobile-cta-btn {
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: white;
+        justify-content: center;
+        margin-top: 8px;
+    }
+
     @media (max-width: 1024px) {
         .header-center {
             display: none;
@@ -785,6 +894,55 @@
 
         .header-search {
             width: 140px;
+        }
+
+        .hide-on-mobile {
+            display: none !important;
+        }
+
+        .mobile-menu-btn {
+            display: flex;
+        }
+
+        .header-container {
+            height: 60px;
+        }
+
+        .header-left img {
+            height: 60px;
+            max-height: 60px;
+        }
+
+        /* Push header-right all the way to the right on mobile */
+        .header-right {
+            flex: 1;
+            justify-content: flex-end;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .header-container {
+            padding: 0 12px;
+            height: 56px;
+        }
+
+        .header-left img {
+            height: 56px;
+            max-height: 56px;
+        }
+
+        .header-brand {
+            font-size: 1.1rem;
+        }
+
+        .mobile-menu-btn {
+            width: 40px;
+            height: 40px;
+        }
+
+        .header-right {
+            flex: 1;
+            justify-content: flex-end;
         }
     }
 }

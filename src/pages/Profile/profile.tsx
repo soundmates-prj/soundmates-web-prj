@@ -131,7 +131,7 @@ export default function Profile() {
 
   if (!user) return <div className="pf-loading">Đang tải...</div>;
 
-  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  const name = `${user.lastName ?? ""} ${user.firstName ?? ""}`.trim();
   const dob = formatDate(user.dateOfBirth);
   const defaultCover =
     "https://images.unsplash.com/photo-1511376777868-611b54f68947?w=1200&q=80";
