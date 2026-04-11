@@ -10,6 +10,7 @@ import {
   Play,
   ChevronRight,
   X,
+  Bookmark,
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
 import type { PodcastItem } from "../../types/podcast";
@@ -61,14 +62,19 @@ export default function PodcastScreen() {
   const [search, setSearch] = useState("");
   const [activeType, setActiveType] = useState("all");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await podcastService.getPublishedPodcasts();
+        const [data, saved] = await Promise.all([
+          podcastService.getPublishedPodcasts(),
+          podcastService.getSavedPodcasts().catch(() => [] as PodcastItem[]),
+        ]);
         setPodcasts(data);
+        setSavedIds(new Set(saved.map((p) => p.id)));
       } catch {
         setError("Không thể tải danh sách podcast. Vui lòng thử lại sau.");
       } finally {
@@ -105,6 +111,30 @@ export default function PodcastScreen() {
   /* tách featured (bài đầu) và phần còn lại */
   const featured = filtered.length > 0 ? filtered[0] : null;
   const rest = filtered.length > 1 ? filtered.slice(1) : [];
+
+  const toggleSave = async (podcastId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const isSaved = savedIds.has(podcastId);
+    // Optimistic update
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (isSaved) next.delete(podcastId);
+      else next.add(podcastId);
+      return next;
+    });
+    try {
+      if (isSaved) await podcastService.unsavePodcast(podcastId);
+      else await podcastService.savePodcast(podcastId);
+    } catch {
+      // Revert on error
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (isSaved) next.add(podcastId);
+        else next.delete(podcastId);
+        return next;
+      });
+    }
+  };
 
   return (
     <div className="pds">
@@ -241,6 +271,8 @@ export default function PodcastScreen() {
               <FeaturedCard
                 podcast={featured}
                 onClick={() => navigate(`/podcast/${featured.id}`)}
+                isSaved={savedIds.has(featured.id)}
+                onToggleSave={toggleSave}
               />
             )}
 
@@ -265,6 +297,8 @@ export default function PodcastScreen() {
                   podcast={podcast}
                   index={i}
                   onClick={() => navigate(`/podcast/${podcast.id}`)}
+                  isSaved={savedIds.has(podcast.id)}
+                  onToggleSave={toggleSave}
                 />
               ))}
             </div>
@@ -282,9 +316,13 @@ export default function PodcastScreen() {
 function FeaturedCard({
   podcast,
   onClick,
+  isSaved,
+  onToggleSave,
 }: {
   podcast: PodcastItem;
   onClick: () => void;
+  isSaved: boolean;
+  onToggleSave: (id: string, e: React.MouseEvent) => void;
 }) {
   const [imgErr, setImgErr] = useState(false);
   const typeLabel =
@@ -320,11 +358,21 @@ function FeaturedCard({
         {podcast.description && (
           <p className="pds-featured-desc">{podcast.description}</p>
         )}
-        <button className="pds-featured-cta" type="button">
-          <Play size={16} fill="currentColor" />
-          Nghe ngay
-          <ChevronRight size={16} />
-        </button>
+        <div className="pds-featured-actions">
+          <button className="pds-featured-cta" type="button">
+            <Play size={16} fill="currentColor" />
+            Nghe ngay
+            <ChevronRight size={16} />
+          </button>
+          <button
+            className={`pds-save-btn${isSaved ? " saved" : ""}`}
+            type="button"
+            title={isSaved ? "Bỏ lưu" : "Lưu podcast"}
+            onClick={(e) => onToggleSave(podcast.id, e)}
+          >
+            <Bookmark size={18} fill={isSaved ? "currentColor" : "none"} />
+          </button>
+        </div>
       </div>
     </article>
   );
@@ -338,10 +386,14 @@ function PodcastCard({
   podcast,
   index,
   onClick,
+  isSaved,
+  onToggleSave,
 }: {
   podcast: PodcastItem;
   index: number;
   onClick: () => void;
+  isSaved: boolean;
+  onToggleSave: (id: string, e: React.MouseEvent) => void;
 }) {
   const [imgErr, setImgErr] = useState(false);
   const typeLabel =
@@ -373,6 +425,16 @@ function PodcastCard({
             <Play size={18} fill="#fff" />
           </div>
         </div>
+
+        {/* Save button */}
+        <button
+          className={`pds-card-save${isSaved ? " saved" : ""}`}
+          type="button"
+          title={isSaved ? "Bỏ lưu" : "Lưu podcast"}
+          onClick={(e) => onToggleSave(podcast.id, e)}
+        >
+          <Bookmark size={16} fill={isSaved ? "currentColor" : "none"} />
+        </button>
 
         {/* hover equalizer */}
         <EqBars count={5} className="pds-card-eq" />
