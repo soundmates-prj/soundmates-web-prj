@@ -35,11 +35,38 @@ function createBlobs(count: number, w: number, h: number): Blob[] {
 
 /* ─── Bento Grid Block Data ─── */
 const gridBlocks = [
-  { id: 1, title: "🎵 Phòng Nghe", desc: "Tham gia phòng live cùng bạn bè", size: "span-2" },
-  { id: 2, title: "🎧 Podcast", desc: "Thư podcast mỗi ngày", size: "" },
-  { id: 3, title: "💬 Diễn đàn", desc: "Chia sẻ cảm xúc âm nhạc", size: "" },
-  { id: 4, title: "🎤 AI Podcast", desc: "Tạo podcast bằng AI", size: "" },
-  { id: 5, title: "📻 Lịch Phát Sóng", desc: "Đặt lịch & nhận thông báo", size: "span-2" },
+  {
+    id: 1,
+    icon: 'M23 7l-7 5 7 5V7z M14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z',
+    title: "Phòng Nghe",
+    desc: "Tham gia phòng live cùng bạn bè",
+    size: "span-2",
+    path: "/live",
+  },
+  {
+    id: 2,
+    icon: 'M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3zM19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8',
+    title: "Podcast",
+    desc: "Thư podcast mỗi ngày",
+    size: "",
+    path: "/podcast",
+  },
+  {
+    id: 3,
+    icon: 'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z',
+    title: "Diễn Đàn",
+    desc: "Chia sẻ cảm xúc âm nhạc",
+    size: "",
+    path: "/forum",
+  },
+  {
+    id: 4,
+    icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+    title: "Lịch Phát Sóng",
+    desc: "Đặt lịch & nhận thông báo",
+    size: "span-2",
+    path: "/schedule-public",
+  },
 ];
 
 export default function HeroSection() {
@@ -163,7 +190,7 @@ export default function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.5 }}
           >
-            <Link to="/" className="hero-btn">
+            <Link to="/live" className="hero-btn">
               Khám phá ngay
               <Icon name="play" size={18} />
             </Link>
@@ -182,13 +209,25 @@ export default function HeroSection() {
               style={{
                 transform: `translate(${mousePos.x * (3 + i * 1.5)}px, ${mousePos.y * (3 + i * 1.5)}px)`,
               }}
-              whileHover={{ scale: 1.04 }}
             >
-              <div className="bento-block-inner">
+              <Link to={block.path} className="bento-block-inner">
+                <div className="bento-icon-wrapper">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#55C5F1"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d={block.icon} />
+                  </svg>
+                </div>
                 <h3 className="bento-title">{block.title}</h3>
                 <p className="bento-desc">{block.desc}</p>
-              </div>
-              <div className="bento-glow" />
+              </Link>
             </motion.div>
           ))}
         </div>

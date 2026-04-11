@@ -265,6 +265,28 @@ export interface EpisodeResult {
   duration: number;
 }
 
+export interface PodcastRequestResult {
+  id: string;
+  liveSessionId: string;
+  requestedByUserId: string;
+  title: string;
+  description: string | null;
+  scriptText: string;
+  audioUrl: string;
+  durationSeconds: number;
+  voiceCode: string;
+  voiceDisplayName: string | null;
+  azuraCastMediaId: string | null;
+  status: string;
+  reviewedByUserId: string | null;
+  reviewedAt: string | null;
+  rejectReason: string | null;
+  requestedAt: string;
+  sessionName: string | null;
+  requestedByUsername?: string;
+  reviewedByUsername?: string;
+}
+
 export interface PagedResult<T> {
   items: T[];
   totalCount: number;
@@ -715,7 +737,6 @@ class LiveSessionApiService {
   }
 
   async createPodcast(data: {
-    createdBy: string;
     title: string;
     description?: string;
     author?: string;
@@ -782,6 +803,73 @@ class LiveSessionApiService {
       `/podcast/${podcastId}/episodes/${episodeId}`,
       data,
       { headers: { "Content-Type": "multipart/form-data" }, timeout: 300_000 },
+    );
+    return res.data.data;
+  }
+
+  /* ── Podcast Requests ── */
+
+  async getPodcastRequests(params?: {
+    sessionId?: string;
+    status?: string;
+    search?: string;
+  }): Promise<PodcastRequestResult[]> {
+    const res = await api.get<ApiResponse<PodcastRequestResult[]>>(
+      "/podcast-requests",
+      { params },
+    );
+    return res.data.data;
+  }
+
+  async getMyPodcastRequests(params?: {
+    sessionId?: string;
+    status?: string;
+  }): Promise<PodcastRequestResult[]> {
+    const res = await api.get<ApiResponse<PodcastRequestResult[]>>(
+      "/podcast-requests/my",
+      { params },
+    );
+    return res.data.data;
+  }
+
+  async getPodcastRequest(id: string): Promise<PodcastRequestResult> {
+    const res = await api.get<ApiResponse<PodcastRequestResult>>(
+      `/podcast-requests/${id}`,
+    );
+    return res.data.data;
+  }
+
+  async reviewPodcastRequest(
+    id: string,
+    data: { action: "approve" | "reject"; rejectReason?: string },
+  ): Promise<PodcastRequestResult> {
+    const res = await api.post<ApiResponse<PodcastRequestResult>>(
+      `/podcast-requests/${id}/review`,
+      data,
+    );
+    return res.data.data;
+  }
+
+  async cancelPodcastRequest(id: string): Promise<boolean> {
+    const res = await api.delete<ApiResponse<boolean>>(
+      `/podcast-requests/${id}`,
+    );
+    return res.data.data;
+  }
+
+  async createPodcastRequest(data: {
+    liveSessionId: string;
+    title: string;
+    description?: string;
+    scriptText: string;
+    audioUrl: string;
+    durationSeconds: number;
+    voiceCode: string;
+    voiceDisplayName?: string;
+  }): Promise<PodcastRequestResult> {
+    const res = await api.post<ApiResponse<PodcastRequestResult>>(
+      "/podcast-requests",
+      data,
     );
     return res.data.data;
   }

@@ -55,9 +55,11 @@ export interface PodcastGenerateRequest {
 }
 
 export interface PodcastGenerateResult {
-  script: Script;
-  audio: ScriptAudio;
+  script: string;
   audioUrl?: string;
+  audioBytes?: Uint8Array;
+  duration?: number;
+  provider?: string;
 }
 
 export interface GenerateScriptRequest {

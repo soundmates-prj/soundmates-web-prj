@@ -85,6 +85,43 @@ export interface SongRequestCreatedEvent {
   createdAt: string;
 }
 
+// Podcast request event — mirrors PodcastRequestResult shape
+export interface PodcastRequestCreatedEvent {
+  id: string;
+  liveSessionId: string;
+  requestedByUserId: string;
+  title: string;
+  description: string | null;
+  scriptText: string;
+  audioUrl: string;
+  durationSeconds: number;
+  voiceCode: string;
+  voiceDisplayName: string | null;
+  status: string;
+  requestedAt: string;
+  sessionName: string | null;
+}
+
+export interface PodcastRequestReviewedEvent {
+  id: string;
+  liveSessionId: string;
+  requestedByUserId: string;
+  title: string;
+  description: string | null;
+  scriptText: string;
+  audioUrl: string;
+  durationSeconds: number;
+  voiceCode: string;
+  voiceDisplayName: string | null;
+  azuraCastMediaId: string | null;
+  status: string;
+  reviewedByUserId: string | null;
+  reviewedAt: string | null;
+  rejectReason: string | null;
+  requestedAt: string;
+  sessionName: string | null;
+}
+
 class LiveHubService {
   private connection: signalR.HubConnection | null = null;
   private reconnectAttempt = 0;
@@ -228,6 +265,18 @@ class LiveHubService {
     return () => conn.off("SongRequestCreated", callback);
   }
 
+  onPodcastRequestCreated(callback: (req: PodcastRequestCreatedEvent) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("PodcastRequestCreated", callback);
+    return () => conn.off("PodcastRequestCreated", callback);
+  }
+
+  onPodcastRequestReviewed(callback: (req: PodcastRequestReviewedEvent) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("PodcastRequestReviewed", callback);
+    return () => conn.off("PodcastRequestReviewed", callback);
+  }
+
   offAll(): void {
     const conn = this.getConnection();
     conn.off("sessionstarted");
@@ -239,6 +288,8 @@ class LiveHubService {
     conn.off("SongChanged");
     conn.off("SongRequestCreated");
     conn.off("NowPlayingUpdated");
+    conn.off("PodcastRequestCreated");
+    conn.off("PodcastRequestReviewed");
   }
 }
 

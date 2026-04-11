@@ -7,15 +7,21 @@ import {
   Heart,
   ListMusic,
   X,
+  Mic2,
+  Music,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { usePlayer } from "../../context/PlayerContext";
 import { showToast } from "../../utils/toast";
+import podcastService from "../../services/podcastService";
+import type { PodcastEpisode } from "../../types/podcast";
 import "./MusicPlayer.css";
 
 // Placeholder art when not in a session
 const PLACEHOLDER_ART =
   "https://i.pinimg.com/736x/e2/8e/8c/e28e8c45eed55b1ffca39e0666be1f86.jpg";
+
+type DrawerTab = "playlist" | "podcast";
 
 export function MusicPlayer() {
   const {
@@ -28,6 +34,9 @@ export function MusicPlayer() {
     setVolume,
     toggleMute,
     leaveSession,
+    setTrack,
+    setIsPlaying,
+    audioRef,
   } = usePlayer();
 
   const location = useLocation();
@@ -53,9 +62,56 @@ export function MusicPlayer() {
   const iconMuted = isDark ? "rgba(255,255,255,0.35)" : "#9CA3AF";
   const [isFavorite, setIsFavorite] = useState(false);
   const [showPlaylist, setShowPlaylist] = useState(false);
+  const [drawerTab, setDrawerTab] = useState<DrawerTab>("playlist");
+  const [podcastEpisodes, setPodcastEpisodes] = useState<PodcastEpisode[]>([]);
+  const [podcasts, setPodcasts] = useState<{ id: string; title: string; banner: string | null }[]>([]);
+  const [selectedPodcastId, setSelectedPodcastId] = useState<string | null>(null);
+  const [loadingEpisodes, setLoadingEpisodes] = useState(false);
 
   // Reset favorite when track changes
   useEffect(() => { setIsFavorite(false); }, [track?.title]);
+
+  // Load podcasts when drawer opens on podcast tab
+  useEffect(() => {
+    if (showPlaylist && drawerTab === "podcast" && podcasts.length === 0) {
+      podcastService.getPublishedPodcasts()
+        .then((data) => setPodcasts(data.slice(0, 10).map((p) => ({ id: p.id, title: p.title, banner: p.banner }))))
+        .catch(() => {});
+    }
+  }, [showPlaylist, drawerTab]);
+
+  // Load episodes when a podcast is selected
+  useEffect(() => {
+    if (!selectedPodcastId) return;
+    setLoadingEpisodes(true);
+    podcastService.getEpisodes(selectedPodcastId)
+      .then((eps) => setPodcastEpisodes(eps))
+      .catch(() => setPodcastEpisodes([]))
+      .finally(() => setLoadingEpisodes(false));
+  }, [selectedPodcastId]);
+
+  const playPodcastEpisode = async (ep: PodcastEpisode) => {
+    if (!ep.audioUrl) {
+      showToast.error("Tập podcast chưa có file audio");
+      return;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    const audio = new Audio(ep.audioUrl);
+    audioRef.current = audio;
+    audio.volume = volume / 100;
+    setTrack({
+      title: ep.title,
+      artist: "Podcast",
+      artUrl: ep.thumbnailUrl || PLACEHOLDER_ART,
+      duration: 0,
+      elapsed: 0,
+      listenUrl: ep.audioUrl,
+    });
+    audio.play().then(() => setIsPlaying(true)).catch(() => {});
+  };
 
   /* ── Pause when navigating to auth pages ─────────────────────────────── */
   useEffect(() => {
@@ -80,7 +136,7 @@ export function MusicPlayer() {
     duration > 0 ? Math.min((elapsed / duration) * 100, 100) : 0;
 
   const title = track?.title ?? "Chưa có bài phát";
-  const artist = track?.artist ?? "Vào một Live Session để nghe nhạc";
+  const artist = track?.artist ?? "...";
   const artUrl = track?.artUrl ?? PLACEHOLDER_ART;
   const displayVolume = isMuted ? 0 : volume;
   const showPlayIcon = !isPlaying || isMuted || volume === 0;
@@ -221,19 +277,99 @@ export function MusicPlayer() {
           </div>
         </div>
 
-        {/* Playlist drawer (placeholder — wire up to session queue later) */}
+        {/* Playlist + Podcast drawer */}
         {showPlaylist && (
           <div className="music-player-playlist-drawer">
             <div className="playlist-drawer-header">
-              <span>Danh sách phát</span>
+              {/* Tabs */}
+              <div className="playlist-drawer-tabs">
+                <button
+                  className={`playlist-drawer-tab ${drawerTab === "playlist" ? "active" : ""}`}
+                  onClick={() => setDrawerTab("playlist")}
+                >
+                  <Music size={13} /> Nhạc
+                </button>
+                <button
+                  className={`playlist-drawer-tab ${drawerTab === "podcast" ? "active" : ""}`}
+                  onClick={() => setDrawerTab("podcast")}
+                >
+                  <Mic2 size={13} /> Podcast
+                </button>
+              </div>
               <button onClick={() => setShowPlaylist(false)}>
                 <X size={16} />
               </button>
             </div>
+
             <div className="playlist-drawer-body">
-              <p className="playlist-drawer-placeholder">
-                Tính năng đang phát triển — sẽ hiển thị queue nhạc của phiên.
-              </p>
+              {drawerTab === "playlist" && (
+                <p className="playlist-drawer-placeholder">
+                  Tính năng đang phát triển — sẽ hiển thị queue nhạc của phiên.
+                </p>
+              )}
+
+              {drawerTab === "podcast" && (
+                <div className="podcast-drawer-content">
+                  {/* Podcast list */}
+                  {selectedPodcastId === null ? (
+                    <div className="podcast-drawer-list">
+                      {loadingEpisodes ? (
+                        <p className="playlist-drawer-placeholder">Đang tải podcast...</p>
+                      ) : podcasts.length === 0 ? (
+                        <p className="playlist-drawer-placeholder">Chưa có podcast nào</p>
+                      ) : (
+                        podcasts.map((pod) => (
+                          <div
+                            key={pod.id}
+                            className="podcast-drawer-item"
+                            onClick={() => setSelectedPodcastId(pod.id)}
+                          >
+                            <div className="podcast-drawer-art">
+                              {pod.banner ? (
+                                <img src={pod.banner} alt={pod.title} />
+                              ) : (
+                                <Mic2 size={16} />
+                              )}
+                            </div>
+                            <div className="podcast-drawer-info">
+                              <span className="podcast-drawer-title">{pod.title}</span>
+                            </div>
+                            <Play size={12} fill="currentColor" />
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  ) : (
+                    /* Episode list */
+                    <div className="episode-drawer-list">
+                      <button
+                        className="episode-drawer-back"
+                        onClick={() => { setSelectedPodcastId(null); setPodcastEpisodes([]); }}
+                      >
+                        <X size={12} /> Quay lại
+                      </button>
+                      {loadingEpisodes ? (
+                        <p className="playlist-drawer-placeholder">Đang tải tập...</p>
+                      ) : podcastEpisodes.length === 0 ? (
+                        <p className="playlist-drawer-placeholder">Chưa có tập nào</p>
+                      ) : (
+                        podcastEpisodes.map((ep) => (
+                          <div
+                            key={ep.id}
+                            className="episode-drawer-item"
+                            onClick={() => playPodcastEpisode(ep)}
+                          >
+                            <Play size={12} fill="currentColor" />
+                            <div className="episode-drawer-info">
+                              <span className="episode-drawer-title">{ep.title}</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

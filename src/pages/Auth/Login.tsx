@@ -110,6 +110,7 @@ const Login: React.FC = () => {
       const userData = res.data?.data;
       if (userData) {
         localStorage.setItem("userInfo", JSON.stringify({
+          id: userData.id,
           firstName: userData.firstName,
           lastName: userData.lastName,
           username: userData.username,
@@ -262,6 +263,7 @@ const Login: React.FC = () => {
                   const googleUserData = res.data?.data;
                   if (googleUserData) {
                     localStorage.setItem("userInfo", JSON.stringify({
+                      id: googleUserData.id,
                       firstName: googleUserData.firstName,
                       lastName: googleUserData.lastName,
                       username: googleUserData.username,

@@ -14,6 +14,8 @@ const Footer: React.FC = () => {
     <footer className="home-footer">
       <div className="footer-container">
         <div className="footer-grid">
+
+          {/* ── LEFT: Brand + Social ── */}
           <div className="footer-brand">
             <div className="footer-logo">
               <img
@@ -28,49 +30,54 @@ const Footer: React.FC = () => {
                 <p className="footer-tagline">Đọc thư phát sóng mỗi ngày</p>
               </div>
             </div>
-          </div>
 
-          <div>
-            <h4 className="footer-section-title">Về chúng tôi</h4>
-            <ul className="footer-links">
-              <li><a href="/">Trang chủ</a></li>
-              <li><a href="#about-us">Giới thiệu</a></li>
-              <li><a href="#">Chính sách</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="footer-section-title">Liên hệ</h4>
-            <ul className="footer-links">
-              <li><a href="#">FAQ/ Hỗ trợ</a></li>
-              <li><a href="#">Gửi thư podcast</a></li>
-              <li><a href="#">Affiliates / Quảng cáo</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="footer-section-title">Tất cả</h4>
-            <ul className="footer-links">
-              <li><a href="#">Diễn đàn</a></li>
-              <li><a href="#">Playlist</a></li>
-              <li><a href="#">Âm Nhạc</a></li>
-            </ul>
-          </div>
-
-          <div className="footer-app-section">
             <div className="footer-social">
               <a href="#" className="footer-social-link">
-                <Facebook size={20} />
+                <Facebook size={18} />
               </a>
               <a href="#" className="footer-social-link">
-                <Instagram size={20} />
+                <Instagram size={18} />
               </a>
               <a href="#" className="footer-social-link">
-                <Twitter size={20} />
+                <Twitter size={18} />
               </a>
             </div>
+          </div>
+
+          {/* ── CENTER: Link Groups ── */}
+          <div className="footer-links-group">
+            <div className="footer-links-col">
+              <h4 className="footer-section-title">Về chúng tôi</h4>
+              <ul className="footer-links">
+                <li><a href="/">Trang chủ</a></li>
+                <li><a href="#about-us">Giới thiệu</a></li>
+                <li><a href="#">Chính sách</a></li>
+              </ul>
+            </div>
+
+            <div className="footer-links-col">
+              <h4 className="footer-section-title">Liên hệ</h4>
+              <ul className="footer-links">
+                <li><a href="#">FAQ</a></li>
+                <li><a href="#">Gửi thư</a></li>
+                <li><a href="#">Quảng cáo</a></li>
+              </ul>
+            </div>
+
+            <div className="footer-links-col">
+              <h4 className="footer-section-title">Khám phá</h4>
+              <ul className="footer-links">
+                <li><a href="/forum">Diễn đàn</a></li>
+                <li><a href="/schedule-public">Lịch Phát Sóng</a></li>
+                <li><a href="/podcast">Podcast</a></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* ── RIGHT: App Download ── */}
+          <div className="footer-app-section">
             <p className="footer-app-title">Tải ứng dụng SoundMates</p>
-            <div className="footer-app-buttons">
+            <div className="apps">
               <a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" className="app-store-link">
                 <img src={chPlayImg} alt="Tải trên Google Play" />
               </a>
@@ -79,6 +86,7 @@ const Footer: React.FC = () => {
               </a>
             </div>
           </div>
+
         </div>
 
         <div className="footer-bottom">
