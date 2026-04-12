@@ -141,6 +141,26 @@ class AudioService {
   }
 
   /**
+   * Get all audios for the current user
+   */
+  async getAllAudios(): Promise<ScriptAudio[]> {
+    try {
+      const response = await api.get<ApiResponse<{ audios: ScriptAudio[] }>>('/audios');
+      if (!response.data.success || !response.data.data?.audios) {
+        throw new Error(response.data.message || 'Không thể tải danh sách audio');
+      }
+      return response.data.data.audios;
+    } catch (error: any) {
+      console.error('Error fetching all audios:', error);
+      throw new Error(
+        error.response?.data?.message ||
+        error.message ||
+        'Lỗi khi tải danh sách audio'
+      );
+    }
+  }
+
+  /**
    * Get available TTS voices
    * @returns List of available voices
    */

@@ -83,12 +83,12 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem("refreshToken");
 
       if (!refreshToken) {
-        // No refresh token, logout
+        // Guest user or no refresh token - clean up just in case
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("userInfo");
         window.dispatchEvent(new Event("authChange"));
-        window.location.href = "/login";
+        // DO NOT redirect here to allow users to browse public pages seamlessly.
         return Promise.reject(error);
       }
 

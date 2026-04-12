@@ -178,6 +178,8 @@ export function LiveRoomPage() {
   const [playedHistory, setPlayedHistory] = useState<TrackInfo[]>([]);
   const [ended, setEnded] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [listeningTime, setListeningTime] = useState(0);
+  const [showAuthPopup, setShowAuthPopup] = useState(false);
   // Separate lyrics string state — only changes when the actual lyrics content changes.
   // This prevents parsedLyrics from re-computing when only elapsed/sync data changes.
   const [currentLyricsStr, setCurrentLyricsStr] = useState<string | null>(null);
@@ -602,6 +604,10 @@ export function LiveRoomPage() {
   useEffect(() => {
     if (player.isPlaying !== isPlaying) {
       if (player.isPlaying) {
+        if (showAuthPopup) {
+           player.setIsPlaying(false);
+           return;
+        }
         if (audioRef.current) {
           audioRef.current.play().then(() => setIsPlaying(true)).catch(() => void playStream());
         } else {
@@ -614,7 +620,7 @@ export function LiveRoomPage() {
         }
       }
     }
-  }, [player.isPlaying]);
+  }, [player.isPlaying, showAuthPopup]);
   useEffect(() => {
     const current = nowPlaying?.currentTrack;
     const next = nowPlaying?.playingNext;
@@ -651,8 +657,31 @@ export function LiveRoomPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chats]);
 
+  // ─── Guest Preview Limit ──────────────────────────────────────────────
+  useEffect(() => {
+    let timer: any = null;
+    if (isPlaying && !getCurrentUserId()) {
+      timer = setInterval(() => {
+        setListeningTime((prev) => {
+          const next = prev + 1;
+          if (next >= 120) {
+            cleanupAudio();
+            setShowAuthPopup(true);
+            return 120;
+          }
+          return next;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying, cleanupAudio]);
+
   // ─── Audio playback ────────────────────────────────────────────────────
   const playStream = useCallback(async () => {
+    if (showAuthPopup) {
+      player.setIsPlaying(false);
+      return;
+    }
     const url = nowPlaying?.listenUrl || session?.streamUrl;
     if (!url) return;
 
@@ -1161,6 +1190,37 @@ export function LiveRoomPage() {
                     </div>
                   ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Auth Prompt Modal */}
+      {showAuthPopup && (
+        <div className="lr-request-modal-overlay">
+          <div className="lr-request-modal" style={{ textAlign: "center", padding: "30px 20px" }}>
+            <h3 style={{ marginBottom: 15, color: "var(--user-theme-text, var(--lr-title))" }}>Hết thời gian nghe thử</h3>
+            <p style={{ color: "var(--user-theme-text, var(--lr-muted))", marginBottom: 25, fontSize: "14px" }}>
+              Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!
+            </p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <button 
+                onClick={() => navigate("/login")} 
+                style={{ padding: "10px 20px", background: "var(--user-theme-primary, #5cc3f0)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
+              >
+                Đăng nhập
+              </button>
+              <button 
+                onClick={() => navigate("/register")} 
+                style={{ padding: "10px 20px", background: "var(--lr-btn-soft-bg)", color: "var(--user-theme-text, var(--lr-text))", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
+              >
+                Đăng ký
+              </button>
+              <button 
+                onClick={() => navigate("/")} 
+                style={{ padding: "10px 20px", background: "transparent", color: "var(--user-theme-text, var(--lr-muted))", border: "1px solid var(--lr-border)", borderRadius: "8px", cursor: "pointer" }}
+              >
+                Về trang chủ
+              </button>
             </div>
           </div>
         </div>

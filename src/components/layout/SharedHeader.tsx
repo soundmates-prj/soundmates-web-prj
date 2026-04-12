@@ -1,13 +1,14 @@
-import { Search, Bell, Calendar, Shield, Mic2 } from "lucide-react";
+import { Search, Bell, Calendar, Shield, Mic2, Menu } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./SharedLayout.css";
 
 interface SharedHeaderProps {
     role: 'ADMIN' | 'STAFF' | 'HOST';
+    onToggleSidebar?: () => void;
 }
 
-export default function SharedHeader({ role }: SharedHeaderProps) {
+export default function SharedHeader({ role, onToggleSidebar }: SharedHeaderProps) {
     const [userInfo, setUserInfo] = useState<any>(null);
     const navigate = useNavigate();
 
@@ -58,6 +59,11 @@ export default function SharedHeader({ role }: SharedHeaderProps) {
     return (
         <header className="shared-header">
             <div className="shared-header-left">
+                {onToggleSidebar && (
+                    <button className="shared-menu-btn" onClick={onToggleSidebar}>
+                        <Menu size={24} />
+                    </button>
+                )}
                 <div className="shared-header-date">
                     <Calendar size={18} />
                     <span>{currentDate}</span>

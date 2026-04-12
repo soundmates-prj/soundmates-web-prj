@@ -26,6 +26,7 @@ import type {
 } from "../../services/userPlaylistService";
 import { usePlayer } from "../../context/PlayerContext";
 import ImageUploader from "./modals/ImageUploader";
+import musicCatalogService from "../../services/musicCatalogService";
 import "./UserPlaylistTab.css";
 
 const fmtDur = (s?: number) => {
@@ -33,6 +34,33 @@ const fmtDur = (s?: number) => {
   const m = Math.floor(s / 60),
     sec = s % 60;
   return `${m}:${sec.toString().padStart(2, "0")}`;
+};
+
+/* ── Resolve streaming URL from AzuraCast by media file ID ─────────── */
+const resolveStreamUrl = async (
+  mediaFileId: string,
+  fallbackUrl?: string,
+): Promise<string> => {
+  // Nếu đã là full URL thì dùng luôn
+  if (fallbackUrl?.startsWith("http")) return fallbackUrl;
+  try {
+    // Chuyển string ID thành number cho AzuraCast
+    const numericId = parseInt(mediaFileId, 10);
+    if (!isNaN(numericId)) {
+      const media = await musicCatalogService.getTrackById(numericId);
+      // Ưu tiên full URL từ AzuraCast
+      if (media.path && media.path.startsWith("http")) return media.path;
+    }
+  } catch (e) {
+    console.warn("AzuraCast lookup failed, using API proxy:", e);
+  }
+  // Fallback: stream qua API gateway proxy
+  const API_URL =
+    ((import.meta.env.VITE_API_URL as string | undefined) ?? window.location.origin).replace(
+      /\/$/,
+      "",
+    );
+  return `${API_URL}/api/v1/musiccatalog/${mediaFileId}/stream`;
 };
 const fmtSize = (bytes?: number) => {
   if (!bytes) return "";
@@ -73,25 +101,27 @@ export default function UserPlaylistTab() {
   const [deleting, setDeleting] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [playingPlId, setPlayingPlId] = useState<string | null>(null); // which playlist is playing
 
   const { setTrack, setIsPlaying, audioRef, isPlaying } = usePlayer();
-  const API_URL = import.meta.env.VITE_API_URL as string;
+
+  const notifyError = (message: string, detail?: string) => {
+    console.error(message, detail ?? "");
+    window.alert(detail ? `${message}\n${detail}` : message);
+  };
 
   /* ── Playback ──────────────────────────────────────────── */
-  const playTrack = (t: PlaylistTrack, list: PlaylistTrack[]) => {
-    // Try fileUrl on track first, otherwise look up from catalog by mediaId
-    const catalogItem = catalog.find((c) => c.id === t.mediaId);
+  const playTrack = async (t: PlaylistTrack, list: PlaylistTrack[]) => {
+    // Resolve URL first (may need AzuraCast lookup)
+    const mediaId = String(t.mediaId);
+    const catalogItem = catalog.find((c) => String(c.id) === mediaId);
     const rawUrl = t.fileUrl || catalogItem?.fileUrl;
-    if (!rawUrl) {
-      console.warn(
-        "No fileUrl for track",
-        t.title,
-        "- catalog size:",
-        catalog.length,
-      );
+    // Resolve streaming URL (AzuraCast lookup or API proxy)
+    const fullUrl = await resolveStreamUrl(mediaId, rawUrl ?? undefined);
+    if (!fullUrl) {
+      console.warn("Cannot resolve stream URL", t.title, mediaId);
       return;
     }
-    const fullUrl = rawUrl.startsWith("http") ? rawUrl : `${API_URL}/${rawUrl}`;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -123,6 +153,33 @@ export default function UserPlaylistTab() {
         setPlayingId(null);
       }
     });
+  };
+
+  /* ── Play entire playlist from card ──────────────────────── */
+  const playPlaylist = async (pl: UserPlaylist) => {
+    setPlayingPlId(pl.id);
+    try {
+      const shouldReload = selected?.id !== pl.id || tracks.length === 0;
+      const currentTracks = shouldReload
+        ? await userPlaylistService.getTracks(pl.id)
+        : tracks;
+
+      if (shouldReload) {
+        setSelected(pl);
+        setTracks(currentTracks);
+      }
+
+      if (currentTracks.length > 0) {
+        await playTrack(currentTracks[0], currentTracks);
+      } else {
+        notifyError("Playlist trống", "Playlist chưa có bài hát nào");
+      }
+    } catch (e) {
+      console.error("playPlaylist failed:", e);
+      notifyError("Không phát được playlist");
+    } finally {
+      setPlayingPlId(null);
+    }
   };
 
   const stopTrack = () => {
@@ -531,7 +588,10 @@ export default function UserPlaylistTab() {
                     <div className="upl-cover-overlay">
                       <button
                         className="upl-play-btn"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await playPlaylist(pl);
+                        }}
                       >
                         <Play size={20} fill="white" />
                       </button>

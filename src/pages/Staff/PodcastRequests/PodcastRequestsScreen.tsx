@@ -1,43 +1,101 @@
-import { useState } from 'react';
-import { Mic, Search, CheckCircle, XCircle, Clock, User, Play, RefreshCw } from 'lucide-react';
-import { showSuccess } from "../../../components/common/toastUtils";
+import { useState, useEffect, useCallback } from 'react';
+import { Mic, Search, CheckCircle, XCircle, Clock, User, Play, RefreshCw, X } from 'lucide-react';
+import { showSuccess, showError } from '../../../components/common/toastUtils';
+import { liveSessionApiService, type PodcastRequestResult } from '../../../services/liveSessionApiService';
 import './PodcastRequestsScreen.css';
 
-const podcastRequests = [
-  { id: 1, title: 'Tech Talk Episode 5', creator: 'PodcastFan', requestedAt: '2024-01-15 09:00', status: 'pending', category: 'Technology', duration: '45:30', description: 'Discussion about AI and future tech' },
-  { id: 2, title: 'Daily News Briefing', creator: 'NewsJunkie', requestedAt: '2024-01-15 10:30', status: 'approved', category: 'News', duration: '15:20', description: 'Morning news summary' },
-  { id: 3, title: 'Wellness Wednesday', creator: 'HealthGuru', requestedAt: '2024-01-15 11:45', status: 'pending', category: 'Health', duration: '30:15', description: 'Mental health and wellness tips' },
-  { id: 4, title: 'Business Insights', creator: 'BizPro', requestedAt: '2024-01-15 13:00', status: 'approved', category: 'Business', duration: '52:40', description: 'Startup success stories' },
-];
+type FilterTab = 'all' | 'pending' | 'approved' | 'rejected';
 
 export function PodcastRequestsScreen() {
-  const [requests, setRequests] = useState(podcastRequests);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [requests, setRequests] = useState<PodcastRequestResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<FilterTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedRequest, setSelectedRequest] = useState<PodcastRequestResult | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const filteredRequests = requests.filter(req => {
-    const matchesFilter = filter === 'all' || req.status === filter;
-    const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         req.creator.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: { status?: string; search?: string } = {};
+      if (filter !== 'all') params.status = filter;
+      if (searchQuery.trim()) params.search = searchQuery;
+      const data = await liveSessionApiService.getPodcastRequests(params);
+      setRequests(data);
+    } catch (err: any) {
+      showError('Lỗi', err?.response?.data?.message || 'Không thể tải yêu cầu podcast');
+    } finally {
+      setLoading(false);
+    }
+  }, [filter, searchQuery]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   const stats = {
     total: requests.length,
-    pending: requests.filter(r => r.status === 'pending').length,
-    approved: requests.filter(r => r.status === 'approved').length,
-    rejected: requests.filter(r => r.status === 'rejected').length,
+    pending: requests.filter(r => r.status === 'Pending').length,
+    approved: requests.filter(r => r.status === 'Approved').length,
+    rejected: requests.filter(r => r.status === 'Rejected').length,
   };
 
-  const handleApprove = (id: number) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
-    showSuccess("Thành công", "Yêu cầu podcast đã được duyệt");
+  const handleApprove = async (id: string) => {
+    setActionLoading(id);
+    try {
+      const updated = await liveSessionApiService.reviewPodcastRequest(id, { action: 'approve' });
+      setRequests(prev => prev.map(r => r.id === id ? updated : r));
+      if (selectedRequest?.id === id) setSelectedRequest(updated);
+      showSuccess('Thành công', 'Yêu cầu podcast đã được duyệt');
+    } catch (err: any) {
+      showError('Lỗi', err?.response?.data?.message || 'Không thể duyệt yêu cầu');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleReject = (id: number) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected' } : r));
-    showSuccess("Thành công", "Yêu cầu podcast đã bị từ chối");
+  const handleReject = async (id: string) => {
+    const reason = prompt('Lý do từ chối (bắt buộc):');
+    if (!reason?.trim()) return;
+    setActionLoading(id);
+    try {
+      const updated = await liveSessionApiService.reviewPodcastRequest(id, {
+        action: 'reject',
+        rejectReason: reason.trim(),
+      });
+      setRequests(prev => prev.map(r => r.id === id ? updated : r));
+      if (selectedRequest?.id === id) setSelectedRequest(updated);
+      showSuccess('Thành công', 'Yêu cầu podcast đã bị từ chối');
+    } catch (err: any) {
+      showError('Lỗi', err?.response?.data?.message || 'Không thể từ chối yêu cầu');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case 'Approved': return 'Đã duyệt';
+      case 'Rejected': return 'Từ chối';
+      case 'Pending': return 'Đang chờ';
+      case 'Cancelled': return 'Đã hủy';
+      case 'Played': return 'Đã phát';
+      default: return status;
+    }
+  };
+
+  const statusIcon = (status: string) => {
+    switch (status) {
+      case 'Approved': return <CheckCircle size={14} />;
+      case 'Rejected': return <XCircle size={14} />;
+      default: return <Clock size={14} />;
+    }
   };
 
   return (
@@ -47,8 +105,8 @@ export function PodcastRequestsScreen() {
           <h1 className="requests-title">Yêu cầu Podcast</h1>
           <p className="requests-subtitle">Duyệt và quản lý yêu cầu podcast từ người dùng</p>
         </div>
-        <button className="lm-btn lm-btn--outline">
-          <RefreshCw size={14} />
+        <button className="lm-btn lm-btn--outline" onClick={fetchRequests} disabled={loading}>
+          <RefreshCw size={14} className={loading ? 'spin' : ''} />
           Làm mới
         </button>
       </div>
@@ -89,7 +147,7 @@ export function PodcastRequestsScreen() {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Tìm theo tên podcast hoặc người tạo..."
+            placeholder="Tìm theo tiêu đề podcast hoặc tên giọng..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -103,85 +161,153 @@ export function PodcastRequestsScreen() {
         </div>
       </div>
 
-      <div className="podcast-grid">
-        {filteredRequests.map((request) => (
-          <div key={request.id} className="podcast-card">
-            <div className="podcast-card-header">
-              <div className="podcast-icon"><Mic size={24} /></div>
-              <span className={`status-badge ${request.status}`}>
-                {request.status === 'approved' && <CheckCircle size={14} />}
-                {request.status === 'rejected' && <XCircle size={14} />}
-                {request.status === 'pending' && <Clock size={14} />}
-                {request.status === 'approved' ? 'Đã duyệt' : request.status === 'rejected' ? 'Từ chối' : 'Đang chờ'}
-              </span>
-            </div>
+      {loading ? (
+        <div className="requests-loading">
+          <div className="spinner" />
+          <span>Đang tải yêu cầu podcast...</span>
+        </div>
+      ) : requests.length === 0 ? (
+        <div className="requests-empty">
+          <Mic size={48} />
+          <p>Không có yêu cầu podcast nào</p>
+        </div>
+      ) : (
+        <div className="podcast-grid">
+          {requests.map((request) => (
+            <div key={request.id} className="podcast-card">
+              <div className="podcast-card-header">
+                <div className="podcast-icon"><Mic size={24} /></div>
+                <span className={`status-badge ${request.status.toLowerCase()}`}>
+                  {statusIcon(request.status)}
+                  {statusLabel(request.status)}
+                </span>
+              </div>
 
-            <h3 className="podcast-title">{request.title}</h3>
-            <p className="podcast-description">{request.description}</p>
+              <h3 className="podcast-title">{request.title}</h3>
+              {request.description && (
+                <p className="podcast-description">{request.description}</p>
+              )}
 
-            <div className="podcast-meta">
-              <div className="meta-item"><User size={14} /><span>{request.creator}</span></div>
-              <div className="meta-item"><Clock size={14} /><span>{request.duration}</span></div>
-            </div>
+              <div className="podcast-meta">
+                <div className="meta-item">
+                  <User size={14} />
+                  <span>{request.requestedByUsername || request.requestedByUserId}</span>
+                </div>
+                <div className="meta-item">
+                  <Clock size={14} />
+                  <span>{formatDuration(request.durationSeconds)}</span>
+                </div>
+              </div>
 
-            <div className="podcast-category">
-              <span className="category-badge">{request.category}</span>
-            </div>
-
-            <div className="podcast-footer">
-              <button className="preview-btn" onClick={() => setSelectedRequest(request)}>
-                <Play size={16} />
-                Xem trước
-              </button>
-              {request.status === 'pending' && (
-                <div className="action-buttons">
-                  <button className="action-btn approve" onClick={() => handleApprove(request.id)}>
-                    <CheckCircle size={16} />
-                  </button>
-                  <button className="action-btn reject" onClick={() => handleReject(request.id)}>
-                    <XCircle size={16} />
-                  </button>
+              {request.voiceDisplayName && (
+                <div className="podcast-category">
+                  <span className="category-badge">🎙️ {request.voiceDisplayName}</span>
                 </div>
               )}
+
+              {request.rejectReason && request.status === 'Rejected' && (
+                <div className="reject-reason">
+                  <XCircle size={12} />
+                  <span>{request.rejectReason}</span>
+                </div>
+              )}
+
+              <div className="podcast-footer">
+                <button className="preview-btn" onClick={() => setSelectedRequest(request)}>
+                  <Play size={16} />
+                  Xem trước
+                </button>
+                {request.status === 'Pending' && (
+                  <div className="action-buttons">
+                    <button
+                      className="action-btn approve"
+                      onClick={() => handleApprove(request.id)}
+                      disabled={actionLoading === request.id}
+                      title="Duyệt"
+                    >
+                      {actionLoading === request.id ? (
+                        <div className="btn-spinner" />
+                      ) : (
+                        <CheckCircle size={16} />
+                      )}
+                    </button>
+                    <button
+                      className="action-btn reject"
+                      onClick={() => handleReject(request.id)}
+                      disabled={actionLoading === request.id}
+                      title="Từ chối"
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {selectedRequest && (
         <div className="preview-modal-overlay" onClick={() => setSelectedRequest(null)}>
           <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
             <div className="preview-modal-header">
               <h3>{selectedRequest.title}</h3>
-              <button className="modal-close" onClick={() => setSelectedRequest(null)}>×</button>
+              <button className="modal-close" onClick={() => setSelectedRequest(null)}>
+                <X size={20} />
+              </button>
             </div>
             <div className="preview-modal-body">
               <div className="preview-info">
                 <div className="info-row">
                   <span className="info-label">Người tạo:</span>
-                  <span className="info-value">{selectedRequest.creator}</span>
+                  <span className="info-value">{selectedRequest.requestedByUsername || selectedRequest.requestedByUserId}</span>
                 </div>
                 <div className="info-row">
-                  <span className="info-label">Thể loại:</span>
-                  <span className="info-value">{selectedRequest.category}</span>
+                  <span className="info-label">Giọng đọc:</span>
+                  <span className="info-value">{selectedRequest.voiceDisplayName || selectedRequest.voiceCode}</span>
                 </div>
                 <div className="info-row">
                   <span className="info-label">Thời lượng:</span>
-                  <span className="info-value">{selectedRequest.duration}</span>
+                  <span className="info-value">{formatDuration(selectedRequest.durationSeconds)}</span>
                 </div>
                 <div className="info-row">
-                  <span className="info-label">Mô tả:</span>
-                  <span className="info-value">{selectedRequest.description}</span>
+                  <span className="info-label">Session:</span>
+                  <span className="info-value">{selectedRequest.sessionName || selectedRequest.liveSessionId}</span>
                 </div>
+                {selectedRequest.description && (
+                  <div className="info-row">
+                    <span className="info-label">Mô tả:</span>
+                    <span className="info-value">{selectedRequest.description}</span>
+                  </div>
+                )}
+                {selectedRequest.rejectReason && (
+                  <div className="info-row reject">
+                    <span className="info-label">Lý do từ chối:</span>
+                    <span className="info-value">{selectedRequest.rejectReason}</span>
+                  </div>
+                )}
               </div>
-              <div className="audio-player">
-                <Play size={32} />
-                <span>Audio Player Placeholder</span>
-              </div>
+
+              {selectedRequest.audioUrl && (
+                <div className="audio-player">
+                  <audio controls src={selectedRequest.audioUrl} style={{ width: '100%' }} />
+                </div>
+              )}
+
+              {selectedRequest.scriptText && (
+                <div className="script-preview">
+                  <p className="script-label">📝 Script:</p>
+                  <pre className="script-text">{selectedRequest.scriptText}</pre>
+                </div>
+              )}
             </div>
             <div className="preview-modal-footer">
-              <button className="modal-btn reject" onClick={() => { handleReject(selectedRequest.id); setSelectedRequest(null); }}>Từ chối</button>
-              <button className="modal-btn approve" onClick={() => { handleApprove(selectedRequest.id); setSelectedRequest(null); }}>Duyệt</button>
+              <button className="modal-btn reject" onClick={() => { handleReject(selectedRequest.id); setSelectedRequest(null); }}>
+                Từ chối
+              </button>
+              <button className="modal-btn approve" onClick={() => { handleApprove(selectedRequest.id); setSelectedRequest(null); }}>
+                Duyệt
+              </button>
             </div>
           </div>
         </div>

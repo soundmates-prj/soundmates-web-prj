@@ -1,45 +1,43 @@
 /* ============================================
-   Footer Component Styles
+   Footer Component Styles — Premium Redesign
    ============================================ */
 .home-footer {
     background: var(--footer-bg);
     border-top: 3px solid var(--footer-border);
-    padding: 40px 32px 20px;
+    padding: 48px 24px calc(20px + 75px);
     transition: background 0.3s ease, border-color 0.3s ease;
+}
 
 .footer-container {
     max-width: 100%;
     margin: 0;
 }
 
+/* ── 3-Column Grid Layout ── */
 .footer-grid {
     display: grid;
-    grid-template-columns: 1.3fr 0.8fr 0.8fr 0.8fr 1.2fr;
-    gap: 60px;
-    margin-bottom: 30px;
-    align-items: center;
+    grid-template-columns: 1.2fr 2fr 1fr;
+    gap: 40px;
+    margin-bottom: 36px;
+    align-items: start;
 }
 
+/* ── LEFT: Brand ── */
 .footer-brand {
     display: flex;
     flex-direction: column;
-}
-
-.footer-grid>div {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    gap: 20px;
+    align-items: center;
 }
 
 .footer-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 0;
+    gap: 14px;
 }
 
 .footer-logo img {
-    height: 100px;
+    height: 70px;
     width: auto;
 }
 
@@ -51,162 +49,318 @@
 
 .footer-logo-text {
     font-family: 'Inter', sans-serif;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    color: #55C5F1;
+    color: var(--footer-border);
     margin: 0;
 }
-
 
 .footer-tagline {
-    font-size: 0.85rem;
-    color: #6B7280;
+    font-size: 0.9rem;
+    color: var(--footer-text);
     margin: 0;
     font-family: 'Be Vietnam Pro', sans-serif;
+    opacity: 0.75;
 }
 
+/* ── Social Icons (Glass Style) ── */
 .footer-social {
     display: flex;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 10px;
     align-items: center;
 }
-    .footer-logo-text {
-        font-family: 'Inter', sans-serif;
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: var(--footer-border);
-        margin: 0;
-    }
-
-    .footer-tagline {
-        font-size: 0.85rem;
-        color: var(--footer-text);
-        margin: 0;
-        font-family: 'Be Vietnam Pro', sans-serif;
-    }
 
 .footer-social-link {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background: #F3F4F6;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #000000;
-    transition: all 0.3s ease;
-    border: none;
-}
-
-    .footer-social-link {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: var(--footer-social-bg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--footer-social-color);
-        transition: all 0.3s ease;
-        border: none;
-    }
-
-    .footer-social-link:hover {
-        background: var(--footer-social-hover-bg);
-        color: var(--footer-social-hover-color);
-    }
-
-    .footer-section-title {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: var(--footer-title);
-        margin-bottom: 16px;
-        font-family: 'Be Vietnam Pro', sans-serif;
-    }
-
-.footer-links li {
-    margin-bottom: 10px;
-}
-
-.footer-links a {
-    font-size: 0.95rem;
-    color: #6B7280;
+    color: var(--footer-social-color);
+    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     text-decoration: none;
-    transition: color 0.3s ease;
+}
+
+.footer-social-link:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #55C5F1;
+    transform: translateY(-2px);
+}
+
+/* ── CENTER: Link Groups ── */
+.footer-links-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+}
+
+.footer-links-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.footer-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--footer-title);
+    opacity: 0.9;
+    margin: 0 0 8px 0;
     font-family: 'Be Vietnam Pro', sans-serif;
 }
 
-    .footer-links a {
-        font-size: 0.95rem;
-        color: var(--footer-text);
-        text-decoration: none;
-        transition: color 0.3s ease;
-        font-family: 'Be Vietnam Pro', sans-serif;
-    }
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
-    .footer-links a:hover {
-        color: var(--footer-border);
-    }
+.footer-links a {
+    font-size: 0.85rem;
+    color: var(--footer-text);
+    text-decoration: none;
+    transition: opacity 0.25s ease, color 0.25s ease;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    opacity: 0.7;
+}
 
+.footer-links a:hover {
+    opacity: 1;
+    color: var(--footer-border);
+}
+
+/* ── RIGHT: App Download ── */
 .footer-app-section {
     display: flex;
     flex-direction: column;
+    gap: 12px;
+    align-items: center;
 }
 
 .footer-app-title {
     font-size: 0.95rem;
-    color: #6B7280;
-    margin-bottom: 16px;
-    margin-top: 0;
+    font-weight: 600;
+    color: var(--footer-title);
+    opacity: 0.9;
+    margin: 0;
     font-family: 'Be Vietnam Pro', sans-serif;
 }
 
-    .footer-app-title {
-        font-size: 0.95rem;
-        color: var(--footer-text);
-        margin-bottom: 16px;
-        margin-top: 0;
-        font-family: 'Be Vietnam Pro', sans-serif;
-    }
+.apps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
 .app-store-link {
     display: inline-block;
-    transition: all 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .app-store-link img {
-    height: 50px;
-    width: auto;
+    height: 42px;
+    width: 130px;
+    object-fit: cover;
     display: block;
-    border-radius: 17px;
+    transition: transform 0.2s ease;
 }
 
-.app-store-link:hover {
-    transform: translateY(-2px);
-    opacity: 0.9;
+.app-store-link:hover img {
+    transform: scale(1.06);
 }
 
+/* ── Bottom Bar ── */
 .footer-bottom {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-top: 20px;
-    /* border-top: 1px solid #E5E7EB; */
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-    .footer-bottom {
-        display: flex;
+.footer-copyright {
+    font-size: 0.82rem;
+    color: var(--footer-text);
+    margin: 0;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    opacity: 0.55;
+}
+
+/* ── Responsive: 1024px ── */
+@media (max-width: 1024px) {
+    .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        margin-bottom: 28px;
+    }
+
+    .footer-brand {
+        grid-column: 1 / -1;
+        flex-direction: row;
         align-items: center;
-        justify-content: center;
-        padding-top: 20px;
-        /* border-top: 1px solid #E5E7EB; */
+        justify-content: space-between;
+    }
+
+    .footer-links-group {
+        gap: 24px;
+    }
+}
+
+/* ── Responsive: 768px ── */
+@media (max-width: 768px) {
+    .home-footer {
+        padding: 32px 24px calc(16px + 75px);
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .footer-brand {
+        grid-column: 1 / -1;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .footer-links-group {
+        grid-column: 1 / -1;
+        gap: 20px;
+    }
+
+    .footer-logo img {
+        height: 58px;
+    }
+
+    .footer-logo-text {
+        font-size: 1.2rem;
+    }
+
+    .footer-social-link {
+        width: 34px;
+        height: 34px;
+    }
+
+    .footer-bottom {
+        padding-top: 16px;
     }
 
     .footer-copyright {
+        font-size: 0.78rem;
+        text-align: center;
+    }
+}
+
+/* ── Responsive: 480px ── */
+@media (max-width: 480px) {
+    .home-footer {
+        padding: 24px 16px calc(12px + 75px);
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .footer-brand,
+    .footer-links-group,
+    .footer-app-section {
+        grid-column: auto;
+    }
+
+    .footer-links-group {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .footer-logo img {
+        height: 52px;
+    }
+
+    .footer-logo-text {
+        font-size: 1.1rem;
+    }
+
+    .footer-tagline {
+        font-size: 0.8rem;
+    }
+
+    .footer-section-title {
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+    }
+
+    .footer-links a {
         font-size: 0.85rem;
-        color: var(--footer-text);
-        margin: 0;
-        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+
+    .apps {
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    .app-store-link img {
+        height: 36px;
+        width: 110px;
+    }
+
+    .footer-bottom {
+        padding-top: 12px;
+    }
+
+    .footer-copyright {
+        font-size: 0.72rem;
+    }
+}
+
+/* ── Responsive: 360px ── */
+@media (max-width: 360px) {
+    .home-footer {
+        padding: 20px 12px calc(10px + 75px);
+    }
+
+    .footer-logo img {
+        height: 46px;
+    }
+
+    .footer-logo-text {
+        font-size: 0.95rem;
+    }
+
+    .footer-tagline {
+        font-size: 0.75rem;
+    }
+
+    .footer-section-title {
+        font-size: 0.85rem;
+    }
+
+    .footer-links a {
+        font-size: 0.8rem;
+    }
+
+    .footer-social-link {
+        width: 30px;
+        height: 30px;
+    }
+
+    .app-store-link img {
+        height: 32px;
+        width: 100px;
+    }
+
+    .footer-copyright {
+        font-size: 0.7rem;
     }
 }

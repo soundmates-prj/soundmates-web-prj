@@ -16,17 +16,6 @@ import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import "./LiveOps.css";
 
-const getCurrentUserId = () => {
-  try {
-    const raw = localStorage.getItem("userInfo");
-    if (!raw) return "";
-    const user = JSON.parse(raw);
-    return user?.id || user?.userId || "";
-  } catch {
-    return "";
-  }
-};
-
 const PODCAST_TYPES = [
   { value: "Podcast", label: "Podcast" },
   { value: "technology", label: "Công nghệ" },
@@ -123,18 +112,7 @@ export default function PodcastEditor() {
           status: status || undefined,
         });
       } else {
-        const createdBy = getCurrentUserId();
-        if (!createdBy) {
-          showError(
-            "Thiếu user id",
-            "Không tìm thấy userInfo.id để tạo podcast",
-          );
-          setSaving(false);
-          return;
-        }
-
         await liveSessionApiService.createPodcast({
-          createdBy,
           title,
           description: description || undefined,
           author: author || undefined,

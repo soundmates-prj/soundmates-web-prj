@@ -39,8 +39,6 @@ import StationPage from "./pages/Admin/LiveOps/StationPage";
 import MusicCatalogPage from "./pages/Admin/LiveOps/MusicCatalogPage";
 import PlaylistPage from "./pages/Admin/LiveOps/PlaylistPage";
 import PlaylistDetailPage from "./pages/Admin/LiveOps/PlaylistDetailPage";
-import LiveSessionPage from "./pages/Admin/LiveOps/LiveSessionPage";
-import LiveSessionDetailPage from "./pages/Admin/LiveOps/LiveSessionDetailPage";
 import PodcastPage from "./pages/Admin/LiveOps/PodcastPage";
 import PodcastEditor from "./pages/Admin/LiveOps/PodcastEditor";
 import { PodcastCreatorPage } from "./pages/PodcastCreator/PodcastCreatorPage";
@@ -53,19 +51,20 @@ import { HostDashboard } from "./pages/Host/Dashboard/HostDashboard";
 import { HostScheduleView } from "./pages/Host/Schedule/HostScheduleView";
 import { HostMusicRequestsScreen } from "./pages/Host/Requests/HostMusicRequestsScreen";
 import { HostPodcastRequestsScreen } from "./pages/Host/Requests/HostPodcastRequestsScreen";
-import { HostSessionDashboard } from "./pages/Host/LiveSession/HostSessionDashboard";
-import { HostLiveController } from "./pages/Host/LiveSession/HostLiveController";
+import HostLiveSessionPage from "./pages/Host/LiveSession/HostLiveSessionPage";
+import HostLiveSessionDetailPage from "./pages/Host/LiveSession/HostLiveSessionDetailPage";
+
 import { HostAnalyticsScreen } from "./pages/Host/Analytics/HostAnalyticsScreen";
 import HostSettingsPage from "./pages/Host/Settings/HostSettingsPage";
 
-// ── New Staff Page Imports ──
+// ── Staff Page Imports ──
 import { ChatModerationScreen } from "./pages/Staff/ChatModeration/ChatModerationScreen";
 import { ScriptModerationScreen } from "./pages/Staff/Scripts/ScriptModerationScreen";
 import { CreateLiveSessionScreen } from "./pages/Staff/LiveSession/CreateLiveSessionScreen";
 import { StaffAnalyticsScreen } from "./pages/Staff/Analytics/StaffAnalyticsScreen";
 import { LiveStreamScriptEditor } from "./pages/Staff/Schedule/LiveStreamScriptEditor";
 
-// ── New Admin Page Imports ──
+// ── Admin Page Imports ──
 import { UserPostsManagementScreen } from "./pages/Admin/Posts/UserPostsManagementScreen";
 import { SystemConfigScreen } from "./pages/Admin/SystemConfig/SystemConfigScreen";
 import PodcastScreen from "./pages/Podcast/PodcastScreen";
@@ -115,11 +114,7 @@ function App() {
               path="playlists/:playlistId"
               element={<PlaylistDetailPage />}
             />
-            <Route path="sessions" element={<LiveSessionPage />} />
-            <Route
-              path="sessions/:sessionId"
-              element={<LiveSessionDetailPage />}
-            />
+
             <Route path="podcasts" element={<PodcastPage />} />
             <Route path="podcasts/new" element={<PodcastEditor />} />
             <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
@@ -172,13 +167,11 @@ function App() {
             }
           >
             <Route path="dashboard" element={<HostDashboard />} />
-            <Route path="sessions" element={<HostSessionDashboard />} />
-            <Route path="admin-sessions" element={<LiveSessionPage />} />
+            <Route path="sessions" element={<HostLiveSessionPage />} />
             <Route
-              path="admin-sessions/:sessionId"
-              element={<LiveSessionDetailPage />}
+              path="sessions/:sessionId"
+              element={<HostLiveSessionDetailPage />}
             />
-            <Route path="live/:sessionId" element={<HostLiveController />} />
             <Route path="schedule" element={<HostScheduleView />} />
             <Route
               path="music-requests"
