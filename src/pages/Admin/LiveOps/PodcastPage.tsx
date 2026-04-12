@@ -26,6 +26,30 @@ import "./LiveOps.css";
 
 /* ── helpers ── */
 
+/** Đọc duration (giây) từ File audio bằng HTML5 Audio API */
+const getAudioDuration = (file: File): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+    audio.preload = "metadata";
+    const url = URL.createObjectURL(file);
+    audio.src = url;
+    audio.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve(Math.round(audio.duration));
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Không thể đọc metadata audio"));
+    };
+  });
+};
+
+const fmtDuration = (seconds: number) => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+};
+
 const fmtDate = (d: string | null) => {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("vi-VN", {
@@ -367,6 +391,7 @@ function PodcastRow({
               <div className="pe-episodes-header">
                 <span>#</span>
                 <span>Tiêu đề</span>
+                <span>Thời lượng</span>
                 <span>Ngày phát</span>
                 <span />
               </div>
@@ -381,6 +406,9 @@ function PodcastRow({
                       <span className="pe-ep-desc">{ep.description}</span>
                     )}
                   </div>
+                  <span className="pe-ep-duration">
+                    {ep.duration > 0 ? fmtDuration(ep.duration) : "—"}
+                  </span>
                   <span className="pe-ep-date">{fmtDate(ep.publishDate)}</span>
                   <div className="pe-ep-actions">
                     {ep.audioUrl && (
@@ -464,9 +492,24 @@ function EditEpisodeModal({
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
+  const [duration, setDuration] = useState<number | null>(null);
 
   const audioRef = useRef<HTMLInputElement>(null);
   const thumbRef = useRef<HTMLInputElement>(null);
+
+  const handleAudioChange = async (file: File | null) => {
+    setAudioFile(file);
+    if (file) {
+      try {
+        const dur = await getAudioDuration(file);
+        setDuration(dur);
+      } catch {
+        setDuration(null);
+      }
+    } else {
+      setDuration(null);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -512,6 +555,7 @@ function EditEpisodeModal({
         formData.append("EpisodeNumber", String(episodeNumber));
       if (publishDate)
         formData.append("PublishDate", new Date(publishDate).toISOString());
+      if (duration !== null) formData.append("Duration", String(duration));
 
       if (audioUrl) {
         formData.append("AudioUrl", audioUrl);
@@ -635,6 +679,9 @@ function EditEpisodeModal({
                   <a href={episode.audioUrl} target="_blank" rel="noreferrer">
                     Nghe thử
                   </a>
+                  {episode.duration > 0 && (
+                    <span> • {fmtDuration(episode.duration)}</span>
+                  )}
                 </div>
               )}
               <div
@@ -646,6 +693,7 @@ function EditEpisodeModal({
                   <span>
                     {audioFile.name} (
                     {(audioFile.size / 1024 / 1024).toFixed(1)} MB)
+                    {duration !== null && ` • ${fmtDuration(duration)}`}
                   </span>
                 ) : (
                   <span>Chọn file mới (bỏ trống = giữ nguyên)</span>
@@ -656,7 +704,7 @@ function EditEpisodeModal({
                 type="file"
                 accept="audio/*"
                 style={{ display: "none" }}
-                onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                onChange={(e) => handleAudioChange(e.target.files?.[0] || null)}
               />
             </div>
 
@@ -731,11 +779,26 @@ function CreateEpisodeModal({
   const [publishDate, setPublishDate] = useState("");
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [duration, setDuration] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
 
   const audioRef = useRef<HTMLInputElement>(null);
   const thumbRef = useRef<HTMLInputElement>(null);
+
+  const handleAudioChange = async (file: File | null) => {
+    setAudioFile(file);
+    if (file) {
+      try {
+        const dur = await getAudioDuration(file);
+        setDuration(dur);
+      } catch {
+        setDuration(null);
+      }
+    } else {
+      setDuration(null);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -783,6 +846,7 @@ function CreateEpisodeModal({
         formData.append("EpisodeNumber", String(episodeNumber));
       if (publishDate)
         formData.append("PublishDate", new Date(publishDate).toISOString());
+      if (duration !== null) formData.append("Duration", String(duration));
 
       // Audio: ưu tiên URL từ Cloudinary, fallback gửi file trực tiếp
       if (audioUrl) {
@@ -914,6 +978,7 @@ function CreateEpisodeModal({
                   <span>
                     {audioFile.name} (
                     {(audioFile.size / 1024 / 1024).toFixed(1)} MB)
+                    {duration !== null && ` • ${fmtDuration(duration)}`}
                   </span>
                 ) : (
                   <span>Chọn file MP3, WAV, OGG...</span>
@@ -924,7 +989,7 @@ function CreateEpisodeModal({
                 type="file"
                 accept="audio/*"
                 style={{ display: "none" }}
-                onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                onChange={(e) => handleAudioChange(e.target.files?.[0] || null)}
               />
             </div>
 
