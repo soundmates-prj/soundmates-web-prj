@@ -225,27 +225,20 @@ export function QuickGenerateForm() {
           <div className="result-section">
             <h4 className="result-section-title">Script</h4>
             <div className="script-content">
-              <p className="script-topic">
-                <strong>Chủ đề:</strong> {result.script.topic}
-              </p>
-              {result.script.title && (
-                <p className="script-title-text">
-                  <strong>Tiêu đề:</strong> {result.script.title}
-                </p>
-              )}
-              <div className="script-text">{result.script.content}</div>
+              <div className="script-text">{result.script}</div>
             </div>
           </div>
 
           {/* Audio Player */}
-          <div className="result-section">
-            <h4 className="result-section-title">Audio</h4>
-            <AudioPlayer
-              audioUrl={result.audio.publicUrl}
-              title={result.script.title || result.script.topic}
-              downloadUrl={result.audio.downloadUrl}
-            />
-          </div>
+          {result.audioUrl && (
+            <div className="result-section">
+              <h4 className="result-section-title">Audio</h4>
+              <AudioPlayer
+                audioUrl={result.audioUrl}
+                title={formData.topic}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

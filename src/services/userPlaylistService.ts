@@ -1,4 +1,13 @@
 import api from "./axios";
+import axios from "axios";
+
+// Public API instance without authentication
+const publicApi = axios.create({
+  baseURL: `${import.meta.env.VITE_API_URL}/api/v1/`,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 export interface UserPlaylist {
   id: string;
@@ -71,18 +80,33 @@ const userPlaylistService = {
     return res.data.data ?? [];
   },
 
+  /** GET /api/v1/userplaylist/public — Get all public user playlists */
+  getPublic: async (): Promise<UserPlaylist[]> => {
+    const res = await api.get<ApiResponse<UserPlaylist[]>>("/userplaylist/public");
+    return res.data.data ?? [];
+  },
+
   /** GET /api/v1/userplaylist/{id} */
   getById: async (id: string): Promise<UserPlaylist> => {
     const res = await api.get<ApiResponse<UserPlaylist>>(`/userplaylist/${id}`);
     return res.data.data;
   },
 
-  /** GET /api/v1/userplaylist/{id}/tracks — Lấy tracks trong playlist */
+  /** GET /api/v1/userplaylist/{id}/tracks — Lấy tracks trong playlist (public access) */
   getTracks: async (id: string): Promise<PlaylistTrack[]> => {
-    const res = await api.get<ApiResponse<PlaylistTrack[]>>(
-      `/userplaylist/${id}/tracks`,
-    );
-    return res.data.data ?? [];
+    try {
+      // Try authenticated request first
+      const res = await api.get<ApiResponse<PlaylistTrack[]>>(
+        `/userplaylist/${id}/tracks`,
+      );
+      return res.data.data ?? [];
+    } catch (error) {
+      // If authenticated request fails, try public API for public playlists
+      const res = await publicApi.get<ApiResponse<PlaylistTrack[]>>(
+        `/userplaylist/${id}/tracks`,
+      );
+      return res.data.data ?? [];
+    }
   },
 
   /** POST /api/v1/userplaylist/{id}/tracks — Thêm nhạc vào playlist */

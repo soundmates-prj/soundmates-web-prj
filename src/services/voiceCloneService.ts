@@ -30,7 +30,7 @@ class VoiceCloneService {
    */
   async getMyVoices(): Promise<ClonedVoice[]> {
     const res = await api.get<{ success: boolean; data: { voices: ClonedVoice[] } }>(
-      '/voice-clone/my-voices',
+      '/voices',
     );
     return res.data.data?.voices ?? [];
   }
@@ -66,11 +66,12 @@ class VoiceCloneService {
   }
 
   /**
-   * Delete a cloned voice
+   * Delete a cloned voice by voiceCode
    */
-  async deleteVoice(voiceId: string): Promise<void> {
+  async deleteVoice(voiceCode: string): Promise<void> {
+    if (!voiceCode) throw new Error('Voice code không hợp lệ');
     const res = await api.delete<{ success: boolean; message?: string }>(
-      `/voice-clone/${voiceId}`,
+      `/voices/code/${voiceCode}`,
     );
     if (!res.data.success) {
       throw new Error(res.data.message ?? 'Xóa thất bại');
@@ -78,21 +79,49 @@ class VoiceCloneService {
   }
 
   /**
-   * Get current user's subscription plan (for voice model limits)
+   * Get current user's subscription plan WITH plan limits (VoiceModelLimit, TtsMinuteLimit, PodcastRequestLimit).
+   * Calls /me/subscriptions/full to get plan limits directly from Subscription + Plan join.
    */
   async getMySubscriptionPlan(): Promise<SubscriptionPlan | null> {
     try {
-      const subRes = await api.get<{ success: boolean; data: { planId: string } }>(
-        '/me/subscriptions',
-      );
-      const planId = subRes.data.data?.planId;
-      if (!planId) return null;
+      // Try the /full endpoint first — it returns VoiceModelLimit/TtsMinuteLimit/PodcastRequestLimit
+      const fullRes = await api.get<{
+        success: boolean;
+        data: {
+          planId: string;
+          planName: string;
+          voiceModelLimit: number;
+          ttsMinuteLimit: number;
+          podcastRequestLimit: number;
+          price: number;
+        } | null;
+      }>('/me/subscriptions/full');
 
-      const planRes = await api.get<{ success: boolean; data: SubscriptionPlan }>(
-        `/subscription-plans/${planId}`,
-      );
-      return planRes.data.success ? planRes.data.data : null;
-    } catch {
+      // DEBUG: Log the raw response so we can diagnose why Voice Clone may not appear
+      console.log('[VoiceClone] /me/subscriptions/full raw response:', fullRes.data);
+
+      const data = fullRes.data.data;
+      if (!data) {
+        console.warn('[VoiceClone] No subscription data returned (data is null/undefined)');
+        return null;
+      }
+
+      // planId may come back as "planId" or "id" depending on serialization
+      const resolvedPlanId = data.planId ?? (data as any).id;
+      if (!resolvedPlanId) {
+        console.warn('[VoiceClone] Subscription data has no planId. Full data:', data);
+      }
+
+      return {
+        id: resolvedPlanId ?? '',
+        planName: data.planName ?? '',
+        voiceModelLimit: data.voiceModelLimit ?? 0,
+        ttsMinuteLimit: data.ttsMinuteLimit ?? 0,
+        podcastRequestLimit: data.podcastRequestLimit ?? 0,
+        price: data.price ?? 0,
+      };
+    } catch (err) {
+      console.error('[VoiceClone] Failed to fetch subscription plan:', err);
       return null;
     }
   }

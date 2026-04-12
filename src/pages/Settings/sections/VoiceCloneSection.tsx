@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Mic,
   Upload,
@@ -10,9 +10,15 @@ import {
   Volume2,
   X,
   Waves,
+  FileText,
+  Wand2,
+  Music,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { voiceCloneService, type ClonedVoice, type SubscriptionPlan } from "../../../services/voiceCloneService";
 import { showToast } from "../../../utils/toast";
+import podcastService from "../../../services/podcastService";
 import "./VoiceCloneSection.css";
 
 interface VoiceCloneSectionProps {
@@ -42,6 +48,14 @@ function formatDate(dateStr: string): string {
   }
 }
 
+function getScriptDisplayTitle(script: any): string {
+  if (script.title && script.title.trim()) return script.title.trim();
+  const content = script.contentText ?? script.content ?? "";
+  const firstLine = content.split("\n").find((l: string) => l.trim().length > 5);
+  if (firstLine) return firstLine.trim().slice(0, 80);
+  return `Script ${((script.scriptId ?? script.id) as string)?.slice(0, 8)}`;
+}
+
 function validateFile(file: File): string | null {
   const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
   if (!ALLOWED_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) {
@@ -56,45 +70,180 @@ function validateFile(file: File): string | null {
 /* ─── Delete Confirm Modal ───────────────────────────────────────────────── */
 
 function DeleteConfirmModal({
-  voiceName,
+  title,
   onConfirm,
   onCancel,
   loading,
 }: {
-  voiceName: string;
+  title: string;
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;
 }) {
   return (
     <>
-      <div className="vc-modal-backdrop" onClick={onCancel} />
-      <div className="vc-delete-modal">
-        <div className="vc-delete-modal-icon">
-          <Trash2 size={28} />
+      <div className="vc-overlay" onClick={onCancel} />
+      <div className="vc-confirm-box">
+        <div className="vc-confirm-icon vc-confirm-icon--danger">
+          <Trash2 size={24} />
         </div>
-        <h3>Xóa giọng đọc?</h3>
-        <p>
-          Bạn có chắc muốn xóa <strong>&quot;{voiceName}&quot;</strong>? Hành động này không
-          thể hoàn tác.
-        </p>
-        <div className="vc-delete-modal-actions">
-          <button className="vc-cancel-btn" onClick={onCancel} disabled={loading}>
-            Hủy
+        <h3>Xóa bỏ?</h3>
+        <p>Xóa <strong>&quot;{title}&quot;</strong>. Hành động này không thể hoàn tác.</p>
+        <div className="vc-confirm-actions">
+          <button className="vc-btn vc-btn--ghost" onClick={onCancel} disabled={loading}>Hủy</button>
+          <button className="vc-btn vc-btn--danger" onClick={onConfirm} disabled={loading}>
+            {loading ? <Loader2 size={14} className="vc-spin" /> : <Trash2 size={14} />}
+            Xóa
           </button>
-          <button className="vc-delete-confirm-btn" onClick={onConfirm} disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 size={14} className="vc-spinner" />
-                Đang xóa...
-              </>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Script View / Edit Modal ───────────────────────────────────────────── */
+
+function ScriptModal({
+  script,
+  voices,
+  pickedVoiceId,
+  onVoiceChange,
+  onGenerateAudio,
+  generatingAudio,
+  audioResultUrl,
+  onClose,
+  onDelete,
+  onSave,
+  loadingDelete,
+  loadingSave,
+}: {
+  script: any;
+  voices: ClonedVoice[];
+  pickedVoiceId: string;
+  onVoiceChange: (v: string) => void;
+  onGenerateAudio: () => void;
+  generatingAudio: boolean;
+  audioResultUrl: string | null;
+  onClose: () => void;
+  onDelete: () => void;
+  onSave: (title: string, content: string) => void;
+  loadingDelete: boolean;
+  loadingSave: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(script.title ?? "");
+  const [editContent, setEditContent] = useState(script.contentText ?? script.content ?? "");
+  const saveRef = useRef(onSave);
+
+  useEffect(() => { saveRef.current = onSave; }, [onSave]);
+
+  const handleSave = () => {
+    onSave(editTitle, editContent);
+    setEditing(false);
+  };
+
+  const content = script.contentText ?? script.content ?? "";
+
+  return (
+    <>
+      <div className="vc-overlay" onClick={onClose} />
+      <div className="vc-modal vc-modal--wide">
+        <div className="vc-modal__header">
+          <div className="vc-modal__title-row">
+            {editing ? (
+              <input
+                className="vc-modal__title-input"
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                placeholder="Tiêu đề script..."
+                maxLength={200}
+              />
             ) : (
-              <>
-                <Trash2 size={14} />
-                Xóa
-              </>
+              <h2 className="vc-modal__title">{getScriptDisplayTitle(script)}</h2>
             )}
-          </button>
+            <span className="vc-modal__date">{formatDate(script.createdAt)}</span>
+          </div>
+          <button className="vc-modal__close" onClick={onClose}><X size={18} /></button>
+        </div>
+
+        <div className="vc-modal__body">
+          {editing ? (
+            <textarea
+              className="vc-script-editor"
+              value={editContent}
+              onChange={e => setEditContent(e.target.value)}
+              rows={18}
+              placeholder="Nội dung script..."
+            />
+          ) : (
+            <div className="vc-script-content">
+              {(content || "").split("\n").map((line: string, i: number) => (
+                <p key={i}>{line || "\u00A0"}</p>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Audio result */}
+        {audioResultUrl && (
+          <div className="vc-modal__audio-result">
+            <div className="vc-modal__audio-label">
+              <Music size={14} /> Audio đã tạo
+            </div>
+            <audio controls src={audioResultUrl} className="vc-modal__audio-player" />
+          </div>
+        )}
+
+        <div className="vc-modal__footer">
+          <div className="vc-modal__footer-left">
+            <button
+              className={`vc-btn vc-btn--ghost vc-btn--sm ${editing ? "vc-btn--active" : ""}`}
+              onClick={() => editing ? handleSave() : setEditing(true)}
+              disabled={loadingSave}
+            >
+              {loadingSave ? (
+                <Loader2 size={13} className="vc-spin" />
+              ) : editing ? (
+                <Check size={13} />
+              ) : (
+                <Pencil size={13} />
+              )}
+              {editing ? "Lưu" : "Sửa"}
+            </button>
+            <button
+              className="vc-btn vc-btn--ghost vc-btn--sm vc-btn--danger-ghost"
+              onClick={onDelete}
+              disabled={loadingDelete}
+            >
+              {loadingDelete ? <Loader2 size={13} className="vc-spin" /> : <Trash2 size={13} />}
+              Xóa
+            </button>
+          </div>
+
+          <div className="vc-modal__footer-right">
+            <select
+              className="vc-modal__voice-select"
+              value={pickedVoiceId}
+              onChange={e => onVoiceChange(e.target.value)}
+              disabled={generatingAudio}
+            >
+              <option value="">-- Chọn giọng --</option>
+              {voices.map(v => (
+                <option key={v.voiceCode} value={v.voiceCode}>{v.displayName}</option>
+              ))}
+            </select>
+            <button
+              className="vc-btn vc-btn--primary"
+              onClick={onGenerateAudio}
+              disabled={generatingAudio || !pickedVoiceId}
+            >
+              {generatingAudio ? (
+                <><Loader2 size={14} className="vc-spin" /> Đang tạo...</>
+              ) : (
+                <><Music size={14} /> Tạo Audio</>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </>
@@ -109,7 +258,7 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
-  // Upload form state
+  // Upload form
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -119,7 +268,6 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Audio element ref
   const audioRef = useCallback((node: HTMLAudioElement | null) => {
     if (node && audioPreviewUrl) {
       node.src = audioPreviewUrl;
@@ -127,13 +275,34 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
       node.onpause = () => setIsPlaying(false);
       node.onended = () => setIsPlaying(false);
     }
-  }, [audioPreviewUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [audioPreviewUrl]);
 
-  // Delete confirm modal
+  // Delete voice
   const [deleteTarget, setDeleteTarget] = useState<ClonedVoice | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  /* ─── Load data ─────────────────────────────────────────────────────── */
+  // Script tabs
+  const [scriptTab, setScriptTab] = useState<"create" | "mine">("create");
+  const [scriptTopic, setScriptTopic] = useState("");
+  const [scriptStyle, setScriptStyle] = useState("");
+  const [generatingScript, setGeneratingScript] = useState(false);
+  const [generatedScript, setGeneratedScript] = useState<string | null>(null);
+  const [generatedScriptId, setGeneratedScriptId] = useState<string | null>(null);
+  const [generatedScriptTitle, setGeneratedScriptTitle] = useState<string | null>(null);
+
+  // My scripts
+  const [myScripts, setMyScripts] = useState<any[]>([]);
+  const [loadingScripts, setLoadingScripts] = useState(false);
+  const [pickedVoiceId, setPickedVoiceId] = useState("");
+  const [generatingAudio, setGeneratingAudio] = useState(false);
+  const [audioResultUrl, setAudioResultUrl] = useState<string | null>(null);
+
+  // Script modal
+  const [viewScript, setViewScript] = useState<any | null>(null);
+  const [deletingScript, setDeletingScript] = useState(false);
+  const [savingScript, setSavingScript] = useState(false);
+
+  /* ─── Load ─────────────────────────────────────────────────────────────── */
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -144,8 +313,7 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
       ]);
       setVoices(voicesData);
       setPlan(planData);
-    } catch (err) {
-      console.error("[VoiceCloneSection] fetchData error:", err);
+    } catch {
       showToast.error("Không thể tải dữ liệu giọng đọc");
     } finally {
       setLoading(false);
@@ -154,64 +322,30 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
 
   useEffect(() => { void fetchData(); }, [fetchData]);
 
-  /* ─── Cleanup audio preview URL on unmount ───────────────────────────── */
-
   useEffect(() => {
-    return () => {
-      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
-    };
+    return () => { if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl); };
   }, [audioPreviewUrl]);
 
-  /* ─── Audio playback ────────────────────────────────────────────────── */
+  /* ─── Audio playback ─────────────────────────────────────────────────── */
 
   const togglePlayPause = () => {
-    if (!audioRef || !audioPreviewUrl) return;
     const audio = document.querySelector("audio") as HTMLAudioElement | null;
-    if (!audio) return;
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play().catch(() => {
-        showToast.error("Trình duyệt chặn phát tự động. Vui lòng tương tác thủ công.");
-      });
-    }
+    if (!audio || !audioPreviewUrl) return;
+    if (isPlaying) audio.pause();
+    else audio.play().catch(() => showToast.error("Trình duyệt chặn phát tự động."));
   };
 
   /* ─── Drag & Drop ───────────────────────────────────────────────────── */
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else {
-      setDragActive(false);
-    }
-  };
-
   const applyFile = (file: File) => {
     const err = validateFile(file);
-    if (err) {
-      showToast.error(err);
-      return;
-    }
+    if (err) { showToast.error(err); return; }
     setAudioFile(file);
     if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
     setAudioPreviewUrl(URL.createObjectURL(file));
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files?.[0]) applyFile(e.dataTransfer.files[0]);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) applyFile(e.target.files[0]);
-  };
-
-  /* ─── Upload ────────────────────────────────────────────────────────── */
+  /* ─── Voice clone upload ─────────────────────────────────────────────── */
 
   const validateForm = (): string | null => {
     if (!audioFile) return "Vui lòng chọn file audio mẫu.";
@@ -223,14 +357,9 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
 
   const handleUpload = async () => {
     const err = validateForm();
-    if (err) {
-      showToast.error(err);
-      return;
-    }
-
+    if (err) { showToast.error(err); return; }
     setUploading(true);
-    const toastId = showToast.loading("Đang clone giọng... Vui lòng chờ 10–30 giây.");
-
+    const tid = showToast.loading("Đang clone giọng... Vui lòng chờ 10–30 giây.");
     try {
       await voiceCloneService.cloneVoice({
         displayName: displayName.trim(),
@@ -238,328 +367,481 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
         gender,
         audioFile: audioFile!,
       });
-
-      showToast.dismiss(toastId);
-      showToast.success("Clone giọng thành công! Giờ bạn có thể dùng giọng này để tạo podcast.");
-      resetForm();
+      showToast.dismiss(tid);
+      showToast.success("Clone giọng thành công!");
+      setAudioFile(null);
+      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+      setAudioPreviewUrl(null);
+      setRefText(""); setDisplayName(""); setGender("Unknown"); setIsPlaying(false);
       setShowUploadModal(false);
       void fetchData();
     } catch (err: any) {
-      showToast.dismiss(toastId);
-      showToast.error(err?.response?.data?.message ?? err?.message ?? "Clone giọng thất bại. Vui lòng thử lại.");
+      showToast.dismiss(tid);
+      showToast.error(err?.response?.data?.message ?? err?.message ?? "Clone giọng thất bại.");
     } finally {
       setUploading(false);
     }
   };
 
-  /* ─── Delete ────────────────────────────────────────────────────────── */
+  /* ─── Voice delete ───────────────────────────────────────────────────── */
 
-  const handleDeleteConfirm = async () => {
+  const myVoices = voices.filter(v => v.model === "custom" || v.model === "custom-cloned");
+  const isVoiceCloneEnabled = plan != null && plan.voiceModelLimit > 0;
+  const canCreateMoreVoices = !plan || myVoices.length < plan.voiceModelLimit;
+
+  const handleDeleteVoice = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await voiceCloneService.deleteVoice(deleteTarget.id);
+      await voiceCloneService.deleteVoice(deleteTarget.voiceCode);
+      setVoices(prev => prev.filter(v => v.voiceCode !== deleteTarget.voiceCode));
+      setDeleteTarget(null);
       showToast.success("Đã xóa giọng đọc");
-      setVoices(prev => prev.filter(v => v.id !== deleteTarget.id));
     } catch (err: any) {
       showToast.error(err?.response?.data?.message ?? err?.message ?? "Xóa thất bại");
     } finally {
       setDeleting(false);
-      setDeleteTarget(null);
     }
   };
 
-  /* ─── Reset form ────────────────────────────────────────────────────── */
+  /* ─── Script handlers ─────────────────────────────────────────────────── */
 
-  const resetForm = () => {
-    setAudioFile(null);
-    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
-    setAudioPreviewUrl(null);
-    setRefText("");
-    setDisplayName("");
-    setGender("Unknown");
-    setIsPlaying(false);
+  const handleGenerateScript = async () => {
+    if (!scriptTopic.trim()) { showToast.error("Vui lòng nhập chủ đề"); return; }
+    setGeneratingScript(true);
+    const tid = showToast.loading("Đang tạo script...");
+    try {
+      const result = await podcastService.generateScript({
+        topic: scriptTopic.trim(),
+        editorInstruction: scriptStyle.trim() || undefined,
+      });
+      setGeneratedScript(result.scriptText);
+      setGeneratedScriptId(result.scriptId);
+      setGeneratedScriptTitle(result.title);
+      showToast.dismiss(tid);
+      showToast.success("Script đã tạo xong!");
+    } catch (err: any) {
+      showToast.dismiss(tid);
+      showToast.error(err?.message ?? "Tạo script thất bại");
+    } finally {
+      setGeneratingScript(false);
+    }
   };
 
-  /* ─── Derived state ─────────────────────────────────────────────────── */
+  const handleLoadMyScripts = async () => {
+    setLoadingScripts(true);
+    try {
+      setMyScripts(await podcastService.getMyScripts());
+    } catch (err: any) {
+      showToast.error(err?.message ?? "Không tải được scripts");
+    } finally {
+      setLoadingScripts(false);
+    }
+  };
 
-  const isVoiceCloneEnabled = plan != null && plan.voiceModelLimit > 0;
-  const canCreateMoreVoices = !plan || voices.length < plan.voiceModelLimit;
+  const handleDeleteScript = async (script: any) => {
+    const id = script.scriptId ?? script.id;
+    setDeletingScript(true);
+    try {
+      await podcastService.deleteScript(id);
+      setMyScripts(prev => prev.filter(s => (s.scriptId ?? s.id) !== id));
+      setViewScript(null);
+      showToast.success("Đã xóa script");
+    } catch (err: any) {
+      showToast.error(err?.message ?? "Xóa script thất bại");
+    } finally {
+      setDeletingScript(false);
+    }
+  };
 
-  /* ─── Render ────────────────────────────────────────────────────────── */
+  const handleSaveScript = async (title: string, content: string) => {
+    if (!viewScript) return;
+    const id = viewScript.scriptId ?? viewScript.id;
+    setSavingScript(true);
+    try {
+      await podcastService.updateScript(id, { title: title || undefined, contentText: content });
+      setMyScripts(prev => prev.map(s =>
+        (s.scriptId ?? s.id) === id ? { ...s, title, contentText: content } : s
+      ));
+      setViewScript({ ...viewScript, title, contentText: content });
+      showToast.success("Đã lưu script");
+    } catch (err: any) {
+      showToast.error(err?.message ?? "Lưu script thất bại");
+    } finally {
+      setSavingScript(false);
+    }
+  };
 
-  if (loading) {
-    return (
-      <div className="voice-clone-settings">
-        <div className="settings-section-header">
-          <h1>Voice Clone</h1>
-          <p>Tạo giọng đọc AI từ giọng thật của bạn</p>
-        </div>
-        <div className="vc-loading">
-          <Loader2 size={32} className="vc-spinner" />
-          <p>Đang tải...</p>
-        </div>
+  const handleGenerateAudio = async () => {
+    if (!viewScript || !pickedVoiceId) return;
+    const id = viewScript.scriptId ?? viewScript.id;
+    setGeneratingAudio(true);
+    const tid = showToast.loading("Đang tạo audio...");
+    try {
+      const result = await podcastService.generateAudioFromScript({ scriptId: id, voiceCode: pickedVoiceId });
+      setAudioResultUrl(result.audioUrl);
+      showToast.dismiss(tid);
+      showToast.success("Audio đã tạo xong!");
+    } catch (err: any) {
+      showToast.dismiss(tid);
+      showToast.error(err?.message ?? "Tạo audio thất bại");
+    } finally {
+      setGeneratingAudio(false);
+    }
+  };
+
+  /* ─── Render ─────────────────────────────────────────────────────────── */
+
+  if (loading) return (
+    <div className="voice-clone-settings">
+      <div className="settings-section-header">
+        <h1>Voice Clone</h1>
+        <p>Tạo giọng đọc AI từ giọng thật của bạn</p>
       </div>
-    );
-  }
+      <div className="vc-center"><Loader2 size={28} className="vc-spin" /><p>Đang tải...</p></div>
+    </div>
+  );
 
   return (
     <div className="voice-clone-settings">
+
+      {/* ── Header ── */}
       <div className="settings-section-header">
         <h1>Voice Clone</h1>
         <p>Tạo giọng đọc AI từ giọng thật của bạn để tạo podcast</p>
       </div>
 
       {!isVoiceCloneEnabled ? (
-        /* ── Upgrade prompt ── */
-        <div className="vc-upgrade-prompt">
-          <div className="vc-upgrade-icon">
-            <Volume2 size={48} />
-          </div>
+        <div className="vc-upgrade">
+          <div className="vc-upgrade-icon"><Volume2 size={40} /></div>
           <h3>Tính năng Voice Clone</h3>
-          <p>
-            Nâng cấp lên <strong>Premium</strong> hoặc <strong>Elite</strong> để tạo giọng đọc
-            AI từ chính giọng nói của bạn. Dùng nó để tạo podcast với giọng của bạn!
-          </p>
-          {onUpgradeClick && (
-            <button className="vc-upgrade-btn" onClick={onUpgradeClick}>
-              Nâng cấp ngay
-            </button>
-          )}
+          <p>Nâng cấp lên <strong>Premium</strong> hoặc <strong>Elite</strong> để tạo giọng đọc AI từ chính giọng nói của bạn.</p>
+          {onUpgradeClick && <button className="vc-btn vc-btn--primary" onClick={onUpgradeClick}>Nâng cấp ngay</button>}
         </div>
       ) : (
         <>
-          {/* ── Stats bar ── */}
-          <div className="vc-stats-bar">
-            <div className="vc-stat">
-              <span className="vc-stat-value">{voices.length}</span>
-              <span className="vc-stat-label">/ {plan.voiceModelLimit} giọng đã tạo</span>
-            </div>
-            <div className="vc-stat-info">
-              <Info size={16} />
-              <span>
-                Clone giọng cần 3–10 giây audio. Upload file có giọng nói rõ ràng để có kết
-                quả tốt nhất.
-              </span>
-            </div>
-          </div>
 
-          {/* ── Voice list ── */}
-          <div className="vc-voices-list">
-            {voices.length === 0 ? (
+          {/* ── Voice section ── */}
+          <div className="vc-section">
+            <div className="vc-section__head">
+              <h2 className="vc-section__title"><Mic size={16} /> Giọng đọc của tôi</h2>
+              <span className="vc-section__badge">{myVoices.length} / {plan?.voiceModelLimit ?? 0}</span>
+            </div>
+
+            <div className="vc-tip">
+              <Info size={14} />
+              <span><strong>Cách clone đúng:</strong> Upload audio tiếng Việt cực ngắn <strong>(3–6 giây)</strong> không có tạp âm → Nhập <strong>CHÍNH XÁC 100%</strong> từng từ bạn đọc vào refText. Text phải khớp y hệt audio (kể cả tiếng "à", "ừm") thì AI mới clone thành công.</span>
+            </div>
+
+            {myVoices.length === 0 ? (
               <div className="vc-empty">
-                <Mic size={48} />
-                <h3>Chưa có giọng đọc nào</h3>
-                <p>Tạo giọng đọc AI đầu tiên của bạn bằng cách upload một đoạn audio ngắn</p>
+                <Mic size={36} />
+                <p>Chưa có giọng đọc nào</p>
               </div>
             ) : (
-              voices.map(voice => (
-                <div key={voice.id} className="vc-voice-card">
-                  <div className="vc-voice-info">
-                    <div className="vc-voice-header">
-                      <h4>{voice.displayName}</h4>
-                      <span className={`vc-voice-gender ${voice.gender?.toLowerCase() ?? "unknown"}`}>
-                        {voice.gender ?? "Không rõ"}
-                      </span>
+              <div className="vc-card-list">
+                {myVoices.map(voice => (
+                  <div key={voice.id} className="vc-card">
+                    <div className="vc-card__body">
+                      <div className="vc-card__name">{voice.displayName}</div>
+                      <div className="vc-card__meta">
+                        <span className={`vc-tag vc-tag--${voice.gender?.toLowerCase() ?? "unk"}`}>{voice.gender ?? "Không rõ"}</span>
+                        <span className="vc-card__date">{formatDate(voice.createdAt)}</span>
+                      </div>
                     </div>
-                    <div className="vc-voice-meta">
-                      <span>
-                        <Waves size={12} /> {voice.provider}
-                      </span>
-                      <span>Tạo: {formatDate(voice.createdAt)}</span>
-                    </div>
-                  </div>
-                  <div className="vc-voice-actions">
-                    <button
-                      className="vc-delete-btn"
-                      onClick={() => setDeleteTarget(voice)}
-                      title="Xóa giọng đọc"
-                    >
-                      <Trash2 size={16} />
+                    <button className="vc-icon-btn vc-icon-btn--danger" onClick={() => setDeleteTarget(voice)} title="Xóa giọng">
+                      <Trash2 size={15} />
                     </button>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
+            )}
+
+            {canCreateMoreVoices && (
+              <button className="vc-btn vc-btn--gradient" onClick={() => setShowUploadModal(true)}>
+                <Mic size={16} /> Tạo giọng đọc mới
+              </button>
             )}
           </div>
 
-          {/* ── Create button ── */}
-          {canCreateMoreVoices && (
-            <button
-              className="vc-create-btn"
-              onClick={() => setShowUploadModal(true)}
-            >
-              <Mic size={18} />
-              Tạo giọng đọc mới
-            </button>
-          )}
+          {/* ── Script section ── */}
+          <div className="vc-section">
+            <div className="vc-section__head">
+              <h2 className="vc-section__title"><FileText size={16} /> Script & Audio</h2>
+            </div>
+
+            <div className="vc-tabs">
+              <button className={`vc-tab ${scriptTab === "create" ? "vc-tab--active" : ""}`} onClick={() => setScriptTab("create")}>
+                <Wand2 size={14} /> Tạo Script
+              </button>
+              <button className={`vc-tab ${scriptTab === "mine" ? "vc-tab--active" : ""}`} onClick={() => { setScriptTab("mine"); void handleLoadMyScripts(); }}>
+                <FileText size={14} /> Script của tôi
+              </button>
+            </div>
+
+            {/* ── Tab: Create ── */}
+            {scriptTab === "create" && (
+              <div className="vc-tab-pane">
+                <div className="vc-field">
+                  <label className="vc-label">Chủ đề</label>
+                  <input
+                    className="vc-input"
+                    value={scriptTopic}
+                    onChange={e => setScriptTopic(e.target.value)}
+                    placeholder="VD: Xu hướng công nghệ 2026, Câu chuyện khởi nghiệp..."
+                    disabled={generatingScript}
+                    maxLength={500}
+                  />
+                </div>
+                <div className="vc-field">
+                  <label className="vc-label">Phong cách <span className="vc-label-opt">(tùy chọn)</span></label>
+                  <input
+                    className="vc-input"
+                    value={scriptStyle}
+                    onChange={e => setScriptStyle(e.target.value)}
+                    placeholder="VD: Chuyên sâu, đối thoại, tin tức..."
+                    disabled={generatingScript}
+                    maxLength={200}
+                  />
+                </div>
+                <button
+                  className="vc-btn vc-btn--gradient"
+                  onClick={() => void handleGenerateScript()}
+                  disabled={generatingScript || !scriptTopic.trim()}
+                >
+                  {generatingScript ? <><Loader2 size={16} className="vc-spin" /> Đang tạo...</> : <><Wand2 size={16} /> Tạo Script</>}
+                </button>
+
+                {generatedScript && (
+                  <div className="vc-result-card">
+                    <div className="vc-result-card__header">
+                      <strong>{generatedScriptTitle ?? "Script mới"}</strong>
+                      <button className="vc-btn vc-btn--ghost vc-btn--sm" onClick={() => setScriptTab("mine")}>
+                        <FileText size={13} /> Xem trong Script của tôi
+                      </button>
+                    </div>
+                    <div className="vc-result-card__body">
+                      {generatedScript.split("\n").map((line, i) => (
+                        <p key={i}>{line || "\u00A0"}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Tab: Mine ── */}
+            {scriptTab === "mine" && (
+              <div className="vc-tab-pane">
+                {voices.length > 0 && (
+                  <div className="vc-field">
+                    <label className="vc-label">Giọng đọc</label>
+                    <select className="vc-select" value={pickedVoiceId} onChange={e => setPickedVoiceId(e.target.value)}>
+                      <option value="">-- Chọn giọng --</option>
+                      {voices.map(v => <option key={v.voiceCode} value={v.voiceCode}>{v.displayName}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {loadingScripts ? (
+                  <div className="vc-center"><Loader2 size={20} className="vc-spin" /><p>Đang tải...</p></div>
+                ) : myScripts.length === 0 ? (
+                  <div className="vc-empty">
+                    <FileText size={32} />
+                    <p>Chưa có script nào. Vào tab &quot;Tạo Script&quot; để tạo.</p>
+                  </div>
+                ) : (
+                  <div className="vc-card-list">
+                    {myScripts.map(script => {
+                      const sid = script.scriptId ?? script.id;
+                      const content = script.contentText ?? script.content ?? "";
+                      return (
+                        <div key={sid} className="vc-card vc-card--script">
+                          <div className="vc-card__body">
+                            <div className="vc-card__name">{getScriptDisplayTitle(script)}</div>
+                            <p className="vc-card__excerpt">{content.slice(0, 100)}{content.length > 100 ? "..." : ""}</p>
+                            <span className="vc-card__date">{formatDate(script.createdAt)}</span>
+                          </div>
+                          <div className="vc-card__actions">
+                            <button className="vc-btn vc-btn--ghost vc-btn--sm" onClick={() => setViewScript({ ...script, sid })}>
+                              <FileText size={13} /> Xem
+                            </button>
+                            <button
+                              className="vc-btn vc-btn--primary vc-btn--sm"
+                              disabled={!pickedVoiceId}
+                              onClick={() => setViewScript({ ...script, sid })}
+                              title={!pickedVoiceId ? "Chọn giọng trước" : "Tạo audio"}
+                            >
+                              <Music size={13} /> Audio
+                            </button>
+                            <button className="vc-icon-btn vc-icon-btn--danger" onClick={() => handleDeleteScript({ ...script, sid })}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {audioResultUrl && (
+                  <div className="vc-result-card">
+                    <div className="vc-result-card__header">
+                      <Music size={14} /> Audio đã tạo
+                    </div>
+                    <audio controls src={audioResultUrl} className="vc-audio-player" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </>
       )}
 
-      {/* ── Upload modal ── */}
+      {/* ── Script Modal ── */}
+      {viewScript && (
+        <ScriptModal
+          script={viewScript}
+          voices={voices}
+          pickedVoiceId={pickedVoiceId}
+          onVoiceChange={setPickedVoiceId}
+          onGenerateAudio={handleGenerateAudio}
+          generatingAudio={generatingAudio}
+          audioResultUrl={audioResultUrl}
+          onClose={() => setViewScript(null)}
+          onDelete={() => handleDeleteScript(viewScript)}
+          onSave={handleSaveScript}
+          loadingDelete={deletingScript}
+          loadingSave={savingScript}
+        />
+      )}
+
+      {/* ── Voice Clone Modal ── */}
       {showUploadModal && (
         <>
-          <div className="vc-modal-backdrop" onClick={() => !uploading && setShowUploadModal(false)} />
+          <div className="vc-overlay" onClick={() => !uploading && setShowUploadModal(false)} />
           <div className="vc-modal">
-            <div className="vc-modal-header">
-              <h3>Tạo giọng đọc AI</h3>
+            <div className="vc-modal__header">
+              <h2 className="vc-modal__title"><Mic size={18} /> Tạo giọng đọc AI</h2>
               {!uploading && (
-                <button className="vc-modal-close" onClick={() => setShowUploadModal(false)}>
-                  <X size={18} />
-                </button>
+                <button className="vc-modal__close" onClick={() => setShowUploadModal(false)}><X size={18} /></button>
               )}
             </div>
 
-            <div className="vc-modal-body">
-              {/* Step 1: Audio upload */}
-              <div className="vc-upload-section">
-                <label>1. Upload audio mẫu (3–10 giây)</label>
-                <div
-                  className={`vc-dropzone ${dragActive ? "active" : ""} ${audioFile ? "has-file" : ""}`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                  onClick={() => !uploading && document.getElementById("vc-audio-input")?.click()}
-                >
-                  <input
-                    id="vc-audio-input"
-                    type="file"
-                    accept=".wav,.mp3,.m4a,.flac,.ogg,audio/*"
-                    onChange={handleFileChange}
-                    hidden
-                    disabled={uploading}
-                  />
-
-                  {audioFile ? (
-                    <div className="vc-file-preview">
-                      <div className="vc-file-icon">
-                        <Waves size={20} />
+            <div className="vc-modal__body">
+              <div className="vc-step">
+                <div className="vc-step__num">1</div>
+                <div className="vc-step__content">
+                  <label className="vc-label">Upload audio thu âm cực ngắn (3–6 giây)</label>
+                  <div
+                    className={`vc-dropzone ${dragActive ? "vc-dropzone--active" : ""} ${audioFile ? "vc-dropzone--ok" : ""}`}
+                    onDragEnter={e => { e.preventDefault(); setDragActive(true); }}
+                    onDragLeave={e => { e.preventDefault(); setDragActive(false); }}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => { e.preventDefault(); setDragActive(false); if (e.dataTransfer.files?.[0]) applyFile(e.dataTransfer.files[0]); }}
+                    onClick={() => !uploading && document.getElementById("vc-file-input")?.click()}
+                  >
+                    <input id="vc-file-input" type="file" accept=".wav,.mp3,.m4a,.flac,.ogg,audio/*" onChange={e => { if (e.target.files?.[0]) applyFile(e.target.files[0]); }} hidden />
+                    {audioFile ? (
+                      <div className="vc-file-row">
+                        <div className="vc-file-icon"><Waves size={18} /></div>
+                        <div>
+                          <div className="vc-file-name">{audioFile.name}</div>
+                          <div className="vc-file-size">{formatFileSize(audioFile.size)}</div>
+                        </div>
+                        <audio ref={audioRef} onEnded={() => setIsPlaying(false)} onError={() => { setIsPlaying(false); showToast.error("Không thể phát file này"); }} />
+                        <button className={`vc-play-btn ${isPlaying ? "vc-play-btn--playing" : ""}`} onClick={e => { e.stopPropagation(); togglePlayPause(); }} disabled={uploading}>
+                          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                        </button>
                       </div>
-                      <div className="vc-file-info">
-                        <span className="vc-file-name">{audioFile.name}</span>
-                        <span className="vc-file-size">{formatFileSize(audioFile.size)}</span>
+                    ) : (
+                      <div className="vc-dropzone__inner">
+                        <Upload size={28} />
+                        <p>Kéo thả file audio hoặc click để chọn</p>
+                        <span>WAV, MP3, M4A, FLAC, OGG · Tối đa {MAX_FILE_SIZE_MB}MB</span>
                       </div>
-                      {/* Hidden audio — controlled via ref callback */}
-                      <audio
-                        ref={audioRef}
-                        onEnded={() => setIsPlaying(false)}
-                        onError={() => {
-                          setIsPlaying(false);
-                          showToast.error("Không thể phát file audio này");
-                        }}
-                      />
-                      <button
-                        className={`vc-play-btn ${isPlaying ? "playing" : ""}`}
-                        onClick={e => {
-                          e.stopPropagation();
-                          togglePlayPause();
-                        }}
-                        disabled={uploading}
-                        title={isPlaying ? "Dừng" : "Phát"}
-                      >
-                        {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="vc-dropzone-content">
-                      <Upload size={32} />
-                      <p>Kéo thả file audio hoặc click để chọn</p>
-                      <span>WAV, MP3, M4A, FLAC, OGG (tối đa {MAX_FILE_SIZE_MB}MB)</span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Step 2: Reference text */}
-              <div className="vc-form-group">
-                <label>2. Nội dung bạn đã nói trong audio</label>
-                <textarea
-                  value={refText}
-                  onChange={e => setRefText(e.target.value)}
-                  placeholder="Nhập chính xác những gì bạn đã nói trong file audio. Đây là văn bản mẫu để hệ thống học cách phát âm của bạn."
-                  rows={3}
-                  disabled={uploading}
-                  maxLength={1000}
-                />
-                <span className="vc-form-hint">
-                  <Info size={14} />
-                  Nhập chính xác nội dung bạn đọc trong audio để hệ thống clone chính xác hơn
-                </span>
+              <div className="vc-step">
+                <div className="vc-step__num">2</div>
+                <div className="vc-step__content">
+                  <label className="vc-label">Gõ lại nội dung bạn đã nói trong Audio</label>
+                  <textarea
+                    className="vc-textarea"
+                    value={refText}
+                    onChange={e => setRefText(e.target.value)}
+                    placeholder="VD: Xin chào, tôi đang thử nghiệm AI..."
+                    rows={4}
+                    disabled={uploading}
+                    maxLength={1000}
+                  />
+                  <div className="vc-alert vc-alert--warn">
+                    <Info size={14} />
+                    <span>Nhập <strong>CHÍNH XÁC TỪNG CHỮ</strong> nội dung bạn đọc trong audio kể trên. Dư hoặc thiếu chữ so với audio sẽ làm AI không hiểu và sinh ra giọng bị rè hoặc tự bịa ra chữ.</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Step 3: Display name */}
-              <div className="vc-form-group">
-                <label>3. Tên giọng đọc</label>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={e => setDisplayName(e.target.value)}
-                  placeholder="VD: Giọng Bác sĩ, Giọng MC..."
-                  maxLength={100}
-                  disabled={uploading}
-                />
+              {/* Step 3 */}
+              <div className="vc-step">
+                <div className="vc-step__num">3</div>
+                <div className="vc-step__content">
+                  <label className="vc-label">Tên giọng đọc</label>
+                  <input
+                    className="vc-input"
+                    value={displayName}
+                    onChange={e => setDisplayName(e.target.value)}
+                    placeholder="VD: Giọng MC Báo, Giọng Bác sĩ..."
+                    maxLength={100}
+                    disabled={uploading}
+                  />
+                </div>
               </div>
 
-              {/* Step 4: Gender */}
-              <div className="vc-form-group">
-                <label>4. Giới tính giọng nói</label>
-                <div className="vc-gender-options">
-                  {(["Male", "Female", "Unknown"] as const).map(g => (
-                    <button
-                      key={g}
-                      type="button"
-                      className={`vc-gender-btn ${gender === g ? "active" : ""}`}
-                      onClick={() => setGender(g)}
-                      disabled={uploading}
-                    >
-                      {g === "Male" ? "👨 Nam" : g === "Female" ? "👩 Nữ" : "❓ Không rõ"}
-                    </button>
-                  ))}
+              {/* Step 4 */}
+              <div className="vc-step">
+                <div className="vc-step__num">4</div>
+                <div className="vc-step__content">
+                  <label className="vc-label">Giới tính</label>
+                  <div className="vc-gender-row">
+                    {(["Male", "Female", "Unknown"] as const).map(g => (
+                      <button
+                        key={g}
+                        type="button"
+                        className={`vc-gender-btn ${gender === g ? "vc-gender-btn--active" : ""}`}
+                        onClick={() => setGender(g)}
+                        disabled={uploading}
+                      >
+                        {g === "Male" ? "Nam" : g === "Female" ? "Nữ" : "Không rõ"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="vc-modal-footer">
+            <div className="vc-modal__footer">
+              <button className="vc-btn vc-btn--ghost" onClick={() => setShowUploadModal(false)} disabled={uploading}>Hủy</button>
               <button
-                className="vc-cancel-btn"
-                onClick={() => setShowUploadModal(false)}
-                disabled={uploading}
-              >
-                Hủy
-              </button>
-              <button
-                className="vc-submit-btn"
+                className="vc-btn vc-btn--gradient"
                 onClick={() => void handleUpload()}
-                disabled={
-                  uploading ||
-                  !audioFile ||
-                  refText.trim().length < MIN_REF_TEXT_CHARS ||
-                  !displayName.trim()
-                }
+                disabled={uploading || !audioFile || refText.trim().length < MIN_REF_TEXT_CHARS || !displayName.trim()}
               >
-                {uploading ? (
-                  <>
-                    <Loader2 size={16} className="vc-spinner" />
-                    Đang clone giọng...
-                  </>
-                ) : (
-                  <>
-                    <Mic size={16} />
-                    Clone giọng
-                  </>
-                )}
+                {uploading ? <><Loader2 size={16} className="vc-spin" /> Đang clone...</> : <><Mic size={16} /> Clone giọng</>}
               </button>
             </div>
           </div>
         </>
       )}
 
-      {/* ── Delete confirm modal ── */}
+      {/* ── Delete voice confirm ── */}
       {deleteTarget && (
         <DeleteConfirmModal
-          voiceName={deleteTarget.displayName}
-          onConfirm={() => void handleDeleteConfirm()}
+          title={deleteTarget.displayName}
+          onConfirm={() => void handleDeleteVoice()}
           onCancel={() => setDeleteTarget(null)}
           loading={deleting}
         />

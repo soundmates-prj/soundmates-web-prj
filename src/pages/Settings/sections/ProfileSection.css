@@ -30,6 +30,9 @@
   aspect-ratio: 16 / 5;
   height: auto;
   background: linear-gradient(135deg, #1a1f3c 0%, #2d3561 50%, #004395 100%);
+  background-size: cover;         /* prevent blur when image is smaller than container */
+  background-position: center;     /* always center the image */
+  background-repeat: no-repeat;   /* prevent tile repeat */
   position: relative;
   overflow: visible;
   border-radius: 16px 16px 0 0;
@@ -77,6 +80,7 @@
   position: absolute;
   bottom: -56px;
   left: 32px;
+  z-index: 3;
 }
 
 .profile-page .avatar {
@@ -487,4 +491,82 @@
 .crop-btn-apply:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(85,197,241,0.45);
+}
+
+/* ===================================================
+   RESPONSIVE — Mobile
+   =================================================== */
+@media (max-width: 768px) {
+  .profile-card {
+    border-radius: 12px;
+  }
+
+  .profile-banner {
+    aspect-ratio: 16 / 4;   /* slightly taller on mobile */
+    min-height: 160px;
+  }
+
+  /* Avatar — smaller overlap on mobile */
+  .profile-page .avatar-wrapper {
+    bottom: -44px;
+    left: 20px;
+  }
+
+  .profile-page .avatar {
+    width: 90px;
+    height: 90px;
+    border-width: 4px;
+  }
+
+  .profile-page .avatar-edit {
+    width: 28px;
+    height: 28px;
+    right: 4px;
+    bottom: 4px;
+  }
+
+  .profile-form {
+    padding: 52px 20px 24px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .profile-page .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-banner {
+    aspect-ratio: 4 / 3;     /* square-ish banner like FB on very small screens */
+    min-height: 140px;
+  }
+
+  .profile-page .avatar-wrapper {
+    bottom: -36px;
+    left: 16px;
+  }
+
+  .profile-page .avatar {
+    width: 72px;
+    height: 72px;
+  }
+
+  .profile-form {
+    padding: 46px 16px 20px;
+  }
+
+  .banner-upload {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
 }

@@ -34,6 +34,8 @@ interface MenuItem {
 
 interface SharedSidebarProps {
     role: 'ADMIN' | 'STAFF' | 'HOST';
+    isOpen?: boolean;
+    onClose?: () => void;
 }
 
 const adminMenuItems: MenuItem[] = [
@@ -42,7 +44,6 @@ const adminMenuItems: MenuItem[] = [
     { id: 'music', icon: <Headphones size={20} />, label: 'Kho nhạc', path: '/admin/music' },
     { id: 'stations', icon: <Music2 size={20} />, label: 'Đài phát', path: '/admin/stations' },
     { id: 'playlists', icon: <ListMusic size={20} />, label: 'Playlist', path: '/admin/playlists' },
-    { id: 'sessions', icon: <Radio size={20} />, label: 'Phiên phát sóng', path: '/admin/sessions' },
     { id: 'podcasts', icon: <Podcast size={20} />, label: 'Podcast', path: '/admin/podcasts' },
     { id: 'posts', icon: <FileTextIcon size={20} />, label: 'Bài viết người dùng', path: '/admin/posts' },
     { id: 'transactions', icon: <Receipt size={20} />, label: 'Giao dịch', path: '/admin/transactions' },
@@ -68,16 +69,14 @@ const staffMenuItems: MenuItem[] = [
 const hostMenuItems: MenuItem[] = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: '/host/dashboard' },
     { id: 'sessions', icon: <Radio size={20} />, label: 'Phiên phát sóng', path: '/host/sessions' },
-    { id: 'live-control', icon: <Play size={20} />, label: 'Điều khiển Live', path: '/host/sessions' }, // sessionId required — go to sessions list
     { id: 'schedule', icon: <Calendar size={20} />, label: 'Lịch trình', path: '/host/schedule' },
-    { id: 'admin-sessions', icon: <Radio size={20} />, label: 'Quản lý Phiên PS', path: '/host/admin-sessions' },
     { id: 'music-requests', icon: <Music size={20} />, label: 'Yêu cầu nhạc', path: '/host/music-requests' },
     { id: 'podcast-requests', icon: <Mic size={20} />, label: 'Yêu cầu podcast', path: '/host/podcast-requests' },
     { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Phân tích', path: '/host/analytics' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Cài đặt', path: '/host/settings' },
 ];
 
-export default function SharedSidebar({ role }: SharedSidebarProps) {
+export default function SharedSidebar({ role, isOpen = false, onClose }: SharedSidebarProps) {
     const location = useLocation();
     const navigate = useNavigate();
     const { mode } = useTheme();
@@ -108,35 +107,38 @@ export default function SharedSidebar({ role }: SharedSidebarProps) {
     };
 
     return (
-        <aside className="shared-sidebar">
-            <div className="shared-sidebar-logo" onClick={() => navigate(dashboardPath)}>
-                <img
-                    src={mode === "dark" ? logoDark : logoLight}
-                    alt="SoundMates"
-                    onError={(e) => {
-                        e.currentTarget.src = logoLight;
-                    }}
-                />
-                <span className="shared-logo-text">SoundMates</span>
-            </div>
+        <>
+            {isOpen && <div className="shared-sidebar-overlay" onClick={onClose} />}
+            <aside className={`shared-sidebar ${isOpen ? 'open' : ''}`}>
+                <div className="shared-sidebar-logo" onClick={() => { navigate(dashboardPath); onClose?.(); }}>
+                    <img
+                        src={mode === "dark" ? logoDark : logoLight}
+                        alt="SoundMates"
+                        onError={(e) => {
+                            e.currentTarget.src = logoLight;
+                        }}
+                    />
+                    <span className="shared-logo-text">SoundMates</span>
+                </div>
 
-            <nav className="shared-sidebar-nav">
-                {menuItems.map((item) => (
-                    <button
-                        key={item.id}
-                        className={`shared-nav-item ${isActive(item.path) ? "active" : ""}`}
-                        onClick={() => navigate(item.path)}
-                    >
-                        {item.icon}
-                        <span>{item.label}</span>
-                    </button>
-                ))}
-            </nav>
+                <nav className="shared-sidebar-nav">
+                    {menuItems.map((item) => (
+                        <button
+                            key={item.id}
+                            className={`shared-nav-item ${isActive(item.path) ? "active" : ""}`}
+                            onClick={() => { navigate(item.path); onClose?.(); }}
+                        >
+                            {item.icon}
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
+                </nav>
 
-            <button className="shared-logout-btn" onClick={handleLogout}>
-                <LogOut size={20} />
-                <span>Đăng xuất</span>
-            </button>
-        </aside>
+                <button className="shared-logout-btn" onClick={handleLogout}>
+                    <LogOut size={20} />
+                    <span>Đăng xuất</span>
+                </button>
+            </aside>
+        </>
     );
 }
