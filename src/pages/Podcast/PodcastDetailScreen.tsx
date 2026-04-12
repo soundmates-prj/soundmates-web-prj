@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Calendar,
+  Clock,
   Headphones,
   Loader2,
   Mic2,
@@ -15,6 +16,8 @@ import podcastService from "../../services/podcastService";
 import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
 import "./PodcastDetailScreen.css";
 
+/* ── helpers ── */
+
 const fmtDate = (d?: string) => {
   if (!d) return "";
   return new Date(d).toLocaleDateString("vi-VN", {
@@ -23,6 +26,20 @@ const fmtDate = (d?: string) => {
     year: "numeric",
   });
 };
+
+const fmtTime = (seconds: number) => {
+  if (!seconds || !isFinite(seconds)) return "0:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0)
+    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+};
+
+/* ══════════════════════════════════════════════
+   PodcastDetailScreen
+   ══════════════════════════════════════════════ */
 
 export default function PodcastDetailScreen() {
   const { id } = useParams();
@@ -34,7 +51,11 @@ export default function PodcastDetailScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -55,31 +76,106 @@ export default function PodcastDetailScreen() {
     void load();
   }, [id]);
 
+  /* ── Audio time tracking via RAF ── */
+
+  const startTracking = useCallback(() => {
+    const tick = () => {
+      if (audioRef.current && !isSeeking) {
+        setCurrentTime(audioRef.current.currentTime);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, [isSeeking]);
+
+  const stopTracking = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
+
+  /* ── Toggle play / pause ── */
+
   const togglePlay = (ep: PodcastEpisode) => {
     if (!ep.audioUrl) return;
 
     if (playingId === ep.id) {
       audioRef.current?.pause();
+      stopTracking();
       setPlayingId(null);
       return;
     }
 
     if (audioRef.current) {
       audioRef.current.pause();
+      stopTracking();
     }
 
     const audio = new Audio(ep.audioUrl);
+
+    audio.onloadedmetadata = () => {
+      setAudioDuration(audio.duration);
+    };
+
+    audio.onended = () => {
+      setPlayingId(null);
+      setCurrentTime(0);
+      setAudioDuration(0);
+      stopTracking();
+    };
+
     audio.play().catch(() => {});
-    audio.onended = () => setPlayingId(null);
     audioRef.current = audio;
     setPlayingId(ep.id);
+    setCurrentTime(0);
+    setAudioDuration(0);
+    startTracking();
   };
+
+  /* ── Seek handlers ── */
+
+  const seekFromEvent = (
+    e: React.MouseEvent<HTMLDivElement> | MouseEvent,
+    bar: HTMLDivElement,
+  ) => {
+    if (!audioRef.current) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = Math.max(
+      0,
+      Math.min(1, (e.clientX - rect.left) / rect.width),
+    );
+    const newTime = ratio * (audioRef.current.duration || 0);
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  const handleBarMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsSeeking(true);
+    const bar = e.currentTarget;
+    seekFromEvent(e, bar);
+
+    const onMove = (me: MouseEvent) => seekFromEvent(me, bar);
+    const onUp = () => {
+      setIsSeeking(false);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  /* ── Cleanup ── */
 
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
+      stopTracking();
     };
-  }, []);
+  }, [stopTracking]);
+
+  /* ── Render ── */
 
   if (loading) {
     return (
@@ -172,6 +268,10 @@ export default function PodcastDetailScreen() {
           <div className="pdd-ep-list">
             {episodes.map((ep, i) => {
               const isPlaying = playingId === ep.id;
+              const progress =
+                isPlaying && audioDuration > 0
+                  ? (currentTime / audioDuration) * 100
+                  : 0;
 
               return (
                 <div
@@ -221,10 +321,43 @@ export default function PodcastDetailScreen() {
                           {fmtDate(ep.publishDate)}
                         </span>
                       )}
+                      {(ep as any).duration != null &&
+                        (ep as any).duration > 0 && (
+                          <span className="pdd-ep-duration">
+                            <Clock size={12} />
+                            {fmtTime((ep as any).duration)}
+                          </span>
+                        )}
                     </div>
                     <h3 className="pdd-ep-title">{ep.title}</h3>
                     {ep.description && (
                       <p className="pdd-ep-desc">{ep.description}</p>
+                    )}
+
+                    {/* ── Audio progress bar ── */}
+                    {isPlaying && (
+                      <div className="pdd-ep-player">
+                        <span className="pdd-ep-time">
+                          {fmtTime(currentTime)}
+                        </span>
+                        <div
+                          className="pdd-ep-bar"
+                          onMouseDown={handleBarMouseDown}
+                        >
+                          <div className="pdd-ep-bar-bg" />
+                          <div
+                            className="pdd-ep-bar-fill"
+                            style={{ width: `${progress}%` }}
+                          />
+                          <div
+                            className="pdd-ep-bar-knob"
+                            style={{ left: `${progress}%` }}
+                          />
+                        </div>
+                        <span className="pdd-ep-time">
+                          {fmtTime(audioDuration)}
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
