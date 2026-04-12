@@ -52,7 +52,7 @@ export function StationsScreen() {
       const result = await liveSessionApiService.syncStations();
       showSuccess(
         "Đồng bộ thành công!",
-        `${result.createdStations} tạo mới, ${result.updatedStations} cập nhật`
+        `${result.createdStations} tạo mới, ${result.updatedStations} cập nhật`,
       );
       await loadStations();
     } catch {
@@ -90,12 +90,16 @@ export function StationsScreen() {
 
     try {
       await liveSessionApiService.createStation(newStation);
-      showSuccess("Tạo thành công!", `Station "${newStation.stationName}" đã được tạo`);
+      showSuccess(
+        "Tạo thành công!",
+        `Station "${newStation.stationName}" đã được tạo`,
+      );
       setShowCreateModal(false);
       setNewStation({ stationName: "", description: "", shortCode: "" });
       await loadStations();
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Không thể tạo station";
+      const errorMessage =
+        error.response?.data?.message || "Không thể tạo station";
       showError("Lỗi", errorMessage);
     }
   };
@@ -105,18 +109,28 @@ export function StationsScreen() {
       {/* Header */}
       <div className="staff-page-header">
         <div>
-          <h1 className="staff-page-title" style={{
-            background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>Stations</h1>
+          <h1
+            className="staff-page-title"
+            style={{
+              background:
+                "linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Stations
+          </h1>
           <p className="staff-page-subtitle">
             Quản lý các kênh phát sóng radio
           </p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="staff-btn staff-btn--outline" onClick={loadStations} disabled={loading}>
+          <button
+            className="staff-btn staff-btn--outline"
+            onClick={loadStations}
+            disabled={loading}
+          >
             <RefreshCw size={16} className={loading ? "staff-spin" : ""} />
             Làm mới
           </button>
@@ -127,8 +141,15 @@ export function StationsScreen() {
             <Plus size={16} />
             Tạo Station
           </button>
-          <button className="staff-btn staff-btn--primary" onClick={handleSync} disabled={syncing}>
-            <ArrowDownToLine size={16} className={syncing ? "staff-spin" : ""} />
+          <button
+            className="staff-btn staff-btn--primary"
+            onClick={handleSync}
+            disabled={syncing}
+          >
+            <ArrowDownToLine
+              size={16}
+              className={syncing ? "staff-spin" : ""}
+            />
             {syncing ? "Đang sync..." : "Đồng bộ"}
           </button>
         </div>
@@ -142,10 +163,14 @@ export function StationsScreen() {
         </div>
       ) : stations.length === 0 ? (
         <div className="staff-card">
-          <div className="staff-card-body" style={{ textAlign: "center", padding: "48px 24px" }}>
+          <div
+            className="staff-card-body"
+            style={{ textAlign: "center", padding: "48px 24px" }}
+          >
             <Radio size={40} style={{ color: "#94a3b8", marginBottom: 12 }} />
             <p className="staff-empty" style={{ fontSize: 15 }}>
-              Chưa có station nào. Nhấn <strong>Đồng bộ</strong> để tải danh sách.
+              Chưa có station nào. Nhấn <strong>Đồng bộ</strong> để tải danh
+              sách.
             </p>
           </div>
         </div>
@@ -190,10 +215,11 @@ export function StationsScreen() {
 
               <div className="station-footer">
                 <span
-                  className={`staff-badge ${station.syncStatus === "Synced"
+                  className={`staff-badge ${
+                    station.syncStatus === "Synced"
                       ? "staff-badge--live"
                       : "staff-badge--scheduled"
-                    }`}
+                  }`}
                 >
                   {station.syncStatus}
                 </span>
@@ -213,11 +239,17 @@ export function StationsScreen() {
 
       {/* Create Station Modal */}
       {showCreateModal && (
-        <div className="staff-modal-overlay" onClick={() => setShowCreateModal(false)}>
+        <div
+          className="staff-modal-overlay"
+          onClick={() => setShowCreateModal(false)}
+        >
           <div className="staff-modal" onClick={(e) => e.stopPropagation()}>
             <div className="staff-modal-header">
               <h3>Tạo Station mới</h3>
-              <button className="staff-modal-close" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="staff-modal-close"
+                onClick={() => setShowCreateModal(false)}
+              >
                 <X size={18} />
               </button>
             </div>
@@ -226,7 +258,9 @@ export function StationsScreen() {
               <input
                 className="staff-input"
                 value={newStation.stationName}
-                onChange={(e) => setNewStation({ ...newStation, stationName: e.target.value })}
+                onChange={(e) =>
+                  setNewStation({ ...newStation, stationName: e.target.value })
+                }
                 placeholder="Nhập tên station..."
                 autoFocus
               />
@@ -237,7 +271,9 @@ export function StationsScreen() {
               <input
                 className="staff-input"
                 value={newStation.shortCode}
-                onChange={(e) => setNewStation({ ...newStation, shortCode: e.target.value })}
+                onChange={(e) =>
+                  setNewStation({ ...newStation, shortCode: e.target.value })
+                }
                 placeholder="vd: jazz-fm, chill-radio..."
                 pattern="^[a-z0-9_-]+$"
               />
@@ -251,14 +287,17 @@ export function StationsScreen() {
               <textarea
                 className="staff-input staff-textarea"
                 value={newStation.description}
-                onChange={(e) => setNewStation({ ...newStation, description: e.target.value })}
+                onChange={(e) =>
+                  setNewStation({ ...newStation, description: e.target.value })
+                }
                 placeholder="Mô tả ngắn về station..."
                 rows={3}
               />
 
               <div className="staff-info-box">
-                <strong>Lưu ý:</strong> Station sẽ được tạo trong local database. 
-                Để có stream URL thực, vui lòng đồng bộ với AzuraCast sau khi tạo.
+                <strong>Lưu ý:</strong> Station sẽ được tạo trong local
+                database. Để có stream URL thực, vui lòng đồng bộ với AzuraCast
+                sau khi tạo.
               </div>
             </div>
             <div className="staff-modal-footer">
@@ -275,7 +314,6 @@ export function StationsScreen() {
               >
                 Tạo
               </button>
-
             </div>
           </div>
         </div>
