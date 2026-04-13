@@ -13,7 +13,6 @@ import {
   liveSessionApiService,
   type MusicResult,
   type BulkUploadMusicResult,
-  type StationResult,
 } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import {
@@ -27,7 +26,6 @@ export default function MusicCatalogPage() {
   const [tracks, setTracks] = useState<MusicResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
-  const [stationId, setStationId] = useState<string | undefined>(undefined);
 
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -60,20 +58,7 @@ export default function MusicCatalogPage() {
 
   useEffect(() => {
     isMountedRef.current = true;
-    const init = async () => {
-      try {
-        // Lấy stationId mặc định cho bulk upload
-        const stations = await liveSessionApiService.getStations();
-        if (stations && stations.length > 0) {
-          setStationId(stations[0].id);
-        }
-        await loadTracks();
-      } catch {
-        setLoading(false);
-      }
-    };
-
-    void init();
+    void loadTracks();
 
     return () => {
       isMountedRef.current = false;
@@ -182,7 +167,7 @@ export default function MusicCatalogPage() {
 
     try {
       const result = await liveSessionApiService.bulkUploadMusic(
-        stationId,
+        undefined, // Admin uploads to System Media — no station
         files,
       );
 

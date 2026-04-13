@@ -46,7 +46,7 @@
 /* ─── Page container ─── */
 .home-page {
     min-height: 100vh;
-    background: var(--sm-bg);
+    background-color: var(--sm-bg);
     color: var(--sm-text);
     overflow: hidden;
 }

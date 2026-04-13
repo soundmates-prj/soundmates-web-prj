@@ -342,6 +342,11 @@
     white-space: nowrap;
 }
 
+.req-message-empty {
+    font-size: 0.78rem;
+    color: var(--neutral-400);
+}
+
 .req-reject-cell {
     display: block;
     font-size: 0.75rem;

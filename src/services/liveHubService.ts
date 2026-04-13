@@ -4,6 +4,99 @@ const LIVE_HUB_URL =
   import.meta.env.VITE_SIGNALR_HUB_URL ??
   "http://localhost:8003/hubs/live-session";
 
+const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const GUEST_ID_KEY = "liveGuestIdentifier";
+
+function normalizeGuid(value?: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return GUID_REGEX.test(trimmed) ? trimmed : null;
+}
+
+function getOrCreateGuestIdentifier(): string {
+  try {
+    const existing = localStorage.getItem(GUEST_ID_KEY);
+    if (existing && existing.trim()) return existing;
+
+    const generated =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `guest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    localStorage.setItem(GUEST_ID_KEY, generated);
+    return generated;
+  } catch {
+    return `guest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
+
+function toListenerTuple(args: any[]): { sessionId: string; count: number } | null {
+  if (args.length >= 2) {
+    const sid = String(args[0] ?? "");
+    const count = Number(args[1]);
+    if (sid && Number.isFinite(count)) {
+      return { sessionId: sid, count };
+    }
+  }
+
+  const payload = args[0];
+  if (payload && typeof payload === "object") {
+    const sid = String(payload.sessionId ?? payload.SessionId ?? payload.id ?? payload.Id ?? "");
+    const count = Number(
+      payload.count ??
+        payload.Count ??
+        payload.listeners ??
+        payload.Listeners ??
+        payload.currentListeners ??
+        payload.CurrentListeners ??
+        payload.listenersCount ??
+        payload.ListenersCount ??
+        payload.totalListeners ??
+        payload.TotalListeners,
+    );
+
+    if (sid && Number.isFinite(count)) {
+      return { sessionId: sid, count };
+    }
+  }
+
+  return null;
+}
+
+function toUserJoinTuple(args: any[]): { sessionId: string; userId: string | null; count: number } | null {
+  if (args.length >= 3) {
+    const sid = String(args[0] ?? "");
+    const uid = args[1] == null ? null : String(args[1]);
+    const count = Number(args[2]);
+    if (sid && Number.isFinite(count)) {
+      return { sessionId: sid, userId: uid, count };
+    }
+  }
+
+  const payload = args[0];
+  if (payload && typeof payload === "object") {
+    const sid = String(payload.sessionId ?? payload.SessionId ?? payload.id ?? payload.Id ?? "");
+    const uidRaw = payload.userId ?? payload.UserId ?? null;
+    const uid = uidRaw == null ? null : String(uidRaw);
+    const count = Number(
+      payload.count ??
+        payload.Count ??
+        payload.listeners ??
+        payload.Listeners ??
+        payload.currentListeners ??
+        payload.CurrentListeners ??
+        payload.listenersCount ??
+        payload.ListenersCount,
+    );
+
+    if (sid && Number.isFinite(count)) {
+      return { sessionId: sid, userId: uid, count };
+    }
+  }
+
+  return null;
+}
+
 export interface ChatMessage {
   id: string;
   liveSessionId: string;
@@ -122,9 +215,17 @@ export interface PodcastRequestReviewedEvent {
   sessionName: string | null;
 }
 
+export interface GuestViewLimitExceededEvent {
+  sessionId: string;
+  anonymousIdentifier: string | null;
+  message: string;
+  viewedDuration: number; // seconds
+}
+
 class LiveHubService {
   private connection: signalR.HubConnection | null = null;
   private reconnectAttempt = 0;
+  private joinedSessions = new Map<string, { userId: string | null; anonymousIdentifier: string | null }>();
 
   getConnection(): signalR.HubConnection {
     if (!this.connection) {
@@ -144,6 +245,18 @@ class LiveHubService {
       this.connection.onreconnected(() => {
         console.log("[LiveHub] Reconnected");
         this.reconnectAttempt = 0;
+        // SignalR group membership is not guaranteed after reconnect.
+        // Re-join all previously joined sessions to restore realtime events.
+        for (const [sessionId, state] of this.joinedSessions.entries()) {
+          void this.connection
+            ?.invoke("JoinSession", sessionId, state.userId, state.anonymousIdentifier)
+            .then(() => {
+              console.log(`[LiveHub] Re-joined session after reconnect: ${sessionId}`);
+            })
+            .catch((err) => {
+              console.warn(`[LiveHub] Failed to re-join session ${sessionId}:`, err);
+            });
+        }
       });
     }
     return this.connection;
@@ -172,16 +285,44 @@ class LiveHubService {
   // Backend: JoinSession(sessionId, userId?, anonymousIdentifier?)
   async joinSession(sessionId: string, userId?: string | null): Promise<void> {
     const conn = this.getConnection();
+    if (!normalizeGuid(sessionId)) {
+      throw new Error("Session ID is not a valid GUID");
+    }
+
+    if (conn.state !== signalR.HubConnectionState.Connected) {
+      await this.start();
+    }
+
     if (conn.state === signalR.HubConnectionState.Connected) {
+      const normalizedUserId = normalizeGuid(userId);
+      const anonymousIdentifier = normalizedUserId ? null : getOrCreateGuestIdentifier();
       try {
-        await conn.invoke("JoinSession", sessionId, userId ?? null);
+        await conn.invoke("JoinSession", sessionId, normalizedUserId, anonymousIdentifier);
+        this.joinedSessions.set(sessionId, {
+          userId: normalizedUserId,
+          anonymousIdentifier,
+        });
       } catch (err: any) {
-        // Log full error details for debugging
-        console.error("[LiveHub] JoinSession full error:", err);
-        console.error("[LiveHub]  message:", err?.message);
-        console.error("[LiveHub]  error:", err?.error);
-        console.error("[LiveHub]  stack:", err?.stack);
-        throw err;
+        // SignalR v7 wraps HubException details in err.errorData
+        // Format: { "error": "HubException", "message": "actual message", ... }
+        const signalrMsg: string = err?.message ?? "";
+        const errorData: any = err?.errorData ?? err?.error ?? null;
+        const serverMsg: string =
+          errorData?.message ??
+          errorData?.Message ??
+          (typeof errorData === "string" ? errorData : null) ??
+          signalrMsg.replace(/^Failed to invoke 'JoinSession' due to an error on the server\.\s*/i, "") ??
+          "";
+
+        const finalMsg = serverMsg.trim() || signalrMsg || "JoinSession failed on server";
+
+        console.error("[LiveHub] JoinSession error:", {
+          signalrMsg,
+          errorData,
+          serverMsg: finalMsg,
+          full: err,
+        });
+        throw new Error(finalMsg);
       }
     }
   }
@@ -189,9 +330,13 @@ class LiveHubService {
   // Backend: LeaveSession(sessionId, userId?, anonymousIdentifier?)
   async leaveSession(sessionId: string, userId?: string | null): Promise<void> {
     const conn = this.getConnection();
+
     if (conn.state === signalR.HubConnectionState.Connected) {
-      await conn.invoke("LeaveSession", sessionId, userId ?? null);
+      const normalizedUserId = normalizeGuid(userId);
+      const anonymousIdentifier = normalizedUserId ? null : getOrCreateGuestIdentifier();
+      await conn.invoke("LeaveSession", sessionId, normalizedUserId, anonymousIdentifier);
     }
+    this.joinedSessions.delete(sessionId);
   }
 
   async sendChat(sessionId: string, userId: string, message: string): Promise<void> {
@@ -207,30 +352,42 @@ class LiveHubService {
 
   onSessionStarted(callback: (session: LiveSessionEvent) => void): () => void {
     const conn = this.getConnection();
-    conn.on("sessionstarted", callback);
-    return () => conn.off("sessionstarted", callback);
+    conn.on("SessionStarted", callback);
+    return () => conn.off("SessionStarted", callback);
   }
 
   onSessionEnded(callback: (session: LiveSessionEvent) => void): () => void {
     const conn = this.getConnection();
-    conn.on("sessionended", callback);
-    return () => conn.off("sessionended", callback);
+    conn.on("SessionEnded", callback);
+    return () => conn.off("SessionEnded", callback);
   }
 
   onUserJoined(
     callback: (sessionId: string, userId: string | null, count: number) => void,
   ): () => void {
     const conn = this.getConnection();
-    conn.on("userjoined", callback);
-    return () => conn.off("userjoined", callback);
+    const handler = (...args: any[]) => {
+      const parsed = toUserJoinTuple(args);
+      if (parsed) {
+        callback(parsed.sessionId, parsed.userId, parsed.count);
+      }
+    };
+    conn.on("UserJoined", handler);
+    return () => conn.off("UserJoined", handler);
   }
 
   onUserLeft(
     callback: (sessionId: string, userId: string | null, count: number) => void,
   ): () => void {
     const conn = this.getConnection();
-    conn.on("userleft", callback);
-    return () => conn.off("userleft", callback);
+    const handler = (...args: any[]) => {
+      const parsed = toUserJoinTuple(args);
+      if (parsed) {
+        callback(parsed.sessionId, parsed.userId, parsed.count);
+      }
+    };
+    conn.on("UserLeft", handler);
+    return () => conn.off("UserLeft", handler);
   }
 
   onReceiveChat(callback: (chat: ChatMessage) => void): () => void {
@@ -241,8 +398,14 @@ class LiveHubService {
 
   onListenersUpdated(callback: (sessionId: string, count: number) => void): () => void {
     const conn = this.getConnection();
-    conn.on("ListenersUpdated", callback);
-    return () => conn.off("ListenersUpdated", callback);
+    const handler = (...args: any[]) => {
+      const parsed = toListenerTuple(args);
+      if (parsed) {
+        callback(parsed.sessionId, parsed.count);
+      }
+    };
+    conn.on("ListenersUpdated", handler);
+    return () => conn.off("ListenersUpdated", handler);
   }
 
   onSongChanged(callback: (song: SongChangedEvent) => void): () => void {
@@ -277,8 +440,18 @@ class LiveHubService {
     return () => conn.off("PodcastRequestReviewed", callback);
   }
 
+  onGuestViewLimitExceeded(callback: (event: GuestViewLimitExceededEvent) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("GuestViewLimitExceeded", callback);
+    return () => conn.off("GuestViewLimitExceeded", callback);
+  }
+
   offAll(): void {
     const conn = this.getConnection();
+    conn.off("SessionStarted");
+    conn.off("SessionEnded");
+    conn.off("UserJoined");
+    conn.off("UserLeft");
     conn.off("sessionstarted");
     conn.off("sessionended");
     conn.off("userjoined");
@@ -290,6 +463,7 @@ class LiveHubService {
     conn.off("NowPlayingUpdated");
     conn.off("PodcastRequestCreated");
     conn.off("PodcastRequestReviewed");
+    conn.off("GuestViewLimitExceeded");
   }
 }
 

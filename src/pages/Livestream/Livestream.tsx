@@ -175,6 +175,11 @@ function proxyArtUrl(url: string): string {
   return url.replace("host.docker.internal", "localhost");
 }
 
+function toSafeListenerCount(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
 // ===== MAIN COMPONENT =====
 const LivestreamPage: React.FC = () => {
   const player = usePlayer();
@@ -199,6 +204,7 @@ const LivestreamPage: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const { mode, setMode } = useTheme();
   const [activeSession, setActiveSession] = useState<LiveSessionResult | null>(null);
+  const [listenerCount, setListenerCount] = useState<number | null>(null);
   // SignalR real-time
   const [hubConnected, setHubConnected] = useState(false);
   const activeSessionIdRef = useRef<string | null>(null);
@@ -243,6 +249,8 @@ const LivestreamPage: React.FC = () => {
 
         const session = await livestreamService.getLiveSession(liveSession.id);
         setActiveSession(session);
+        const initialListeners = toSafeListenerCount(session.listenersCount ?? session.totalListeners, 0);
+        setListenerCount(initialListeners);
 
         // Fetch real now-playing from AzuraCast via backend for album art / track info
         let trackData: NowPlayingData | null = null;
@@ -258,7 +266,7 @@ const LivestreamPage: React.FC = () => {
               isOnline: azuraData.isOnline ?? true,
               isLive: azuraData.isLive ?? true,
               streamerName: azuraData.streamerName ?? null,
-              totalListeners: azuraData.totalListeners ?? 0,
+              totalListeners: initialListeners,
               uniqueListeners: azuraData.uniqueListeners ?? 0,
               currentTrack: azuraData.currentTrack ? {
                 shId: azuraData.currentTrack.shId ?? azuraData.currentTrack.id ?? 0,
@@ -327,23 +335,25 @@ const LivestreamPage: React.FC = () => {
 
         // Use AzuraCast data if available, otherwise fallback to session
         const data = trackData || livestreamService.toNowPlaying(session);
-        setNowPlaying(data);
-        setElapsed(data.currentTrack?.elapsed || 0);
+        const normalizedListeners = toSafeListenerCount(session.listenersCount ?? session.totalListeners ?? data.totalListeners, 0);
+        const normalizedData = { ...data, totalListeners: normalizedListeners };
+        setNowPlaying(normalizedData);
+        setElapsed(normalizedData.currentTrack?.elapsed || 0);
 
         // Push track info to global player context
-        if (data.currentTrack) {
+        if (normalizedData.currentTrack) {
           player.setTrack({
-            title: data.currentTrack.title,
-            artist: data.currentTrack.artist,
-            album: data.currentTrack.album,
-            artUrl: data.currentTrack.artUrl.replace(
+            title: normalizedData.currentTrack.title,
+            artist: normalizedData.currentTrack.artist,
+            album: normalizedData.currentTrack.album,
+            artUrl: normalizedData.currentTrack.artUrl.replace(
               "host.docker.internal",
               "localhost",
             ),
-            duration: data.currentTrack.duration,
-            elapsed: data.currentTrack.elapsed,
-            listenUrl: livestreamService.getListenUrl(session.streamUrl || data.listenUrl),
-            lyrics: data.currentTrack.lyrics ?? null,
+            duration: normalizedData.currentTrack.duration,
+            elapsed: normalizedData.currentTrack.elapsed,
+            listenUrl: livestreamService.getListenUrl(session.streamUrl || normalizedData.listenUrl),
+            lyrics: normalizedData.currentTrack.lyrics ?? null,
           });
         }
 
@@ -390,6 +400,7 @@ const LivestreamPage: React.FC = () => {
   useEffect(() => {
     const offListeners = liveHubService.onListenersUpdated((sessionId, count) => {
       if (activeSessionIdRef.current === sessionId && nowPlaying) {
+        setListenerCount(count);
         setNowPlaying(prev => prev ? { ...prev, totalListeners: count } : prev);
       }
     });
@@ -535,6 +546,7 @@ const LivestreamPage: React.FC = () => {
     isLive,
     isOnline,
   } = nowPlaying;
+  const displayListeners = listenerCount ?? totalListeners;
 
   const stationName = activeSession?.stationName || nowPlaying.stationName;
 
@@ -611,7 +623,7 @@ const LivestreamPage: React.FC = () => {
                   <Clock size={13} /> {formatTime(currentTrack.duration)}
                 </span>
                 <span className="meta-item">
-                  <Users size={13} /> {totalListeners} ngườii nghe
+                  <Users size={13} /> {displayListeners} ngườii nghe
                 </span>
               </div>
 
@@ -735,7 +747,7 @@ const LivestreamPage: React.FC = () => {
             <div className="action-bar-right">
               <div className="listener-count">
                 <Users size={14} />
-                {totalListeners || 128}
+                {displayListeners}
               </div>
             </div>
           </motion.div>

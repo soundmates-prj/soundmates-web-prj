@@ -14,9 +14,8 @@ import {
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
 import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
+import { usePlayer } from "../../context/PlayerContext";
 import "./PodcastDetailScreen.css";
-
-/* ── helpers ── */
 
 const fmtDate = (d?: string) => {
   if (!d) return "";
@@ -32,14 +31,11 @@ const fmtTime = (seconds: number) => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  if (h > 0)
+  if (h > 0) {
     return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
   return `${m}:${String(s).padStart(2, "0")}`;
 };
-
-/* ══════════════════════════════════════════════
-   PodcastDetailScreen
-   ══════════════════════════════════════════════ */
 
 export default function PodcastDetailScreen() {
   const { id } = useParams();
@@ -49,12 +45,14 @@ export default function PodcastDetailScreen() {
   const [episodes, setEpisodes] = useState<PodcastEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resolvedDurations, setResolvedDurations] = useState<Record<string, number>>({});
 
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const { audioRef, setTrack, setIsPlaying } = usePlayer();
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -67,7 +65,7 @@ export default function PodcastDetailScreen() {
         setPodcast(p);
         setEpisodes(p.allEpisodes ?? []);
       } catch {
-        setError("Không thể tải thông tin podcast.");
+        setError("Kh�ng th? t?i th�ng tin podcast.");
       } finally {
         setLoading(false);
       }
@@ -76,7 +74,42 @@ export default function PodcastDetailScreen() {
     void load();
   }, [id]);
 
-  /* ── Audio time tracking via RAF ── */
+  useEffect(() => {
+    let cancelled = false;
+
+    const fillMissingDurations = async () => {
+      const missing = episodes.filter(
+        (ep) => !!ep.audioUrl && (ep.duration ?? 0) <= 0 && !resolvedDurations[ep.id],
+      );
+
+      for (const ep of missing) {
+        const duration = await new Promise<number>((resolve) => {
+          const audio = new Audio();
+          audio.preload = "metadata";
+          audio.src = ep.audioUrl!;
+
+          const done = (value: number) => {
+            audio.onloadedmetadata = null;
+            audio.onerror = null;
+            resolve(value);
+          };
+
+          audio.onloadedmetadata = () => done(Math.max(0, Math.floor(audio.duration || 0)));
+          audio.onerror = () => done(0);
+        });
+
+        if (!cancelled && duration > 0) {
+          setResolvedDurations((prev) => ({ ...prev, [ep.id]: duration }));
+        }
+      }
+    };
+
+    void fillMissingDurations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [episodes, resolvedDurations]);
 
   const startTracking = useCallback(() => {
     const tick = () => {
@@ -86,7 +119,7 @@ export default function PodcastDetailScreen() {
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
-  }, [isSeeking]);
+  }, [audioRef, isSeeking]);
 
   const stopTracking = useCallback(() => {
     if (rafRef.current) {
@@ -95,14 +128,13 @@ export default function PodcastDetailScreen() {
     }
   }, []);
 
-  /* ── Toggle play / pause ── */
-
   const togglePlay = (ep: PodcastEpisode) => {
     if (!ep.audioUrl) return;
 
     if (playingId === ep.id) {
       audioRef.current?.pause();
       stopTracking();
+      setIsPlaying(false);
       setPlayingId(null);
       return;
     }
@@ -123,17 +155,27 @@ export default function PodcastDetailScreen() {
       setCurrentTime(0);
       setAudioDuration(0);
       stopTracking();
+      setIsPlaying(false);
     };
 
-    audio.play().catch(() => {});
+    audio.play().then(() => setIsPlaying(true)).catch(() => {});
     audioRef.current = audio;
+
+    const effectiveDuration = resolvedDurations[ep.id] ?? ep.duration ?? 0;
+    setTrack({
+      title: ep.title,
+      artist: podcast?.author || "Podcast",
+      artUrl: ep.thumbnailUrl || podcast?.banner || "",
+      duration: effectiveDuration,
+      elapsed: 0,
+      listenUrl: ep.audioUrl,
+    });
+
     setPlayingId(ep.id);
     setCurrentTime(0);
     setAudioDuration(0);
     startTracking();
   };
-
-  /* ── Seek handlers ── */
 
   const seekFromEvent = (
     e: React.MouseEvent<HTMLDivElement> | MouseEvent,
@@ -141,10 +183,7 @@ export default function PodcastDetailScreen() {
   ) => {
     if (!audioRef.current) return;
     const rect = bar.getBoundingClientRect();
-    const ratio = Math.max(
-      0,
-      Math.min(1, (e.clientX - rect.left) / rect.width),
-    );
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const newTime = ratio * (audioRef.current.duration || 0);
     audioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
@@ -166,23 +205,20 @@ export default function PodcastDetailScreen() {
     window.addEventListener("mouseup", onUp);
   };
 
-  /* ── Cleanup ── */
-
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
       stopTracking();
+      setIsPlaying(false);
     };
-  }, [stopTracking]);
-
-  /* ── Render ── */
+  }, [audioRef, setIsPlaying, stopTracking]);
 
   if (loading) {
     return (
       <div className="pdd">
         <div className="pdd-state">
           <Loader2 size={28} className="pdd-spin" />
-          <p>Đang tải...</p>
+          <p>�ang t?i...</p>
         </div>
       </div>
     );
@@ -193,10 +229,10 @@ export default function PodcastDetailScreen() {
       <div className="pdd">
         <div className="pdd-state">
           <Music2 size={28} />
-          <p>{error || "Không tìm thấy podcast."}</p>
+          <p>{error || "Kh�ng t�m th?y podcast."}</p>
           <button className="pdd-back-btn" onClick={() => navigate("/podcast")}>
             <ArrowLeft size={14} />
-            Quay lại
+            Quay l?i
           </button>
         </div>
       </div>
@@ -214,7 +250,7 @@ export default function PodcastDetailScreen() {
         <div className="pdd-hero-content">
           <button className="pdd-back" onClick={() => navigate("/podcast")}>
             <ArrowLeft size={16} />
-            Tất cả Podcast
+            T?t c? Podcast
           </button>
 
           <div className="pdd-hero-info">
@@ -241,13 +277,11 @@ export default function PodcastDetailScreen() {
                 )}
                 <span className="pdd-meta-item">
                   <Headphones size={14} />
-                  {episodes.length} tập
+                  {episodes.length} t?p
                 </span>
               </div>
 
-              {podcast.description && (
-                <p className="pdd-hero-desc">{podcast.description}</p>
-              )}
+              {podcast.description && <p className="pdd-hero-desc">{podcast.description}</p>}
             </div>
           </div>
         </div>
@@ -255,23 +289,20 @@ export default function PodcastDetailScreen() {
 
       <section className="pdd-episodes">
         <h2 className="pdd-section-title">
-          Danh sách tập
+          Danh s�ch t?p
           <span className="pdd-section-count">{episodes.length}</span>
         </h2>
 
         {episodes.length === 0 ? (
           <div className="pdd-empty">
             <Music2 size={24} />
-            <p>Podcast này chưa có tập nào.</p>
+            <p>Podcast n�y chua c� t?p n�o.</p>
           </div>
         ) : (
           <div className="pdd-ep-list">
             {episodes.map((ep, i) => {
               const isPlaying = playingId === ep.id;
-              const progress =
-                isPlaying && audioDuration > 0
-                  ? (currentTime / audioDuration) * 100
-                  : 0;
+              const progress = isPlaying && audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
 
               return (
                 <div
@@ -283,19 +314,9 @@ export default function PodcastDetailScreen() {
                     className={`pdd-ep-play${isPlaying ? " active" : ""}`}
                     onClick={() => togglePlay(ep)}
                     disabled={!ep.audioUrl}
-                    title={
-                      ep.audioUrl
-                        ? isPlaying
-                          ? "Tạm dừng"
-                          : "Phát"
-                        : "Chưa có audio"
-                    }
+                    title={ep.audioUrl ? (isPlaying ? "T?m d?ng" : "Ph�t") : "Chua c� audio"}
                   >
-                    {isPlaying ? (
-                      <Pause size={18} fill="currentColor" />
-                    ) : (
-                      <Play size={18} fill="currentColor" />
-                    )}
+                    {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
                   </button>
 
                   <div className="pdd-ep-thumb">
@@ -310,53 +331,30 @@ export default function PodcastDetailScreen() {
 
                   <div className="pdd-ep-info">
                     <div className="pdd-ep-top">
-                      {ep.episodeNumber != null && (
-                        <span className="pdd-ep-number">
-                          Tập {ep.episodeNumber}
-                        </span>
-                      )}
+                      {ep.episodeNumber != null && <span className="pdd-ep-number">T?p {ep.episodeNumber}</span>}
+                      <span className="pdd-ep-duration">
+                        <Clock size={12} />
+                        {fmtTime(resolvedDurations[ep.id] ?? ep.duration ?? 0)}
+                      </span>
                       {ep.publishDate && (
                         <span className="pdd-ep-date">
                           <Calendar size={12} />
                           {fmtDate(ep.publishDate)}
                         </span>
                       )}
-                      {(ep as any).duration != null &&
-                        (ep as any).duration > 0 && (
-                          <span className="pdd-ep-duration">
-                            <Clock size={12} />
-                            {fmtTime((ep as any).duration)}
-                          </span>
-                        )}
                     </div>
                     <h3 className="pdd-ep-title">{ep.title}</h3>
-                    {ep.description && (
-                      <p className="pdd-ep-desc">{ep.description}</p>
-                    )}
+                    {ep.description && <p className="pdd-ep-desc">{ep.description}</p>}
 
-                    {/* ── Audio progress bar ── */}
                     {isPlaying && (
                       <div className="pdd-ep-player">
-                        <span className="pdd-ep-time">
-                          {fmtTime(currentTime)}
-                        </span>
-                        <div
-                          className="pdd-ep-bar"
-                          onMouseDown={handleBarMouseDown}
-                        >
+                        <span className="pdd-ep-time">{fmtTime(currentTime)}</span>
+                        <div className="pdd-ep-bar" onMouseDown={handleBarMouseDown}>
                           <div className="pdd-ep-bar-bg" />
-                          <div
-                            className="pdd-ep-bar-fill"
-                            style={{ width: `${progress}%` }}
-                          />
-                          <div
-                            className="pdd-ep-bar-knob"
-                            style={{ left: `${progress}%` }}
-                          />
+                          <div className="pdd-ep-bar-fill" style={{ width: `${progress}%` }} />
+                          <div className="pdd-ep-bar-knob" style={{ left: `${progress}%` }} />
                         </div>
-                        <span className="pdd-ep-time">
-                          {fmtTime(audioDuration)}
-                        </span>
+                        <span className="pdd-ep-time">{fmtTime(audioDuration)}</span>
                       </div>
                     )}
                   </div>

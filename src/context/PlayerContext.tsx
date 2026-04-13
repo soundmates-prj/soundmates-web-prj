@@ -34,10 +34,23 @@ interface PlayerContextValue {
   toggle: () => void;
   toggleMute: () => void;
   leaveSession: () => void;
+  /** The Audio element used for non-session playback (podcasts, etc.). Null when in a live session. */
   audioRef: React.MutableRefObject<HTMLAudioElement | null>;
+  /**
+   * When in a live session, LiveRoomPage passes its own audio element here so that
+   * MusicPlayer can read the real currentTime for progress/sync.
+   * Set to null (or call clearLiveAudioRef) when leaving the session.
+   */
+  setLiveAudioRef: (ref: HTMLAudioElement | null) => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
+
+const toAbsoluteAudioUrl = (url: string): string => {
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith("/")) return `${window.location.origin}${url}`;
+  return `${window.location.origin}/${url}`;
+};
 
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -48,6 +61,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [elapsed, setElapsedState] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  /** Audio element owned by LiveRoomPage when in a live session. */
+  const liveAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const setTrack = useCallback((newTrack: TrackData | null) => {
     if (!newTrack) {
@@ -61,8 +76,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       setElapsedState(newTrack.elapsed);
     }
     if (audioRef.current && playerTrack.listenUrl) {
-      const nextSrc = playerTrack.listenUrl.replace(/^https?:\/\/[^/]+/, "");
-      if (audioRef.current.src !== window.location.origin + nextSrc) {
+      const nextSrc = toAbsoluteAudioUrl(playerTrack.listenUrl);
+      if (audioRef.current.src !== nextSrc) {
         audioRef.current.pause();
         audioRef.current = null;
         setIsPlaying(false);
@@ -83,7 +98,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (!audioRef.current) {
       // Lần đầu: kết nối stream và phát
-      const src = track.listenUrl.replace(/^https?:\/\/[^/]+/, "");
+      const src = toAbsoluteAudioUrl(track.listenUrl);
       audioRef.current = new Audio(src);
       audioRef.current.volume = volume / 100;
       audioRef.current.play().catch(console.error);
@@ -116,10 +131,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       audioRef.current.pause();
       audioRef.current = null;
     }
+    liveAudioRef.current = null;
     setIsPlayingState(false);
     setIsMuted(false);
     setElapsedState(0);
     setTrackState(null);
+  }, []);
+
+  const setLiveAudioRef = useCallback((ref: HTMLAudioElement | null) => {
+    liveAudioRef.current = ref;
   }, []);
 
   return (
@@ -138,6 +158,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
         toggleMute,
         leaveSession,
         audioRef,
+        setLiveAudioRef,
       }}
     >
       {children}

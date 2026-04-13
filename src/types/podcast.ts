@@ -139,6 +139,7 @@ export interface PodcastEpisode {
   audioUrl?: string;
   thumbnailUrl?: string;
   episodeNumber?: number;
+  duration?: number;
   publishDate?: string;
   createdAt?: string;
 }

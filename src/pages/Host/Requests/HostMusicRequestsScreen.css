@@ -116,6 +116,11 @@
     max-width: 200px;
 }
 
+.request-message-empty {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
 .reject-reason {
     font-size: 11px;
     color: rgba(239, 68, 68, 0.7);

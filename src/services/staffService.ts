@@ -61,9 +61,11 @@ export interface Music {
 }
 
 export interface SyncMusicResult {
-  createdFiles: number;
-  updatedFiles: number;
-  failedFiles: number;
+  created: number;
+  updated: number;
+  failed: number;
+  skipped: number;
+  errors: string[];
 }
 
 export const musicCatalogService = {
@@ -154,9 +156,9 @@ export interface PlaylistTrack {
 }
 
 export interface SyncPlaylistsResult {
-  createdPlaylists: number;
-  updatedPlaylists: number;
-  failedPlaylists: number;
+  created: number;
+  updated: number;
+  failed: number;
 }
 
 export const playlistService = {
