@@ -97,13 +97,16 @@ export interface MusicResult {
   fileSize: number;
   uploadedAt: string;
   lyrics?: string;
+  /** AzuraCast unique_id — only set for station-sourced media. */
+  azuraCastMediaId?: string | null;
 }
 
 export interface SyncMediaFilesResult {
-  synced: number;
   created: number;
   updated: number;
   failed: number;
+  skipped: number;
+  errors: string[];
 }
 
 export interface ImportedSystemMediaItemResult {
@@ -378,6 +381,27 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async updatePlaylist(
+    playlistId: string,
+    data: {
+      playlistName?: string;
+      isAutoPlay?: boolean;
+      includeInRequests?: boolean;
+      includeInOnDemand?: boolean;
+      isEnabled?: boolean;
+    },
+  ): Promise<PlaylistResult> {
+    const res = await api.put<ApiResponse<PlaylistResult>>(
+      `/playlist/${playlistId}`,
+      data,
+    );
+    return res.data.data;
+  }
+
+  async deletePlaylist(playlistId: string): Promise<void> {
+    await api.delete(`/playlist/${playlistId}`);
+  }
+
   async getPlaylistTracks(playlistId: string): Promise<PlaylistMediaResult[]> {
     const res = await api.get<ApiResponse<PlaylistMediaResult[]>>(
       `/playlist/${playlistId}/tracks`,
@@ -435,6 +459,23 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async updateStationMusicMetadata(
+    stationId: string,
+    musicId: string,
+    data: {
+      title?: string | null;
+      artist?: string | null;
+      album?: string | null;
+      lyrics?: string | null;
+    },
+  ): Promise<MusicResult> {
+    const res = await api.put<ApiResponse<MusicResult>>(
+      `/musiccatalog/station/${stationId}/media/${musicId}/metadata`,
+      data,
+    );
+    return res.data.data;
+  }
+
   async uploadMusic(
     stationId: string | undefined,
     file: File,
@@ -478,6 +519,28 @@ class LiveSessionApiService {
     files: File[],
     onFileProgress?: (fileName: string, progress: number) => void,
   ): Promise<BulkUploadMusicResult> {
+    if (files.length === 1) {
+      const [singleFile] = files;
+      const uploaded = await this.uploadMusic(
+        stationId,
+        singleFile,
+        undefined,
+        (percent) => onFileProgress?.(singleFile.name, percent),
+      );
+
+      onFileProgress?.(singleFile.name, 100);
+
+      return {
+        totalFiles: 1,
+        successCount: 1,
+        failedCount: 0,
+        isSuccess: true,
+        message: "Successfully uploaded 1 file(s).",
+        uploadedFiles: [uploaded],
+        failedFiles: [],
+      };
+    }
+
     const formData = new FormData();
     for (const file of files) {
       formData.append("Files", file);
@@ -869,25 +932,6 @@ class LiveSessionApiService {
   }): Promise<PodcastRequestResult> {
     const res = await api.post<ApiResponse<PodcastRequestResult>>(
       "/podcast-requests",
-      data,
-    );
-    return res.data.data;
-  }
-
-  /* ── Playlist Update ── */
-
-  async updatePlaylist(
-    playlistId: string,
-    data: {
-      playlistName?: string;
-      isAutoPlay?: boolean;
-      includeInRequests?: boolean;
-      includeInOnDemand?: boolean;
-      isEnabled?: boolean;
-    },
-  ): Promise<PlaylistResult> {
-    const res = await api.put<ApiResponse<PlaylistResult>>(
-      `/playlist/${playlistId}`,
       data,
     );
     return res.data.data;

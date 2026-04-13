@@ -5,7 +5,12 @@
 
 /* ── Page ── */
 .pf {
-  background: #f4f6f9;
+  background-color: var(--user-theme-bg, #f4f6f9);
+  background-image: var(--user-theme-bg-image, none), var(--user-theme-gradient, none);
+  background-size: var(--user-theme-bg-size, cover), cover;
+  background-repeat: var(--user-theme-bg-repeat, no-repeat), no-repeat;
+  background-position: center center;
+  background-attachment: fixed;
   min-height: 100vh;
   padding-bottom: 80px;
   font-family: "Be Vietnam Pro", Inter, system-ui, sans-serif;

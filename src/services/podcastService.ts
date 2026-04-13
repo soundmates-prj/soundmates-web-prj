@@ -193,14 +193,26 @@ class PodcastService {
       const response = await api.get<ApiResponse<PodcastEpisode[]>>(
         `/podcast/${podcastId}/episodes`,
       );
-      return response.data.data ?? [];
+      return (response.data.data ?? []).map((ep) => ({
+        ...ep,
+        podcastId: ep.podcastId ?? podcastId,
+      }));
     } catch (error: any) {
-      console.error("Error fetching episodes:", error);
-      throw new Error(
-        error.response?.data?.message ||
-        error.message ||
-        "Không thể tải danh sách tập",
-      );
+      // Fallback for backends that return episodes in GET /podcast/{id} as allEpisodes.
+      try {
+        const podcast = await this.getPodcastById(podcastId);
+        return (podcast.allEpisodes ?? []).map((ep) => ({
+          ...ep,
+          podcastId: ep.podcastId ?? podcastId,
+        }));
+      } catch {
+        console.error("Error fetching episodes:", error);
+        throw new Error(
+          error.response?.data?.message ||
+          error.message ||
+          "Không thể tải danh sách tập",
+        );
+      }
     }
   }
 

@@ -37,17 +37,38 @@ interface LiveSessionContextValue {
 
 const LiveSessionContext = createContext<LiveSessionContextValue | null>(null);
 
+const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function tryParseJwtUserId(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const json = atob(padded);
+    const payload = JSON.parse(json);
+    const sub = String(payload?.sub ?? "").trim();
+    return GUID_REGEX.test(sub) ? sub : null;
+  } catch {
+    return null;
+  }
+}
+
 function getCurrentUserId(): string | null {
   try {
     const raw = localStorage.getItem("userInfo");
     if (raw) {
       const parsed = JSON.parse(raw);
-      return parsed.id || parsed.userId || null;
+      const id = String(parsed?.id ?? parsed?.userId ?? "").trim();
+      if (GUID_REGEX.test(id)) {
+        return id;
+      }
     }
   } catch {
     // ignore
   }
-  return null;
+  return tryParseJwtUserId(localStorage.getItem("accessToken"));
 }
 
 export function LiveSessionProvider({ children }: { children: ReactNode }) {

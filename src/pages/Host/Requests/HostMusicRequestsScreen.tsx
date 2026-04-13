@@ -225,6 +225,7 @@ export function HostMusicRequestsScreen() {
                 <th>Nghệ sĩ</th>
                 <th>Người yêu cầu</th>
                 <th>Ngày</th>
+                <th>Lời nhắn member</th>
                 <th>Trạng thái</th>
                 <th>Hành động</th>
               </tr>
@@ -255,15 +256,19 @@ export function HostMusicRequestsScreen() {
                     </div>
                   </td>
                   <td>
+                    {request.message ? (
+                      <div className="request-message" title={request.message}>{request.message}</div>
+                    ) : (
+                      <span className="request-message-empty">Không có lời nhắn</span>
+                    )}
+                  </td>
+                  <td>
                     <span className={`status-badge ${request.status?.toLowerCase()}`}>
                       {request.status?.toLowerCase() === 'approved' && <CheckCircle size={14} />}
                       {request.status?.toLowerCase() === 'rejected' && <XCircle size={14} />}
                       {request.status?.toLowerCase() === 'pending' && <Clock size={14} />}
                       {getStatusLabel(request.status || '')}
                     </span>
-                    {request.message && (
-                      <div className="request-message">"{request.message}"</div>
-                    )}
                   </td>
                   <td>
                     {request.status?.toLowerCase() === 'pending' && (
@@ -285,7 +290,7 @@ export function HostMusicRequestsScreen() {
                       </div>
                     )}
                     {request.status?.toLowerCase() === 'rejected' && request.rejectReason && (
-                      <span className="reject-reason">Lý do: {request.rejectReason}</span>
+                      <span className="reject-reason">Lý do từ chối: {request.rejectReason}</span>
                     )}
                   </td>
                 </tr>

@@ -74,7 +74,8 @@ const TransactionHistory: React.FC = () => {
     .reduce((sum, t) => sum + t.amount, 0);
 
   return (
-    <div className="transaction-history-container">
+    <div className="transaction-history-page">
+      <div className="transaction-history-container">
       <div className="transaction-header-section">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -225,19 +226,20 @@ const TransactionHistory: React.FC = () => {
         )}
       </div>
 
-      <div className="pagination-area">
-        <p className="pagination-info">
-          Hiển thị 1 - {filteredTransactions.length} của {transactions.length}{" "}
-          giao dịch
-        </p>
-        <div className="pagination-btns">
-          <button disabled className="page-btn">
-            <ChevronLeft size={18} />
-          </button>
-          <button className="page-btn active">1</button>
-          <button disabled className="page-btn">
-            <ChevronRight size={18} />
-          </button>
+        <div className="pagination-area">
+          <p className="pagination-info">
+            Hiển thị 1 - {filteredTransactions.length} của {transactions.length}{" "}
+            giao dịch
+          </p>
+          <div className="pagination-btns">
+            <button disabled className="page-btn">
+              <ChevronLeft size={18} />
+            </button>
+            <button className="page-btn active">1</button>
+            <button disabled className="page-btn">
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -199,8 +199,43 @@
     color: #ef4444;
 }
 
+.mc-btn-icon + .mc-btn-icon {
+    margin-left: 6px;
+}
+
+.mc-btn-icon--edit:hover {
+    color: #0ea5e9;
+}
+
 [data-theme="dark"] .mc-btn-icon:hover {
     background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .mc-btn-icon--edit:hover {
+    color: #38bdf8;
+}
+
+.mc-edit-modal {
+    width: 560px;
+    max-width: 94vw;
+}
+
+.mc-edit-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #475569;
+}
+
+[data-theme="dark"] .mc-edit-label {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.mc-edit-textarea {
+    min-height: 140px;
+    resize: vertical;
+    margin-bottom: 0;
 }
 
 /* Modals */

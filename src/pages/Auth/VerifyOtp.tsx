@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./VerifyOtp.css";
 import logoLight from "../../assets/light_logo.png";
 import logoDark from "../../assets/dark_logo.png";
@@ -24,6 +24,13 @@ const VerifyOtp: React.FC = () => {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!email) {
+      showInfo("Thiếu thông tin xác thực", "Vui lòng đăng nhập lại để nhận mã OTP");
+      navigate("/login", { replace: true });
+    }
+  }, [email, navigate]);
 
   const startCooldown = () => {
     setResendCooldown(60);

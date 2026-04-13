@@ -3,6 +3,7 @@ import { Music, Search, CheckCircle, XCircle, Clock, User, Calendar, RefreshCw }
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import type { SongRequestResult } from "../../../services/liveSessionApiService";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
+import { RejectReasonModal } from "../../../components/common/RejectReasonModal";
 import './MusicRequestsScreen.css';
 
 type FilterStatus = 'All' | 'Pending' | 'Approved' | 'Rejected';
@@ -13,6 +14,11 @@ export function MusicRequestsScreen() {
   const [filter, setFilter] = useState<FilterStatus>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [rejectModal, setRejectModal] = useState<{ isOpen: boolean; requestId: string; songTitle: string }>({
+    isOpen: false,
+    requestId: "",
+    songTitle: "",
+  });
 
   useEffect(() => { loadRequests(); }, []);
 
@@ -42,16 +48,19 @@ export function MusicRequestsScreen() {
     }
   };
 
-  const handleReject = async (id: string) => {
+  const handleRejectConfirm = async (reason: string) => {
+    const id = rejectModal.requestId;
+    if (!id) return;
     setActionLoading(id);
     try {
-      await liveSessionApiService.reviewSongRequest(id, { action: "reject" });
-      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Rejected' } : r));
+      await liveSessionApiService.reviewSongRequest(id, { action: "reject", rejectReason: reason });
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Rejected', rejectReason: reason } : r));
       showSuccess("Thành công", "Yêu cầu đã bị từ chối");
     } catch {
       showError("Lỗi", "Không thể từ chối yêu cầu");
     } finally {
       setActionLoading(null);
+      setRejectModal({ isOpen: false, requestId: "", songTitle: "" });
     }
   };
 
@@ -182,13 +191,15 @@ export function MusicRequestsScreen() {
                     </div>
                   </td>
                   <td>
-                    {request.message && (
+                    {request.message ? (
                       <div className="req-message-cell" title={request.message}>
-                        "{request.message}"
+                        {request.message}
                       </div>
+                    ) : (
+                      <span className="req-message-empty">Không có lời nhắn</span>
                     )}
                     {request.rejectReason && (
-                      <div className="req-reject-cell">{request.rejectReason}</div>
+                      <div className="req-reject-cell">Lý do từ chối: {request.rejectReason}</div>
                     )}
                   </td>
                   <td>
@@ -213,7 +224,7 @@ export function MusicRequestsScreen() {
                         <button
                           className="action-btn reject"
                           disabled={actionLoading === request.id}
-                          onClick={() => handleReject(request.id)}
+                          onClick={() => setRejectModal({ isOpen: true, requestId: request.id, songTitle: request.songTitle || "Bài hát" })}
                         >
                           <XCircle size={14} />
                           Từ chối
@@ -227,6 +238,13 @@ export function MusicRequestsScreen() {
           </table>
         </div>
       )}
+
+      <RejectReasonModal
+        isOpen={rejectModal.isOpen}
+        songTitle={rejectModal.songTitle}
+        onConfirm={handleRejectConfirm}
+        onCancel={() => setRejectModal({ isOpen: false, requestId: "", songTitle: "" })}
+      />
     </div>
   );
 }
