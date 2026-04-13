@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Login.css";
 import logoLight from "../../assets/light_logo.png";
 import logoDark from "../../assets/dark_logo.png";
@@ -20,6 +20,14 @@ const Login: React.FC = () => {
   // EF-02: Field-level error state for empty-input highlighting
   const [fieldErrors, setFieldErrors] = useState({ emailOrUsername: false, password: false });
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
