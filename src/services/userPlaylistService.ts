@@ -40,12 +40,14 @@ export interface MusicCatalogItem {
 export interface PlaylistTrack {
   id: string;
   playlistId: string;
-  mediaId: string;
+  mediaId?: string;
+  mediaFileId?: string;
   title: string;
   artist: string;
   album?: string | null;
   artworkUrl?: string | null;
   fileUrl?: string | null;
+  fileType?: string;
   durationSeconds?: number;
   addedAt?: string;
 }
@@ -73,6 +75,15 @@ interface ApiResponse<T> {
   errorCode: string | null;
 }
 
+const normalizePlaylistTracks = (tracks: PlaylistTrack[] | null | undefined): PlaylistTrack[] => {
+  return (tracks ?? []).map((track) => ({
+    ...track,
+    // Backend may return either mediaId or mediaFileId depending on service version.
+    mediaId: track.mediaId ?? track.mediaFileId,
+    mediaFileId: track.mediaFileId ?? track.mediaId,
+  }));
+};
+
 const userPlaylistService = {
   /** GET /api/v1/userplaylist */
   getAll: async (): Promise<UserPlaylist[]> => {
@@ -99,13 +110,13 @@ const userPlaylistService = {
       const res = await api.get<ApiResponse<PlaylistTrack[]>>(
         `/userplaylist/${id}/tracks`,
       );
-      return res.data.data ?? [];
+      return normalizePlaylistTracks(res.data.data);
     } catch (error) {
       // If authenticated request fails, try public API for public playlists
       const res = await publicApi.get<ApiResponse<PlaylistTrack[]>>(
         `/userplaylist/${id}/tracks`,
       );
-      return res.data.data ?? [];
+      return normalizePlaylistTracks(res.data.data);
     }
   },
 
@@ -114,9 +125,11 @@ const userPlaylistService = {
     await api.post(`/userplaylist/${id}/tracks`, { mediaIds });
   },
 
-  /** DELETE /api/v1/userplaylist/{id}/tracks/{trackId} — Xoá track khỏi playlist */
+  /** DELETE /api/v1/userplaylist/{id}/tracks — Xoá track khỏi playlist */
   removeTrack: async (playlistId: string, mediaId: string): Promise<void> => {
-    await api.delete(`/userplaylist/${playlistId}/tracks/${mediaId}`);
+    await api.delete(`/userplaylist/${playlistId}/tracks`, {
+      data: { mediaIds: [mediaId] },
+    });
   },
 
   /** GET /api/v1/musiccatalog — Lấy danh sách nhạc hệ thống */

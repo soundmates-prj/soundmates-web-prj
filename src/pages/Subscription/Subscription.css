@@ -945,6 +945,12 @@
     gap: 20px;
   }
 
+  /* Reset grid-column for all cards */
+  .subscription-card.free,
+  .subscription-card.premium {
+    grid-column: auto;
+  }
+
   /* Elite spans full width — visually centered */
   .subscription-card.elite {
     grid-column: 1 / -1;
@@ -980,9 +986,11 @@
     padding: 8px 0 28px;
   }
 
+  /* Reset grid-column for all cards in single column layout */
   .subscription-card.elite,
   .subscription-card.free,
   .subscription-card.premium {
+    grid-column: auto;
     order: unset;
     transform: none !important;
   }

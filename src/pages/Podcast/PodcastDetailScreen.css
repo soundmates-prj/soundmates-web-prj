@@ -633,18 +633,17 @@
 }
 
 /* Duration badge */
-
 .pdd-ep-duration {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted, #94a3b8);
+  font-weight: 700;
+  color: #0e7fb5;
 }
 
 [data-theme="dark"] .pdd-ep-duration {
-  color: #64748b;
+  color: #55c5f1;
 }
 
 .pdd-ep-title {

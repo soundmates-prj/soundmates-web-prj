@@ -238,6 +238,14 @@ export const musicCatalogApi = {
     await azuracastApi.delete(`/station/${stationId}/file/${mediaId}`);
   },
 
+  async downloadMediaFile(stationId: number, mediaId: number): Promise<Blob> {
+    const response = await azuracastApi.get(
+      `/station/${stationId}/file/${mediaId}/download`,
+      { responseType: "blob" },
+    );
+    return response.data as Blob;
+  },
+
   async uploadMediaFile(
     stationId: number,
     formData: FormData,

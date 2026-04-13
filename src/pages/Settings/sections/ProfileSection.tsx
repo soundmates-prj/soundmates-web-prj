@@ -335,7 +335,7 @@ const CropModal: React.FC<CropModalProps> = ({
    ProfileSection Component
 ───────────────────────────────────────────── */
 const defaultAv = "https://ui-avatars.com/api/?name=User&background=55C5F1&color=fff";
-const defaultCover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=1000";
+const defaultCover = "https://images.unsplash.com/photo-1511376777868-611b54f68947?w=1200&q=80";
 
 const ProfileSection: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);

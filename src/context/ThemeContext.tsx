@@ -60,6 +60,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const root = document.documentElement;
 
+    // Reset advanced background tokens to avoid stale values from previous themes.
+    root.style.removeProperty('--user-theme-bg-image');
+    root.style.removeProperty('--user-theme-bg-size');
+    root.style.removeProperty('--user-theme-bg-repeat');
+
     // Core project variables - using custom namespace to not break global UI
     root.style.setProperty('--user-theme-primary', theme.primaryColor || '#55C5F1');
 
@@ -82,26 +87,33 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (theme.fontFamily) root.style.setProperty('--user-theme-font', theme.fontFamily);
 
-    if (theme.configJson) {
-      if (theme.configJson.borderRadius) {
-        root.style.setProperty('--user-theme-radius', theme.configJson.borderRadius);
+    const config = theme.configJson;
+
+    if (config) {
+      if (config.borderRadius) {
+        root.style.setProperty('--user-theme-radius', config.borderRadius);
       }
-      if (theme.configJson.boxShadow) {
-        root.style.setProperty('--user-theme-shadow', theme.configJson.boxShadow);
-      }
-      if (theme.configJson.backgroundImage) {
-        root.style.setProperty('--user-theme-bg-image', `url("${theme.configJson.backgroundImage}")`);
-      }
-      if (theme.configJson.backgroundSize) {
-        root.style.setProperty('--user-theme-bg-size', theme.configJson.backgroundSize);
+      if (config.boxShadow) {
+        root.style.setProperty('--user-theme-shadow', config.boxShadow);
       }
 
-      // If the theme wants cover, it probably shouldn't repeat
-      if (theme.configJson.backgroundSize === 'cover') {
-        root.style.setProperty('--user-theme-bg-repeat', 'no-repeat');
-      } else {
-        root.style.setProperty('--user-theme-bg-repeat', 'repeat');
+      const backgroundImage = config.backgroundImage || theme.backgroundImage;
+      if (backgroundImage) {
+        root.style.setProperty('--user-theme-bg-image', `url("${backgroundImage}")`);
       }
+
+      const backgroundSize = config.backgroundSize || 'cover';
+      root.style.setProperty('--user-theme-bg-size', backgroundSize);
+
+      const backgroundRepeat = config.backgroundRepeat || (backgroundSize === 'cover' ? 'no-repeat' : 'repeat');
+      root.style.setProperty('--user-theme-bg-repeat', backgroundRepeat);
+    } else if (theme.backgroundImage) {
+      root.style.setProperty('--user-theme-bg-image', `url("${theme.backgroundImage}")`);
+      root.style.setProperty('--user-theme-bg-size', 'cover');
+      root.style.setProperty('--user-theme-bg-repeat', 'no-repeat');
+    } else {
+      root.style.setProperty('--user-theme-bg-size', 'cover');
+      root.style.setProperty('--user-theme-bg-repeat', 'no-repeat');
     }
 
     setModeState(theme.mode); // Sync mode

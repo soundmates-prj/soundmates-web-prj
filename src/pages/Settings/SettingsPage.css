@@ -1,6 +1,6 @@
 .settings-container {
   min-height: 100vh;
-  background: var(--bg-primary);
+  background-color: var(--bg-primary);
   padding: 24px;
 }
 

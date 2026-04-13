@@ -3,6 +3,7 @@ import {
   ListMusic,
   RefreshCw,
   Plus,
+  Pencil,
   ChevronRight,
   ArrowDownToLine,
   Music,
@@ -35,9 +36,15 @@ export function PlaylistsScreen() {
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showAddTracksModal, setShowAddTracksModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [newPlaylistDesc, setNewPlaylistDesc] = useState("");
+  const [editPlaylistName, setEditPlaylistName] = useState("");
+  const [editIsAutoPlay, setEditIsAutoPlay] = useState(false);
+  const [editIncludeInRequests, setEditIncludeInRequests] = useState(false);
+  const [editIncludeInOnDemand, setEditIncludeInOnDemand] = useState(false);
+  const [editIsEnabled, setEditIsEnabled] = useState(true);
 
   useEffect(() => {
     loadStations();
@@ -115,6 +122,65 @@ export function PlaylistsScreen() {
       setPlaylists(data);
     } catch {
       showError("Lỗi", "Không thể tạo playlist");
+    }
+  };
+
+  const openEditPlaylistModal = () => {
+    if (!selectedPlaylist) return;
+
+    setEditPlaylistName(selectedPlaylist.playlistName ?? "");
+    setEditIsAutoPlay(Boolean(selectedPlaylist.isAutoPlay));
+    setEditIncludeInRequests(Boolean(selectedPlaylist.includeInRequests));
+    setEditIncludeInOnDemand(Boolean(selectedPlaylist.includeInOnDemand));
+    setEditIsEnabled(selectedPlaylist.isEnabled ?? true);
+    setShowEditModal(true);
+  };
+
+  const handleUpdatePlaylist = async () => {
+    if (!selectedPlaylist || !selectedStation || !editPlaylistName.trim()) {
+      return;
+    }
+
+    try {
+      await liveSessionApiService.updatePlaylist(selectedPlaylist.id, {
+        playlistName: editPlaylistName.trim(),
+        isAutoPlay: editIsAutoPlay,
+        includeInRequests: editIncludeInRequests,
+        includeInOnDemand: editIncludeInOnDemand,
+        isEnabled: editIsEnabled,
+      });
+
+      const updatedPlaylists = await liveSessionApiService.getStationPlaylists(selectedStation.id);
+      setPlaylists(updatedPlaylists);
+
+      const updatedSelected = updatedPlaylists.find((pl) => pl.id === selectedPlaylist.id) ?? null;
+      setSelectedPlaylist(updatedSelected);
+
+      setShowEditModal(false);
+      showSuccess("Cập nhật thành công", `Playlist "${editPlaylistName.trim()}" đã được cập nhật`);
+    } catch {
+      showError("Lỗi", "Không thể cập nhật playlist");
+    }
+  };
+
+  const handleDeletePlaylist = async () => {
+    if (!selectedPlaylist || !selectedStation) return;
+
+    if (!window.confirm(`Bạn có chắc chắn muốn xoá playlist \"${selectedPlaylist.playlistName}\"?`)) {
+      return;
+    }
+
+    try {
+      await liveSessionApiService.deletePlaylist(selectedPlaylist.id);
+
+      const updatedPlaylists = await liveSessionApiService.getStationPlaylists(selectedStation.id);
+      setPlaylists(updatedPlaylists);
+      setSelectedPlaylist(null);
+      setTracks([]);
+
+      showSuccess("Đã xoá", "Playlist đã được xoá thành công");
+    } catch {
+      showError("Lỗi", "Không thể xoá playlist");
     }
   };
 
@@ -228,19 +294,27 @@ export function PlaylistsScreen() {
         );
       }
 
-      // Bước 2: Refresh station music để lấy media mới
-      const stationMedia = await liveSessionApiService.getStationMusic(selectedStation.id);
-      setStationMusic(stationMedia);
+      // Bước 2: Refresh station music để lấy media đã import hoặc đã map trước đó
+      const refreshedStationMedia = await liveSessionApiService.getStationMusic(selectedStation.id);
+      setStationMusic(refreshedStationMedia);
 
-      // Bước 3: Lấy các media mới được import (có ExternalMediaId)
-      // và thêm vào playlist
-      const importedMediaIds = importResult.importedItems
-        .map((item) => item.mediaFileId)
-        .filter((id) => !existingIds.has(id));
+      // Bước 3: Chỉ add những bài thực sự đã có trong station media
+      const stationMediaIds = new Set(refreshedStationMedia.map((item) => item.id));
+      const readyToAddIds = idsToAdd.filter(
+        (id) => stationMediaIds.has(id) && !existingIds.has(id)
+      );
 
-      if (importedMediaIds.length > 0) {
-        await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, importedMediaIds);
-        showSuccess("Đã thêm", `Đã thêm ${importedMediaIds.length} bài vào playlist`);
+      if (readyToAddIds.length > 0) {
+        await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, readyToAddIds);
+        showSuccess("Đã thêm", `Đã thêm ${readyToAddIds.length} bài vào playlist`);
+      }
+
+      const unresolvedCount = idsToAdd.length - readyToAddIds.length;
+      if (unresolvedCount > 0) {
+        showError(
+          "Một số bài chưa sẵn sàng",
+          `${unresolvedCount} bài chưa import được vào station nên chưa thêm playlist.`
+        );
       }
 
       // Refresh playlist tracks
@@ -366,10 +440,20 @@ export function PlaylistsScreen() {
                     <p className="pl-detail-desc">{selectedPlaylist.description}</p>
                   )}
                 </div>
-                <button className="staff-btn staff-btn--outline" onClick={handleOpenAddTracks}>
-                  <Plus size={15} />
-                  Thêm nhạc
-                </button>
+                <div className="pl-detail-actions">
+                  <button className="staff-btn staff-btn--outline" onClick={openEditPlaylistModal}>
+                    <Pencil size={15} />
+                    Sửa playlist
+                  </button>
+                  <button className="staff-btn staff-btn--outline" onClick={handleDeletePlaylist}>
+                    <Trash2 size={15} />
+                    Xoá playlist
+                  </button>
+                  <button className="staff-btn staff-btn--primary" onClick={handleOpenAddTracks}>
+                    <Plus size={15} />
+                    Thêm nhạc
+                  </button>
+                </div>
               </div>
 
               {loadingTracks ? (
@@ -452,13 +536,96 @@ export function PlaylistsScreen() {
         </div>
       )}
 
+      {/* Edit Playlist Modal */}
+      {showEditModal && (
+        <div className="staff-modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="staff-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="staff-modal-header">
+              <h3>Chỉnh sửa Playlist</h3>
+              <button className="staff-modal-close" onClick={() => setShowEditModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="staff-modal-body">
+              <label className="staff-label">Tên playlist</label>
+              <input
+                className="staff-input"
+                value={editPlaylistName}
+                onChange={(e) => setEditPlaylistName(e.target.value)}
+                placeholder="Nhập tên playlist..."
+                autoFocus
+              />
+
+              <div className="pl-edit-options">
+                <label className="pl-edit-option">
+                  <input
+                    type="checkbox"
+                    checked={editIsAutoPlay}
+                    onChange={(e) => setEditIsAutoPlay(e.target.checked)}
+                  />
+                  <span>Tự động phát (AutoPlay)</span>
+                </label>
+
+                <label className="pl-edit-option">
+                  <input
+                    type="checkbox"
+                    checked={editIncludeInRequests}
+                    onChange={(e) => setEditIncludeInRequests(e.target.checked)}
+                  />
+                  <span>Cho phép request bài hát</span>
+                </label>
+
+                <label className="pl-edit-option">
+                  <input
+                    type="checkbox"
+                    checked={editIncludeInOnDemand}
+                    onChange={(e) => setEditIncludeInOnDemand(e.target.checked)}
+                  />
+                  <span>Hiển thị trong On-demand</span>
+                </label>
+
+                <label className="pl-edit-option">
+                  <input
+                    type="checkbox"
+                    checked={editIsEnabled}
+                    onChange={(e) => setEditIsEnabled(e.target.checked)}
+                  />
+                  <span>Kích hoạt playlist</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="staff-modal-footer">
+              <button className="staff-btn staff-btn--outline" onClick={() => setShowEditModal(false)}>
+                Huỷ
+              </button>
+              <button
+                className="staff-btn staff-btn--primary"
+                onClick={handleUpdatePlaylist}
+                disabled={!editPlaylistName.trim()}
+              >
+                Lưu thay đổi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Tracks Modal */}
       {showAddTracksModal && (
-        <div className="staff-modal-overlay" onClick={() => setShowAddTracksModal(false)}>
+        <div
+          className="staff-modal-overlay"
+          onClick={() => !musicActionLoading && setShowAddTracksModal(false)}
+        >
           <div className="staff-modal staff-modal--wide" onClick={(e) => e.stopPropagation()}>
             <div className="staff-modal-header">
               <h3>Thêm nhạc vào "{selectedPlaylist?.playlistName}"</h3>
-              <button className="staff-modal-close" onClick={() => setShowAddTracksModal(false)}>
+              <button
+                className="staff-modal-close"
+                onClick={() => setShowAddTracksModal(false)}
+                disabled={musicActionLoading}
+              >
                 <X size={18} />
               </button>
             </div>
@@ -542,18 +709,22 @@ export function PlaylistsScreen() {
                     onClick={handleImportSystemMediaBatch}
                     disabled={selectedSystemMediaIds.length === 0 || musicActionLoading}
                   >
-                    Import vào Station
+                    {musicActionLoading ? "Đang xử lý..." : "Import vào Station"}
                   </button>
                   <button
                     className="staff-btn staff-btn--primary"
                     onClick={handleAddSelectedSystemToPlaylist}
                     disabled={selectedSystemMediaIds.length === 0 || musicActionLoading}
                   >
-                    Add to Station Playlist
+                    {musicActionLoading ? "Đang xử lý..." : "Add to Station Playlist"}
                   </button>
                 </>
               )}
-              <button className="staff-btn staff-btn--outline" onClick={() => setShowAddTracksModal(false)}>
+              <button
+                className="staff-btn staff-btn--outline"
+                onClick={() => setShowAddTracksModal(false)}
+                disabled={musicActionLoading}
+              >
                 Đóng
               </button>
             </div>
