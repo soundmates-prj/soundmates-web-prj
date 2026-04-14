@@ -3,6 +3,15 @@
   height: 100vh;
   font-family: "Inter", sans-serif;
 
+/* Theme variables for mobile logo */
+:root {
+  --mobile-logo: url('../../assets/light_logo.png');
+}
+
+[data-theme='dark'] {
+  --mobile-logo: url('../../assets/dark_logo.png');
+}
+
 /* LEFT */
 .verify-left {
   flex: 1;
@@ -242,4 +251,62 @@
 
 [data-theme='dark'] .verify-container .verify-card .btn-primary:hover {
   background: linear-gradient(135deg, #3AA8D4 0%, #55C5F1 100%) !important;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .verify-container .verify-left {
+    display: none;
+  }
+
+  .verify-container .verify-right {
+    flex: 1;
+    position: relative;
+  }
+
+  /* Show logo on mobile */
+  .verify-container .verify-right::before {
+    content: '';
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    background-image: var(--mobile-logo);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 1;
+  }
+
+  .verify-container .verify-card {
+    width: min(500px, calc(100vw - 32px));
+    padding: 32px;
+    margin-top: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .verify-container .verify-right::before {
+    width: 64px;
+    height: 64px;
+    top: 20px;
+  }
+
+  .verify-container .verify-card {
+    width: calc(100vw - 24px);
+    padding: 24px;
+    margin-top: 90px;
+  }
+
+  .verify-container .otp-group {
+    gap: 8px;
+  }
+
+  .verify-container .otp-box {
+    width: 42px;
+    height: 46px;
+    font-size: 20px;
+  }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Register.css";
 import logoLight from "../../assets/light_logo.png";
 import logoDark from "../../assets/dark_logo.png";
@@ -14,6 +14,14 @@ const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
 
   const [form, setForm] = useState({
     firstName: "",

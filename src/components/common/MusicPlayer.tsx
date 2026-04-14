@@ -32,11 +32,12 @@ export function MusicPlayer() {
     elapsed,
     toggle,
     setVolume,
+    setElapsed,
     toggleMute,
     leaveSession,
     setTrack,
     setIsPlaying,
-    audioRef,
+    audioRef: ctxAudioRef,
   } = usePlayer();
 
   const location = useLocation();
@@ -68,6 +69,24 @@ export function MusicPlayer() {
   const [selectedPodcastId, setSelectedPodcastId] = useState<string | null>(null);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
 
+  // ─── Poll audio.currentTime directly from the shared audio element ────────
+  // liveAudioRef: Audio instance owned by LiveRoomPage (live session playback).
+  // ctxAudioRef:  Audio instance owned by PlayerContext (podcasts, on-demand).
+  // Poll non-live audio to keep PlayerContext.elapsed in sync (podcasts/on-demand).
+  // For live sessions, LiveRoomPage publishes server-calibrated elapsed via player.setElapsed.
+  useEffect(() => {
+    const tick = () => {
+      const live = (window as any).__liveAudioRef;
+      const srcAudio = (live ?? ctxAudioRef.current) as HTMLAudioElement | null | undefined;
+      if (srcAudio && !live) {
+        setElapsed(srcAudio.currentTime);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 250); // 4×/s is enough for smooth display
+    return () => clearInterval(id);
+  }, [ctxAudioRef, setElapsed]);
+
   // Reset favorite when track changes
   useEffect(() => { setIsFavorite(false); }, [track?.title]);
 
@@ -95,22 +114,38 @@ export function MusicPlayer() {
       showToast.error("Tập podcast chưa có file audio");
       return;
     }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
+    if (ctxAudioRef.current) {
+      ctxAudioRef.current.pause();
+      ctxAudioRef.current = null;
     }
     const audio = new Audio(ep.audioUrl);
-    audioRef.current = audio;
+    ctxAudioRef.current = audio;
     audio.volume = volume / 100;
+    const baseDuration = ep.duration ?? 0;
     setTrack({
       title: ep.title,
       artist: "Podcast",
       artUrl: ep.thumbnailUrl || PLACEHOLDER_ART,
-      duration: 0,
+      duration: baseDuration,
       elapsed: 0,
       listenUrl: ep.audioUrl,
     });
-    audio.play().then(() => setIsPlaying(true)).catch(() => {});
+    audio.onloadedmetadata = () => {
+      const d = Math.max(0, Math.floor(audio.duration || 0));
+      if (d > 0 && d !== baseDuration) {
+        setTrack({
+          title: ep.title,
+          artist: "Podcast",
+          artUrl: ep.thumbnailUrl || PLACEHOLDER_ART,
+          duration: d,
+          elapsed: 0,
+          listenUrl: ep.audioUrl,
+        });
+      }
+    };
+    audio.play().then(() => setIsPlaying(true)).catch((err) => {
+      showToast.error(`Không phát được podcast: ${String(err?.message ?? err ?? "Unknown error")}`);
+    });
   };
 
   /* ── Pause when navigating to auth pages ─────────────────────────────── */
@@ -132,8 +167,10 @@ export function MusicPlayer() {
   };
 
   const duration = track?.duration ?? 0;
+  const displayElapsed = Math.max(0, duration > 0 ? Math.min(elapsed, duration) : elapsed);
+  // Progress bar now uses the synchronized PlayerContext elapsed.
   const progressPct =
-    duration > 0 ? Math.min((elapsed / duration) * 100, 100) : 0;
+    duration > 0 ? Math.min((displayElapsed / duration) * 100, 100) : 0;
 
   const title = track?.title ?? "Chưa có bài phát";
   const artist = track?.artist ?? "...";
@@ -202,7 +239,7 @@ export function MusicPlayer() {
 
           {/* Center Section */}
           <div className="center-section">
-            <span className="time-display">{fmt(elapsed)}</span>
+            <span className="time-display">{fmt(displayElapsed)}</span>
 
             <button
               className="play-button-clean"
