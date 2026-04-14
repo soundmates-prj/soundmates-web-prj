@@ -230,10 +230,7 @@ class LiveHubService {
   getConnection(): signalR.HubConnection {
     if (!this.connection) {
       this.connection = new signalR.HubConnectionBuilder()
-        .withUrl(LIVE_HUB_URL, {
-          skipNegotiation: true,
-          transport: signalR.HttpTransportType.WebSockets,
-        })
+        .withUrl(LIVE_HUB_URL)
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
         .configureLogging(signalR.LogLevel.Debug)
         .build();
