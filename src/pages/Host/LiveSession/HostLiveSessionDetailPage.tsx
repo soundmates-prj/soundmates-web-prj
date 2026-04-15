@@ -108,13 +108,14 @@ export default function HostLiveSessionDetailPage() {
     const currentUserId = getCurrentUserId();
     
     const offChatHistory = liveHubService.onChatHistory((history) => {
+      console.log("[HostLiveSessionDetail] ChatHistory RAW:", history);
       const mapped = history.map((chat: any) => ({
         id: chat.id || chat.Id || `hub-${Date.now()}-${Math.random()}`,
         userId: chat.userId || chat.UserId || "",
         userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
         avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
-        message: chat.message,
-        createdAt: chat.createdAt || new Date().toISOString()
+        message: chat.message || chat.Message,
+        createdAt: chat.createdAt || chat.CreatedAt || new Date().toISOString()
       }));
       setChats(mapped);
     });
@@ -124,13 +125,14 @@ export default function HostLiveSessionDetailPage() {
     });
 
     const offReceiveChat = liveHubService.onReceiveChat((chat: any) => {
+      console.log("[HostLiveSessionDetail] ReceiveChat RAW:", chat);
       const mapped: DisplayChat = {
         id: chat.id || chat.Id || `hub-${Date.now()}-${Math.random()}`,
         userId: chat.userId || chat.UserId || "",
         userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
         avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
-        message: chat.message,
-        createdAt: chat.createdAt || new Date().toISOString()
+        message: chat.message || chat.Message,
+        createdAt: chat.createdAt || chat.CreatedAt || new Date().toISOString()
       };
       setChats(prev => [...prev, mapped]);
     });
@@ -231,11 +233,13 @@ export default function HostLiveSessionDetailPage() {
     if (!sessionId) return;
     if (!window.confirm("Bạn muốn xóa tin nhắn này?")) return;
     const userId = getCurrentUserId();
+    console.log("[HostLiveSessionDetail] Attempting to DeleteChat:", { sessionId, chatId, userId });
     try {
       await liveHubService.deleteChat(sessionId, chatId, userId, "Host");
-      showSuccess("Đã yêu cầu xóa tin nhắn");
-    } catch {
-      showError("Lỗi", "Không thể xóa tin nhắn");
+      showSuccess("Đã yêu cầu xóa tin nhắn (ID = " + chatId.slice(0, 8) + "...)");
+    } catch (err) {
+      console.error("[HostLiveSessionDetail] DeleteChat error:", err);
+      showError("Lỗi", "Không thể xóa tin nhắn. Vui lòng xem Console.");
     }
   };
 
