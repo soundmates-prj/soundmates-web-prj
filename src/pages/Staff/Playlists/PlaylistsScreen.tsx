@@ -352,20 +352,20 @@ export function PlaylistsScreen() {
 
       // Bước 3: Chỉ add những bài thực sự đã có trong station media
       const stationMediaIds = new Set(
-        refreshedStationMedia.map((item) => item.id),
+        stationMedia.map((item) => item.id),
       );
       const readyToAddIds = idsToAdd.filter(
         (id) => stationMediaIds.has(id) && !existingIds.has(id),
       );
 
-      if (importedMediaIds.length > 0) {
+      if (readyToAddIds.length > 0) {
         await liveSessionApiService.addTracksToPlaylist(
           selectedPlaylist.id,
-          importedMediaIds,
+          readyToAddIds,
         );
         showSuccess(
           "Đã thêm",
-          `Đã thêm ${importedMediaIds.length} bài vào playlist`,
+          `Đã thêm ${readyToAddIds.length} bài vào playlist`,
         );
       }
 
