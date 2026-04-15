@@ -32,7 +32,7 @@ interface LiveSessionContextValue {
   resumeSession: (sessionId: string) => Promise<void>;
   stopSession: (sessionId: string) => Promise<void>;
   leaveSession: (sessionId: string) => void;
-  sendChat: (sessionId: string, userId: string, message: string) => void;
+  sendChat: (sessionId: string, userId: string, message: string, userName?: string) => void;
 }
 
 const LiveSessionContext = createContext<LiveSessionContextValue | null>(null);
@@ -219,8 +219,8 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     setChatMessages([]);
   }, []);
 
-  const sendChat = useCallback((sessionId: string, userId: string, message: string) => {
-    void liveHubService.sendChat(sessionId, userId, message);
+  const sendChat = useCallback((sessionId: string, userId: string, message: string, userName?: string) => {
+    void liveHubService.sendChat(sessionId, userId, message, userName);
   }, []);
 
   return (
