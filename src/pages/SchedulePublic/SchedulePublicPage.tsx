@@ -15,12 +15,15 @@ import { liveSessionApiService } from "../../services/liveSessionApiService";
 import type { SessionScheduleResult } from "../../services/liveSessionApiService";
 import "./SchedulePublicPage.css";
 
+const WEEKDAY_LABELS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+type StatusClass = "live" | "upcoming" | "ended";
+
 export default function SchedulePublicPage() {
   const [schedules, setSchedules] = useState<SessionScheduleResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  /* ── Fetch tất cả lịch từ GET /api/v1/schedule ── */
   useEffect(() => {
     fetchSchedules();
   }, []);
@@ -29,13 +32,14 @@ export default function SchedulePublicPage() {
     setLoading(true);
     try {
       const data = await liveSessionApiService.getSchedules();
-      // Sort by startDate + startTime (both DateOnly/TimeOnly strings, sortable lexicographically)
+      // startDate (DateOnly) + startTime (TimeOnly) là chuỗi ISO-like nên so sánh
+      // lexicographical = so sánh theo thứ tự thời gian, không cần parse Date.
       setSchedules(
-        [...data].sort((a, b) => {
-          const aKey = `${a.startDate}${a.startTime}`;
-          const bKey = `${b.startDate}${b.startTime}`;
-          return aKey.localeCompare(bKey);
-        }),
+        [...data].sort((a, b) =>
+          `${a.startDate}${a.startTime}`.localeCompare(
+            `${b.startDate}${b.startTime}`,
+          ),
+        ),
       );
     } catch (err) {
       console.error("Failed to fetch schedules:", err);
@@ -44,128 +48,87 @@ export default function SchedulePublicPage() {
     }
   };
 
-  /* ── Helpers ── */
-  // Format TimeOnly "HH:mm:ss" → "HH:mm"
+  /* ── Formatters ─────────────────────────────────────────── */
   const formatTime = (timeOnly: string) => timeOnly.substring(0, 5);
 
-  // Format DateOnly "yyyy-MM-dd" → "Thứ X, dd/MM/yyyy"
   const formatDateLabel = (dateOnly: string) => {
-    const d = new Date(dateOnly + "T00:00:00");
-    const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-    return `${weekdays[d.getDay()]}, ${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+    const d = new Date(`${dateOnly}T00:00:00`);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${WEEKDAY_LABELS[d.getDay()]}, ${dd}/${mm}/${d.getFullYear()}`;
   };
 
-  // Compute a full Date for a schedule occurrence
-  const scheduleDate = (sch: SessionScheduleResult): Date => {
-    return new Date(`${sch.startDate}T${sch.startTime}`);
-  };
+  /* ── Status helpers ─────────────────────────────────────── */
+  const scheduleStart = (sch: SessionScheduleResult) =>
+    new Date(`${sch.startDate}T${sch.startTime}`);
+  const scheduleEnd = (sch: SessionScheduleResult) =>
+    new Date(`${sch.startDate}T${sch.endTime}`);
 
-  // Check if schedule is live right now (based on liveSession status OR time overlap)
+  // "Live" khi BE đã mark Live, hoặc BE mark Scheduled nhưng hiện tại rơi vào
+  // khung giờ phát — tránh hiển thị Live cho phiên đã Cancel/Ended.
   const isLiveNow = (sch: SessionScheduleResult) => {
     if (sch.liveSession?.status === "Live") return true;
     if (sch.liveSession?.status !== "Scheduled") return false;
-    const start = scheduleDate(sch);
-    const end = new Date(`${sch.startDate}T${sch.endTime}`);
     const now = new Date();
-    return start <= now && now <= end;
+    return scheduleStart(sch) <= now && now <= scheduleEnd(sch);
   };
 
   const isUpcoming = (sch: SessionScheduleResult) =>
-    scheduleDate(sch) > new Date();
+    scheduleStart(sch) > new Date();
+  const isPast = (sch: SessionScheduleResult) => scheduleEnd(sch) < new Date();
 
-  const isPast = (sch: SessionScheduleResult) => {
-    const end = new Date(`${sch.startDate}T${sch.endTime}`);
-    return end < new Date();
+  const getStatus = (
+    sch: SessionScheduleResult,
+  ): { label: string; cls: StatusClass } => {
+    if (isLiveNow(sch)) return { label: "Đang phát", cls: "live" };
+    if (isUpcoming(sch)) return { label: "Sắp diễn ra", cls: "upcoming" };
+    return { label: "Đã kết thúc", cls: "ended" };
   };
 
-  const getStatusLabel = (sch: SessionScheduleResult) => {
-    if (isLiveNow(sch)) return { label: "Đang phát", cls: "live" as const };
-    if (isUpcoming(sch)) return { label: "Sắp diễn ra", cls: "upcoming" as const };
-    return { label: "Đã kết thúc", cls: "ended" as const };
-  };
-
-  /* Nhóm theo startDate (DateOnly string) */
+  /* ── Derived data ───────────────────────────────────────── */
   const grouped = schedules.reduce<Record<string, SessionScheduleResult[]>>(
     (acc, s) => {
-      if (!acc[s.startDate]) acc[s.startDate] = [];
-      acc[s.startDate].push(s);
+      (acc[s.startDate] ||= []).push(s);
       return acc;
     },
     {},
   );
-
   const sortedDays = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+  const liveSchedules = schedules.filter(isLiveNow);
 
-  /* Phân trang tháng */
+  /* ── Mini calendar ──────────────────────────────────────── */
   const prevMonth = () =>
     setCurrentMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
   const nextMonth = () =>
     setCurrentMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
 
-  const daysInMonth = new Date(
-    currentMonth.getFullYear(),
-    currentMonth.getMonth() + 1,
-    0,
-  ).getDate();
-  const firstDayOfWeek = new Date(
-    currentMonth.getFullYear(),
-    currentMonth.getMonth(),
-    1,
-  ).getDay();
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
 
-  /* Ngày có lịch trong tháng đang xem — dùng startDate */
+  // Chỉ lấy ngày có schedule thuộc đúng tháng đang xem để chấm dot trên lịch
   const scheduleDays = new Set(
     schedules
       .filter((s) => {
-        const d = new Date(s.startDate + "T00:00:00");
-        return (
-          d.getFullYear() === currentMonth.getFullYear() &&
-          d.getMonth() === currentMonth.getMonth()
-        );
+        const d = new Date(`${s.startDate}T00:00:00`);
+        return d.getFullYear() === year && d.getMonth() === month;
       })
-      .map((s) => new Date(s.startDate + "T00:00:00").getDate()),
+      .map((s) => new Date(`${s.startDate}T00:00:00`).getDate()),
   );
 
-  /* Live schedule for hero highlight */
-  const liveSchedules = schedules.filter(isLiveNow);
+  const today = new Date();
+  const isToday = (day: number) =>
+    day === today.getDate() &&
+    month === today.getMonth() &&
+    year === today.getFullYear();
 
-  /* ── Render ── */
+  /* ── Render ─────────────────────────────────────────────── */
   return (
     <div className="sp-page">
-      {/* Hero */}
-      <div className="sp-hero">
-        <div className="sp-hero-bg" />
-        <div className="sp-hero-inner">
-          <span className="sp-hero-badge">
-            <Calendar size={13} /> Lịch phát sóng
-          </span>
-          <h1 className="sp-hero-title">Lịch Live SoundMates</h1>
-          <p className="sp-hero-sub">
-            Theo dõi tất cả các phiên phát sóng trực tiếp sắp diễn ra
-          </p>
-          {liveSchedules.length > 0 && (
-            <div className="sp-live-badge-row">
-              {liveSchedules.slice(0, 3).map((sch) => (
-                <div key={sch.id} className="sp-live-badge">
-                  <span className="sp-hero-live-dot" />
-                  <span className="sp-live-name">
-                    {sch.liveSession?.sessionName || sch.title || "Phiên đang phát"}
-                  </span>
-                  {sch.liveSession?.station?.stationName && (
-                    <span className="sp-live-station">
-                      <Radio size={10} />
-                      {sch.liveSession.station.stationName}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      <Hero liveSchedules={liveSchedules} />
 
       <div className="sp-layout">
-        {/* Calendar mini */}
         <aside className="sp-sidebar">
           <div className="sp-cal-card">
             <div className="sp-cal-nav">
@@ -184,32 +147,27 @@ export default function SchedulePublicPage() {
             </div>
 
             <div className="sp-cal-grid">
-              {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map((d) => (
+              {WEEKDAY_LABELS.map((d) => (
                 <div key={d} className="sp-cal-weekday">
                   {d}
                 </div>
               ))}
 
-              {/* Empty cells */}
+              {/* Padding ô trống trước ngày 1 để ngày đầu tháng thẳng cột weekday */}
               {Array.from({ length: firstDayOfWeek }).map((_, i) => (
                 <div key={`e-${i}`} />
               ))}
 
-              {/* Day cells */}
               {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(
                 (day) => {
-                  const isToday =
-                    day === new Date().getDate() &&
-                    currentMonth.getMonth() === new Date().getMonth() &&
-                    currentMonth.getFullYear() === new Date().getFullYear();
-                  const hasSchedule = scheduleDays.has(day);
+                  const hasEvent = scheduleDays.has(day);
                   return (
                     <div
                       key={day}
-                      className={`sp-cal-day ${isToday ? "today" : ""} ${hasSchedule ? "has-event" : ""}`}
+                      className={`sp-cal-day ${isToday(day) ? "today" : ""} ${hasEvent ? "has-event" : ""}`}
                     >
                       {day}
-                      {hasSchedule && <span className="sp-cal-dot" />}
+                      {hasEvent && <span className="sp-cal-dot" />}
                     </div>
                   );
                 },
@@ -221,32 +179,26 @@ export default function SchedulePublicPage() {
             </div>
           </div>
 
-          {/* Stats */}
           <div className="sp-stat-card">
-            <div className="sp-stat-item">
-              <span className="sp-stat-num sp-stat-num--live">
-                {schedules.filter(isLiveNow).length}
-              </span>
-              <span className="sp-stat-lbl">Đang phát</span>
-            </div>
+            <Stat
+              value={schedules.filter(isLiveNow).length}
+              label="Đang phát"
+              variant="live"
+            />
             <div className="sp-stat-divider" />
-            <div className="sp-stat-item">
-              <span className="sp-stat-num">
-                {schedules.filter(isUpcoming).length}
-              </span>
-              <span className="sp-stat-lbl">Sắp diễn ra</span>
-            </div>
+            <Stat
+              value={schedules.filter(isUpcoming).length}
+              label="Sắp diễn ra"
+            />
             <div className="sp-stat-divider" />
-            <div className="sp-stat-item">
-              <span className="sp-stat-num sp-stat-num--ended">
-                {schedules.filter(isPast).length}
-              </span>
-              <span className="sp-stat-lbl">Đã kết thúc</span>
-            </div>
+            <Stat
+              value={schedules.filter(isPast).length}
+              label="Đã kết thúc"
+              variant="ended"
+            />
           </div>
         </aside>
 
-        {/* Timeline */}
         <main className="sp-main">
           <div className="sp-toolbar">
             <span className="sp-toolbar-info">
@@ -277,7 +229,6 @@ export default function SchedulePublicPage() {
             <div className="sp-timeline">
               {sortedDays.map((day) => (
                 <div key={day} className="sp-day-group">
-                  {/* Day label */}
                   <div className="sp-day-label">
                     <Calendar size={13} />
                     {formatDateLabel(day)}
@@ -286,108 +237,15 @@ export default function SchedulePublicPage() {
                     </span>
                   </div>
 
-                  {/* Items */}
                   <div className="sp-items">
-                    {grouped[day].map((sch) => {
-                      const status = getStatusLabel(sch);
-                      const isLive = status.cls === "live";
-                      return (
-                        <div
-                          key={sch.id}
-                          className={`sp-item sp-item--${status.cls}`}
-                        >
-                          {/* Thumbnail */}
-                          {sch.liveSession?.thumbnailUrl && (
-                            <div className="sp-item-thumb">
-                              <img
-                                src={sch.liveSession.thumbnailUrl}
-                                alt={sch.liveSession.sessionName}
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = "none";
-                                }}
-                              />
-                            </div>
-                          )}
-
-                          {/* Time strip */}
-                          <div className="sp-item-time">
-                            <span className="sp-time-start">
-                              {formatTime(sch.startTime)}
-                            </span>
-                            <div className="sp-time-line" />
-                            <span className="sp-time-end">
-                              {formatTime(sch.endTime)}
-                            </span>
-                          </div>
-
-                          {/* Content */}
-                          <div className="sp-item-body">
-                            <div className="sp-item-top">
-                              <div className="sp-item-icon">
-                                {isLive ? (
-                                  <Play size={16} />
-                                ) : (
-                                  <Radio size={16} />
-                                )}
-                              </div>
-                              <h4 className="sp-item-title">
-                                {sch.title ||
-                                  sch.liveSession?.sessionName ||
-                                  "Phiên phát sóng"}
-                              </h4>
-                              <span
-                                className={`sp-status sp-status--${status.cls}`}
-                              >
-                                {isLive && <span className="sp-live-dot" />}
-                                {status.label}
-                              </span>
-                            </div>
-
-                            {/* Session + Station info */}
-                            <div className="sp-item-session">
-                              {sch.liveSession?.sessionName && sch.title && (
-                                <span className="sp-session-chip">
-                                  <Disc3 size={11} />
-                                  {sch.liveSession.sessionName}
-                                </span>
-                              )}
-                              {sch.liveSession?.station?.stationName && (
-                                <span className="sp-station-chip">
-                                  <Radio size={11} />
-                                  {sch.liveSession.station.stationName}
-                                </span>
-                              )}
-                              {sch.liveSession?.genre && (
-                                <span className="sp-genre-chip">
-                                  <Tag size={11} />
-                                  {sch.liveSession.genre}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="sp-item-meta">
-                              <span>
-                                <Clock size={12} />
-                                {formatTime(sch.startTime)} –{" "}
-                                {formatTime(sch.endTime)}
-                              </span>
-                              {sch.liveSession?.station?.publicPlayerUrl && (
-                                <a
-                                  href={sch.liveSession.station.publicPlayerUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="sp-listen-btn"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Play size={11} />
-                                  Nghe trực tiếp
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {grouped[day].map((sch) => (
+                      <ScheduleItem
+                        key={sch.id}
+                        schedule={sch}
+                        status={getStatus(sch)}
+                        formatTime={formatTime}
+                      />
+                    ))}
                   </div>
                 </div>
               ))}
@@ -396,5 +254,170 @@ export default function SchedulePublicPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+/* ── Sub-components ──────────────────────────────────────── */
+
+function Hero({ liveSchedules }: { liveSchedules: SessionScheduleResult[] }) {
+  return (
+    <div className="sp-hero">
+      <div className="sp-hero-bg" />
+      <div className="sp-hero-inner">
+        <span className="sp-hero-badge">
+          <Calendar size={13} /> Lịch phát sóng
+        </span>
+        <h1 className="sp-hero-title">Lịch Live SoundMates</h1>
+        <p className="sp-hero-sub">
+          Theo dõi tất cả các phiên phát sóng trực tiếp sắp diễn ra
+        </p>
+
+        {liveSchedules.length > 0 && (
+          <div className="sp-live-badge-row">
+            {/* Giới hạn 3 badge để hero không tràn khi nhiều phiên Live cùng lúc */}
+            {liveSchedules.slice(0, 3).map((sch) => (
+              <div key={sch.id} className="sp-live-badge">
+                <span className="sp-hero-live-dot" />
+                <span className="sp-live-name">
+                  {sch.liveSession?.sessionName ||
+                    sch.title ||
+                    "Phiên đang phát"}
+                </span>
+                {sch.liveSession?.station?.stationName && (
+                  <span className="sp-live-station">
+                    <Radio size={10} />
+                    {sch.liveSession.station.stationName}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({
+  value,
+  label,
+  variant,
+}: {
+  value: number;
+  label: string;
+  variant?: "live" | "ended";
+}) {
+  const modifier = variant ? `sp-stat-num--${variant}` : "";
+  return (
+    <div className="sp-stat-item">
+      <span className={`sp-stat-num ${modifier}`}>{value}</span>
+      <span className="sp-stat-lbl">{label}</span>
+    </div>
+  );
+}
+
+function ScheduleItem({
+  schedule: sch,
+  status,
+  formatTime,
+}: {
+  schedule: SessionScheduleResult;
+  status: { label: string; cls: StatusClass };
+  formatTime: (t: string) => string;
+}) {
+  const isLive = status.cls === "live";
+  const session = sch.liveSession;
+
+  return (
+    <div className={`sp-item sp-item--${status.cls}`}>
+      {session?.thumbnailUrl && (
+        <div className="sp-item-thumb">
+          <img
+            src={session.thumbnailUrl}
+            alt={session.sessionName}
+            // Ẩn hẳn thumb khi ảnh vỡ để không tạo khoảng trống trong layout
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+        </div>
+      )}
+
+      <div className="sp-item-time">
+        <span className="sp-time-start">{formatTime(sch.startTime)}</span>
+        <div className="sp-time-line" />
+        <span className="sp-time-end">{formatTime(sch.endTime)}</span>
+      </div>
+
+      <div className="sp-item-body">
+        <div className="sp-item-top">
+          <div className="sp-item-icon">
+            {isLive ? <Play size={16} /> : <Radio size={16} />}
+          </div>
+          <h4 className="sp-item-title">
+            {sch.title || session?.sessionName || "Phiên phát sóng"}
+          </h4>
+          <span className={`sp-status sp-status--${status.cls}`}>
+            {isLive && <span className="sp-live-dot" />}
+            {status.label}
+          </span>
+        </div>
+
+        <div className="sp-item-session">
+          {/* Chỉ show sessionName khi title đã chiếm chỗ — tránh trùng lặp */}
+          {session?.sessionName && sch.title && (
+            <Chip className="sp-session-chip" icon={<Disc3 size={11} />}>
+              {session.sessionName}
+            </Chip>
+          )}
+          {session?.station?.stationName && (
+            <Chip className="sp-station-chip" icon={<Radio size={11} />}>
+              {session.station.stationName}
+            </Chip>
+          )}
+          {session?.genre && (
+            <Chip className="sp-genre-chip" icon={<Tag size={11} />}>
+              {session.genre}
+            </Chip>
+          )}
+        </div>
+
+        <div className="sp-item-meta">
+          <span>
+            <Clock size={12} />
+            {formatTime(sch.startTime)} – {formatTime(sch.endTime)}
+          </span>
+          {session?.station?.publicPlayerUrl && (
+            <a
+              href={session.station.publicPlayerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="sp-listen-btn"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Play size={11} />
+              Nghe trực tiếp
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Chip({
+  className,
+  icon,
+  children,
+}: {
+  className: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className={className}>
+      {icon}
+      {children}
+    </span>
   );
 }

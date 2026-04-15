@@ -45,7 +45,9 @@ export default function PodcastDetailScreen() {
   const [episodes, setEpisodes] = useState<PodcastEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [resolvedDurations, setResolvedDurations] = useState<Record<string, number>>({});
+  const [resolvedDurations, setResolvedDurations] = useState<
+    Record<string, number>
+  >({});
 
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -65,7 +67,7 @@ export default function PodcastDetailScreen() {
         setPodcast(p);
         setEpisodes(p.allEpisodes ?? []);
       } catch {
-        setError("Kh�ng th? t?i th�ng tin podcast.");
+        setError("Không thể tìm thông tin podcast.");
       } finally {
         setLoading(false);
       }
@@ -79,7 +81,8 @@ export default function PodcastDetailScreen() {
 
     const fillMissingDurations = async () => {
       const missing = episodes.filter(
-        (ep) => !!ep.audioUrl && (ep.duration ?? 0) <= 0 && !resolvedDurations[ep.id],
+        (ep) =>
+          !!ep.audioUrl && (ep.duration ?? 0) <= 0 && !resolvedDurations[ep.id],
       );
 
       for (const ep of missing) {
@@ -94,7 +97,8 @@ export default function PodcastDetailScreen() {
             resolve(value);
           };
 
-          audio.onloadedmetadata = () => done(Math.max(0, Math.floor(audio.duration || 0)));
+          audio.onloadedmetadata = () =>
+            done(Math.max(0, Math.floor(audio.duration || 0)));
           audio.onerror = () => done(0);
         });
 
@@ -158,7 +162,10 @@ export default function PodcastDetailScreen() {
       setIsPlaying(false);
     };
 
-    audio.play().then(() => setIsPlaying(true)).catch(() => {});
+    audio
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch(() => {});
     audioRef.current = audio;
 
     const effectiveDuration = resolvedDurations[ep.id] ?? ep.duration ?? 0;
@@ -183,7 +190,10 @@ export default function PodcastDetailScreen() {
   ) => {
     if (!audioRef.current) return;
     const rect = bar.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const ratio = Math.max(
+      0,
+      Math.min(1, (e.clientX - rect.left) / rect.width),
+    );
     const newTime = ratio * (audioRef.current.duration || 0);
     audioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
@@ -218,7 +228,7 @@ export default function PodcastDetailScreen() {
       <div className="pdd">
         <div className="pdd-state">
           <Loader2 size={28} className="pdd-spin" />
-          <p>�ang t?i...</p>
+          <p>Đang tải...</p>
         </div>
       </div>
     );
@@ -229,10 +239,10 @@ export default function PodcastDetailScreen() {
       <div className="pdd">
         <div className="pdd-state">
           <Music2 size={28} />
-          <p>{error || "Kh�ng t�m th?y podcast."}</p>
+          <p>{error || "Không tìm thấy podcast."}</p>
           <button className="pdd-back-btn" onClick={() => navigate("/podcast")}>
             <ArrowLeft size={14} />
-            Quay l?i
+            Quay lại
           </button>
         </div>
       </div>
@@ -250,7 +260,7 @@ export default function PodcastDetailScreen() {
         <div className="pdd-hero-content">
           <button className="pdd-back" onClick={() => navigate("/podcast")}>
             <ArrowLeft size={16} />
-            T?t c? Podcast
+            Quay lại
           </button>
 
           <div className="pdd-hero-info">
@@ -277,11 +287,13 @@ export default function PodcastDetailScreen() {
                 )}
                 <span className="pdd-meta-item">
                   <Headphones size={14} />
-                  {episodes.length} t?p
+                  {episodes.length} tập
                 </span>
               </div>
 
-              {podcast.description && <p className="pdd-hero-desc">{podcast.description}</p>}
+              {podcast.description && (
+                <p className="pdd-hero-desc">{podcast.description}</p>
+              )}
             </div>
           </div>
         </div>
@@ -289,20 +301,23 @@ export default function PodcastDetailScreen() {
 
       <section className="pdd-episodes">
         <h2 className="pdd-section-title">
-          Danh s�ch t?p
+          Danh sách tập
           <span className="pdd-section-count">{episodes.length}</span>
         </h2>
 
         {episodes.length === 0 ? (
           <div className="pdd-empty">
             <Music2 size={24} />
-            <p>Podcast n�y chua c� t?p n�o.</p>
+            <p>Podcast này chưa có tập nào.</p>
           </div>
         ) : (
           <div className="pdd-ep-list">
             {episodes.map((ep, i) => {
               const isPlaying = playingId === ep.id;
-              const progress = isPlaying && audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
+              const progress =
+                isPlaying && audioDuration > 0
+                  ? (currentTime / audioDuration) * 100
+                  : 0;
 
               return (
                 <div
@@ -314,9 +329,19 @@ export default function PodcastDetailScreen() {
                     className={`pdd-ep-play${isPlaying ? " active" : ""}`}
                     onClick={() => togglePlay(ep)}
                     disabled={!ep.audioUrl}
-                    title={ep.audioUrl ? (isPlaying ? "T?m d?ng" : "Ph�t") : "Chua c� audio"}
+                    title={
+                      ep.audioUrl
+                        ? isPlaying
+                          ? "Tạm dừng"
+                          : "Phát"
+                        : "Chưa có audio"
+                    }
                   >
-                    {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                    {isPlaying ? (
+                      <Pause size={18} fill="currentColor" />
+                    ) : (
+                      <Play size={18} fill="currentColor" />
+                    )}
                   </button>
 
                   <div className="pdd-ep-thumb">
@@ -331,7 +356,11 @@ export default function PodcastDetailScreen() {
 
                   <div className="pdd-ep-info">
                     <div className="pdd-ep-top">
-                      {ep.episodeNumber != null && <span className="pdd-ep-number">T?p {ep.episodeNumber}</span>}
+                      {ep.episodeNumber != null && (
+                        <span className="pdd-ep-number">
+                          Tập {ep.episodeNumber}
+                        </span>
+                      )}
                       <span className="pdd-ep-duration">
                         <Clock size={12} />
                         {fmtTime(resolvedDurations[ep.id] ?? ep.duration ?? 0)}
@@ -344,17 +373,32 @@ export default function PodcastDetailScreen() {
                       )}
                     </div>
                     <h3 className="pdd-ep-title">{ep.title}</h3>
-                    {ep.description && <p className="pdd-ep-desc">{ep.description}</p>}
+                    {ep.description && (
+                      <p className="pdd-ep-desc">{ep.description}</p>
+                    )}
 
                     {isPlaying && (
                       <div className="pdd-ep-player">
-                        <span className="pdd-ep-time">{fmtTime(currentTime)}</span>
-                        <div className="pdd-ep-bar" onMouseDown={handleBarMouseDown}>
+                        <span className="pdd-ep-time">
+                          {fmtTime(currentTime)}
+                        </span>
+                        <div
+                          className="pdd-ep-bar"
+                          onMouseDown={handleBarMouseDown}
+                        >
                           <div className="pdd-ep-bar-bg" />
-                          <div className="pdd-ep-bar-fill" style={{ width: `${progress}%` }} />
-                          <div className="pdd-ep-bar-knob" style={{ left: `${progress}%` }} />
+                          <div
+                            className="pdd-ep-bar-fill"
+                            style={{ width: `${progress}%` }}
+                          />
+                          <div
+                            className="pdd-ep-bar-knob"
+                            style={{ left: `${progress}%` }}
+                          />
                         </div>
-                        <span className="pdd-ep-time">{fmtTime(audioDuration)}</span>
+                        <span className="pdd-ep-time">
+                          {fmtTime(audioDuration)}
+                        </span>
                       </div>
                     )}
                   </div>
