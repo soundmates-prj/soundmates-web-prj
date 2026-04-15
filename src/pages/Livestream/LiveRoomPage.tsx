@@ -538,28 +538,28 @@ export function LiveRoomPage() {
       if (sid === sessionIdRef.current) setListeners(count);
     });
 
-    const offChat = liveHubService.onReceiveChat((chat: ChatMessage) => {
-      if (chat.liveSessionId === sessionIdRef.current) {
+    const offChat = liveHubService.onReceiveChat((chat: any) => {
+      if (chat.liveSessionId === sessionIdRef.current || chat.LiveSessionId === sessionIdRef.current) {
         setChats(prev => [
           ...prev,
           {
-            id: chat.id,
-            userId: chat.userId || "",
-            userName: chat.userName || `User-${(chat.userId || "?").slice(0, 6)}`,
-            avatarUrl: chat.avatarUrl || "",
-            message: chat.message,
-            createdAt: chat.createdAt,
+            id: chat.id || chat.Id,
+            userId: chat.userId || chat.UserId || "",
+            userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "?").slice(0, 6)}`,
+            avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
+            message: chat.message || chat.Message,
+            createdAt: chat.createdAt || chat.CreatedAt,
           },
         ]);
       }
     });
 
     const offChatHistory = liveHubService.onChatHistory((history) => {
-      const mapped = history.map(chat => ({
-        id: chat.id,
-        userId: chat.userId || "",
-        userName: chat.userName || `User-${(chat.userId || "?").slice(0, 6)}`,
-        avatarUrl: chat.avatarUrl || "",
+      const mapped = history.map((chat: any) => ({
+        id: chat.id || chat.Id,
+        userId: chat.userId || chat.UserId || "",
+        userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "?").slice(0, 6)}`,
+        avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
         message: chat.message,
         createdAt: chat.createdAt,
       }));

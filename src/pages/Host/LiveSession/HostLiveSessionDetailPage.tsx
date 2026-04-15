@@ -109,9 +109,9 @@ export default function HostLiveSessionDetailPage() {
     
     const offChatHistory = liveHubService.onChatHistory((history) => {
       const mapped = history.map((chat: any) => ({
-        id: chat.id || `hub-${Date.now()}-${Math.random()}`,
-        userId: chat.userId || "",
-        userName: chat.userName || `User-${String(chat.userId || "??").slice(0, 6)}`,
+        id: chat.id || chat.Id || `hub-${Date.now()}-${Math.random()}`,
+        userId: chat.userId || chat.UserId || "",
+        userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
         avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
         message: chat.message,
         createdAt: chat.createdAt || new Date().toISOString()
@@ -125,9 +125,9 @@ export default function HostLiveSessionDetailPage() {
 
     const offReceiveChat = liveHubService.onReceiveChat((chat: any) => {
       const mapped: DisplayChat = {
-        id: chat.id || `hub-${Date.now()}-${Math.random()}`,
-        userId: chat.userId || "",
-        userName: chat.userName || `User-${String(chat.userId || "??").slice(0, 6)}`,
+        id: chat.id || chat.Id || `hub-${Date.now()}-${Math.random()}`,
+        userId: chat.userId || chat.UserId || "",
+        userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
         avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
         message: chat.message,
         createdAt: chat.createdAt || new Date().toISOString()
