@@ -32,7 +32,8 @@ interface LiveSessionContextValue {
   resumeSession: (sessionId: string) => Promise<void>;
   stopSession: (sessionId: string) => Promise<void>;
   leaveSession: (sessionId: string) => void;
-  sendChat: (sessionId: string, userId: string, message: string, userName?: string) => void;
+  sendChat: (sessionId: string, userId: string, message: string, userName?: string, avatarUrl?: string) => void;
+  deleteChat: (sessionId: string, chatId: string, requestUserId: string, role: string) => void;
 }
 
 const LiveSessionContext = createContext<LiveSessionContextValue | null>(null);
@@ -122,6 +123,14 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    const chatHistoryUnsubscribe = liveHubService.onChatHistory((history: ChatMessage[]) => {
+      setChatMessages(history);
+    });
+
+    const chatDeletedUnsubscribe = liveHubService.onChatDeleted((chatId: string) => {
+      setChatMessages(prev => prev.map(m => m.id === chatId ? { ...m, isDeleted: true } : m));
+    });
+
     // Session started
     sessionStartedUnsubscribeRef.current = liveHubService.onSessionStarted((evt: LiveSessionEvent) => {
       if (evt.id === currentSessionIdRef.current) {
@@ -144,6 +153,8 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     return () => {
       listenersUnsubscribeRef.current?.();
       chatUnsubscribeRef.current?.();
+      chatHistoryUnsubscribe();
+      chatDeletedUnsubscribe();
       sessionStartedUnsubscribeRef.current?.();
       sessionEndedUnsubscribeRef.current?.();
     };
@@ -219,8 +230,12 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     setChatMessages([]);
   }, []);
 
-  const sendChat = useCallback((sessionId: string, userId: string, message: string, userName?: string) => {
-    void liveHubService.sendChat(sessionId, userId, message, userName);
+  const sendChat = useCallback((sessionId: string, userId: string, message: string, userName?: string, avatarUrl?: string) => {
+    void liveHubService.sendChat(sessionId, userId, message, userName, avatarUrl);
+  }, []);
+
+  const deleteChat = useCallback((sessionId: string, chatId: string, requestUserId: string, role: string) => {
+    void liveHubService.deleteChat(sessionId, chatId, requestUserId, role);
   }, []);
 
   return (
@@ -238,6 +253,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         stopSession,
         leaveSession,
         sendChat,
+        deleteChat,
       }}
     >
       {children}

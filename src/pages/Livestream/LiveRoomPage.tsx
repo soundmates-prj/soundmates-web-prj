@@ -57,6 +57,8 @@ interface DisplayChat {
   message: string;
   createdAt: string;
   isSystem?: boolean;
+  avatarUrl?: string;
+  isDeleted?: boolean;
 }
 
 interface RequestSongItem {
@@ -522,11 +524,28 @@ export function LiveRoomPage() {
             id: chat.id,
             userId: chat.userId || "",
             userName: chat.userName || `User-${(chat.userId || "?").slice(0, 6)}`,
+            avatarUrl: chat.avatarUrl || "",
             message: chat.message,
             createdAt: chat.createdAt,
           },
         ]);
       }
+    });
+
+    const offChatHistory = liveHubService.onChatHistory((history) => {
+       const mapped = history.map(chat => ({
+          id: chat.id,
+          userId: chat.userId || "",
+          userName: chat.userName || `User-${(chat.userId || "?").slice(0, 6)}`,
+          avatarUrl: chat.avatarUrl || "",
+          message: chat.message,
+          createdAt: chat.createdAt,
+       }));
+       setChats(mapped);
+    });
+
+    const offChatDeleted = liveHubService.onChatDeleted((chatId) => {
+       setChats(prev => prev.map(m => m.id === chatId ? { ...m, isDeleted: true } : m));
     });
 
     const offJoined = liveHubService.onUserJoined((sid) => {
@@ -1105,7 +1124,8 @@ export function LiveRoomPage() {
       return;
     }
     try {
-      await liveHubService.sendChat(sessionIdRef.current, userId, chatInput.trim(), getCurrentUserName());
+      const uAvatar = user?.avatar || "";
+      await liveHubService.sendChat(sessionIdRef.current, userId, chatInput.trim(), getCurrentUserName(), uAvatar);
       setChatInput("");
     } catch (err) {
       console.error("[LiveRoomPage] Send chat failed:", err);
@@ -1315,13 +1335,36 @@ export function LiveRoomPage() {
                   chat.isSystem ? (
                     <div key={chat.id} className="lr-chat-system">{chat.message}</div>
                   ) : (
-                    <div key={chat.id} className="lr-chat-msg">
+                    <div key={chat.id} className="lr-chat-msg" style={{ position: 'relative' }}>
                       <div className="lr-chat-avatar">
-                        {chat.userName.charAt(0).toUpperCase()}
+                        {chat.avatarUrl ? (
+                          <img src={chat.avatarUrl} alt="avt" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                        ) : (
+                          chat.userName.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <div className="lr-chat-bubble">
-                        <div className="lr-chat-user">{chat.userName}</div>
-                        <div className="lr-chat-text">{chat.message}</div>
+                        <div className="lr-chat-user">
+                           {chat.userName}
+                           {(user?.role === 'Host' || user?.role === 'Staff' || user?.role === 'Admin' || chat.userId === user?.userId) && (
+                              <button 
+                                onClick={() => {
+                                  if (window.confirm("Bạn có chắc chắn muốn xóa tin nhắn này?")) {
+                                     liveHubService.deleteChat(sessionIdRef.current, chat.id, user!.userId, user!.role || 'User').catch(e => console.warn(e));
+                                  }
+                                }} 
+                                style={{ marginLeft: 6, fontSize: '0.7em', color: '#ff4d4f', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                                title="Xóa tin nhắn"
+                              >
+                                [Xóa]
+                              </button>
+                           )}
+                        </div>
+                        {chat.isDeleted ? (
+                           <div className="lr-chat-text" style={{ fontStyle: 'italic', color: '#888' }}>Tin nhắn đã bị thu hồi/xoá.</div>
+                        ) : (
+                           <div className="lr-chat-text">{chat.message}</div>
+                        )}
                         <div className="lr-chat-time">{formatChatTime(chat.createdAt)}</div>
                       </div>
                     </div>
