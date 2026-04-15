@@ -191,7 +191,7 @@ function getCurrentUserAvatar(): string {
     const raw = localStorage.getItem("userInfo");
     if (raw) {
       const parsed = JSON.parse(raw);
-      return parsed.avatar || "";
+      return parsed.avatarUrl || "";
     }
   } catch { /* ignore */ }
   return "";
