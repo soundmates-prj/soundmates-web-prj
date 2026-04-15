@@ -521,10 +521,7 @@ export function LiveRoomPage() {
           {
             id: chat.id,
             userId: chat.userId || "",
-            userName:
-              chat.userId === userId
-                ? getCurrentUserName()
-                : `User-${(chat.userId || "?").slice(0, 6)}`,
+            userName: chat.userName || `User-${(chat.userId || "?").slice(0, 6)}`,
             message: chat.message,
             createdAt: chat.createdAt,
           },
@@ -1108,7 +1105,7 @@ export function LiveRoomPage() {
       return;
     }
     try {
-      await liveHubService.sendChat(sessionIdRef.current, userId, chatInput.trim());
+      await liveHubService.sendChat(sessionIdRef.current, userId, chatInput.trim(), getCurrentUserName());
       setChatInput("");
     } catch (err) {
       console.error("[LiveRoomPage] Send chat failed:", err);

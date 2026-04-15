@@ -101,6 +101,7 @@ export interface ChatMessage {
   id: string;
   liveSessionId: string;
   userId: string;
+  userName?: string;
   message: string;
   createdAt: string;
 }
@@ -230,10 +231,7 @@ class LiveHubService {
   getConnection(): signalR.HubConnection {
     if (!this.connection) {
       this.connection = new signalR.HubConnectionBuilder()
-        .withUrl(LIVE_HUB_URL, {
-          skipNegotiation: true,
-          transport: signalR.HttpTransportType.WebSockets,
-        })
+        .withUrl(LIVE_HUB_URL)
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
         .configureLogging(signalR.LogLevel.Debug)
         .build();
@@ -339,12 +337,12 @@ class LiveHubService {
     this.joinedSessions.delete(sessionId);
   }
 
-  async sendChat(sessionId: string, userId: string, message: string): Promise<void> {
+  async sendChat(sessionId: string, userId: string, message: string, userName?: string): Promise<void> {
     const conn = this.getConnection();
     if (conn.state !== signalR.HubConnectionState.Connected) {
       throw new Error("Mất kết nối — không thể gửi tin nhắn");
     }
-    await conn.invoke("SendChat", sessionId, userId, message);
+    await conn.invoke("SendChat", sessionId, userId, message, userName ?? null);
   }
 
   // ─── Event handlers ───────────────────────────────────────────────────────
