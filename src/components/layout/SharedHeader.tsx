@@ -106,7 +106,7 @@ export default function SharedHeader({ role, onToggleSidebar }: SharedHeaderProp
                     <div className="shared-user-info">
                         <span className="shared-user-name">
                             {userInfo?.firstName && userInfo?.lastName
-                                ? `${userInfo.lastName} ${userInfo.firstName}`
+                                ? `${userInfo.firstName} ${userInfo.lastName}`
                                 : userInfo?.username || (role === 'ADMIN' ? 'Admin' : role === 'STAFF' ? 'Staff' : 'Host')}
                         </span>
                         <span className="shared-user-role">{getRoleLabel()}</span>

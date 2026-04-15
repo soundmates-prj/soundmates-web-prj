@@ -179,7 +179,7 @@ function getCurrentUserName(): string {
     const raw = localStorage.getItem("userInfo");
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.firstName && parsed.lastName) return `${parsed.lastName} ${parsed.firstName}`;
+      if (parsed.firstName && parsed.lastName) return `${parsed.firstName} ${parsed.lastName}`;
       return parsed.username || parsed.email || "Ẩn danh";
     }
   } catch { /* ignore */ }

@@ -54,7 +54,9 @@ export function ScheduleScreen() {
   const [creating, setCreating] = useState(false);
 
   // ── Edit modal ──
-  const [editTarget, setEditTarget] = useState<SessionScheduleResult | null>(null);
+  const [editTarget, setEditTarget] = useState<SessionScheduleResult | null>(
+    null,
+  );
   const [editTitle, setEditTitle] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editStartTime, setEditStartTime] = useState("");
@@ -69,7 +71,9 @@ export function ScheduleScreen() {
   // ── Filters ──
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSessionId, setFilterSessionId] = useState("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "upcoming" | "live" | "ended">("all");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "upcoming" | "live" | "ended"
+  >("all");
 
   /* ── Load schedules ── */
   useEffect(() => {
@@ -189,7 +193,10 @@ export function ScheduleScreen() {
       setEditTarget(null);
       await loadSchedules();
     } catch (err: any) {
-      showError("Lỗi", err?.response?.data?.message || "Không thể cập nhật lịch");
+      showError(
+        "Lỗi",
+        err?.response?.data?.message || "Không thể cập nhật lịch",
+      );
     } finally {
       setUpdating(false);
     }
@@ -223,8 +230,7 @@ export function ScheduleScreen() {
   };
 
   // formatTime: backend sends TimeOnly "HH:mm:ss" → display "HH:mm"
-  const formatTime = (timeOnly: string) =>
-    timeOnly.substring(0, 5);
+  const formatTime = (timeOnly: string) => timeOnly.substring(0, 5);
 
   // formatDateLabel: backend sends DateOnly "yyyy-MM-dd" → "Thứ X, dd/MM/yyyy"
   const formatDateLabel = (dateOnly: string) => {
@@ -238,7 +244,9 @@ export function ScheduleScreen() {
   const getScheduleDateTime = (s: SessionScheduleResult, isEnd = false) =>
     new Date(`${s.startDate}T${isEnd ? s.endTime : s.startTime}`);
 
-  const getScheduleStatus = (s: SessionScheduleResult): "upcoming" | "live" | "ended" => {
+  const getScheduleStatus = (
+    s: SessionScheduleResult,
+  ): "upcoming" | "live" | "ended" => {
     const now = new Date();
     const start = getScheduleDateTime(s);
     const end = getScheduleDateTime(s, true);
@@ -264,22 +272,25 @@ export function ScheduleScreen() {
   });
 
   // Group by startDate (DateOnly string)
-  const grouped = filteredSchedules.reduce<Record<string, SessionScheduleResult[]>>(
-    (acc, s) => {
-      if (!acc[s.startDate]) acc[s.startDate] = [];
-      acc[s.startDate].push(s);
-      return acc;
-    },
-    {},
-  );
+  const grouped = filteredSchedules.reduce<
+    Record<string, SessionScheduleResult[]>
+  >((acc, s) => {
+    if (!acc[s.startDate]) acc[s.startDate] = [];
+    acc[s.startDate].push(s);
+    return acc;
+  }, {});
 
-  const totalLive = schedules.filter((s) => getScheduleStatus(s) === "live").length;
-  const totalUpcoming = schedules.filter((s) => getScheduleStatus(s) === "upcoming").length;
-  const totalEnded = schedules.filter((s) => getScheduleStatus(s) === "ended").length;
+  const totalLive = schedules.filter(
+    (s) => getScheduleStatus(s) === "live",
+  ).length;
+  const totalUpcoming = schedules.filter(
+    (s) => getScheduleStatus(s) === "upcoming",
+  ).length;
+  const totalEnded = schedules.filter(
+    (s) => getScheduleStatus(s) === "ended",
+  ).length;
 
-  const sortedDays = Object.keys(grouped).sort((a, b) =>
-    a.localeCompare(b),
-  );
+  const sortedDays = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
 
   const toggleDay = (
     current: number[],
@@ -298,7 +309,7 @@ export function ScheduleScreen() {
       {/* Header */}
       <div className="sc-header">
         <div className="sc-header-left">
-          <h1>Lịch phát sóng</h1>
+          <h1>Quản lý lịch phát sóng</h1>
           <p>Quản lý lịch trình tất cả các phiên phát sóng</p>
         </div>
         <div className="sc-header-actions">
@@ -375,7 +386,9 @@ export function ScheduleScreen() {
               className="sc-select"
               value={filterStatus}
               onChange={(e) =>
-                setFilterStatus(e.target.value as "all" | "upcoming" | "live" | "ended")
+                setFilterStatus(
+                  e.target.value as "all" | "upcoming" | "live" | "ended",
+                )
               }
             >
               <option value="all">Tất cả trạng thái</option>
@@ -415,79 +428,89 @@ export function ScheduleScreen() {
                   .map((sch) => {
                     const status = getScheduleStatus(sch);
                     return (
-                    <div className={`sc-item sc-item--${status}`} key={sch.id}>
-                      <div className="sc-item-time">
-                        <span className="sc-time-start">
-                          {formatTime(sch.startTime)}
-                        </span>
-                        <div className="sc-time-line" />
-                        <span className="sc-time-end">
-                          {formatTime(sch.endTime)}
-                        </span>
-                      </div>
-
-                      <div className="sc-item-body">
-                        <div className="sc-item-top">
-                          <div className="sc-item-title-wrap">
-                            <h4 className="sc-item-title">
-                              {sch.title ||
-                                sch.liveSession?.sessionName ||
-                                "Phiên phát sóng"}
-                            </h4>
-                            <span className={`sc-status-badge sc-status-badge--${status}`}>
-                              {status === "live" ? "Đang diễn ra" : status === "upcoming" ? "Sắp diễn ra" : "Đã kết thúc"}
-                            </span>
-                          </div>
-                          <div className="sc-item-actions">
-                            <button
-                              className="sc-action-btn sc-action-btn--edit"
-                              onClick={() => openEdit(sch)}
-                              title="Chỉnh sửa"
-                            >
-                              <Pencil size={13} />
-                            </button>
-                            <button
-                              className="sc-action-btn sc-action-btn--delete"
-                              onClick={() => handleDelete(sch.id)}
-                              disabled={deletingId === sch.id}
-                              title="Xoá lịch"
-                            >
-                              {deletingId === sch.id ? (
-                                <RefreshCw size={13} className="sc-spin" />
-                              ) : (
-                                <Trash2 size={13} />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="sc-item-meta">
-                          {sch.liveSession?.sessionName && (
-                            <span className="sc-meta-chip sc-meta-chip--session">
-                              <Disc3 size={12} />
-                              {sch.liveSession.sessionName}
-                            </span>
-                          )}
-                          {sch.liveSession?.station?.stationName && (
-                            <span className="sc-meta-chip">
-                              <Radio size={12} />
-                              {sch.liveSession.station.stationName}
-                            </span>
-                          )}
-                          <span className="sc-meta-chip">
-                            <Clock size={12} />
-                            {formatTime(sch.startTime)} – {formatTime(sch.endTime)}
+                      <div
+                        className={`sc-item sc-item--${status}`}
+                        key={sch.id}
+                      >
+                        <div className="sc-item-time">
+                          <span className="sc-time-start">
+                            {formatTime(sch.startTime)}
                           </span>
-                          {sch.isRecurring && (
-                            <span className="sc-meta-chip sc-meta-chip--recurring">
-                              <Repeat size={12} />
-                              Lặp lại
+                          <div className="sc-time-line" />
+                          <span className="sc-time-end">
+                            {formatTime(sch.endTime)}
+                          </span>
+                        </div>
+
+                        <div className="sc-item-body">
+                          <div className="sc-item-top">
+                            <div className="sc-item-title-wrap">
+                              <h4 className="sc-item-title">
+                                {sch.title ||
+                                  sch.liveSession?.sessionName ||
+                                  "Phiên phát sóng"}
+                              </h4>
+                              <span
+                                className={`sc-status-badge sc-status-badge--${status}`}
+                              >
+                                {status === "live"
+                                  ? "Đang diễn ra"
+                                  : status === "upcoming"
+                                    ? "Sắp diễn ra"
+                                    : "Đã kết thúc"}
+                              </span>
+                            </div>
+                            <div className="sc-item-actions">
+                              <button
+                                className="sc-action-btn sc-action-btn--edit"
+                                onClick={() => openEdit(sch)}
+                                title="Chỉnh sửa"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                              <button
+                                className="sc-action-btn sc-action-btn--delete"
+                                onClick={() => handleDelete(sch.id)}
+                                disabled={deletingId === sch.id}
+                                title="Xoá lịch"
+                              >
+                                {deletingId === sch.id ? (
+                                  <RefreshCw size={13} className="sc-spin" />
+                                ) : (
+                                  <Trash2 size={13} />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="sc-item-meta">
+                            {sch.liveSession?.sessionName && (
+                              <span className="sc-meta-chip sc-meta-chip--session">
+                                <Disc3 size={12} />
+                                {sch.liveSession.sessionName}
+                              </span>
+                            )}
+                            {sch.liveSession?.station?.stationName && (
+                              <span className="sc-meta-chip">
+                                <Radio size={12} />
+                                {sch.liveSession.station.stationName}
+                              </span>
+                            )}
+                            <span className="sc-meta-chip">
+                              <Clock size={12} />
+                              {formatTime(sch.startTime)} –{" "}
+                              {formatTime(sch.endTime)}
                             </span>
-                          )}
+                            {sch.isRecurring && (
+                              <span className="sc-meta-chip sc-meta-chip--recurring">
+                                <Repeat size={12} />
+                                Lặp lại
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
+                    );
                   })}
               </div>
             </div>
@@ -504,7 +527,10 @@ export function ScheduleScreen() {
                 <CalendarDays size={20} />
                 <h3>Tạo lịch phát sóng</h3>
               </div>
-              <button className="sc-modal-close" onClick={() => setShowModal(false)}>
+              <button
+                className="sc-modal-close"
+                onClick={() => setShowModal(false)}
+              >
                 <X size={18} />
               </button>
             </div>
@@ -621,9 +647,13 @@ export function ScheduleScreen() {
                 }
               >
                 {creating ? (
-                  <><RefreshCw size={14} className="sc-spin" /> Đang tạo...</>
+                  <>
+                    <RefreshCw size={14} className="sc-spin" /> Đang tạo...
+                  </>
                 ) : (
-                  <><Disc3 size={14} /> Tạo lịch</>
+                  <>
+                    <Disc3 size={14} /> Tạo lịch
+                  </>
                 )}
               </button>
             </div>

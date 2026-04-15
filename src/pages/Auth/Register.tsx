@@ -59,9 +59,9 @@ const Register: React.FC = () => {
     // ── FirstName (BR-01): required, 1–50 chars ──
     if (name === "firstName") {
       if (!value.trim())
-        setFirstNameError("Tên không được để trống!");
+        setFirstNameError("Họ không được để trống!");
       else if (value.trim().length > MAX_NAME_LENGTH)
-        setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+        setFirstNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
       else
         setFirstNameError("");
     }
@@ -69,9 +69,9 @@ const Register: React.FC = () => {
     // ── LastName (BR-01): required, 1–50 chars ──
     if (name === "lastName") {
       if (!value.trim())
-        setLastNameError("Họ không được để trống!");
+        setLastNameError("Tên không được để trống!");
       else if (value.trim().length > MAX_NAME_LENGTH)
-        setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
+        setLastNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
       else
         setLastNameError("");
     }
@@ -126,15 +126,15 @@ const Register: React.FC = () => {
     let valid = true;
 
     if (!form.firstName?.trim()) {
-      setFirstNameError("Tên không được để trống!"); valid = false;
+      setFirstNameError("Họ không được để trống!"); valid = false;
     } else if (form.firstName.trim().length > MAX_NAME_LENGTH) {
-      setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`); valid = false;
+      setFirstNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`); valid = false;
     }
 
     if (!form.lastName?.trim()) {
-      setLastNameError("Họ không được để trống!"); valid = false;
+      setLastNameError("Tên không được để trống!"); valid = false;
     } else if (form.lastName.trim().length > MAX_NAME_LENGTH) {
-      setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`); valid = false;
+      setLastNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`); valid = false;
     }
 
     if (!form.username?.trim()) {
@@ -221,13 +221,13 @@ const Register: React.FC = () => {
 
           <div className="name-row">
             {/* EF-01 + BR-01: Họ — required, 1–50 chars */}
-            <div className={`input-wrapper${lastNameError ? " input-error" : ""}`}>
+            <div className={`input-wrapper${firstNameError ? " input-error" : ""}`}>
               <User size={18} />
               <input
                 type="text"
-                name="lastName"
+                name="firstName"
                 placeholder="Họ"
-                value={form.lastName}
+                value={form.firstName}
                 onChange={handleChange}
                 onKeyPress={handleKeyPress}
                 maxLength={MAX_NAME_LENGTH}
@@ -235,21 +235,21 @@ const Register: React.FC = () => {
             </div>
 
             {/* EF-01 + BR-01: Tên — required, 1–50 chars */}
-            <div className={`input-wrapper${firstNameError ? " input-error" : ""}`}>
+            <div className={`input-wrapper${lastNameError ? " input-error" : ""}`}>
               <User size={18} />
               <input
                 type="text"
-                name="firstName"
+                name="lastName"
                 placeholder="Tên"
-                value={form.firstName}
+                value={form.lastName}
                 onChange={handleChange}
                 onKeyPress={handleKeyPress}
                 maxLength={MAX_NAME_LENGTH}
               />
             </div>
           </div>
-          {lastNameError && <p className="error-text">{lastNameError}</p>}
           {firstNameError && <p className="error-text">{firstNameError}</p>}
+          {lastNameError && <p className="error-text">{lastNameError}</p>}
 
           {/* EF-01: Username — required, 3–30 chars */}
           <div className={`input-wrapper${usernameError ? " input-error" : ""}`}>

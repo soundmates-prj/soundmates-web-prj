@@ -14,6 +14,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
+import { uploadImage } from "../../../utils/cloudinaryUpload";
 import "./LiveOps.css";
 
 const PODCAST_TYPES = [
@@ -46,6 +47,7 @@ export default function PodcastEditor() {
   const [author, setAuthor] = useState("");
   const [type, setType] = useState("Podcast");
   const [banner, setBanner] = useState("");
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [status, setStatus] = useState("Draft");
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -82,6 +84,7 @@ export default function PodcastEditor() {
       showError("Ảnh tối đa 5MB");
       return;
     }
+    setBannerFile(file);
     const reader = new FileReader();
     reader.onload = () => setBanner(String(reader.result || ""));
     reader.readAsDataURL(file);
@@ -102,29 +105,50 @@ export default function PodcastEditor() {
 
     setSaving(true);
     try {
+      let bannerUrl = banner;
+      if (bannerFile) {
+        bannerUrl = await uploadImage(bannerFile);
+      } else if (banner.startsWith("data:")) {
+        showError("Ảnh bìa chưa được tải lên, vui lòng chọn lại file ảnh");
+        setSaving(false);
+        return;
+      }
+
       if (isEdit && podcastId) {
         await liveSessionApiService.updatePodcast(podcastId, {
           title,
           description: description || undefined,
           author: author || undefined,
           type: type || undefined,
-          banner: banner || undefined,
+          banner: bannerUrl || undefined,
           status: status || undefined,
         });
       } else {
-        await liveSessionApiService.createPodcast({
+        const created = await liveSessionApiService.createPodcast({
           title,
           description: description || undefined,
           author: author || undefined,
           type: type || undefined,
-          banner: banner || undefined,
+          banner: bannerUrl || undefined,
+          status: status || undefined,
         });
+        // Fallback: nếu BE không nhận status khi tạo (mặc định Draft),
+        // gọi update để đảm bảo trạng thái được lưu đúng.
+        if (created?.id && status && status !== "Draft" && created.status !== status) {
+          await liveSessionApiService.updatePodcast(created.id, { status });
+        }
       }
 
+      setBannerFile(null);
+      if (bannerUrl) setBanner(bannerUrl);
       showSuccess("Lưu podcast thành công");
       navigate("/admin/podcasts");
-    } catch {
-      showError("Lưu podcast thất bại");
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Lưu podcast thất bại";
+      showError(msg);
     } finally {
       setSaving(false);
     }
@@ -279,7 +303,10 @@ export default function PodcastEditor() {
                 </button>
                 <button
                   className="pe-banner-btn pe-banner-btn--danger"
-                  onClick={() => setBanner("")}
+                  onClick={() => {
+                    setBanner("");
+                    setBannerFile(null);
+                  }}
                 >
                   <Trash2 size={14} />
                   Xóa
@@ -320,7 +347,10 @@ export default function PodcastEditor() {
             <input
               className="ops-input"
               value={banner.startsWith("data:") ? "" : banner}
-              onChange={(e) => setBanner(e.target.value)}
+              onChange={(e) => {
+                setBanner(e.target.value);
+                setBannerFile(null);
+              }}
               placeholder="https://example.com/banner.jpg"
               style={{ fontSize: 13 }}
             />
