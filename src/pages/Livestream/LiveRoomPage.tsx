@@ -186,6 +186,28 @@ function getCurrentUserName(): string {
   return "Ẩn danh";
 }
 
+function getCurrentUserAvatar(): string {
+  try {
+    const raw = localStorage.getItem("userInfo");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return parsed.avatar || "";
+    }
+  } catch { /* ignore */ }
+  return "";
+}
+
+function getCurrentUserRole(): string {
+  try {
+    const raw = localStorage.getItem("userInfo");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return parsed.role || "User";
+    }
+  } catch { /* ignore */ }
+  return "User";
+}
+
 function mapTrack(raw: any, proxy: (u: string) => string): TrackInfo | null {
   if (!raw) return null;
   // playedAt: backend sends double seconds (with fractional part) from AzuraCast.
@@ -322,7 +344,7 @@ export function LiveRoomPage() {
     const projectedElapsed = Math.max(
       0,
       baseServerElapsedRef.current +
-        (Date.now() - serverElapsedSyncedAtMsRef.current) / 1000,
+      (Date.now() - serverElapsedSyncedAtMsRef.current) / 1000,
     );
 
     // Only fast-forward when server is clearly ahead.
@@ -384,7 +406,7 @@ export function LiveRoomPage() {
       const projectedElapsed = Math.max(
         0,
         baseServerElapsedRef.current +
-          (Date.now() - serverElapsedSyncedAtMsRef.current) / 1000,
+        (Date.now() - serverElapsedSyncedAtMsRef.current) / 1000,
       );
       const duration = nowPlayingRef.current?.currentTrack?.duration ?? 0;
       const nextElapsed = duration > 0
@@ -533,19 +555,19 @@ export function LiveRoomPage() {
     });
 
     const offChatHistory = liveHubService.onChatHistory((history) => {
-       const mapped = history.map(chat => ({
-          id: chat.id,
-          userId: chat.userId || "",
-          userName: chat.userName || `User-${(chat.userId || "?").slice(0, 6)}`,
-          avatarUrl: chat.avatarUrl || "",
-          message: chat.message,
-          createdAt: chat.createdAt,
-       }));
-       setChats(mapped);
+      const mapped = history.map(chat => ({
+        id: chat.id,
+        userId: chat.userId || "",
+        userName: chat.userName || `User-${(chat.userId || "?").slice(0, 6)}`,
+        avatarUrl: chat.avatarUrl || "",
+        message: chat.message,
+        createdAt: chat.createdAt,
+      }));
+      setChats(mapped);
     });
 
     const offChatDeleted = liveHubService.onChatDeleted((chatId) => {
-       setChats(prev => prev.map(m => m.id === chatId ? { ...m, isDeleted: true } : m));
+      setChats(prev => prev.map(m => m.id === chatId ? { ...m, isDeleted: true } : m));
     });
 
     const offJoined = liveHubService.onUserJoined((sid) => {
@@ -592,7 +614,7 @@ export function LiveRoomPage() {
 
         console.log("[LiveRoomPage] Guest view limit exceeded:", event);
         // Stop audio and show login popup
-  guestLimitReachedRef.current = true;
+        guestLimitReachedRef.current = true;
         cleanupAudio();
         setIsPlaying(false);
         setAuthPopupMode("guestLimit");
@@ -863,8 +885,8 @@ export function LiveRoomPage() {
 
       if (player.isPlaying) {
         if (showAuthPopup) {
-           player.setIsPlaying(false);
-           return;
+          player.setIsPlaying(false);
+          return;
         }
         if (audioRef.current) {
           audioRef.current
@@ -1124,7 +1146,7 @@ export function LiveRoomPage() {
       return;
     }
     try {
-      const uAvatar = user?.avatar || "";
+      const uAvatar = getCurrentUserAvatar();
       await liveHubService.sendChat(sessionIdRef.current, userId, chatInput.trim(), getCurrentUserName(), uAvatar);
       setChatInput("");
     } catch (err) {
@@ -1345,25 +1367,25 @@ export function LiveRoomPage() {
                       </div>
                       <div className="lr-chat-bubble">
                         <div className="lr-chat-user">
-                           {chat.userName}
-                           {(user?.role === 'Host' || user?.role === 'Staff' || user?.role === 'Admin' || chat.userId === user?.userId) && (
-                              <button 
-                                onClick={() => {
-                                  if (window.confirm("Bạn có chắc chắn muốn xóa tin nhắn này?")) {
-                                     liveHubService.deleteChat(sessionIdRef.current, chat.id, user!.userId, user!.role || 'User').catch(e => console.warn(e));
-                                  }
-                                }} 
-                                style={{ marginLeft: 6, fontSize: '0.7em', color: '#ff4d4f', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                                title="Xóa tin nhắn"
-                              >
-                                [Xóa]
-                              </button>
-                           )}
+                          {chat.userName}
+                          {(getCurrentUserRole() === 'Host' || getCurrentUserRole() === 'Staff' || getCurrentUserRole() === 'Admin' || chat.userId === getCurrentUserId()) && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm("Bạn có chắc chắn muốn xóa tin nhắn này?") && sessionIdRef.current) {
+                                  liveHubService.deleteChat(sessionIdRef.current, chat.id, getCurrentUserId()!, getCurrentUserRole()).catch(e => console.warn(e));
+                                }
+                              }}
+                              style={{ marginLeft: 6, fontSize: '0.7em', color: '#ff4d4f', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                              title="Xóa tin nhắn"
+                            >
+                              [Xóa]
+                            </button>
+                          )}
                         </div>
                         {chat.isDeleted ? (
-                           <div className="lr-chat-text" style={{ fontStyle: 'italic', color: '#888' }}>Tin nhắn đã bị thu hồi/xoá.</div>
+                          <div className="lr-chat-text" style={{ fontStyle: 'italic', color: '#888' }}>Tin nhắn đã bị thu hồi/xoá.</div>
                         ) : (
-                           <div className="lr-chat-text">{chat.message}</div>
+                          <div className="lr-chat-text">{chat.message}</div>
                         )}
                         <div className="lr-chat-time">{formatChatTime(chat.createdAt)}</div>
                       </div>
@@ -1579,20 +1601,20 @@ export function LiveRoomPage() {
                 : "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!"}
             </p>
             <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-              <button 
-                onClick={() => navigate("/login")} 
+              <button
+                onClick={() => navigate("/login")}
                 style={{ padding: "10px 20px", background: "var(--user-theme-primary, #5cc3f0)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
               >
                 Đăng nhập
               </button>
-              <button 
-                onClick={() => navigate("/register")} 
+              <button
+                onClick={() => navigate("/register")}
                 style={{ padding: "10px 20px", background: "var(--lr-btn-soft-bg)", color: "var(--user-theme-text, var(--lr-text))", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
               >
                 Đăng ký
               </button>
-              <button 
-                onClick={() => navigate("/")} 
+              <button
+                onClick={() => navigate("/")}
                 style={{ padding: "10px 20px", background: "transparent", color: "var(--user-theme-text, var(--lr-muted))", border: "1px solid var(--lr-border)", borderRadius: "8px", cursor: "pointer" }}
               >
                 Về trang chủ
