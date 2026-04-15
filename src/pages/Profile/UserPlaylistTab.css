@@ -1134,3 +1134,159 @@
   color: var(--text-secondary, #bbb);
   padding: 6px 0 0;
 }
+
+/* ══════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES
+   ══════════════════════════════════════════════════════ */
+[data-theme="light"] .upl-modal,
+[data-theme="light"] .upl-catalog-modal {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 32px 80px rgba(15, 23, 42, 0.18);
+}
+[data-theme="light"] .upl-modal .upl-modal-hd,
+[data-theme="light"] .upl-catalog-modal .upl-modal-hd {
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .upl-modal .upl-modal-hd h3,
+[data-theme="light"] .upl-catalog-modal .upl-modal-hd h3 {
+  color: #0f172a;
+}
+[data-theme="light"] .upl-modal .upl-close-btn,
+[data-theme="light"] .upl-catalog-modal .upl-close-btn {
+  background: rgba(15, 23, 42, 0.06);
+  color: rgba(15, 23, 42, 0.55);
+}
+[data-theme="light"] .upl-modal .upl-close-btn:hover,
+[data-theme="light"] .upl-catalog-modal .upl-close-btn:hover {
+  background: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+[data-theme="light"] .upl-modal-bd {
+  background: #ffffff;
+}
+[data-theme="light"] .upl-modal-ft,
+[data-theme="light"] .upl-catalog-modal .upl-modal-ft {
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Labels */
+[data-theme="light"] .upl-lbl {
+  color: rgba(15, 23, 42, 0.55);
+}
+
+/* Thumbnail uploader frame */
+[data-theme="light"] .upl-thumb-wrap {
+  border: 1.5px dashed rgba(15, 23, 42, 0.15);
+  background: #f8fafc;
+}
+[data-theme="light"] .upl-thumb-wrap:hover {
+  border-color: rgba(85, 197, 241, 0.55);
+}
+
+/* Inputs */
+[data-theme="light"] .upl-inp,
+[data-theme="light"] .upl-ta {
+  background: #f8fafc;
+  border: 1.5px solid rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+[data-theme="light"] .upl-inp::placeholder,
+[data-theme="light"] .upl-ta::placeholder {
+  color: rgba(15, 23, 42, 0.35);
+}
+[data-theme="light"] .upl-inp:focus,
+[data-theme="light"] .upl-ta:focus {
+  background: #ffffff;
+  border-color: #55c5f1;
+  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.18);
+}
+
+/* Visibility row */
+[data-theme="light"] .upl-vis-row {
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+[data-theme="light"] .upl-vis-txt {
+  color: rgba(15, 23, 42, 0.8);
+}
+[data-theme="light"] .upl-vis-txt svg {
+  color: rgba(15, 23, 42, 0.5);
+}
+[data-theme="light"] .upl-vis-txt b {
+  color: #0f172a;
+}
+
+/* Toggle off-state */
+[data-theme="light"] .upl-tog {
+  background: rgba(15, 23, 42, 0.18);
+}
+[data-theme="light"] .upl-tog-dot {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+}
+
+/* Ghost button */
+[data-theme="light"] .upl-modal .upl-btn.ghost,
+[data-theme="light"] .upl-catalog-modal .upl-btn.ghost {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1.5px solid rgba(15, 23, 42, 0.1);
+}
+[data-theme="light"] .upl-modal .upl-btn.ghost:hover:not(:disabled),
+[data-theme="light"] .upl-catalog-modal .upl-btn.ghost:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Error message */
+[data-theme="light"] .upl-err-msg {
+  color: #b91c1c;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+/* Catalog search */
+[data-theme="light"] .upl-catalog-search {
+  background: #f8fafc;
+  border: 1.5px solid rgba(15, 23, 42, 0.12);
+}
+[data-theme="light"] .upl-catalog-search svg {
+  color: rgba(15, 23, 42, 0.45);
+}
+[data-theme="light"] .upl-catalog-search input {
+  color: #0f172a;
+}
+[data-theme="light"] .upl-catalog-search input::placeholder {
+  color: rgba(15, 23, 42, 0.35);
+}
+
+/* Catalog rows */
+[data-theme="light"] .upl-catalog-row:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+[data-theme="light"] .upl-catalog-row.checked {
+  background: rgba(85, 197, 241, 0.12);
+}
+[data-theme="light"] .upl-catalog-check svg {
+  color: rgba(15, 23, 42, 0.3);
+}
+[data-theme="light"] .upl-catalog-row .upl-track-title {
+  color: #0f172a;
+}
+[data-theme="light"] .upl-catalog-row .upl-track-artist {
+  color: rgba(15, 23, 42, 0.6);
+}
+[data-theme="light"] .upl-catalog-row .upl-track-dur {
+  color: rgba(15, 23, 42, 0.45);
+}
+[data-theme="light"] .upl-catalog-size {
+  color: rgba(15, 23, 42, 0.45);
+}
+
+/* Scrollbar */
+[data-theme="light"] .upl-catalog-list::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.15);
+}

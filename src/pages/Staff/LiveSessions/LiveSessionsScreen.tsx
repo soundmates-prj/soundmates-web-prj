@@ -210,7 +210,7 @@ export function LiveSessionsScreen() {
     const key = status.toLowerCase();
     const labels: Record<string, string> = {
       live: "LIVE",
-      created: "Chờ",
+      created: "Chờ lên lịch",
       scheduled: "Đã lên lịch",
       paused: "Tạm dừng",
       ended: "Đã kết thúc",
@@ -225,7 +225,8 @@ export function LiveSessionsScreen() {
 
   const filterTabs: { label: string; value: FilterStatus }[] = [
     { label: "Tất cả", value: "all" },
-    { label: "Chờ phát", value: "Created" },
+    { label: "Đã lên lịch", value: "Scheduled" },
+    { label: "Chờ lên lịch", value: "Created" },
     { label: "Đang phát", value: "Live" },
     { label: "Đã kết thúc", value: "Ended" },
   ];
@@ -243,7 +244,7 @@ export function LiveSessionsScreen() {
     <div className="lm-page">
       <div className="lm-header">
         <div className="lm-header-left">
-          <h1>Quản lý phát sóng</h1>
+          <h1>Quản lý phiên trực tiếp</h1>
           <p>Tạo và điều khiển các phiên phát sóng trực tiếp</p>
         </div>
         <div className="lm-header-actions">

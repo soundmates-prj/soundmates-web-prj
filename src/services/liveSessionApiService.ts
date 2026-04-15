@@ -805,6 +805,7 @@ class LiveSessionApiService {
     author?: string;
     type?: string;
     banner?: string;
+    status?: string;
   }): Promise<PodcastResult> {
     const res = await api.post<ApiResponse<PodcastResult>>("/podcast", data);
     return res.data.data;
