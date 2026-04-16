@@ -119,7 +119,7 @@ export function StationsScreen() {
               backgroundClip: "text",
             }}
           >
-            Quản lý trạm phát
+            Stations
           </h1>
           <p className="staff-page-subtitle">
             Quản lý các kênh phát sóng radio
