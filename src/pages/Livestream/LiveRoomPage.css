@@ -512,7 +512,7 @@
     right: 0;
     top: 100%;
     margin-top: 4px;
-    background-color: #252235;
+    background-color: var(--user-theme-bg, #252235);
     padding: 4px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
