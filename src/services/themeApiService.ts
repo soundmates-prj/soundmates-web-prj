@@ -5,6 +5,8 @@ export interface ThemeTokens {
   boxShadow?: string;
   iconStyle?: string;
   backgroundImage?: string;
+  backgroundSize?: string;
+  backgroundRepeat?: string;
   [key: string]: string | undefined;
 }
 
@@ -18,6 +20,7 @@ export interface ThemeResult {
   textColor: string;
   mood?: string;
   gradientBackground?: string;
+  backgroundImage?: string;
   playerColor?: string;
   fontFamily?: string;
   configJson?: ThemeTokens;
@@ -42,7 +45,21 @@ export const themeApiService = {
     try {
       const res = await api.get<ApiResponse<PaginatedThemeResult>>("/themes/active");
       if (res.data.success && res.data.data) {
-        return res.data.data.items || [];
+        const items = res.data.data.items || [];
+        return items.map((theme) => {
+          const normalizedTheme = { ...theme };
+
+          // Some environments may return configJson as a JSON string.
+          if (typeof normalizedTheme.configJson === "string") {
+            try {
+              normalizedTheme.configJson = JSON.parse(normalizedTheme.configJson) as ThemeTokens;
+            } catch {
+              normalizedTheme.configJson = undefined;
+            }
+          }
+
+          return normalizedTheme;
+        });
       }
       return [];
     } catch (error) {

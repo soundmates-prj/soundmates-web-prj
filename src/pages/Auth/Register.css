@@ -256,6 +256,15 @@
   }
 }
 
+/* Theme variables for mobile logo */
+:root {
+  --mobile-logo: url('../../assets/light_logo.png');
+}
+
+[data-theme='dark'] {
+  --mobile-logo: url('../../assets/dark_logo.png');
+}
+
 [data-theme='dark'] .register-container .register-left {
   background: #101826;
 }
@@ -315,22 +324,47 @@
 
   .register-right {
     flex: 1;
+    position: relative;
+  }
+
+  /* Show logo on mobile */
+  .register-right::before {
+    content: '';
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    background-image: var(--mobile-logo);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 1;
   }
 
   .register-box {
     width: min(440px, calc(100vw - 32px));
     padding: 32px;
+    margin-top: 100px;
   }
 }
 
 @media (max-width: 480px) {
-  .register-box {
+  .register-container .register-right::before {
+    width: 64px;
+    height: 64px;
+    top: 20px;
+  }
+
+  .register-container .register-box {
     width: calc(100vw - 24px);
     padding: 24px;
     border-radius: 12px;
+    margin-top: 90px;
   }
 
-  .name-row {
+  .register-container .name-row {
     flex-direction: column;
     gap: 0;
   }

@@ -32,22 +32,44 @@ interface LiveSessionContextValue {
   resumeSession: (sessionId: string) => Promise<void>;
   stopSession: (sessionId: string) => Promise<void>;
   leaveSession: (sessionId: string) => void;
-  sendChat: (sessionId: string, userId: string, message: string) => void;
+  sendChat: (sessionId: string, userId: string, message: string, userName?: string, avatarUrl?: string) => void;
+  deleteChat: (sessionId: string, chatId: string, requestUserId: string, role: string) => void;
 }
 
 const LiveSessionContext = createContext<LiveSessionContextValue | null>(null);
+
+const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function tryParseJwtUserId(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const json = atob(padded);
+    const payload = JSON.parse(json);
+    const sub = String(payload?.sub ?? "").trim();
+    return GUID_REGEX.test(sub) ? sub : null;
+  } catch {
+    return null;
+  }
+}
 
 function getCurrentUserId(): string | null {
   try {
     const raw = localStorage.getItem("userInfo");
     if (raw) {
       const parsed = JSON.parse(raw);
-      return parsed.id || parsed.userId || null;
+      const id = String(parsed?.id ?? parsed?.userId ?? "").trim();
+      if (GUID_REGEX.test(id)) {
+        return id;
+      }
     }
   } catch {
     // ignore
   }
-  return null;
+  return tryParseJwtUserId(localStorage.getItem("accessToken"));
 }
 
 export function LiveSessionProvider({ children }: { children: ReactNode }) {
@@ -101,6 +123,14 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    const chatHistoryUnsubscribe = liveHubService.onChatHistory((history: ChatMessage[]) => {
+      setChatMessages(history);
+    });
+
+    const chatDeletedUnsubscribe = liveHubService.onChatDeleted((chatId: string) => {
+      setChatMessages(prev => prev.map(m => m.id === chatId ? { ...m, isDeleted: true } : m));
+    });
+
     // Session started
     sessionStartedUnsubscribeRef.current = liveHubService.onSessionStarted((evt: LiveSessionEvent) => {
       if (evt.id === currentSessionIdRef.current) {
@@ -123,6 +153,8 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     return () => {
       listenersUnsubscribeRef.current?.();
       chatUnsubscribeRef.current?.();
+      chatHistoryUnsubscribe();
+      chatDeletedUnsubscribe();
       sessionStartedUnsubscribeRef.current?.();
       sessionEndedUnsubscribeRef.current?.();
     };
@@ -198,8 +230,12 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     setChatMessages([]);
   }, []);
 
-  const sendChat = useCallback((sessionId: string, userId: string, message: string) => {
-    void liveHubService.sendChat(sessionId, userId, message);
+  const sendChat = useCallback((sessionId: string, userId: string, message: string, userName?: string, avatarUrl?: string) => {
+    void liveHubService.sendChat(sessionId, userId, message, userName, avatarUrl);
+  }, []);
+
+  const deleteChat = useCallback((sessionId: string, chatId: string, requestUserId: string, role: string) => {
+    void liveHubService.deleteChat(sessionId, chatId, requestUserId, role);
   }, []);
 
   return (
@@ -217,6 +253,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         stopSession,
         leaveSession,
         sendChat,
+        deleteChat,
       }}
     >
       {children}

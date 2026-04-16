@@ -328,7 +328,7 @@ body {
   font-size: var(--font-size-base);
   line-height: var(--leading-normal);
   color: var(--text-primary);
-  background-color: var(--bg-primary);
+  /* Background removed - only apply to specific pages (Live, Profile) */
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -980,3 +980,17 @@ a:hover {
 .Toastify__toast-icon svg {
   fill: currentColor !important;
 }
+
+
+/* ============================================
+   Page-specific backgrounds
+   ============================================ */
+
+/* Default background for all pages except Live and Profile */
+.page-wrapper {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+/* Live Room Page - uses its own background via .lr-page */
+/* Profile Page - uses its own background via .pf */

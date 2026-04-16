@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
               />
               <div className="footer-logo-info">
                 <h3 className="footer-logo-text">SoundMates</h3>
-                <p className="footer-tagline">Đọc thư phát sóng mỗi ngày</p>
+                <p className="footer-tagline">Chia sẻ nhạc phát sóng mỗi ngày</p>
               </div>
             </div>
 

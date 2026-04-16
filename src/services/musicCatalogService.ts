@@ -264,6 +264,43 @@ class MusicCatalogService {
     }
   }
 
+  async getTrackBlobByUniqueId(uniqueId: string): Promise<Blob | null> {
+    if (!uniqueId) return null;
+
+    try {
+      const tryFindAndDownload = async (stationId: number): Promise<Blob | null> => {
+        const response = await musicCatalogApi.getMediaFiles(stationId, {
+          searchPhrase: uniqueId,
+          limit: 200,
+        });
+
+        const media = (response.data ?? []).find(
+          (m) => m.unique_id === uniqueId || m.path === uniqueId,
+        );
+
+        if (!media?.id) return null;
+        return await musicCatalogApi.downloadMediaFile(stationId, media.id);
+      };
+
+      // Fast path: current default station first.
+      const fromDefault = await tryFindAndDownload(this.defaultStationId);
+      if (fromDefault) return fromDefault;
+
+      // Fallback: some playlists belong to other stations; scan all stations.
+      const stations = await musicCatalogApi.getStations();
+      for (const station of stations) {
+        if (station.id === this.defaultStationId) continue;
+        const blob = await tryFindAndDownload(station.id);
+        if (blob) return blob;
+      }
+
+      return null;
+    } catch (error) {
+      console.warn("Unable to download media by unique id", uniqueId, error);
+      return null;
+    }
+  }
+
   async searchTracks(query: string, limit = 50): Promise<MusicTrack[]> {
     const result = await this.getTracks({
       searchQuery: query,

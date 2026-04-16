@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Login.css";
 import logoLight from "../../assets/light_logo.png";
 import logoDark from "../../assets/dark_logo.png";
@@ -6,7 +6,7 @@ import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/common";
 import api from "../../services/axios";
 import { useNavigate } from "react-router-dom";
-import { showError, showSuccess } from "../../components/common/toastUtils";
+import { showError, showInfo, showSuccess } from "../../components/common/toastUtils";
 import { GoogleLogin } from "@react-oauth/google";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -21,7 +21,46 @@ const Login: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState({ emailOrUsername: false, password: false });
   const navigate = useNavigate();
 
+  // Redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
+
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const getEmailForOtpFlow = (userData: any): string | null => {
+    const emailFromResponse = userData?.email;
+    if (emailFromResponse && EMAIL_REGEX.test(String(emailFromResponse))) {
+      return String(emailFromResponse);
+    }
+    if (EMAIL_REGEX.test(emailOrUsername.trim())) {
+      return emailOrUsername.trim();
+    }
+    return null;
+  };
+
+  const isUnverifiedFromLoginPayload = (userData: any): boolean => {
+    if (!userData) return false;
+    if (userData.isVerified === false) return true;
+    if (userData.emailVerified === false) return true;
+    if (userData.requiresOtp === true || userData.needVerifyOtp === true) return true;
+    return false;
+  };
+
+  const isUnverifiedFromError = (error: any): boolean => {
+    const status = error?.response?.status;
+    const serverMsg = String(error?.response?.data?.message || "").toLowerCase();
+    if (status !== 401 && status !== 403 && status !== 400) return false;
+    return (
+      serverMsg.includes("otp") ||
+      serverMsg.includes("verify") ||
+      serverMsg.includes("verified") ||
+      serverMsg.includes("xác thực")
+    );
+  };
 
   /** Map HTTP status codes / backend messages to Vietnamese UX messages per use-case */
   const getLoginErrorMessage = (error: any): { title: string; description: string } => {
@@ -100,6 +139,29 @@ const Login: React.FC = () => {
       });
 
       const accessToken = res.data?.data?.accessToken;
+      const userData = res.data?.data;
+
+      if (isUnverifiedFromLoginPayload(userData)) {
+        const verifyEmail = getEmailForOtpFlow(userData);
+        if (!verifyEmail) {
+          showError(
+            "Tài khoản chưa xác thực",
+            "Không tìm thấy email để xác thực OTP. Vui lòng đăng nhập bằng email.",
+          );
+          return;
+        }
+
+        showInfo("Tài khoản chưa xác thực", "Vui lòng xác thực OTP để tiếp tục đăng nhập");
+        navigate("/verify-otp", {
+          state: {
+            email: verifyEmail,
+            firstName: userData?.firstName,
+            lastName: userData?.lastName,
+            username: userData?.username,
+          },
+        });
+        return;
+      }
 
       if (!accessToken) {
         showError("Lỗi hệ thống", "Server không trả về token. Vui lòng thử lại.");
@@ -107,7 +169,6 @@ const Login: React.FC = () => {
       }
 
       localStorage.setItem("accessToken", accessToken);
-      const userData = res.data?.data;
       if (userData) {
         localStorage.setItem("userInfo", JSON.stringify({
           id: userData.id,
@@ -133,6 +194,28 @@ const Login: React.FC = () => {
         navigate("/");
       }
     } catch (error: any) {
+      if (isUnverifiedFromError(error)) {
+        const verifyEmail = getEmailForOtpFlow(error?.response?.data?.data);
+        if (!verifyEmail) {
+          showError(
+            "Tài khoản chưa xác thực",
+            "Vui lòng đăng nhập bằng email để tiếp tục xác thực OTP.",
+          );
+          return;
+        }
+
+        showInfo("Tài khoản chưa xác thực", "Vui lòng xác thực OTP để tiếp tục đăng nhập");
+        navigate("/verify-otp", {
+          state: {
+            email: verifyEmail,
+            firstName: error?.response?.data?.data?.firstName,
+            lastName: error?.response?.data?.data?.lastName,
+            username: error?.response?.data?.data?.username,
+          },
+        });
+        return;
+      }
+
       const { title, description } = getLoginErrorMessage(error);
       showError(title, description);
     } finally {

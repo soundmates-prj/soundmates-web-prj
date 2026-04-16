@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   ListMusic,
   Plus,
@@ -10,6 +10,8 @@ import {
   Globe,
   Lock,
   Play,
+  Pause,
+  Square as StopIcon,
   ArrowLeft,
   Music2,
   Search,
@@ -27,6 +29,8 @@ import type {
 import { usePlayer } from "../../context/PlayerContext";
 import ImageUploader from "./modals/ImageUploader";
 import musicCatalogService from "../../services/musicCatalogService";
+import api from "../../services/axios";
+import { showError } from "../../components/common/toastUtils";
 import "./UserPlaylistTab.css";
 
 const fmtDur = (s?: number) => {
@@ -36,6 +40,14 @@ const fmtDur = (s?: number) => {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 };
 
+const getTrackMediaId = (track: PlaylistTrack): string =>
+  String(track.mediaFileId ?? track.mediaId ?? "");
+
+const isUuid = (value: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+
 /* ── Resolve streaming URL from AzuraCast by media file ID ─────────── */
 const resolveStreamUrl = async (
   mediaFileId: string,
@@ -43,6 +55,16 @@ const resolveStreamUrl = async (
 ): Promise<string> => {
   // Nếu đã là full URL thì dùng luôn
   if (fallbackUrl?.startsWith("http")) return fallbackUrl;
+
+  // UUID refers to internal media id: stream through backend endpoint.
+  if (isUuid(mediaFileId)) {
+    const API_URL = (
+      (import.meta.env.VITE_API_URL as string | undefined) ??
+      window.location.origin
+    ).replace(/\/$/, "");
+    return `${API_URL}/api/v1/musiccatalog/${mediaFileId}/stream`;
+  }
+
   try {
     // Chuyển string ID thành number cho AzuraCast
     const numericId = parseInt(mediaFileId, 10);
@@ -54,13 +76,117 @@ const resolveStreamUrl = async (
   } catch (e) {
     console.warn("AzuraCast lookup failed, using API proxy:", e);
   }
-  // Fallback: stream qua API gateway proxy
-  const API_URL =
-    ((import.meta.env.VITE_API_URL as string | undefined) ?? window.location.origin).replace(
-      /\/$/,
-      "",
-    );
-  return `${API_URL}/api/v1/musiccatalog/${mediaFileId}/stream`;
+
+  // Non-UUID IDs are typically AzuraCast unique_id; GUID stream endpoint won't match.
+  return "";
+};
+
+const isApiMusicCatalogStream = (url: string) =>
+  /\/api\/v1\/musiccatalog\/[^/]+\/stream$/i.test(url);
+
+const fetchAuthenticatedStreamUrl = async (
+  mediaFileId: string,
+): Promise<string | null> => {
+  try {
+    const res = await api.get(`/musiccatalog/${mediaFileId}/stream`, {
+      responseType: "blob",
+    });
+    const blob: Blob = res.data;
+    if (!blob || blob.size === 0) return null;
+    // BE đôi khi trả octet-stream — chấp nhận mọi MIME nếu có dữ liệu.
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.warn("Authenticated stream fetch failed", error);
+    return null;
+  }
+};
+
+const fetchAzuraBlobFromUniqueId = async (
+  mediaFileId: string,
+): Promise<string | null> => {
+  try {
+    const blob = await musicCatalogService.getTrackBlobByUniqueId(mediaFileId);
+    if (!blob) return null;
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.warn("Azura unique-id blob fetch failed", error);
+    return null;
+  }
+};
+
+const buildPlaybackCandidates = (
+  track: PlaylistTrack,
+  catalogItem?: MusicCatalogItem,
+  resolvedUrl?: string,
+): string[] => {
+  const candidates: string[] = [];
+  const rawUrl = track.fileUrl || catalogItem?.fileUrl;
+
+  if (rawUrl?.startsWith("http")) candidates.push(rawUrl);
+
+  if (rawUrl && !rawUrl.startsWith("http")) {
+    const ext = (track.fileType || "mp3").replace(/^\./, "");
+    candidates.push(`${rawUrl}.${ext}`);
+
+    const cloud = (track.artworkUrl || "").match(
+      /res\.cloudinary\.com\/([^/]+)/i,
+    )?.[1];
+    if (cloud) {
+      candidates.push(
+        `https://res.cloudinary.com/${cloud}/video/upload/${rawUrl}.${ext}`,
+      );
+      candidates.push(
+        `https://res.cloudinary.com/${cloud}/video/upload/${rawUrl}`,
+      );
+      candidates.push(
+        `https://res.cloudinary.com/${cloud}/raw/upload/${rawUrl}.${ext}`,
+      );
+    }
+  }
+
+  if (resolvedUrl) candidates.push(resolvedUrl);
+
+  return [...new Set(candidates.filter(Boolean))];
+};
+
+const tryPlayWithCandidates = (
+  audio: HTMLAudioElement,
+  candidates: string[],
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    let i = 0;
+
+    const tryNext = () => {
+      if (i >= candidates.length) {
+        reject(new Error("Không tìm thấy nguồn audio hợp lệ"));
+        return;
+      }
+
+      const src = candidates[i++];
+      const onCanPlay = () => {
+        cleanup();
+        audio
+          .play()
+          .then(() => resolve(src))
+          .catch(() => tryNext());
+      };
+      const onError = () => {
+        cleanup();
+        tryNext();
+      };
+      const cleanup = () => {
+        audio.removeEventListener("canplay", onCanPlay);
+        audio.removeEventListener("error", onError);
+      };
+
+      audio.addEventListener("canplay", onCanPlay, { once: true });
+      audio.addEventListener("error", onError, { once: true });
+      audio.src = src;
+      audio.load();
+    };
+
+    tryNext();
+  });
 };
 const fmtSize = (bytes?: number) => {
   if (!bytes) return "";
@@ -102,33 +228,103 @@ export default function UserPlaylistTab() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [playingPlId, setPlayingPlId] = useState<string | null>(null); // which playlist is playing
+  const blobUrlRef = useRef<string | null>(null);
 
-  const { setTrack, setIsPlaying, audioRef, isPlaying } = usePlayer();
+  const { setTrack, setIsPlaying, audioRef, isPlaying, volume, isMuted } =
+    usePlayer();
 
   const notifyError = (message: string, detail?: string) => {
     console.error(message, detail ?? "");
-    window.alert(detail ? `${message}\n${detail}` : message);
+    showError(message, detail);
   };
 
-  /* ── Playback ──────────────────────────────────────────── */
-  const playTrack = async (t: PlaylistTrack, list: PlaylistTrack[]) => {
-    // Resolve URL first (may need AzuraCast lookup)
-    const mediaId = String(t.mediaId);
-    const catalogItem = catalog.find((c) => String(c.id) === mediaId);
-    const rawUrl = t.fileUrl || catalogItem?.fileUrl;
-    // Resolve streaming URL (AzuraCast lookup or API proxy)
-    const fullUrl = await resolveStreamUrl(mediaId, rawUrl ?? undefined);
-    if (!fullUrl) {
-      console.warn("Cannot resolve stream URL", t.title, mediaId);
+  /* ── 4 chức năng: START (từ đầu), PAUSE, RESUME, STOP ── */
+
+  /** START: phát bài mới từ đầu. Nếu đang phát sẽ thay thế. */
+  const startTrack = async (t: PlaylistTrack, list: PlaylistTrack[]) => {
+    const mediaId = getTrackMediaId(t);
+    if (!mediaId) {
+      notifyError(
+        "Không tìm thấy media ID",
+        "Track không có mediaId/mediaFileId hợp lệ",
+      );
       return;
     }
+    const catalogItem = catalog.find((c) => String(c.id) === mediaId);
+    const rawUrl = t.fileUrl || catalogItem?.fileUrl;
+    const fullUrl = await resolveStreamUrl(mediaId, rawUrl ?? undefined);
+
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+
+    let playbackUrl = fullUrl;
+    if (isApiMusicCatalogStream(fullUrl)) {
+      const blobUrl = await fetchAuthenticatedStreamUrl(mediaId);
+      if (blobUrl) {
+        playbackUrl = blobUrl;
+        blobUrlRef.current = blobUrl;
+      }
+    }
+
+    const azuraUniqueId =
+      (rawUrl && !rawUrl.startsWith("http") ? rawUrl : "") ||
+      (!isUuid(mediaId) ? mediaId : "");
+    if (!playbackUrl && azuraUniqueId) {
+      const azuraBlobUrl = await fetchAzuraBlobFromUniqueId(azuraUniqueId);
+      if (azuraBlobUrl) {
+        playbackUrl = azuraBlobUrl;
+        blobUrlRef.current = azuraBlobUrl;
+      }
+    }
+    // Nếu vẫn chưa có URL dùng được, thử blob theo UUID
+    if (!playbackUrl && isUuid(mediaId)) {
+      const blobUrl = await fetchAuthenticatedStreamUrl(mediaId);
+      if (blobUrl) {
+        playbackUrl = blobUrl;
+        blobUrlRef.current = blobUrl;
+      }
+    }
+
+    // Dừng audio cũ trước khi tạo mới
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.src = "";
       audioRef.current = null;
     }
-    const audio = new Audio(fullUrl);
+    const audio = new Audio();
     audioRef.current = audio;
-    audio.volume = 0.8;
+    audio.volume = isMuted ? 0 : Math.max(0, Math.min(1, volume / 100));
+
+    const candidates = buildPlaybackCandidates(t, catalogItem, playbackUrl);
+    if (candidates.length === 0) {
+      notifyError(
+        "Không phát được bài hát",
+        "Không tìm thấy nguồn audio khả dụng cho track này",
+      );
+      return;
+    }
+
+    let playedSource = playbackUrl;
+    try {
+      playedSource = await tryPlayWithCandidates(audio, candidates);
+    } catch (err: any) {
+      console.error("Track play failed", err);
+      notifyError(
+        "Không phát được bài hát",
+        String(err?.message ?? err ?? "Unknown error"),
+      );
+      return;
+    }
+
+    // Đồng bộ trạng thái với global player qua các event của chính <audio>
+    audio.addEventListener("play", () => setIsPlaying(true));
+    audio.addEventListener("pause", () => {
+      // Khi audio tự pause do ended, sự kiện 'ended' sẽ xử lý tiếp theo.
+      if (!audio.ended) setIsPlaying(false);
+    });
+
     setTrack({
       title: t.title,
       artist: t.artist,
@@ -136,23 +332,57 @@ export default function UserPlaylistTab() {
       artUrl: t.artworkUrl ?? "",
       duration: t.durationSeconds ?? 0,
       elapsed: 0,
-      listenUrl: fullUrl,
+      listenUrl: playedSource,
       lyrics: catalogItem?.lyrics ?? null,
     });
-    audio
-      .play()
-      .then(() => setIsPlaying(true))
-      .catch(console.error);
+    setIsPlaying(true);
     setPlayingId(t.id);
+
     audio.addEventListener("ended", () => {
       const idx = list.findIndex((x) => x.id === t.id);
       if (idx < list.length - 1) {
-        playTrack(list[idx + 1], list);
+        startTrack(list[idx + 1], list);
       } else {
         setIsPlaying(false);
         setPlayingId(null);
+        if (blobUrlRef.current) {
+          URL.revokeObjectURL(blobUrlRef.current);
+          blobUrlRef.current = null;
+        }
       }
     });
+  };
+
+  /** PAUSE: tạm dừng, giữ nguyên vị trí */
+  const pauseTrack = () => {
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  /** RESUME: tiếp tục từ vị trí đang dừng */
+  const resumeTrack = () => {
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((e) => {
+          notifyError("Không tiếp tục được", String(e?.message ?? e));
+        });
+    }
+  };
+
+  /** Toggle — dùng cho click vào 1 bài trong playlist */
+  const playTrack = async (t: PlaylistTrack, list: PlaylistTrack[]) => {
+    // Cùng bài đang chọn → pause/resume
+    if (playingId === t.id && audioRef.current) {
+      if (audioRef.current.paused) resumeTrack();
+      else pauseTrack();
+      return;
+    }
+    // Bài khác → start mới
+    await startTrack(t, list);
   };
 
   /* ── Play entire playlist from card ──────────────────────── */
@@ -170,7 +400,7 @@ export default function UserPlaylistTab() {
       }
 
       if (currentTracks.length > 0) {
-        await playTrack(currentTracks[0], currentTracks);
+        await startTrack(currentTracks[0], currentTracks);
       } else {
         notifyError("Playlist trống", "Playlist chưa có bài hát nào");
       }
@@ -182,10 +412,16 @@ export default function UserPlaylistTab() {
     }
   };
 
+  /** STOP: dừng hẳn, giải phóng tài nguyên, clear track hiện tại */
   const stopTrack = () => {
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.src = "";
       audioRef.current = null;
+    }
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
     }
     setIsPlaying(false);
     setPlayingId(null);
@@ -205,6 +441,15 @@ export default function UserPlaylistTab() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+    };
+  }, []);
 
   const openDetail = async (pl: UserPlaylist) => {
     setSelected(pl);
@@ -275,9 +520,17 @@ export default function UserPlaylistTab() {
 
   const handleRemoveTrack = async (t: PlaylistTrack) => {
     if (!selected) return;
+    const mediaId = getTrackMediaId(t);
+    if (!mediaId) {
+      notifyError(
+        "Không xoá được bài",
+        "Track không có mediaId/mediaFileId hợp lệ",
+      );
+      return;
+    }
     setRemovingId(t.id);
     try {
-      await userPlaylistService.removeTrack(selected.id, t.mediaId);
+      await userPlaylistService.removeTrack(selected.id, mediaId);
       setTracks((prev) => prev.filter((x) => x.id !== t.id));
       setPlaylists((prev) =>
         prev.map((p) =>
@@ -373,7 +626,9 @@ export default function UserPlaylistTab() {
       c.title.toLowerCase().includes(catalogSearch.toLowerCase()) ||
       c.artist.toLowerCase().includes(catalogSearch.toLowerCase()),
   );
-  const addedIds = new Set(tracks.map((t) => t.mediaId));
+  const addedIds = new Set(
+    tracks.map((t) => getTrackMediaId(t)).filter(Boolean),
+  );
 
   /* ─────────────────────────── RENDER ─────────────────────────── */
   return (
@@ -423,13 +678,39 @@ export default function UserPlaylistTab() {
                 <div className="upl-banner-actions">
                   <button
                     className="upl-banner-btn play-all"
-                    onClick={() =>
-                      tracks.length > 0 && playTrack(tracks[0], tracks)
-                    }
+                    onClick={() => {
+                      if (tracks.length === 0) return;
+                      // Nếu bài đầu đang phát → pause; đang pause cùng bài → resume; khác → start
+                      if (playingId === tracks[0].id && audioRef.current) {
+                        audioRef.current.paused ? resumeTrack() : pauseTrack();
+                      } else {
+                        startTrack(tracks[0], tracks);
+                      }
+                    }}
                     disabled={tracks.length === 0}
                   >
-                    <Play size={14} fill="white" /> Phát tất cả
+                    {playingId &&
+                    isPlaying &&
+                    audioRef.current &&
+                    !audioRef.current.paused ? (
+                      <>
+                        <Pause size={14} fill="white" /> Tạm dừng
+                      </>
+                    ) : (
+                      <>
+                        <Play size={14} fill="white" /> Phát tất cả
+                      </>
+                    )}
                   </button>
+                  {playingId && (
+                    <button
+                      className="upl-banner-btn icon-only"
+                      onClick={stopTrack}
+                      title="Dừng phát"
+                    >
+                      <StopIcon size={14} fill="currentColor" />
+                    </button>
+                  )}
                   <button
                     className="upl-banner-btn add-music"
                     onClick={openCatalog}
@@ -486,8 +767,17 @@ export default function UserPlaylistTab() {
                     >
                       <div
                         className="upl-track-num-wrap"
-                        onClick={() =>
-                          isNowPlaying ? stopTrack() : playTrack(t, tracks)
+                        onClick={() => playTrack(t, tracks)}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          startTrack(t, tracks);
+                        }}
+                        title={
+                          isNowPlaying
+                            ? "Tạm dừng"
+                            : playingId === t.id
+                              ? "Tiếp tục"
+                              : "Phát"
                         }
                       >
                         {isNowPlaying ? (

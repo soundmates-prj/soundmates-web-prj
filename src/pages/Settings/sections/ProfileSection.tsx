@@ -334,8 +334,10 @@ const CropModal: React.FC<CropModalProps> = ({
 /* ─────────────────────────────────────────────
    ProfileSection Component
 ───────────────────────────────────────────── */
-const defaultAv = "https://ui-avatars.com/api/?name=User&background=55C5F1&color=fff";
-const defaultCover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=1000";
+const defaultAv =
+  "https://ui-avatars.com/api/?name=User&background=55C5F1&color=fff";
+const defaultCover =
+  "https://images.unsplash.com/photo-1511376777868-611b54f68947?w=1200&q=80";
 
 const ProfileSection: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -407,7 +409,7 @@ const ProfileSection: React.FC = () => {
       form.phone !== (user.phone || "") ||
       form.gender !== (user.gender || "") ||
       form.dateOfBirth !==
-      (user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "") ||
+        (user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "") ||
       avatarFile !== null ||
       backgroundFile !== null
     );
@@ -423,31 +425,27 @@ const ProfileSection: React.FC = () => {
 
     // ── EF-01 + BR-01: First name required, 1–50 chars ──
     if (name === "firstName") {
-      if (value === "")
-        setFirstNameError("Tên không được để trống!");
+      if (value === "") setFirstNameError("Họ không được để trống!");
       else if (value.length > MAX_NAME_LENGTH)
-        setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
-      else
-        setFirstNameError("");
+        setFirstNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      else setFirstNameError("");
     }
 
     // ── EF-01 + BR-01: Last name required, 1–50 chars ──
     if (name === "lastName") {
-      if (value === "")
-        setLastNameError("Họ không được để trống!");
+      if (value === "") setLastNameError("Tên không được để trống!");
       else if (value.length > MAX_NAME_LENGTH)
-        setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
-      else
-        setLastNameError("");
+        setLastNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      else setLastNameError("");
     }
 
     // ── EF-02 + EF-03 + BR-03: Phone — non-numeric, >10 digits ──
     if (name === "phone") {
       if (value === "") setPhoneError("");
       else if (!/^[0-9]*$/.test(value))
-        setPhoneError("Vui lòng nhập số!");                          // EF-02
+        setPhoneError("Vui lòng nhập số!"); // EF-02
       else if (value.length > MAX_PHONE_DIGITS)
-        setPhoneError("Số điện thoại không quá 10 số!");             // EF-03
+        setPhoneError("Số điện thoại không quá 10 số!"); // EF-03
       else if (value.length === MAX_PHONE_DIGITS && !isValidVietnamPhone(value))
         setPhoneError("Số điện thoại không hợp lệ (VD: 0912345678)");
       else setPhoneError("");
@@ -524,18 +522,18 @@ const ProfileSection: React.FC = () => {
 
     // EF-01: required fields
     if (!form.firstName?.trim()) {
-      setFirstNameError("Tên không được để trống!");
+      setFirstNameError("Họ không được để trống!");
       valid = false;
     } else if (form.firstName.length > MAX_NAME_LENGTH) {
-      setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      setFirstNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
       valid = false;
     }
 
     if (!form.lastName?.trim()) {
-      setLastNameError("Họ không được để trống!");
+      setLastNameError("Tên không được để trống!");
       valid = false;
     } else if (form.lastName.length > MAX_NAME_LENGTH) {
-      setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      setLastNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
       valid = false;
     }
 
@@ -547,7 +545,10 @@ const ProfileSection: React.FC = () => {
       } else if (form.phone.length > MAX_PHONE_DIGITS) {
         setPhoneError("Số điện thoại không quá 10 số!");
         valid = false;
-      } else if (form.phone.length === MAX_PHONE_DIGITS && !isValidVietnamPhone(form.phone)) {
+      } else if (
+        form.phone.length === MAX_PHONE_DIGITS &&
+        !isValidVietnamPhone(form.phone)
+      ) {
         setPhoneError("Số điện thoại không hợp lệ (VD: 0912345678)");
         valid = false;
       }
@@ -577,8 +578,13 @@ const ProfileSection: React.FC = () => {
     // Anti-spam guard
     const now = Date.now();
     if (now - lastSaveRef.current < SAVE_COOLDOWN_MS) {
-      const remaining = Math.ceil((SAVE_COOLDOWN_MS - (now - lastSaveRef.current)) / 1000);
-      showWarning("Vui lòng chờ", `Bạn vừa lưu xong. Vui lòng chờ ${remaining}s trước khi lưu tiếp.`);
+      const remaining = Math.ceil(
+        (SAVE_COOLDOWN_MS - (now - lastSaveRef.current)) / 1000,
+      );
+      showWarning(
+        "Vui lòng chờ",
+        `Bạn vừa lưu xong. Vui lòng chờ ${remaining}s trước khi lưu tiếp.`,
+      );
       return;
     }
     if (!validateAll()) return;
@@ -600,7 +606,7 @@ const ProfileSection: React.FC = () => {
         phone: form.phone || null,
         gender: form.gender
           ? form.gender.charAt(0).toUpperCase() +
-          form.gender.slice(1).toLowerCase()
+            form.gender.slice(1).toLowerCase()
           : null,
         dateOfBirth: form.dateOfBirth
           ? new Date(form.dateOfBirth).toISOString()
@@ -714,9 +720,7 @@ const ProfileSection: React.FC = () => {
 
             <div className="avatar-wrapper">
               <img
-                src={
-                  avatarPreview || defaultAv
-                }
+                src={avatarPreview || defaultAv}
                 className="avatar"
                 alt="Profile avatar"
               />
@@ -743,34 +747,42 @@ const ProfileSection: React.FC = () => {
               {/* EF-01 + BR-01: Họ (Last name) required, 1–50 chars */}
               <div className="form-group">
                 <label>Họ</label>
-                <div className={lastNameError ? "input-icon input-error" : "input-icon"}>
+                <div
+                  className={
+                    firstNameError ? "input-icon input-error" : "input-icon"
+                  }
+                >
                   <input
-                    name="lastName"
-                    value={form.lastName || ""}
+                    name="firstName"
+                    value={form.firstName || ""}
                     onChange={handleChange}
                     placeholder="VD: Nguyễn"
                     maxLength={MAX_NAME_LENGTH}
                   />
                 </div>
-                {lastNameError && (
-                  <span className="error-text">{lastNameError}</span>
+                {firstNameError && (
+                  <span className="error-text">{firstNameError}</span>
                 )}
               </div>
 
               {/* EF-01 + BR-01: Tên (First name) required, 1–50 chars */}
               <div className="form-group">
                 <label>Tên</label>
-                <div className={firstNameError ? "input-icon input-error" : "input-icon"}>
+                <div
+                  className={
+                    lastNameError ? "input-icon input-error" : "input-icon"
+                  }
+                >
                   <input
-                    name="firstName"
-                    value={form.firstName || ""}
+                    name="lastName"
+                    value={form.lastName || ""}
                     onChange={handleChange}
                     placeholder="VD: Minh"
                     maxLength={MAX_NAME_LENGTH}
                   />
                 </div>
-                {firstNameError && (
-                  <span className="error-text">{firstNameError}</span>
+                {lastNameError && (
+                  <span className="error-text">{lastNameError}</span>
                 )}
               </div>
             </div>
@@ -783,7 +795,9 @@ const ProfileSection: React.FC = () => {
                   {form.bio?.length ?? 0}/{MAX_BIO_LENGTH}
                 </span>
               </label>
-              <div className={bioError ? "input-icon input-error" : "input-icon"}>
+              <div
+                className={bioError ? "input-icon input-error" : "input-icon"}
+              >
                 <textarea
                   name="bio"
                   rows={3}
@@ -873,9 +887,9 @@ const ProfileSection: React.FC = () => {
             <div className="privacy-box">
               <ShieldCheck size={15} className="privacy-icon" />
               <p>
-                Thông tin cá nhân của bạn sẽ được bảo mật và chỉ sử dụng để
-                tăng trải nghiệm cá nhân của bạn. Bạn có thể chỉnh sửa, xóa
-                thông tin của mình bất cứ lúc nào.
+                Thông tin cá nhân của bạn sẽ được bảo mật và chỉ sử dụng để tăng
+                trải nghiệm cá nhân của bạn. Bạn có thể chỉnh sửa, xóa thông tin
+                của mình bất cứ lúc nào.
               </p>
             </div>
           </div>

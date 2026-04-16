@@ -57,6 +57,8 @@ interface DisplayChat {
   message: string;
   createdAt: string;
   isSystem?: boolean;
+  avatarUrl?: string;
+  isDeleted?: boolean;
 }
 
 interface RequestSongItem {
@@ -72,25 +74,39 @@ interface LyricLine {
   text: string;
 }
 
+type AuthPopupMode = "guestLimit" | "requestSong";
+
 function parseLyrics(lrc: string | null | undefined): LyricLine[] {
   if (!lrc) return [];
-  const lines = lrc.split("\n");
   const result: LyricLine[] = [];
-  const timeReg = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
-  for (const line of lines) {
-    const match = timeReg.exec(line);
-    if (match) {
+  for (const rawLine of lrc.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const matches = Array.from(
+      line.matchAll(/\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/g),
+    );
+    if (!matches.length) continue;
+
+    const text = line
+      .replace(/\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/g, "")
+      .trim();
+    if (!text) continue;
+
+    for (const match of matches) {
       const min = parseInt(match[1], 10);
       const sec = parseInt(match[2], 10);
-      const ms = parseInt(match[3], 10);
-      const time = min * 60 + sec + (match[3].length === 2 ? ms / 100 : ms / 1000);
-      const text = line.replace(timeReg, "").trim();
-      if (text) {
-        result.push({ time, text });
-      }
+      const fraction = match[3] ?? "";
+      // Parse → milliseconds (ms) for sub-second precision
+      const ms = fraction
+        ? parseInt(fraction.padEnd(3, "0").slice(0, 3), 10)
+        : 0;
+      const timeMs = min * 60 * 1000 + sec * 1000 + ms;
+      result.push({ time: timeMs, text });
     }
   }
-  return result;
+
+  return result.sort((a, b) => a.time - b.time);
 }
 
 interface SystemMusicItem {
@@ -115,15 +131,47 @@ const formatTime = (seconds: number): string => {
   return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
+const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const GUEST_ID_KEY = "liveGuestIdentifier";
+// Live radio streams usually arrive slightly behind server time due to buffering.
+const LIVE_STREAM_LATENCY_COMPENSATION_MS = 1500; // buffer độ trễ thực của stream (ms)
+// Keep default lyric offset neutral; users can still calibrate by clicking lyric lines.
+const DEFAULT_LYRICS_OFFSET_SEC = 1; // Offset mặc định (user tự chỉnh bằng click vào lyric line)
+const ELAPSED_DRIFT_RESYNC_THRESHOLD_SEC = 1.5; // Nếu server elapsed trôi dạt hơn 1.2s so với local projected elapsed, thực hiện resync (đồng bộ lại server elapsed, bỏ qua các drift nhỏ hơn để tránh re-sync liên tục)
+
+function toSafeListenerCount(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+function tryParseJwtUserId(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const json = atob(padded);
+    const payload = JSON.parse(json);
+    const sub = String(payload?.sub ?? "").trim();
+    return GUID_REGEX.test(sub) ? sub : null;
+  } catch {
+    return null;
+  }
+}
+
 function getCurrentUserId(): string | null {
   try {
     const raw = localStorage.getItem("userInfo");
     if (raw) {
       const parsed = JSON.parse(raw);
-      return parsed.id || parsed.userId || null;
+      const id = String(parsed?.id ?? parsed?.userId ?? "").trim();
+      if (GUID_REGEX.test(id)) {
+        return id;
+      }
     }
   } catch { /* ignore */ }
-  return null;
+  return tryParseJwtUserId(localStorage.getItem("accessToken"));
 }
 
 function getCurrentUserName(): string {
@@ -131,21 +179,47 @@ function getCurrentUserName(): string {
     const raw = localStorage.getItem("userInfo");
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.firstName && parsed.lastName) return `${parsed.lastName} ${parsed.firstName}`;
+      if (parsed.firstName && parsed.lastName) return `${parsed.firstName} ${parsed.lastName}`;
       return parsed.username || parsed.email || "Ẩn danh";
     }
   } catch { /* ignore */ }
   return "Ẩn danh";
 }
 
+function getCurrentUserAvatar(): string {
+  try {
+    const raw = localStorage.getItem("userInfo");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return parsed.avatarUrl || "";
+    }
+  } catch { /* ignore */ }
+  return "";
+}
+
+function getCurrentUserRole(): string {
+  try {
+    const raw = localStorage.getItem("userInfo");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return parsed.role || "User";
+    }
+  } catch { /* ignore */ }
+  return "User";
+}
+
 function mapTrack(raw: any, proxy: (u: string) => string): TrackInfo | null {
   if (!raw) return null;
-  // playedAt: API returns Unix seconds (number), SignalR returns ISO string → normalize to Unix seconds
-  let playedAtMs = 0;
+  // playedAt: backend sends double seconds (with fractional part) from AzuraCast.
+  // Store as fractional Unix seconds — do NOT floor to preserve sub-second precision.
+  let playedAtSec = 0;
   if (typeof raw.playedAt === 'number') {
-    playedAtMs = raw.playedAt * 1000; // Unix seconds → ms
+    // raw.playedAt is in SECONDS — divide by 1000 to convert to ms for Date, divide back to get seconds with fraction
+    playedAtSec = raw.playedAt > 1_000_000_000_000
+      ? raw.playedAt / 1000        // milliseconds → seconds (with fraction)
+      : raw.playedAt;               // already seconds (double with fraction)
   } else if (typeof raw.playedAt === 'string' && raw.playedAt) {
-    playedAtMs = new Date(raw.playedAt).getTime();
+    playedAtSec = new Date(raw.playedAt).getTime() / 1000; // ISO → fractional seconds
   }
   return {
     shId: raw.shId ?? raw.id ?? 0,
@@ -156,15 +230,60 @@ function mapTrack(raw: any, proxy: (u: string) => string): TrackInfo | null {
     duration: raw.duration ?? 0,
     elapsed: raw.elapsed ?? 0,
     isRequest: raw.isRequest ?? false,
-    playedAt: Math.floor(playedAtMs / 1000), // store as Unix seconds
+    playedAt: playedAtSec, // fractional Unix seconds — NOT floored
     lyrics: raw.lyrics ?? null,
   } as any;
+}
+
+function resolveEffectiveElapsed(rawTrack: any): number {
+  if (!rawTrack) {
+    return 0;
+  }
+
+  // Backend now sends double (fractional seconds) — preserve precision, no Math.floor
+  const rawElapsed = Number(rawTrack.elapsed);
+  let effectiveElapsed = Number.isFinite(rawElapsed) ? Math.max(0, rawElapsed) : 0;
+
+  const rawPlayedAt = rawTrack.playedAt;
+  let playedAtSec: number | null = null;
+
+  if (typeof rawPlayedAt === "number" && Number.isFinite(rawPlayedAt) && rawPlayedAt > 0) {
+    // Normalize: if > 1e12 treat as milliseconds → convert to fractional seconds
+    playedAtSec = rawPlayedAt > 1_000_000_000_000
+      ? rawPlayedAt / 1000
+      : rawPlayedAt;
+  } else if (typeof rawPlayedAt === "string" && rawPlayedAt.trim()) {
+    const parsedMs = Date.parse(rawPlayedAt);
+    if (Number.isFinite(parsedMs)) {
+      playedAtSec = parsedMs / 1000; // milliseconds → fractional seconds
+    }
+  }
+
+  if (playedAtSec && playedAtSec > 0) {
+    // Use wall-clock with ms precision — Date.now() gives ms, divide to get fractional seconds
+    const elapsedFromPlayedAt = Math.max(0, Date.now() / 1000 - playedAtSec);
+    // Prefer the fresher value to avoid stale elapsed snapshots from API polling.
+    effectiveElapsed = Math.max(effectiveElapsed, elapsedFromPlayedAt);
+  }
+
+  const rawDuration = Number(rawTrack.duration);
+  if (Number.isFinite(rawDuration) && rawDuration > 0) {
+    effectiveElapsed = Math.min(effectiveElapsed, rawDuration);
+  }
+
+  return effectiveElapsed;
 }
 
 export function LiveRoomPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const player = usePlayer();
+  const playerSetElapsed = player.setElapsed;
+  const playerLeaveSession = player.leaveSession;
+  const playerSetLiveAudioRef = player.setLiveAudioRef;
+  const playerSetTrack = player.setTrack;
+  const playerSetIsPlaying = player.setIsPlaying;
+  const playerToggleMute = player.toggleMute;
 
   const [session, setSession] = useState<LiveSessionResult | null>(null);
   const [nowPlaying, setNowPlaying] = useState<NowPlayingData | null>(null);
@@ -180,16 +299,15 @@ export function LiveRoomPage() {
   const [elapsed, setElapsed] = useState(0);
   const [listeningTime, setListeningTime] = useState(0);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
+  const [authPopupMode, setAuthPopupMode] = useState<AuthPopupMode>("guestLimit");
   // Separate lyrics string state — only changes when the actual lyrics content changes.
   // This prevents parsedLyrics from re-computing when only elapsed/sync data changes.
   const [currentLyricsStr, setCurrentLyricsStr] = useState<string | null>(null);
-  const [lyricsOffset, setLyricsOffset] = useState(() => {
-    const saved = localStorage.getItem("lyricsOffset");
-    return saved ? parseFloat(saved) : 0;
-  });
+  const [lyricsOffset, setLyricsOffset] = useState(DEFAULT_LYRICS_OFFSET_SEC);
 
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestSearch, setRequestSearch] = useState("");
+  const [requestMessage, setRequestMessage] = useState("");
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestableSongs, setRequestableSongs] = useState<RequestSongItem[]>([]);
   const [requestedSongIds, setRequestedSongIds] = useState<Set<string>>(new Set());
@@ -198,74 +316,123 @@ export function LiveRoomPage() {
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
   const elapsedRef = useRef<number>(0);
-  const lyricsOffsetRef = useRef<number>(0); // mirror lyricsOffset into ref to avoid stale closures
+  // Server timeline baseline for current song.
+  // projectedElapsed = baseServerElapsed + (Date.now() - serverElapsedSyncedAtMs)/1000.
+  const baseServerElapsedRef = useRef<number>(0);
+  const serverElapsedSyncedAtMsRef = useRef<number>(Date.now());
+
+  const syncElapsedFromServer = useCallback((serverElapsed: number | null | undefined) => {
+    const parsed = Number(serverElapsed);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+    const safeElapsed = Math.max(0, parsed);
+    baseServerElapsedRef.current = safeElapsed;
+    serverElapsedSyncedAtMsRef.current = Date.now();
+    elapsedRef.current = safeElapsed;
+    setElapsed(safeElapsed);
+    playerSetElapsed(safeElapsed);
+  }, [playerSetElapsed]);
+
+  const maybeResyncElapsed = useCallback((serverElapsed: number | null | undefined) => {
+    const parsed = Number(serverElapsed);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    const safeServerElapsed = Math.max(0, parsed);
+    const projectedElapsed = Math.max(
+      0,
+      baseServerElapsedRef.current +
+      (Date.now() - serverElapsedSyncedAtMsRef.current) / 1000,
+    );
+
+    // Only fast-forward when server is clearly ahead.
+    // Do not pull back elapsed when server reports stale/lagging values.
+    const serverAheadBySec = safeServerElapsed - projectedElapsed;
+    if (serverAheadBySec >= ELAPSED_DRIFT_RESYNC_THRESHOLD_SEC) {
+      syncElapsedFromServer(safeServerElapsed);
+    }
+  }, [syncElapsedFromServer]);
+
+  const alignElapsedToPlaybackStart = useCallback(() => {
+    // Keep server elapsed value, but start local projection from actual playback start time.
+    serverElapsedSyncedAtMsRef.current = Date.now();
+  }, []);
 
   const parsedLyrics = useMemo(() => {
     return parseLyrics(currentLyricsStr);
   }, [currentLyricsStr]);
+  // Use wall-clock projection in milliseconds directly — no precision loss from Math.floor
+  // projectedMs = baseServerElapsed_s * 1000 + (Date.now() - serverSyncedAtMs)
+  const wallClockElapsedMs = Math.max(
+    0,
+    baseServerElapsedRef.current * 1000 + (Date.now() - serverElapsedSyncedAtMsRef.current),
+  );
+  const adjustedElapsedMs = Math.max(
+    0,
+    wallClockElapsedMs - LIVE_STREAM_LATENCY_COMPENSATION_MS - lyricsOffset * 1000,
+  );
 
   const activeLyricIndex = useMemo(() => {
     if (!parsedLyrics.length) return -1;
     let idx = -1;
-    // Áp dụng lyricsOffset để người dùng tự chỉnh độ lệch lyrics vs audio (-10s → +10s)
-    const adjustedElapsed = elapsed - lyricsOffset;
     for (let i = 0; i < parsedLyrics.length; i++) {
-      if (adjustedElapsed >= parsedLyrics[i].time) {
+      if (adjustedElapsedMs >= parsedLyrics[i].time) {
         idx = i;
       } else {
         break;
       }
     }
     return idx;
-  }, [parsedLyrics, elapsed, lyricsOffset]);
-
-  // Sync lyricsOffset → ref để useMemo không bị stale closure
-  useEffect(() => {
-    lyricsOffsetRef.current = lyricsOffset;
-  }, [lyricsOffset]);
-
-  // Save lyricsOffset to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("lyricsOffset", String(lyricsOffset));
-  }, [lyricsOffset]);
+  }, [parsedLyrics, adjustedElapsedMs]);
 
   // Scroll lyrics into view
   useEffect(() => {
     if (activeLyricIndex >= 0 && lyricsContainerRef.current) {
-      const activeEl = lyricsContainerRef.current.querySelector(".lr-lyric-line.active") as HTMLElement;
+      const activeEl = lyricsContainerRef.current.querySelector(
+        ".lr-lyric-sync-line.active, .lr-lyric-line.active",
+      ) as HTMLElement | null;
       if (activeEl) {
         activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
   }, [activeLyricIndex]);
 
-  // ─── Elapsed Timer (PRIMARY DRIVER): real-time elapsed from playedAt ─────
-  // playedAt = Unix seconds when track started on server
-  // elapsed = now - playedAt — pure wall-clock, no staleness from API polling
+  // ─── Elapsed Timer: wall-clock projection from last server elapsed sync ─────
   useEffect(() => {
     const timer = setInterval(() => {
-      if (!isPlaying || !nowPlaying?.currentTrack) return;
-      const playedAt = (nowPlaying.currentTrack as any).playedAt as number | undefined;
-      if (typeof playedAt !== 'number' || playedAt <= 0) return;
-
-      const nextElapsed = Math.max(0, Math.floor(Date.now() / 1000) - playedAt);
+      if (!isPlaying) return;
+      const projectedElapsed = Math.max(
+        0,
+        baseServerElapsedRef.current +
+        (Date.now() - serverElapsedSyncedAtMsRef.current) / 1000,
+      );
+      const duration = nowPlayingRef.current?.currentTrack?.duration ?? 0;
+      const nextElapsed = duration > 0
+        ? Math.min(projectedElapsed, duration)
+        : projectedElapsed;
       setElapsed(nextElapsed);
       elapsedRef.current = nextElapsed;
-      player.setElapsed(nextElapsed);
-    }, 1000);
+      playerSetElapsed(nextElapsed);
+    }, 500); // 2×/s — smooth enough, avoids excessive re-renders
 
     return () => clearInterval(timer);
-  }, [isPlaying, nowPlaying?.currentTrack?.shId, player]);
+  }, [isPlaying, playerSetElapsed]);
 
   // Dùng chung để dừng audio ở mọi nơi: navigate, session end, cleanup
   const cleanupAudio = useCallback(() => {
-    player.leaveSession();
+    playerLeaveSession();
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; audioRef.current = null; }
+    (window as any).__liveAudioRef = null;
+    playerSetLiveAudioRef(null);
     setIsPlaying(false);
+    baseServerElapsedRef.current = 0;
+    serverElapsedSyncedAtMsRef.current = Date.now();
     setElapsed(0);
     elapsedRef.current = 0;
-    player.setElapsed(0);
-  }, []);
+    playerSetElapsed(0);
+  }, [playerLeaveSession, playerSetElapsed, playerSetLiveAudioRef]);
 
   const prevTrackIdRef = useRef<number | undefined>(undefined);
   const prevTrackDataRef = useRef<TrackInfo | null>(null);
@@ -275,6 +442,12 @@ export function LiveRoomPage() {
   const nowPlayingRef = useRef<NowPlayingData | null>(null); // avoid stale closure in pollNowPlaying
   const stationIdRef = useRef<string | undefined>(undefined);
   const autoPlayRef = useRef(false); // chỉ auto-play lần đầu
+  const guestLimitReachedRef = useRef(false);
+
+  useEffect(() => {
+    // LiveRoom owns playback via local audioRef. Clear global player audio to avoid double stream playback.
+    playerLeaveSession();
+  }, [sessionId, playerLeaveSession]);
 
   // ─── Main load effect ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -288,9 +461,15 @@ export function LiveRoomPage() {
     setPlayedHistory([]);
     setChats([]);
     setListeners(0);
+    setListeningTime(0);
     setCurrentLyricsStr(null);
+    setLyricsOffset(DEFAULT_LYRICS_OFFSET_SEC);
+    baseServerElapsedRef.current = 0;
+    serverElapsedSyncedAtMsRef.current = Date.now();
     elapsedRef.current = 0;
     setElapsed(0);
+    playerSetElapsed(0);
+    guestLimitReachedRef.current = false;
     prevTrackIdRef.current = undefined;
     prevTrackDataRef.current = null;
     joinedRef.current = false;
@@ -341,10 +520,17 @@ export function LiveRoomPage() {
 
         // Only update lyrics string when it actually changes — prevents re-parse on every event
         setCurrentLyricsStr(track.lyrics ?? null);
+        setLyricsOffset(DEFAULT_LYRICS_OFFSET_SEC);
 
         prevTrackIdRef.current = newShId;
-        elapsedRef.current = track.elapsed ?? 0;
-        setElapsed(track.elapsed ?? 0);
+        syncElapsedFromServer(resolveEffectiveElapsed(track));
+      } else {
+        // Same song: keep local projected elapsed, do not force re-sync mid-song.
+        maybeResyncElapsed(resolveEffectiveElapsed(track));
+
+        if (data.totalListeners !== undefined && data.totalListeners !== null) {
+          setListeners((prev) => toSafeListenerCount(data.totalListeners, prev));
+        }
       }
     });
 
@@ -359,15 +545,29 @@ export function LiveRoomPage() {
           {
             id: chat.id,
             userId: chat.userId || "",
-            userName:
-              chat.userId === userId
-                ? getCurrentUserName()
-                : `User-${(chat.userId || "?").slice(0, 6)}`,
+            userName: chat.userName || `User-${(chat.userId || "?").slice(0, 6)}`,
+            avatarUrl: chat.avatarUrl || "",
             message: chat.message,
             createdAt: chat.createdAt,
           },
         ]);
       }
+    });
+
+    const offChatHistory = liveHubService.onChatHistory((history) => {
+      const mapped = history.map(chat => ({
+        id: chat.id,
+        userId: chat.userId || "",
+        userName: chat.userName || `User-${(chat.userId || "?").slice(0, 6)}`,
+        avatarUrl: chat.avatarUrl || "",
+        message: chat.message,
+        createdAt: chat.createdAt,
+      }));
+      setChats(mapped);
+    });
+
+    const offChatDeleted = liveHubService.onChatDeleted((chatId) => {
+      setChats(prev => prev.map(m => m.id === chatId ? { ...m, isDeleted: true } : m));
     });
 
     const offJoined = liveHubService.onUserJoined((sid) => {
@@ -380,6 +580,65 @@ export function LiveRoomPage() {
     const offEnded = liveHubService.onSessionEnded((evt) => {
       if (evt.id === sessionIdRef.current) setEnded(true);
     });
+
+    let pollNowPlayingNow: (() => Promise<void>) | null = null;
+
+    const offSongChanged = liveHubService.onSongChanged((event) => {
+      if (event.sessionId !== sessionIdRef.current) {
+        return;
+      }
+
+      // Fast path: don't wait for fallback interval when backend emits SongChanged.
+      if (pollNowPlayingNow) {
+        void pollNowPlayingNow();
+      }
+    });
+
+    const offGuestLimitExceeded = liveHubService.onGuestViewLimitExceeded((event) => {
+      if (event.sessionId === sessionIdRef.current) {
+        if (guestLimitReachedRef.current) {
+          return;
+        }
+
+        const currentUserId = getCurrentUserId();
+        const isAuthenticated = !!(currentUserId && GUID_REGEX.test(currentUserId));
+        if (isAuthenticated) {
+          return;
+        }
+
+        const localGuestId = localStorage.getItem(GUEST_ID_KEY);
+        // Backend broadcasts to whole session group; only handle event for this specific guest.
+        if (!event.anonymousIdentifier || !localGuestId || event.anonymousIdentifier !== localGuestId) {
+          return;
+        }
+
+        console.log("[LiveRoomPage] Guest view limit exceeded:", event);
+        // Stop audio and show login popup
+        guestLimitReachedRef.current = true;
+        cleanupAudio();
+        setIsPlaying(false);
+        setAuthPopupMode("guestLimit");
+        setShowAuthPopup(true);
+        showToast.info("You've reached the 2-minute viewing limit. Please login to continue watching.");
+      }
+    });
+
+    // When user logs in while on the page, re-join with their userId to upgrade from guest → authenticated
+    const offAuthChange = () => {
+      try {
+        const newUserId = getCurrentUserId();
+        const isValid = newUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(newUserId);
+        if (isValid && joinedRef.current) {
+          console.log("[LiveRoomPage] authChange fired — user logged in, re-joining session with userId:", newUserId);
+          liveHubService.joinSession(sessionId, newUserId).catch((err) => {
+            console.error("[LiveRoomPage] authChange joinSession failed:", err);
+          });
+        }
+      } catch (e) {
+        console.error("[LiveRoomPage] authChange handler error:", e);
+      }
+    };
+    window.addEventListener("authChange", offAuthChange);
 
     // ─── Async load ─────────────────────────────────────────────────────────
     void (async () => {
@@ -396,7 +655,7 @@ export function LiveRoomPage() {
         }
 
         setSession(sessionData);
-        setListeners(sessionData.listenersCount ?? 0);
+        setListeners(toSafeListenerCount(sessionData.listenersCount ?? sessionData.totalListeners, 0));
         stationIdRef.current = String(sessionData.stationId);
 
         await liveHubService.start();
@@ -405,7 +664,8 @@ export function LiveRoomPage() {
           // Trì hoãn việc gọi JoinSession 1 chút để tránh race condition khi SignalR mới connected
           setTimeout(async () => {
             try {
-              await liveHubService.joinSession(sessionId, userId || undefined);
+              const validUserId = userId && GUID_REGEX.test(userId) ? userId : undefined;
+              await liveHubService.joinSession(sessionId, validUserId);
               joinedRef.current = true;
             } catch (joinErr: any) {
               const msg = joinErr?.message ?? "";
@@ -441,7 +701,10 @@ export function LiveRoomPage() {
             currentTrack: current,
             playingNext: next,
             songHistory: history,
-            totalListeners: nowPlayingData.totalListeners ?? sessionData.listenersCount ?? 0,
+            totalListeners: toSafeListenerCount(
+              sessionData.listenersCount ?? sessionData.totalListeners ?? nowPlayingData.totalListeners,
+              0,
+            ),
             isLive: nowPlayingData.isLive ?? true,
             isOnline: nowPlayingData.isOnline ?? true,
             listenUrl,
@@ -451,8 +714,7 @@ export function LiveRoomPage() {
           nowPlayingRef.current = npData;
           if (track) {
             prevTrackIdRef.current = track.shId;
-            elapsedRef.current = track.elapsed ?? 0;
-            setElapsed(track.elapsed ?? 0);
+            syncElapsedFromServer(resolveEffectiveElapsed(track));
             setCurrentLyricsStr(track.lyrics ?? null);
           }
           // Auto-play lần đầu khi có track (inline để tránh ref)
@@ -466,17 +728,22 @@ export function LiveRoomPage() {
                 }
                 audioRef.current = new Audio(url);
                 audioRef.current!.volume = player.isMuted ? 0 : (player.volume / 100);
+                // Expose the live-session audio element so MusicPlayer can read its currentTime directly
+                (window as any).__liveAudioRef = audioRef.current;
+                playerSetLiveAudioRef(audioRef.current);
                 await audioRef.current!.play();
+                alignElapsedToPlaybackStart();
                 setIsPlaying(true);
-                player.setIsPlaying(true);
+                playerSetIsPlaying(true);
               } catch {
                 try {
                   if (audioRef.current) {
                     audioRef.current.muted = true;
                     await audioRef.current.play();
-                    player.toggleMute();
+                    alignElapsedToPlaybackStart();
+                    playerToggleMute();
                     setIsPlaying(true);
-                    player.setIsPlaying(true);
+                    playerSetIsPlaying(true);
                   }
                 } catch { /* autoplay blocked */ }
               }
@@ -487,7 +754,7 @@ export function LiveRoomPage() {
             currentTrack: null,
             playingNext: null,
             songHistory: [],
-            totalListeners: sessionData.listenersCount ?? 0,
+            totalListeners: toSafeListenerCount(sessionData.listenersCount ?? sessionData.totalListeners, 0),
             isLive: sessionData.status?.toLowerCase() === "live",
             isOnline: true,
             listenUrl: proxyUrl(sessionData.streamUrl),
@@ -503,7 +770,7 @@ export function LiveRoomPage() {
       }
     })();
 
-    // ─── Poll now-playing (Chỉ chạy 15s/lần để backup, data chính đã lấy từ SignalR) ───────────────────────────
+    // ─── Poll now-playing (fallback nhẹ; realtime chính lấy từ SignalR) ───────────────────────────
     const pollNowPlaying = async () => {
       const sid = sessionIdRef.current;
       if (!sid) return;
@@ -541,20 +808,23 @@ export function LiveRoomPage() {
 
           // Only update lyrics string when it actually changes
           setCurrentLyricsStr(track.lyrics ?? null);
+          setLyricsOffset(DEFAULT_LYRICS_OFFSET_SEC);
 
-          elapsedRef.current = track.elapsed ?? 0;
-          setElapsed(track.elapsed ?? 0);
+          prevTrackIdRef.current = newShId;
+          syncElapsedFromServer(resolveEffectiveElapsed(track));
         } else {
-          // Song same — DO NOT call setNowPlaying (would re-render lyrics every 3s).
-          // elapsed is already updated smoothly every 1s by the wall-clock timer.
-          // No need to override it with API values — that would cause visible jumps.
-          if (data.listenersCount !== undefined) {
-            setListeners(data.listenersCount);
+          // Song same: polling endpoint can be stale, so don't re-sync elapsed here.
+          // Still refresh listeners from fallback polling.
+          const latestListeners = data.listenersCount ?? data.totalListeners;
+          if (latestListeners !== undefined && latestListeners !== null) {
+            setListeners(toSafeListenerCount(latestListeners, 0));
           }
         }
       } catch { /* silent */ }
     };
-    nowPlayingPollRef.current = setInterval(pollNowPlaying, 3000);
+    pollNowPlayingNow = pollNowPlaying;
+    // SignalR is primary realtime source; keep 5s fallback polling for track-change detection/listeners.
+    nowPlayingPollRef.current = setInterval(pollNowPlaying, 5000);
 
     return () => {
       offNowPlayingUpdated();
@@ -563,28 +833,31 @@ export function LiveRoomPage() {
       offJoined();
       offLeft();
       offEnded();
+      offSongChanged();
+      offGuestLimitExceeded();
+      window.removeEventListener("authChange", offAuthChange);
       if (nowPlayingPollRef.current) clearInterval(nowPlayingPollRef.current);
       void liveHubService.stop();
       cleanupAudio();
     };
-  }, [sessionId, ended]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessionId, ended, cleanupAudio, syncElapsedFromServer, maybeResyncElapsed]);
 
   // ─── Sync bottom MusicPlayer ─────────────────────────────────────────────
   useEffect(() => {
     const track = nowPlaying?.currentTrack;
     if (!track) return;
 
-    player.setTrack({
+    playerSetTrack({
       title: track.title,
       artist: track.artist,
       album: track.album,
       artUrl: track.artUrl,
       duration: track.duration,
-      elapsed: track.elapsed,
+      elapsed: resolveEffectiveElapsed(track),
       listenUrl: nowPlaying?.listenUrl || session?.streamUrl || undefined,
       lyrics: track.lyrics ?? null,
     });
-    player.setIsPlaying(isPlaying);
+    playerSetIsPlaying(isPlaying);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nowPlaying?.currentTrack?.shId, nowPlaying?.listenUrl, session?.streamUrl, isPlaying]);
 
@@ -603,13 +876,26 @@ export function LiveRoomPage() {
   }, [player.volume, player.isMuted]);
   useEffect(() => {
     if (player.isPlaying !== isPlaying) {
+      if (guestLimitReachedRef.current) {
+        if (player.isPlaying) {
+          player.setIsPlaying(false);
+        }
+        return;
+      }
+
       if (player.isPlaying) {
         if (showAuthPopup) {
-           player.setIsPlaying(false);
-           return;
+          player.setIsPlaying(false);
+          return;
         }
         if (audioRef.current) {
-          audioRef.current.play().then(() => setIsPlaying(true)).catch(() => void playStream());
+          audioRef.current
+            .play()
+            .then(() => {
+              alignElapsedToPlaybackStart();
+              setIsPlaying(true);
+            })
+            .catch(() => void playStream());
         } else {
           void playStream();
         }
@@ -659,25 +945,45 @@ export function LiveRoomPage() {
 
   // ─── Guest Preview Limit ──────────────────────────────────────────────
   useEffect(() => {
+    // Only start timer for guests (no valid userId) — authenticated users are never kicked
+    const userId = getCurrentUserId();
+    const isValidUser = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
     let timer: any = null;
-    if (isPlaying && !getCurrentUserId()) {
+    if (isValidUser) {
+      setListeningTime(0);
+    }
+    if (isPlaying && !isValidUser) {
       timer = setInterval(() => {
         setListeningTime((prev) => {
-          const next = prev + 1;
-          if (next >= 120) {
-            cleanupAudio();
-            setShowAuthPopup(true);
-            return 120;
-          }
-          return next;
+          return Math.min(prev + 1, 120);
         });
       }, 1000);
     }
     return () => clearInterval(timer);
   }, [isPlaying, cleanupAudio]);
 
+  useEffect(() => {
+    if (!isPlaying || listeningTime < 120 || showAuthPopup) {
+      return;
+    }
+
+    if (guestLimitReachedRef.current) {
+      return;
+    }
+
+    guestLimitReachedRef.current = true;
+    cleanupAudio();
+    setAuthPopupMode("guestLimit");
+    setShowAuthPopup(true);
+  }, [isPlaying, listeningTime, showAuthPopup, cleanupAudio]);
+
   // ─── Audio playback ────────────────────────────────────────────────────
   const playStream = useCallback(async () => {
+    if (guestLimitReachedRef.current) {
+      player.setIsPlaying(false);
+      return;
+    }
+
     if (showAuthPopup) {
       player.setIsPlaying(false);
       return;
@@ -686,12 +992,17 @@ export function LiveRoomPage() {
     if (!url) return;
 
     const srcChanged = !audioRef.current || audioRef.current.src !== url;
+
     if (srcChanged) {
       if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; }
       audioRef.current = new Audio(url);
-      // Áp dụng âm lượng từ player context nếu có, thay vì dùng volume state cũ
+      // Áp dụng âm lượng từ player context nều có, thay vì dùng volume state cũ
       audioRef.current.volume = player.isMuted ? 0 : (player.volume / 100);
+      // Expose the live-session audio element so MusicPlayer can read its currentTime directly
+      (window as any).__liveAudioRef = audioRef.current;
+      playerSetLiveAudioRef(audioRef.current);
     }
+
     try {
       if (!audioRef.current) return;
 
@@ -699,34 +1010,55 @@ export function LiveRoomPage() {
       audioRef.current.muted = player.isMuted;
 
       await audioRef.current.play();
+      alignElapsedToPlaybackStart();
       setIsPlaying(true);
-      player.setIsPlaying(true);
+      playerSetIsPlaying(true);
     } catch {
       try {
         if (audioRef.current) {
           audioRef.current.muted = true;
           await audioRef.current.play();
+          alignElapsedToPlaybackStart();
           if (!player.isMuted) {
-            player.toggleMute();
+            playerToggleMute();
           }
           setIsPlaying(true);
-          player.setIsPlaying(true);
+          playerSetIsPlaying(true);
         }
       } catch { /* ignore autoplay blocked */ }
     }
-  }, [nowPlaying?.listenUrl, session?.streamUrl, player]);
+  }, [
+    nowPlaying?.listenUrl,
+    player.isMuted,
+    player.volume,
+    session?.streamUrl,
+    alignElapsedToPlaybackStart,
+    playerSetIsPlaying,
+    playerSetLiveAudioRef,
+    playerToggleMute,
+  ]);
 
   const togglePlay = () => {
+    if (guestLimitReachedRef.current) {
+      setAuthPopupMode("guestLimit");
+      setShowAuthPopup(true);
+      return;
+    }
+
     if (!audioRef.current) { void playStream(); return; }
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
       player.setIsPlaying(false);
     } else {
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-        player.setIsPlaying(true);
-      }).catch(() => void playStream());
+      audioRef.current
+        .play()
+        .then(() => {
+          alignElapsedToPlaybackStart();
+          setIsPlaying(true);
+          player.setIsPlaying(true);
+        })
+        .catch(() => void playStream());
     }
   };
 
@@ -753,13 +1085,24 @@ export function LiveRoomPage() {
   }, [session?.stationId]);
 
   const handleRequestSong = async (song: RequestSongItem) => {
+    const userId = getCurrentUserId();
+    const isValidUser = userId && GUID_REGEX.test(userId);
+    if (!isValidUser) {
+      // Guest trying to request — show login popup instead
+      setAuthPopupMode("requestSong");
+      setShowAuthPopup(true);
+      return;
+    }
+
     const sid = sessionIdRef.current;
     if (!sid) return;
     try {
       await liveSessionApiService.createSongRequest(sid, {
         mediaFileId: song.id,
+        message: requestMessage.trim() || undefined,
       });
       setRequestedSongIds(prev => new Set([...prev, song.id]));
+      setRequestMessage("");
       setChats(prev => [
         ...prev,
         {
@@ -772,9 +1115,15 @@ export function LiveRoomPage() {
         },
       ]);
       showToast.success(`Đã gửi yêu cầu "${song.title}" - đang chờ host duyệt`);
-    } catch (err) {
+    } catch (err: any) {
       console.error("[LiveRoomPage] requestSong failed:", err);
-      showToast.error("Không thể gửi yêu cầu. Vui lòng thử lại.");
+      // If backend returns 401, show login popup; otherwise generic error
+      if (err?.response?.status === 401 || err?.status === 401) {
+        setAuthPopupMode("requestSong");
+        setShowAuthPopup(true);
+      } else {
+        showToast.error("Không thể gửi yêu cầu. Vui lòng thử lại.");
+      }
     }
   };
 
@@ -797,7 +1146,8 @@ export function LiveRoomPage() {
       return;
     }
     try {
-      await liveHubService.sendChat(sessionIdRef.current, userId, chatInput.trim());
+      const uAvatar = getCurrentUserAvatar();
+      await liveHubService.sendChat(sessionIdRef.current, userId, chatInput.trim(), getCurrentUserName(), uAvatar);
       setChatInput("");
     } catch (err) {
       console.error("[LiveRoomPage] Send chat failed:", err);
@@ -905,6 +1255,14 @@ export function LiveRoomPage() {
               <button
                 className="lr-request-btn"
                 onClick={() => {
+                  const uid = getCurrentUserId();
+                  const isValidUser = uid && GUID_REGEX.test(uid);
+                  if (!isValidUser) {
+                    setAuthPopupMode("requestSong");
+                    setShowAuthPopup(true);
+                    return;
+                  }
+                  setRequestMessage("");
                   setShowRequestModal(true);
                   void loadRequestableSongs();
                 }}
@@ -999,13 +1357,36 @@ export function LiveRoomPage() {
                   chat.isSystem ? (
                     <div key={chat.id} className="lr-chat-system">{chat.message}</div>
                   ) : (
-                    <div key={chat.id} className="lr-chat-msg">
+                    <div key={chat.id} className="lr-chat-msg" style={{ position: 'relative' }}>
                       <div className="lr-chat-avatar">
-                        {chat.userName.charAt(0).toUpperCase()}
+                        {chat.avatarUrl ? (
+                          <img src={chat.avatarUrl} alt="avt" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                        ) : (
+                          chat.userName.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <div className="lr-chat-bubble">
-                        <div className="lr-chat-user">{chat.userName}</div>
-                        <div className="lr-chat-text">{chat.message}</div>
+                        <div className="lr-chat-user">
+                          {chat.userName}
+                          {(getCurrentUserRole() === 'Host' || getCurrentUserRole() === 'Staff' || getCurrentUserRole() === 'Admin' || chat.userId === getCurrentUserId()) && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm("Bạn có chắc chắn muốn xóa tin nhắn này?") && sessionIdRef.current) {
+                                  liveHubService.deleteChat(sessionIdRef.current, chat.id, getCurrentUserId()!, getCurrentUserRole()).catch(e => console.warn(e));
+                                }
+                              }}
+                              style={{ marginLeft: 6, fontSize: '0.7em', color: '#ff4d4f', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                              title="Xóa tin nhắn"
+                            >
+                              [Xóa]
+                            </button>
+                          )}
+                        </div>
+                        {chat.isDeleted ? (
+                          <div className="lr-chat-text" style={{ fontStyle: 'italic', color: '#888' }}>Tin nhắn đã bị thu hồi/xoá.</div>
+                        ) : (
+                          <div className="lr-chat-text">{chat.message}</div>
+                        )}
                         <div className="lr-chat-time">{formatChatTime(chat.createdAt)}</div>
                       </div>
                     </div>
@@ -1108,12 +1489,13 @@ export function LiveRoomPage() {
                 return (
                   <button
                     key={i}
+                    type="button"
                     className={`lr-lyric-sync-line ${isActive ? 'active' : ''}`}
                     onClick={() => {
-                      if (elapsed > 0) {
-                        const newOffset = elapsed - line.time;
-                        setLyricsOffset(newOffset);
-                        localStorage.setItem("lyricsOffset", String(newOffset));
+                      if (adjustedElapsedMs > 0) {
+                        setLyricsOffset(
+                          (adjustedElapsedMs - line.time) / 1000,
+                        );
                       }
                     }}
                   >
@@ -1145,6 +1527,18 @@ export function LiveRoomPage() {
                 placeholder="Tìm bài hát hoặc nghệ sĩ..."
                 className="lr-request-search"
               />
+            </div>
+
+            <div className="lr-request-message-wrap">
+              <textarea
+                value={requestMessage}
+                onChange={e => setRequestMessage(e.target.value.slice(0, 300))}
+                placeholder="Nhắn host (tuỳ chọn): ví dụ 'Cho mình nghe bài này tặng bạn A'"
+                className="lr-request-message"
+                rows={3}
+                maxLength={300}
+              />
+              <div className="lr-request-message-count">{requestMessage.length}/300</div>
             </div>
 
             <div className="lr-request-list">
@@ -1198,25 +1592,29 @@ export function LiveRoomPage() {
       {showAuthPopup && (
         <div className="lr-request-modal-overlay">
           <div className="lr-request-modal" style={{ textAlign: "center", padding: "30px 20px" }}>
-            <h3 style={{ marginBottom: 15, color: "var(--user-theme-text, var(--lr-title))" }}>Hết thời gian nghe thử</h3>
+            <h3 style={{ marginBottom: 15, color: "var(--user-theme-text, var(--lr-title))" }}>
+              {authPopupMode === "requestSong" ? "Hết thời gian nghe thử" : "Hết thời gian nghe thử"}
+            </h3>
             <p style={{ color: "var(--user-theme-text, var(--lr-muted))", marginBottom: 25, fontSize: "14px" }}>
-              Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!
+              {authPopupMode === "requestSong"
+                ? "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!"
+                : "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!"}
             </p>
             <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-              <button 
-                onClick={() => navigate("/login")} 
+              <button
+                onClick={() => navigate("/login")}
                 style={{ padding: "10px 20px", background: "var(--user-theme-primary, #5cc3f0)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
               >
                 Đăng nhập
               </button>
-              <button 
-                onClick={() => navigate("/register")} 
+              <button
+                onClick={() => navigate("/register")}
                 style={{ padding: "10px 20px", background: "var(--lr-btn-soft-bg)", color: "var(--user-theme-text, var(--lr-text))", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
               >
                 Đăng ký
               </button>
-              <button 
-                onClick={() => navigate("/")} 
+              <button
+                onClick={() => navigate("/")}
                 style={{ padding: "10px 20px", background: "transparent", color: "var(--user-theme-text, var(--lr-muted))", border: "1px solid var(--lr-border)", borderRadius: "8px", cursor: "pointer" }}
               >
                 Về trang chủ
