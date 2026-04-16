@@ -137,10 +137,8 @@ export function PlaylistsScreen() {
         selectedStation.id,
       );
       setPlaylists(data);
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.message || "Không thể tạo playlist";
-      showError("Lỗi", errorMessage);
+    } catch {
+      showError("Lỗi", "Không thể tạo playlist");
     }
   };
 
@@ -344,15 +342,15 @@ export function PlaylistsScreen() {
         );
       }
 
-      // Bước 2: Refresh station music để lấy media mới
-      const stationMedia = await liveSessionApiService.getStationMusic(
+      // Bước 2: Refresh station music để lấy media đã import hoặc đã map trước đó
+      const refreshedStationMedia = await liveSessionApiService.getStationMusic(
         selectedStation.id,
       );
-      setStationMusic(stationMedia);
+      setStationMusic(refreshedStationMedia);
 
       // Bước 3: Chỉ add những bài thực sự đã có trong station media
       const stationMediaIds = new Set(
-        stationMedia.map((item) => item.id),
+        refreshedStationMedia.map((item) => item.id),
       );
       const readyToAddIds = idsToAdd.filter(
         (id) => stationMediaIds.has(id) && !existingIds.has(id),
@@ -366,6 +364,14 @@ export function PlaylistsScreen() {
         showSuccess(
           "Đã thêm",
           `Đã thêm ${readyToAddIds.length} bài vào playlist`,
+        );
+      }
+
+      const unresolvedCount = idsToAdd.length - readyToAddIds.length;
+      if (unresolvedCount > 0) {
+        showError(
+          "Một số bài chưa sẵn sàng",
+          `${unresolvedCount} bài chưa import được vào station nên chưa thêm playlist.`,
         );
       }
 
@@ -417,7 +423,7 @@ export function PlaylistsScreen() {
               backgroundClip: "text",
             }}
           >
-            Playlist trạm phát
+            Playlists
           </h1>
           <p className="staff-page-subtitle">
             Quản lý playlist cho từng station
@@ -511,13 +517,29 @@ export function PlaylistsScreen() {
                     </p>
                   )}
                 </div>
-                <button
-                  className="staff-btn staff-btn--outline"
-                  onClick={handleOpenAddTracks}
-                >
-                  <Plus size={15} />
-                  Thêm nhạc
-                </button>
+                <div className="pl-detail-actions">
+                  <button
+                    className="staff-btn staff-btn--outline"
+                    onClick={openEditPlaylistModal}
+                  >
+                    <Pencil size={15} />
+                    Sửa playlist
+                  </button>
+                  <button
+                    className="staff-btn staff-btn--outline"
+                    onClick={handleDeletePlaylist}
+                  >
+                    <Trash2 size={15} />
+                    Xoá playlist
+                  </button>
+                  <button
+                    className="staff-btn staff-btn--primary"
+                    onClick={handleOpenAddTracks}
+                  >
+                    <Plus size={15} />
+                    Thêm nhạc
+                  </button>
+                </div>
               </div>
 
               {loadingTracks ? (
@@ -708,7 +730,7 @@ export function PlaylistsScreen() {
       {showAddTracksModal && (
         <div
           className="staff-modal-overlay"
-          onClick={() => setShowAddTracksModal(false)}
+          onClick={() => !musicActionLoading && setShowAddTracksModal(false)}
         >
           <div
             className="staff-modal staff-modal--wide"
@@ -719,6 +741,7 @@ export function PlaylistsScreen() {
               <button
                 className="staff-modal-close"
                 onClick={() => setShowAddTracksModal(false)}
+                disabled={musicActionLoading}
               >
                 <X size={18} />
               </button>
@@ -844,6 +867,7 @@ export function PlaylistsScreen() {
               <button
                 className="staff-btn staff-btn--outline"
                 onClick={() => setShowAddTracksModal(false)}
+                disabled={musicActionLoading}
               >
                 Đóng
               </button>
