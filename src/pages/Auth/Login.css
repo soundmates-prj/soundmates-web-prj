@@ -257,19 +257,26 @@
 .btn-google-wrapper {
   min-height: 48px;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
   position: relative;
   margin-bottom: 20px;
+  width: 100%;
 }
 
-.btn-google-wrapper>div,
+.btn-google-wrapper > div,
+.btn-google-wrapper > span,
 .btn-google-wrapper .abcRioButton {
   width: 100% !important;
+  max-width: 100% !important;
   height: 48px !important;
   min-height: 48px !important;
   border-radius: 10px !important;
   overflow: hidden;
+  flex: 1;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
 }
 
 /* REGISTER LINK */

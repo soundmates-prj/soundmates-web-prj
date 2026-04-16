@@ -218,7 +218,7 @@ export default function HostLiveSessionDetailPage() {
       const uAvatar = getCurrentUserAvatar();
       const raw = localStorage.getItem("userInfo");
       const parsed = raw ? JSON.parse(raw) : {};
-      const uName = parsed.firstName ? `${parsed.firstName} ${parsed.lastName}` : parsed.username || "Host";
+      const uName = parsed.firstName ? `${parsed.lastName} ${parsed.firstName}` : parsed.username || "Host";
       
       await liveHubService.sendChat(sessionId, userId, chatInput.trim(), uName, uAvatar);
       setChatInput("");

@@ -151,20 +151,22 @@ export function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModalProps) 
             <label className="form-label">Họ</label>
             <input
               type="text"
-              value={formData.firstName}
-              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              value={formData.lastName}
+              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               className="form-input"
               placeholder="vd: Nguyễn"
+              maxLength={20}
             />
           </div>
           <div className="form-group">
             <label className="form-label">Tên</label>
             <input
               type="text"
-              value={formData.lastName}
-              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               className="form-input"
               placeholder="vd: Văn A"
+              maxLength={20}
             />
           </div>
         </div>

@@ -17,7 +17,7 @@ import {
     Antenna,
     MessageSquare,
     FileText as FileTextIcon,
-    Play,
+    ShieldCheck,
 } from 'lucide-react';
 import logoLight from "../../assets/light_logo.png";
 import logoDark from "../../assets/dark_logo.png";
@@ -41,6 +41,7 @@ interface SharedSidebarProps {
 const adminMenuItems: MenuItem[] = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: '/admin/dashboard' },
     { id: 'users', icon: <Users size={20} />, label: 'Người dùng', path: '/admin/users' },
+    { id: 'roles', icon: <ShieldCheck size={20} />, label: 'Quyền người dùng', path: '/admin/roles' },
     { id: 'music', icon: <Headphones size={20} />, label: 'Kho nhạc', path: '/admin/music' },
     { id: 'stations', icon: <Music2 size={20} />, label: 'Đài phát', path: '/admin/stations' },
     { id: 'playlists', icon: <ListMusic size={20} />, label: 'Playlist', path: '/admin/playlists' },

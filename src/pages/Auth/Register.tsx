@@ -15,7 +15,6 @@ const Register: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Redirect if already logged in
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) {
@@ -34,7 +33,6 @@ const Register: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
 
-  // ── Field-level inline errors (EF-01) ──
   const [firstNameError, setFirstNameError] = useState("");
   const [lastNameError, setLastNameError] = useState("");
   const [usernameError, setUsernameError] = useState("");
@@ -43,7 +41,7 @@ const Register: React.FC = () => {
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
   // ── Constants (BR-02, BR-03) ──
-  const MAX_NAME_LENGTH = 50;
+  const MAX_NAME_LENGTH = 20;
   const MIN_NAME_LENGTH = 1;
   const MAX_USERNAME_LEN = 30;
   const MIN_USERNAME_LEN = 3;
@@ -51,25 +49,24 @@ const Register: React.FC = () => {
     /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  /* ── Live validation per field (EF-01) ── */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
 
-    // ── Họ (firstName): required, 1–50 chars ──
-    if (name === "firstName") {
-      if (!value.trim()) setFirstNameError("Tên không được để trống!");
-      else if (value.trim().length > MAX_NAME_LENGTH)
-        setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
-      else setFirstNameError("");
-    }
-
-    // ── Tên (lastName): required, 1–50 chars ──
+    // ── Họ (lastName): required, 1–20 chars ──
     if (name === "lastName") {
       if (!value.trim()) setLastNameError("Họ không được để trống!");
       else if (value.trim().length > MAX_NAME_LENGTH)
         setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
       else setLastNameError("");
+    }
+
+    // ── Tên (firstName): required, 1–20 chars ──
+    if (name === "firstName") {
+      if (!value.trim()) setFirstNameError("Tên không được để trống!");
+      else if (value.trim().length > MAX_NAME_LENGTH)
+        setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      else setFirstNameError("");
     }
 
     // ── Username: 3–30 chars ──
@@ -87,7 +84,6 @@ const Register: React.FC = () => {
       else setUsernameError("");
     }
 
-    // ── Email (BR-02): valid RFC format ──
     if (name === "email") {
       if (!value.trim()) setEmailError("Email không được để trống!");
       else if (!EMAIL_REGEX.test(value.trim()))
@@ -95,7 +91,6 @@ const Register: React.FC = () => {
       else setEmailError("");
     }
 
-    // ── Password (BR-03): ≥8, 1 uppercase, 1 lowercase, 1 number, 1 special ──
     if (name === "password") {
       if (!value) setPasswordError("");
       else if (!PASSWORD_REGEX.test(value))
@@ -105,7 +100,6 @@ const Register: React.FC = () => {
       else setPasswordError("");
     }
 
-    // ── Confirm Password (BR-04): must match password ──
     if (name === "confirmPassword") {
       if (!value) setConfirmPasswordError("");
       else if (value !== form.password)
@@ -114,7 +108,6 @@ const Register: React.FC = () => {
     }
   };
 
-  /* ── Centralised pre-submit validation (EF-01) ── */
   const validateAll = (): boolean => {
     let valid = true;
 
@@ -239,23 +232,7 @@ const Register: React.FC = () => {
           <p className="subtitle">Bắt đầu hành trình cùng SoundMate</p>
 
           <div className="name-row">
-            {/* EF-01 + BR-01: Họ (firstName) — required, 1–50 chars */}
-            <div
-              className={`input-wrapper${firstNameError ? " input-error" : ""}`}
-            >
-              <User size={18} />
-              <input
-                type="text"
-                name="firstName"
-                placeholder="Tên"
-                value={form.firstName}
-                onChange={handleChange}
-                onKeyPress={handleKeyPress}
-                maxLength={MAX_NAME_LENGTH}
-              />
-            </div>
-
-            {/* EF-01 + BR-01: Tên (lastName) — required, 1–50 chars */}
+            {/* EF-01 + BR-01: Họ (lastName) — required, 1–20 chars */}
             <div
               className={`input-wrapper${lastNameError ? " input-error" : ""}`}
             >
@@ -270,11 +247,26 @@ const Register: React.FC = () => {
                 maxLength={MAX_NAME_LENGTH}
               />
             </div>
-          </div>
-          {firstNameError && <p className="error-text">{firstNameError}</p>}
-          {lastNameError && <p className="error-text">{lastNameError}</p>}
 
-          {/* EF-01: Username — required, 3–30 chars */}
+            {/* EF-01 + BR-01: Tên (firstName) — required, 1–20 chars */}
+            <div
+              className={`input-wrapper${firstNameError ? " input-error" : ""}`}
+            >
+              <User size={18} />
+              <input
+                type="text"
+                name="firstName"
+                placeholder="Tên"
+                value={form.firstName}
+                onChange={handleChange}
+                onKeyPress={handleKeyPress}
+                maxLength={MAX_NAME_LENGTH}
+              />
+            </div>
+          </div>
+          {lastNameError && <p className="error-text">{lastNameError}</p>}
+          {firstNameError && <p className="error-text">{firstNameError}</p>}
+
           <div
             className={`input-wrapper${usernameError ? " input-error" : ""}`}
           >
@@ -291,7 +283,6 @@ const Register: React.FC = () => {
           </div>
           {usernameError && <p className="error-text">{usernameError}</p>}
 
-          {/* BR-02: Email — valid RFC format */}
           <div className={`input-wrapper${emailError ? " input-error" : ""}`}>
             <Mail size={18} />
             <input
@@ -305,7 +296,6 @@ const Register: React.FC = () => {
           </div>
           {emailError && <p className="error-text">{emailError}</p>}
 
-          {/* BR-03: Password — ≥8, 1 uppercase, 1 lowercase, 1 number, 1 special */}
           <div
             className={`input-wrapper${passwordError ? " input-error" : ""}`}
           >
@@ -327,7 +317,6 @@ const Register: React.FC = () => {
           </div>
           {passwordError && <p className="error-text">{passwordError}</p>}
 
-          {/* BR-04: Confirm Password — must match password */}
           <div
             className={`input-wrapper${confirmPasswordError ? " input-error" : ""}`}
           >

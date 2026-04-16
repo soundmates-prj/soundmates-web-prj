@@ -64,7 +64,7 @@
     overflow-x: auto;
     overflow-y: visible;
     margin-bottom: 24px;
-    /* Critical: allow action dropdowns to escape the scroll container */
+    /* Menu now uses portal, wrapper keeps normal table scrolling behavior */
     position: relative;
 }
 
@@ -318,6 +318,13 @@
     animation: lm-dropdown-in 0.2s ease;
 }
 
+.lm-action-dropdown--floating {
+    position: fixed;
+    top: auto;
+    right: auto;
+    z-index: 10010;
+}
+
 [data-theme="dark"] .lm-action-dropdown {
     background: #1e1e24;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -329,6 +336,7 @@
         opacity: 0;
         transform: translateY(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -360,6 +368,24 @@
 
 [data-theme="dark"] .lm-action-item:hover {
     background: rgba(255, 255, 255, 0.06);
+}
+
+.lm-action-item:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.lm-action-item:disabled:hover,
+[data-theme="dark"] .lm-action-item:disabled:hover {
+    background: transparent;
+}
+
+.lm-action-item.danger:disabled {
+    color: var(--neutral-400);
+}
+
+[data-theme="dark"] .lm-action-item.danger:disabled {
+    color: #64748b;
 }
 
 .lm-action-item.danger {
@@ -456,7 +482,8 @@
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .lm-table-wrapper {
-        overflow-x: scroll;
+        overflow-x: auto;
+        overflow-y: visible;
     }
 
     .lm-pagination {
@@ -466,16 +493,44 @@
     }
 }
 
-/* ── Modal ── */
+/* ── Modal Animations ── */
+@keyframes lm-modal-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes lm-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
 .modal-overlay {
+    animation: lm-fade-in 0.2s ease;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     padding: 16px;
+}
+
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.7);
 }
 
 .modal-content {
@@ -487,11 +542,20 @@
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     overflow: hidden;
+    animation: lm-modal-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.modal-content.small { max-width: 440px; }
-.modal-content.medium { max-width: 560px; }
-.modal-content.large { max-width: 680px; }
+.modal-content.small {
+    max-width: 440px;
+}
+
+.modal-content.medium {
+    max-width: 560px;
+}
+
+.modal-content.large {
+    max-width: 680px;
+}
 
 [data-theme="dark"] .modal-content {
     background: #1e293b;
@@ -544,11 +608,32 @@
 
 .modal-footer {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     justify-content: flex-end;
     padding: 16px 24px;
     border-top: 1px solid var(--neutral-200);
     flex-shrink: 0;
+}
+
+.modal-footer--actions {
+    gap: 10px;
+}
+
+.modal-footer--actions .btn {
+    width: auto;
+    min-height: 44px;
+    margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+    .modal-footer--actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .modal-footer--actions .btn {
+        width: 100%;
+    }
 }
 
 [data-theme="dark"] .modal-footer {
@@ -589,6 +674,205 @@
 .alert-box.info {
     background: rgba(26, 159, 212, 0.06);
     border-color: rgba(26, 159, 212, 0.2);
+}
+
+[data-theme="dark"] .alert-box.info {
+    background: rgba(26, 159, 212, 0.12);
+    border-color: rgba(26, 159, 212, 0.3);
+}
+
+[data-theme="dark"] .alert-box.danger {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .alert-box.success {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+[data-theme="dark"] .user-avatar.large {
+    background: linear-gradient(135deg, #0e7490, #1a9fd4);
+}
+
+[data-theme="dark"] .user-details-email {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .modal-body {
+    color: #e2e8f0;
+}
+
+/* Status picker buttons — use data attributes for dark-mode overrides */
+.status-picker-btn {
+    color: var(--neutral-700);
+}
+
+[data-theme="dark"] .status-picker-btn {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.03);
+    color: #cbd5e1;
+}
+
+/* Selected state in dark mode */
+[data-theme="dark"] .status-picker-btn[data-selected="true"] {
+    background: rgba(26, 159, 212, 0.15) !important;
+    border-color: #1a9fd4 !important;
+}
+
+[data-theme="dark"] .status-picker-btn .sp-icon {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    background: transparent !important;
+}
+
+[data-theme="dark"] .status-picker-btn[data-selected="true"] .sp-icon {
+    border-color: #1a9fd4 !important;
+    background: #1a9fd4 !important;
+}
+
+[data-theme="dark"] .status-picker-btn .sp-icon-dot {
+    background: #fff !important;
+}
+
+[data-theme="dark"] .status-picker-btn .sp-label {
+    color: inherit !important;
+}
+
+/* ── Update Status Modal ── */
+.update-status-modal .modal-body {
+    padding-top: 18px;
+}
+
+.update-status-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--neutral-200);
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.07), rgba(26, 159, 212, 0.03));
+}
+
+[data-theme="dark"] .update-status-user {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.22), rgba(26, 159, 212, 0.08));
+}
+
+.update-status-user-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.update-status-name {
+    margin: 0 0 3px;
+}
+
+.update-status-email {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.update-status-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.update-status-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.update-status-picker-label {
+    margin-bottom: 2px;
+}
+
+.update-status-footer,
+.verify-email-footer {
+    margin-top: 2px;
+}
+
+.update-status-btn,
+.verify-email-btn {
+    font-weight: 700;
+}
+
+.update-status-btn--cancel,
+.verify-email-btn--cancel {
+    min-width: 100px;
+}
+
+.update-status-btn--confirm,
+.verify-email-btn--confirm {
+    min-width: 182px;
+}
+
+/* Keep admin modal actions isolated from generic button styles loaded elsewhere */
+.lm-page .modal-content .btn {
+    margin-bottom: 0;
+}
+
+.lm-page .modal-content .btn-primary,
+.lm-page .modal-content .btn-secondary,
+.lm-page .modal-content .btn-danger {
+    width: auto;
+    box-shadow: none;
+}
+
+.lm-page .modal-content .btn-primary:hover:not(:disabled),
+.lm-page .modal-content .btn-danger:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+}
+
+/* ── Verify Email Modal ── */
+.verify-email-modal .modal-body {
+    padding-top: 18px;
+}
+
+.verify-email-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--neutral-200);
+    background: linear-gradient(135deg, rgba(26, 159, 212, 0.06), rgba(85, 197, 241, 0.03));
+}
+
+[data-theme="dark"] .verify-email-user {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(26, 159, 212, 0.2), rgba(85, 197, 241, 0.08));
+}
+
+.verify-email-user-info {
+    min-width: 0;
+}
+
+.verify-email-name {
+    margin: 0 0 3px;
+}
+
+.verify-email-address {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.verify-email-note {
+    margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+
+    .update-status-user,
+    .verify-email-user {
+        align-items: flex-start;
+    }
 }
 
 /* ── Form Elements ── */
@@ -654,8 +938,13 @@
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* ── User Details (View Modal) ── */
@@ -713,12 +1002,93 @@
     gap: 12px;
 }
 
+/* ── View Details Modal ── */
+.view-details-modal .modal-body {
+    padding-top: 18px;
+}
+
+.view-details-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--neutral-200);
+    background: linear-gradient(135deg, rgba(26, 159, 212, 0.06), rgba(85, 197, 241, 0.03));
+}
+
+[data-theme="dark"] .view-details-header {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(26, 159, 212, 0.2), rgba(85, 197, 241, 0.08));
+}
+
+.view-details-name {
+    margin: 0;
+}
+
+.view-details-email {
+    margin: 4px 0 8px;
+    overflow-wrap: anywhere;
+}
+
+.view-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.view-detail-card {
+    background: var(--neutral-50);
+    border: 1px solid var(--neutral-200);
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.view-detail-label {
+    font-size: 11px;
+    color: var(--neutral-500);
+    margin-bottom: 3px;
+    font-weight: 600;
+}
+
+.view-detail-value {
+    font-size: 13px;
+    color: var(--neutral-800);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+[data-theme="dark"] .view-detail-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .view-detail-label {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .view-detail-value {
+    color: #e2e8f0;
+}
+
+.view-details-footer {
+    margin-top: 20px;
+}
+
+@media (max-width: 640px) {
+    .view-details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ── Buttons ── */
 .btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 9px 16px;
+    padding: 9px 20px;
     border-radius: 10px;
     font-size: 14px;
     font-weight: 600;
@@ -726,11 +1096,24 @@
     transition: all 0.2s;
     border: none;
     font-family: inherit;
+    white-space: nowrap;
+    min-width: 90px;
 }
 
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+[data-theme="dark"] .btn-secondary {
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .btn-primary {
@@ -932,6 +1315,7 @@
     border: 1px solid var(--neutral-200);
     border-radius: 16px;
     padding: 20px;
+    overflow: visible;
 }
 
 [data-theme="dark"] .lm-card {

@@ -51,7 +51,6 @@ import { HostDashboard } from "./pages/Host/Dashboard/HostDashboard";
 import { HostScheduleView } from "./pages/Host/Schedule/HostScheduleView";
 import HostLiveSessionPage from "./pages/Host/LiveSession/HostLiveSessionPage";
 import HostLiveSessionDetailPage from "./pages/Host/LiveSession/HostLiveSessionDetailPage";
-
 import { HostAnalyticsScreen } from "./pages/Host/Analytics/HostAnalyticsScreen";
 import HostSettingsPage from "./pages/Host/Settings/HostSettingsPage";
 
@@ -65,6 +64,7 @@ import { LiveStreamScriptEditor } from "./pages/Staff/Schedule/LiveStreamScriptE
 // ── Admin Page Imports ──
 import { UserPostsManagementScreen } from "./pages/Admin/Posts/UserPostsManagementScreen";
 import { SystemConfigScreen } from "./pages/Admin/SystemConfig/SystemConfigScreen";
+import { RoleManagementScreen } from "./pages/Admin/Roles/RoleManagementScreen";
 import PodcastScreen from "./pages/Podcast/PodcastScreen";
 import PodcastDetailScreen from "./pages/Podcast/PodcastDetailScreen";
 
@@ -106,13 +106,20 @@ function App() {
                 </ErrorBoundary>
               }
             />
+            <Route
+              path="roles"
+              element={
+                <ErrorBoundary>
+                  <RoleManagementScreen />
+                </ErrorBoundary>
+              }
+            />
             <Route path="stations" element={<StationPage />} />
             <Route path="playlists" element={<PlaylistPage />} />
             <Route
               path="playlists/:playlistId"
               element={<PlaylistDetailPage />}
             />
-
             <Route path="podcasts" element={<PodcastPage />} />
             <Route path="podcasts/new" element={<PodcastEditor />} />
             <Route path="podcasts/:podcastId" element={<PodcastEditor />} />

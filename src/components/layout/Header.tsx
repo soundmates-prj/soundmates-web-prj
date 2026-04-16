@@ -311,7 +311,7 @@ const Header: React.FC = () => {
                         <div>
                           <p className="avatar-dropdown-name">
                             {userInfo?.lastName && userInfo?.firstName
-                              ? `${userInfo.firstName} ${userInfo.lastName}`
+                              ? `${userInfo.lastName} ${userInfo.firstName}`
                               : userInfo?.username || "Người dùng"}
                           </p>
                           <p className="avatar-dropdown-email">
