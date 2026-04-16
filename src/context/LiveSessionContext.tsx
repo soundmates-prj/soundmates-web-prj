@@ -337,9 +337,24 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
             serverElapsedSyncedAtMsRef.current = Date.now();
           }
         } else {
-          // Same song: just refresh listener count
+          // Same song: refresh listener count and resync elapsed time
           const latestCount = data.listenersCount ?? data.totalListeners;
           if (latestCount !== undefined) setListeners(toSafeListenerCount(latestCount));
+          
+          if (track && nowPlayingRef.current) {
+            // Update elapsed sync point
+            baseServerElapsedRef.current = resolveEffectiveElapsed(track);
+            serverElapsedSyncedAtMsRef.current = Date.now();
+            
+            // Reassign track with latest data to trigger React effects (like lyrics reset)
+            const updated = {
+              ...nowPlayingRef.current,
+              currentTrack: track,
+              totalListeners: latestCount ?? nowPlayingRef.current.totalListeners
+            };
+            nowPlayingRef.current = updated;
+            setNowPlaying(updated);
+          }
         }
       } catch { /* silent */ }
     };
@@ -453,14 +468,30 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         nowPlayingRef.current = np;
         prevTrackIdRef.current = newShId;
       } else {
-        // Same song — refresh listeners
+        // Same song — refresh listeners and resync elapsed time
         if (data.totalListeners !== undefined && data.totalListeners !== null) {
           setListeners(toSafeListenerCount(data.totalListeners));
-          if (nowPlayingRef.current) {
-            const updated = { ...nowPlayingRef.current, totalListeners: data.totalListeners };
-            nowPlayingRef.current = updated;
-            setNowPlaying(updated);
-          }
+        }
+        
+        // Always resync track elapsed to maintain tight lyric sync
+        const current: TrackInfo = {
+          shId: track.shId, title: track.title ?? "—", artist: track.artist ?? "—",
+          album: track.album ?? "", artUrl: proxyUrl(track.artUrl ?? ""),
+          duration: track.duration, elapsed: track.elapsed,
+          isRequest: track.isRequest, lyrics: track.lyrics ?? null,
+          playedAt: track.playedAt,
+        };
+        baseServerElapsedRef.current = resolveEffectiveElapsed(current);
+        serverElapsedSyncedAtMsRef.current = Date.now();
+        
+        if (nowPlayingRef.current) {
+          const updated = { 
+            ...nowPlayingRef.current, 
+            currentTrack: current,
+            totalListeners: data.totalListeners ?? nowPlayingRef.current.totalListeners 
+          };
+          nowPlayingRef.current = updated;
+          setNowPlaying(updated);
         }
       }
     });

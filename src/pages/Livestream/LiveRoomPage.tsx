@@ -66,7 +66,7 @@ interface SystemMusicItem {
 
 const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DEFAULT_LYRICS_OFFSET_SEC = 1;
-const LIVE_STREAM_LATENCY_COMPENSATION_MS = 1500;
+const LIVE_STREAM_LATENCY_COMPENSATION_MS = 3000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -189,7 +189,8 @@ export function LiveRoomPage() {
   const [playedHistory, setPlayedHistory] = useState<any[]>([]);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [authPopupMode, setAuthPopupMode] = useState<AuthPopupMode>("guestLimit");
-  const [lyricsOffset, setLyricsOffset] = useState(DEFAULT_LYRICS_OFFSET_SEC);
+  const [manualSyncBaseMs, setManualSyncBaseMs] = useState<number | null>(null);
+  const [manualSyncClockMs, setManualSyncClockMs] = useState<number | null>(null);
   const [adjustedElapsedMs, setAdjustedElapsedMs] = useState(0);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestSearch, setRequestSearch] = useState("");
@@ -203,7 +204,6 @@ export function LiveRoomPage() {
   // ── Refs ──────────────────────────────────────────────────────────────────
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
-  const lyricsOffsetRef = useRef(lyricsOffset);
   const isPlayingRef = useRef(isPlaying);
   const prevTrackIdRef = useRef<number | undefined>(undefined);
   const prevTrackDataRef = useRef<any | null>(null);
@@ -215,7 +215,6 @@ export function LiveRoomPage() {
   const currentUserAvatarRef = useRef<string>(getCurrentUserAvatar());
   const currentUserRoleRef = useRef<string>(getCurrentUserRole());
 
-  useEffect(() => { lyricsOffsetRef.current = lyricsOffset; }, [lyricsOffset]);
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
   useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
 
@@ -250,16 +249,27 @@ export function LiveRoomPage() {
   const currentLyricsStr = nowPlaying?.currentTrack?.lyrics ?? null;
   const parsedLyrics = useMemo(() => parseLyrics(currentLyricsStr), [currentLyricsStr]);
 
-  // Update adjustedElapsedMs every 500ms (for lyrics sync)
+  // Auto-clear manual override when API data updates nowPlaying
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (!isPlayingRef.current) return;
+    setManualSyncBaseMs(null);
+    setManualSyncClockMs(null);
+  }, [nowPlaying]);
+
+  // Update adjustedElapsedMs every 500ms based on context elapsed updates
+  useEffect(() => {
+    if (!isPlayingRef.current) return;
+
+    if (manualSyncBaseMs !== null && manualSyncClockMs !== null) {
+      // Use manual override timing
+      const delta = Date.now() - manualSyncClockMs;
+      setAdjustedElapsedMs(manualSyncBaseMs + delta);
+    } else {
+      // Use true server timing
       const elapsedSec = elapsed;
       const wallClockMs = elapsedSec * 1000;
-      setAdjustedElapsedMs(Math.max(0, wallClockMs - LIVE_STREAM_LATENCY_COMPENSATION_MS - lyricsOffsetRef.current * 1000));
-    }, 500);
-    return () => clearInterval(timer);
-  }, [elapsed]);
+      setAdjustedElapsedMs(Math.max(0, wallClockMs - LIVE_STREAM_LATENCY_COMPENSATION_MS));
+    }
+  }, [elapsed, manualSyncBaseMs, manualSyncClockMs]);
 
   const activeLyricIndex = useMemo(() => {
     if (!parsedLyrics.length) return -1;
@@ -708,9 +718,8 @@ export function LiveRoomPage() {
                     key={i} type="button"
                     className={`lr-lyric-sync-line ${isActive ? "active" : ""}`}
                     onClick={() => {
-                      if (adjustedElapsedMs > 0) {
-                        setLyricsOffset((adjustedElapsedMs - line.time) / 1000);
-                      }
+                      setManualSyncBaseMs(line.time);
+                      setManualSyncClockMs(Date.now());
                     }}
                   >
                     {line.text}
