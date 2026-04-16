@@ -131,7 +131,7 @@ export default function Profile() {
 
   if (!user) return <div className="pf-loading">Đang tải...</div>;
 
-  const name = `${user.lastName ?? ""} ${user.firstName ?? ""}`.trim();
+  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
   const dob = formatDate(user.dateOfBirth);
   const defaultCover =
     "https://images.unsplash.com/photo-1511376777868-611b54f68947?w=1200&q=80";
@@ -173,7 +173,7 @@ export default function Profile() {
                 <h1 className="pf-name">{name}</h1>
                 <span className="pf-check">✔</span>
               </div>
-              <p className="pf-bio">{user.bio || "Music Enthusiast"}</p>
+              <p className="pf-bio">{user.bio || ""}</p>
               {dob && (
                 <p className="pf-dob">
                   <Calendar1 size={13} />

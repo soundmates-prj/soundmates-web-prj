@@ -70,8 +70,6 @@ const hostMenuItems: MenuItem[] = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: '/host/dashboard' },
     { id: 'sessions', icon: <Radio size={20} />, label: 'Phiên phát sóng', path: '/host/sessions' },
     { id: 'schedule', icon: <Calendar size={20} />, label: 'Lịch trình', path: '/host/schedule' },
-    { id: 'music-requests', icon: <Music size={20} />, label: 'Yêu cầu nhạc', path: '/host/music-requests' },
-    { id: 'podcast-requests', icon: <Mic size={20} />, label: 'Yêu cầu podcast', path: '/host/podcast-requests' },
     { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Phân tích', path: '/host/analytics' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Cài đặt', path: '/host/settings' },
 ];

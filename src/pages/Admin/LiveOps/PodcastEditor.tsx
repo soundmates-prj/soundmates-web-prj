@@ -10,9 +10,11 @@ import {
   Tag,
   Radio,
   Info,
+  Loader2,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
+import { uploadImage } from "../../../utils/cloudinaryUpload";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import "./LiveOps.css";
 
@@ -48,6 +50,7 @@ export default function PodcastEditor() {
   const [banner, setBanner] = useState("");
   const [status, setStatus] = useState("Draft");
   const [saving, setSaving] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,7 +75,7 @@ export default function PodcastEditor() {
     void loadPodcast();
   }, [isEdit, podcastId]);
 
-  const handleCoverUpload = (file: File | null) => {
+  const handleCoverUpload = async (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       showError("Chỉ chấp nhận file ảnh");
@@ -82,9 +85,15 @@ export default function PodcastEditor() {
       showError("Ảnh tối đa 5MB");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setBanner(String(reader.result || ""));
-    reader.readAsDataURL(file);
+    setUploadingBanner(true);
+    try {
+      const url = await uploadImage(file);
+      setBanner(url);
+    } catch {
+      showError("Upload ảnh bìa thất bại");
+    } finally {
+      setUploadingBanner(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -118,6 +127,7 @@ export default function PodcastEditor() {
           author: author || undefined,
           type: type || undefined,
           banner: banner || undefined,
+          status: status || undefined,
         });
       }
 
@@ -273,13 +283,19 @@ export default function PodcastEditor() {
                 <button
                   className="pe-banner-btn"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingBanner}
                 >
-                  <ImagePlus size={14} />
-                  Đổi ảnh
+                  {uploadingBanner ? (
+                    <Loader2 size={14} className="spin" />
+                  ) : (
+                    <ImagePlus size={14} />
+                  )}
+                  {uploadingBanner ? "Đang tải..." : "Đổi ảnh"}
                 </button>
                 <button
                   className="pe-banner-btn pe-banner-btn--danger"
                   onClick={() => setBanner("")}
+                  disabled={uploadingBanner}
                 >
                   <Trash2 size={14} />
                   Xóa
@@ -288,8 +304,8 @@ export default function PodcastEditor() {
             </div>
           ) : (
             <div
-              className={`pe-dropzone${dragOver ? " drag-over" : ""}`}
-              onClick={() => fileInputRef.current?.click()}
+              className={`pe-dropzone${dragOver ? " drag-over" : ""}${uploadingBanner ? " loading" : ""}`}
+              onClick={() => !uploadingBanner && fileInputRef.current?.click()}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
@@ -297,11 +313,20 @@ export default function PodcastEditor() {
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
             >
-              <ImagePlus size={28} className="pe-dropzone-icon" />
-              <p className="pe-dropzone-title">Kéo thả ảnh vào đây</p>
-              <p className="pe-dropzone-sub">
-                hoặc nhấn để chọn file • PNG, JPG • Tối đa 5MB
-              </p>
+              {uploadingBanner ? (
+                <>
+                  <Loader2 size={28} className="pe-dropzone-icon spin" />
+                  <p className="pe-dropzone-title">Đang tải lên Cloudinary...</p>
+                </>
+              ) : (
+                <>
+                  <ImagePlus size={28} className="pe-dropzone-icon" />
+                  <p className="pe-dropzone-title">Kéo thả ảnh vào đây</p>
+                  <p className="pe-dropzone-sub">
+                    hoặc nhấn để chọn file • PNG, JPG • Tối đa 5MB
+                  </p>
+                </>
+              )}
             </div>
           )}
 
@@ -312,19 +337,6 @@ export default function PodcastEditor() {
             style={{ display: "none" }}
             onChange={(e) => handleCoverUpload(e.target.files?.[0] || null)}
           />
-
-          <div className="pe-field" style={{ marginTop: 14 }}>
-            <label className="pe-label" style={{ fontSize: 12 }}>
-              Hoặc dán URL ảnh
-            </label>
-            <input
-              className="ops-input"
-              value={banner.startsWith("data:") ? "" : banner}
-              onChange={(e) => setBanner(e.target.value)}
-              placeholder="https://example.com/banner.jpg"
-              style={{ fontSize: 13 }}
-            />
-          </div>
         </div>
       </div>
     </div>

@@ -49,8 +49,6 @@ import TransactionsPage from "./pages/Admin/LiveOps/TransactionsPage";
 // ── Host Page Imports ──
 import { HostDashboard } from "./pages/Host/Dashboard/HostDashboard";
 import { HostScheduleView } from "./pages/Host/Schedule/HostScheduleView";
-import { HostMusicRequestsScreen } from "./pages/Host/Requests/HostMusicRequestsScreen";
-import { HostPodcastRequestsScreen } from "./pages/Host/Requests/HostPodcastRequestsScreen";
 import HostLiveSessionPage from "./pages/Host/LiveSession/HostLiveSessionPage";
 import HostLiveSessionDetailPage from "./pages/Host/LiveSession/HostLiveSessionDetailPage";
 
@@ -173,14 +171,6 @@ function App() {
               element={<HostLiveSessionDetailPage />}
             />
             <Route path="schedule" element={<HostScheduleView />} />
-            <Route
-              path="music-requests"
-              element={<HostMusicRequestsScreen />}
-            />
-            <Route
-              path="podcast-requests"
-              element={<HostPodcastRequestsScreen />}
-            />
             <Route path="analytics" element={<HostAnalyticsScreen />} />
             <Route path="settings" element={<HostSettingsPage />} />
           </Route>

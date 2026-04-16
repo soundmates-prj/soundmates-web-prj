@@ -106,6 +106,19 @@ function CommentAvatar({
 }
 
 /* ── CommentItem ── */
+
+/** Thu thập tất cả replies lồng nhau thành 1 danh sách phẳng */
+const flattenReplies = (replies: Comment[]): Comment[] => {
+  const result: Comment[] = [];
+  for (const r of replies) {
+    result.push(r);
+    if (r.replies && r.replies.length > 0) {
+      result.push(...flattenReplies(r.replies));
+    }
+  }
+  return result;
+};
+
 function CommentItem({
   comment,
   currentUserId,
@@ -113,6 +126,7 @@ function CommentItem({
   onDelete,
   onUpdate,
   onReply,
+  depth = 0,
 }: {
   comment: Comment;
   currentUserId: string | null;
@@ -120,6 +134,7 @@ function CommentItem({
   onDelete: (id: string) => void;
   onUpdate: (id: string, content: string) => void;
   onReply: (id: string, content: string) => void;
+  depth?: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -315,9 +330,14 @@ function CommentItem({
           </div>
         )}
 
-        {comment.replies && comment.replies.length > 0 && (
+        {/* 
+          depth === 0 (comment gốc): gom TẤT CẢ replies lồng nhau thành list phẳng,
+          render hết ở depth 1 → không bao giờ thụt quá 1 cấp.
+          depth >= 1 (reply): không render children vì parent đã flatten rồi.
+        */}
+        {depth === 0 && comment.replies && comment.replies.length > 0 && (
           <div className="cm-replies">
-            {comment.replies.map((reply) => (
+            {flattenReplies(comment.replies).map((reply) => (
               <CommentItem
                 key={reply.id}
                 comment={reply}
@@ -326,6 +346,7 @@ function CommentItem({
                 onDelete={onDelete}
                 onUpdate={onUpdate}
                 onReply={onReply}
+                depth={1}
               />
             ))}
           </div>
@@ -547,10 +568,15 @@ export default function CommentModal({
     }
   };
 
+  // ✅ Khi xóa 1 comment, đẩy replies con của nó lên cùng cấp (promote) thay vì xóa theo
   const removeInTree = (list: Comment[], id: string): Comment[] =>
-    list
-      .filter((c) => c.id !== id)
-      .map((c) => ({ ...c, replies: removeInTree(c.replies ?? [], id) }));
+    list.flatMap((c) => {
+      if (c.id === id) {
+        // Promote children lên cùng cấp với comment bị xóa
+        return c.replies ?? [];
+      }
+      return [{ ...c, replies: removeInTree(c.replies ?? [], id) }];
+    });
   const updateInTree = (list: Comment[], updated: Comment): Comment[] =>
     list.map((c) =>
       c.id === updated.id
