@@ -9,9 +9,11 @@ import {
   X,
   Mic2,
   Music,
+  Radio,
 } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { usePlayer } from "../../context/PlayerContext";
+import { useLiveSession } from "../../context/LiveSessionContext";
 import { showToast } from "../../utils/toast";
 import podcastService from "../../services/podcastService";
 import type { PodcastEpisode } from "../../types/podcast";
@@ -26,20 +28,34 @@ type DrawerTab = "playlist" | "podcast";
 export function MusicPlayer() {
   const {
     track,
-    isPlaying,
-    volume,
-    isMuted,
-    elapsed,
+    isPlaying: playerIsPlaying,
+    volume: playerVolume,
+    isMuted: playerIsMuted,
+    elapsed: playerElapsed,
     toggle,
-    setVolume,
+    setVolume: playerSetVolume,
     setElapsed,
-    toggleMute,
+    toggleMute: playerToggleMute,
     leaveSession,
     setTrack,
     setIsPlaying,
     audioRef: ctxAudioRef,
   } = usePlayer();
 
+  const liveCtx = useLiveSession();
+  const isInLiveSession = !!liveCtx.activeSessionId;
+
+  // Use live context values when in a live session, otherwise use PlayerContext
+  const isPlaying = isInLiveSession ? liveCtx.isPlaying : playerIsPlaying;
+  const volume = isInLiveSession ? liveCtx.volume : playerVolume;
+  const isMuted = isInLiveSession ? liveCtx.isMuted : playerIsMuted;
+  const elapsed = isInLiveSession ? liveCtx.displayElapsed : playerElapsed;
+  const toggleMute = isInLiveSession ? liveCtx.toggleMute : playerToggleMute;
+  const setVolume = isInLiveSession
+    ? liveCtx.setVolume
+    : playerSetVolume;
+
+  const navigate = useNavigate();
   const location = useLocation();
 
   // ─── Theme detection via MutationObserver (not on every render) ────────────
@@ -166,17 +182,54 @@ export function MusicPlayer() {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  const duration = track?.duration ?? 0;
-  const displayElapsed = Math.max(0, duration > 0 ? Math.min(elapsed, duration) : elapsed);
-  // Progress bar now uses the synchronized PlayerContext elapsed.
-  const progressPct =
-    duration > 0 ? Math.min((displayElapsed / duration) * 100, 100) : 0;
+  // Live session: derive track info from context
+  const liveTrack = isInLiveSession ? liveCtx.nowPlaying?.currentTrack : null;
+  const displayTrack = isInLiveSession
+    ? (liveTrack
+        ? {
+            title: liveTrack.title,
+            artist: liveTrack.artist,
+            artUrl: liveTrack.artUrl,
+            duration: liveTrack.duration,
+          }
+        : null)
+    : track;
 
-  const title = track?.title ?? "Chưa có bài phát";
-  const artist = track?.artist ?? "...";
-  const artUrl = track?.artUrl ?? PLACEHOLDER_ART;
+  const title = displayTrack?.title ?? "Chưa có bài phát";
+  const artist = isInLiveSession
+    ? (liveCtx.activeSession?.stationName || liveCtx.nowPlaying?.stationName || "Live")
+    : (displayTrack?.artist ?? "...");
+  const artUrl = displayTrack?.artUrl ?? PLACEHOLDER_ART;
+  const duration = (isInLiveSession ? liveTrack?.duration : track?.duration) ?? 0;
+  const displayElapsed = Math.max(0, duration > 0 ? Math.min(elapsed, duration) : elapsed);
+  const progressPct = duration > 0 ? Math.min((displayElapsed / duration) * 100, 100) : 0;
   const displayVolume = isMuted ? 0 : volume;
   const showPlayIcon = !isPlaying || isMuted || volume === 0;
+
+  // Whether to show the player at all
+  const hasContent = isInLiveSession || !!track;
+
+  const handleTogglePlay = () => {
+    if (isInLiveSession) {
+      liveCtx.toggleAudio();
+    } else {
+      toggle();
+    }
+  };
+
+  const handleLeave = () => {
+    if (isInLiveSession) {
+      liveCtx.leaveLiveRoom();
+    } else {
+      leaveSession();
+    }
+  };
+
+  const handleNavigateToLive = () => {
+    if (liveCtx.activeSessionId) {
+      navigate(`/live/${liveCtx.activeSessionId}`);
+    }
+  };
 
   const handleFavorite = async () => {
     if (!track) return;
@@ -189,16 +242,16 @@ export function MusicPlayer() {
     }
   };
 
+  // Hide the player entirely when there's nothing to play
+  if (!hasContent) return null;
+
   return (
     <div className="music-player">
       <div className="music-player-container">
         {/* Progress Bar */}
         <div className="progress-section">
           <div className="progress-bar-track">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${progressPct}%` }}
-            />
+            <div className="progress-bar-fill" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
@@ -206,21 +259,32 @@ export function MusicPlayer() {
         <div className="player-content">
           {/* Left Section */}
           <div className="left-section">
-            <div className="album-art-container">
+            <div
+              className="album-art-container"
+              style={{ cursor: isInLiveSession ? "pointer" : "default" }}
+              onClick={isInLiveSession ? handleNavigateToLive : undefined}
+              title={isInLiveSession ? "Quay lại phòng Live" : undefined}
+            >
               <img
                 src={artUrl}
                 alt={title}
-                className={`album-art ${!track ? "album-art--placeholder" : ""}`}
+                className={`album-art ${!hasContent ? "album-art--placeholder" : ""}`}
               />
+              {isInLiveSession && (
+                <div className="live-badge-overlay">
+                  <Radio size={10} />
+                  LIVE
+                </div>
+              )}
             </div>
 
             <div className="track-info-container">
-              <p className="track-title">{title}</p>
+              <p className="track-title" style={{ cursor: isInLiveSession ? "pointer" : "default" }} onClick={isInLiveSession ? handleNavigateToLive : undefined}>{title}</p>
               <p className="track-artist">{artist}</p>
             </div>
 
-            {/* Heart — wired up */}
-            {track && (
+            {/* Heart — only for non-live */}
+            {!isInLiveSession && track && (
               <div
                 className="heart-icon-container"
                 title={isFavorite ? "Bỏ yêu thích" : "Yêu thích"}
@@ -243,8 +307,8 @@ export function MusicPlayer() {
 
             <button
               className="play-button-clean"
-              onClick={toggle}
-              disabled={!track}
+              onClick={handleTogglePlay}
+              disabled={!hasContent}
               title={showPlayIcon ? "Phát nhạc" : "Tạm dừng"}
             >
               {showPlayIcon ? (
@@ -301,11 +365,11 @@ export function MusicPlayer() {
             </div>
 
             {/* Leave session button */}
-            {track && (
+            {hasContent && (
               <div
                 className="leave-session-btn"
-                onClick={leaveSession}
-                title="Thoát Live Session"
+                onClick={handleLeave}
+                title={isInLiveSession ? "Thoát Live Session" : "Dừng phát"}
                 style={{ cursor: "pointer" }}
               >
                 <X size={18} strokeWidth={2} color={iconMuted} />

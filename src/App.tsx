@@ -80,8 +80,9 @@ function App() {
   return (
     <ThemeProvider>
       <PlayerProvider>
-        <ToastProvider />
-        <Routes>
+        <LiveSessionProvider>
+          <ToastProvider />
+          <Routes>
           {/* ── Auth Routes (no layout) ── */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -160,9 +161,7 @@ function App() {
             path="/host"
             element={
               <ProtectedRoute requiredRole="HOST">
-                <LiveSessionProvider>
-                  <HostLayout />
-                </LiveSessionProvider>
+                <HostLayout />
               </ProtectedRoute>
             }
           >
@@ -225,6 +224,7 @@ function App() {
             />
           </Route>
         </Routes>
+        </LiveSessionProvider>
       </PlayerProvider>
     </ThemeProvider>
   );

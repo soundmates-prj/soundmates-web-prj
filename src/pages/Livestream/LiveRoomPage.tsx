@@ -1,3 +1,11 @@
+/**
+ * LiveRoomPage — Listener UI for a live session.
+ *
+ * All audio, SignalR, polling and nowPlaying state are now owned by
+ * LiveSessionContext (following the mobile AudioPlayerContext pattern).
+ * This component is a pure UI layer — it joins the session on mount but
+ * does NOT stop audio when the user navigates away (mini-player continues).
+ */
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import EmojiPicker from "emoji-picker-react";
@@ -23,54 +31,12 @@ import {
 } from "lucide-react";
 import { showToast } from "../../utils/toast";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
-import type { LiveSessionResult, SongRequestResult } from "../../services/liveSessionApiService";
-import liveHubService from "../../services/liveHubService";
-import type { ChatMessage, NowPlayingUpdatedEvent } from "../../services/liveHubService";
+import type { SongRequestResult } from "../../services/liveSessionApiService";
+import { useLiveSession } from "../../context/LiveSessionContext";
 import { usePlayer } from "../../context/PlayerContext";
 import "./LiveRoomPage.css";
 
-interface TrackInfo {
-  shId: number;
-  title: string;
-  artist: string;
-  album: string;
-  artUrl: string;
-  duration: number;
-  elapsed: number;
-  isRequest: boolean;
-  lyrics?: string | null;
-  playedAt?: number;
-}
-
-interface NowPlayingData {
-  currentTrack: TrackInfo | null;
-  playingNext: TrackInfo | null;
-  songHistory: TrackInfo[];
-  totalListeners: number;
-  isLive: boolean;
-  isOnline: boolean;
-  listenUrl: string;
-  stationName: string;
-}
-
-interface DisplayChat {
-  id: string;
-  userId: string;
-  userName: string;
-  message: string;
-  createdAt: string;
-  isSystem?: boolean;
-  avatarUrl?: string;
-  isDeleted?: boolean;
-}
-
-interface RequestSongItem {
-  id: string;
-  title: string;
-  artist: string;
-  album?: string | null;
-  artUrl?: string | null;
-}
+// ─── Types (local UI only) ────────────────────────────────────────────────────
 
 interface LyricLine {
   time: number;
@@ -79,37 +45,12 @@ interface LyricLine {
 
 type AuthPopupMode = "guestLimit" | "requestSong";
 
-function parseLyrics(lrc: string | null | undefined): LyricLine[] {
-  if (!lrc) return [];
-  const result: LyricLine[] = [];
-  for (const rawLine of lrc.split("\n")) {
-    const line = rawLine.trim();
-    if (!line) continue;
-
-    const matches = Array.from(
-      line.matchAll(/\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/g),
-    );
-    if (!matches.length) continue;
-
-    const text = line
-      .replace(/\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/g, "")
-      .trim();
-    if (!text) continue;
-
-    for (const match of matches) {
-      const min = parseInt(match[1], 10);
-      const sec = parseInt(match[2], 10);
-      const fraction = match[3] ?? "";
-      // Parse → milliseconds (ms) for sub-second precision
-      const ms = fraction
-        ? parseInt(fraction.padEnd(3, "0").slice(0, 3), 10)
-        : 0;
-      const timeMs = min * 60 * 1000 + sec * 1000 + ms;
-      result.push({ time: timeMs, text });
-    }
-  }
-
-  return result.sort((a, b) => a.time - b.time);
+interface RequestSongItem {
+  id: string;
+  title: string;
+  artist: string;
+  album?: string | null;
+  artUrl?: string | null;
 }
 
 interface SystemMusicItem {
@@ -121,31 +62,40 @@ interface SystemMusicItem {
   artworkUrl?: string | null;
 }
 
-// Proxy Docker-internal hostnames to localhost for browser access
-// AzuraCast returns host.docker.internal:5000 for stream and host.docker.internal:5000/api/... for artwork
-const proxyUrl = (url: string | undefined | null): string => {
-  if (!url) return "";
-  return url.replace(/host\.docker\.internal/gi, "localhost");
-};
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DEFAULT_LYRICS_OFFSET_SEC = 1;
+const LIVE_STREAM_LATENCY_COMPENSATION_MS = 1500;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function parseLyrics(lrc: string | null | undefined): LyricLine[] {
+  if (!lrc) return [];
+  const result: LyricLine[] = [];
+  for (const rawLine of lrc.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const matches = Array.from(line.matchAll(/\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/g));
+    if (!matches.length) continue;
+    const text = line.replace(/\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/g, "").trim();
+    if (!text) continue;
+    for (const match of matches) {
+      const min = parseInt(match[1], 10);
+      const sec = parseInt(match[2], 10);
+      const fraction = match[3] ?? "";
+      const ms = fraction ? parseInt(fraction.padEnd(3, "0").slice(0, 3), 10) : 0;
+      result.push({ time: min * 60 * 1000 + sec * 1000 + ms, text });
+    }
+  }
+  return result.sort((a, b) => a.time - b.time);
+}
 
 const formatTime = (seconds: number): string => {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
 };
-
-const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const GUEST_ID_KEY = "liveGuestIdentifier";
-// Live radio streams usually arrive slightly behind server time due to buffering.
-const LIVE_STREAM_LATENCY_COMPENSATION_MS = 1500; // buffer độ trễ thực của stream (ms)
-// Keep default lyric offset neutral; users can still calibrate by clicking lyric lines.
-const DEFAULT_LYRICS_OFFSET_SEC = 1; // Offset mặc định (user tự chỉnh bằng click vào lyric line)
-const ELAPSED_DRIFT_RESYNC_THRESHOLD_SEC = 1.5; // Nếu server elapsed trôi dạt hơn 1.2s so với local projected elapsed, thực hiện resync (đồng bộ lại server elapsed, bỏ qua các drift nhỏ hơn để tránh re-sync liên tục)
-
-function toSafeListenerCount(value: unknown, fallback = 0): number {
-  const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? n : fallback;
-}
 
 function tryParseJwtUserId(token: string | null): string | null {
   if (!token) return null;
@@ -154,13 +104,10 @@ function tryParseJwtUserId(token: string | null): string | null {
     if (parts.length < 2) return null;
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
-    const json = atob(padded);
-    const payload = JSON.parse(json);
+    const payload = JSON.parse(atob(padded));
     const sub = String(payload?.sub ?? "").trim();
     return GUID_REGEX.test(sub) ? sub : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function getCurrentUserId(): string | null {
@@ -169,9 +116,7 @@ function getCurrentUserId(): string | null {
     if (raw) {
       const parsed = JSON.parse(raw);
       const id = String(parsed?.id ?? parsed?.userId ?? "").trim();
-      if (GUID_REGEX.test(id)) {
-        return id;
-      }
+      if (GUID_REGEX.test(id)) return id;
     }
   } catch { /* ignore */ }
   return tryParseJwtUserId(localStorage.getItem("accessToken"));
@@ -192,10 +137,7 @@ function getCurrentUserName(): string {
 function getCurrentUserAvatar(): string {
   try {
     const raw = localStorage.getItem("userInfo");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed.avatarUrl || "";
-    }
+    if (raw) { const parsed = JSON.parse(raw); return parsed.avatarUrl || ""; }
   } catch { /* ignore */ }
   return "";
 }
@@ -203,191 +145,128 @@ function getCurrentUserAvatar(): string {
 function getCurrentUserRole(): string {
   try {
     const raw = localStorage.getItem("userInfo");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed.role || "User";
-    }
+    if (raw) { const parsed = JSON.parse(raw); return parsed.role || "User"; }
   } catch { /* ignore */ }
   return "User";
 }
 
-function mapTrack(raw: any, proxy: (u: string) => string): TrackInfo | null {
-  if (!raw) return null;
-  // playedAt: backend sends double seconds (with fractional part) from AzuraCast.
-  // Store as fractional Unix seconds — do NOT floor to preserve sub-second precision.
-  let playedAtSec = 0;
-  if (typeof raw.playedAt === 'number') {
-    // raw.playedAt is in SECONDS — divide by 1000 to convert to ms for Date, divide back to get seconds with fraction
-    playedAtSec = raw.playedAt > 1_000_000_000_000
-      ? raw.playedAt / 1000        // milliseconds → seconds (with fraction)
-      : raw.playedAt;               // already seconds (double with fraction)
-  } else if (typeof raw.playedAt === 'string' && raw.playedAt) {
-    playedAtSec = new Date(raw.playedAt).getTime() / 1000; // ISO → fractional seconds
-  }
-  return {
-    shId: raw.shId ?? raw.id ?? 0,
-    title: raw.title || raw.text || "—",
-    artist: raw.artist || "—",
-    album: raw.album || "",
-    artUrl: proxy(raw.artUrl),
-    duration: raw.duration ?? 0,
-    elapsed: raw.elapsed ?? 0,
-    isRequest: raw.isRequest ?? false,
-    playedAt: playedAtSec, // fractional Unix seconds — NOT floored
-    lyrics: raw.lyrics ?? null,
-  } as any;
-}
-
-function resolveEffectiveElapsed(rawTrack: any): number {
-  if (!rawTrack) {
-    return 0;
-  }
-
-  // Backend now sends double (fractional seconds) — preserve precision, no Math.floor
-  const rawElapsed = Number(rawTrack.elapsed);
-  let effectiveElapsed = Number.isFinite(rawElapsed) ? Math.max(0, rawElapsed) : 0;
-
-  const rawPlayedAt = rawTrack.playedAt;
-  let playedAtSec: number | null = null;
-
-  if (typeof rawPlayedAt === "number" && Number.isFinite(rawPlayedAt) && rawPlayedAt > 0) {
-    // Normalize: if > 1e12 treat as milliseconds → convert to fractional seconds
-    playedAtSec = rawPlayedAt > 1_000_000_000_000
-      ? rawPlayedAt / 1000
-      : rawPlayedAt;
-  } else if (typeof rawPlayedAt === "string" && rawPlayedAt.trim()) {
-    const parsedMs = Date.parse(rawPlayedAt);
-    if (Number.isFinite(parsedMs)) {
-      playedAtSec = parsedMs / 1000; // milliseconds → fractional seconds
-    }
-  }
-
-  if (playedAtSec && playedAtSec > 0) {
-    // Use wall-clock with ms precision — Date.now() gives ms, divide to get fractional seconds
-    const elapsedFromPlayedAt = Math.max(0, Date.now() / 1000 - playedAtSec);
-    // Prefer the fresher value to avoid stale elapsed snapshots from API polling.
-    effectiveElapsed = Math.max(effectiveElapsed, elapsedFromPlayedAt);
-  }
-
-  const rawDuration = Number(rawTrack.duration);
-  if (Number.isFinite(rawDuration) && rawDuration > 0) {
-    effectiveElapsed = Math.min(effectiveElapsed, rawDuration);
-  }
-
-  return effectiveElapsed;
-}
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function LiveRoomPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  const player = usePlayer();
-  const playerSetElapsed = player.setElapsed;
-  const playerLeaveSession = player.leaveSession;
-  const playerSetLiveAudioRef = player.setLiveAudioRef;
-  const playerSetTrack = player.setTrack;
-  const playerSetIsPlaying = player.setIsPlaying;
-  const playerToggleMute = player.toggleMute;
 
-  const [session, setSession] = useState<LiveSessionResult | null>(null);
-  const [nowPlaying, setNowPlaying] = useState<NowPlayingData | null>(null);
+  // ── All live session state comes from context ─────────────────────────────
+  const {
+    activeSession: session,
+    nowPlaying,
+    chatMessages: ctxChatMessages,
+    listeners,
+    isPlaying,
+    isLoading: ctxLoading,
+    isMuted,
+    volume,
+    displayElapsed: elapsed,
+    sessionEnded: ended,
+    joinLiveRoom,
+    toggleAudio,
+    toggleMute,
+    setVolume,
+    sendChat: ctxSendChat,
+    deleteChat: ctxDeleteChat,
+  } = useLiveSession();
+
+  // Stop PlayerContext audio (podcast etc.) so it doesn't play over the live stream
+  const { leaveSession: stopPlayerContextAudio } = usePlayer();
+
+  // ── Local UI state only ───────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [listeners, setListeners] = useState(0);
-  const [chats, setChats] = useState<DisplayChat[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeDotMenu, setActiveDotMenu] = useState<string | null>(null);
   const [activeChatTab, setActiveChatTab] = useState<"chat" | "history" | "lyrics">("chat");
-  const [upNextHistory, setUpNextHistory] = useState<TrackInfo[]>([]);
-  const [playedHistory, setPlayedHistory] = useState<TrackInfo[]>([]);
-  const [ended, setEnded] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [listeningTime, setListeningTime] = useState(0);
+  const [upNextHistory, setUpNextHistory] = useState<any[]>([]);
+  const [playedHistory, setPlayedHistory] = useState<any[]>([]);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [authPopupMode, setAuthPopupMode] = useState<AuthPopupMode>("guestLimit");
-  // Separate lyrics string state — only changes when the actual lyrics content changes.
-  // This prevents parsedLyrics from re-computing when only elapsed/sync data changes.
-  const [currentLyricsStr, setCurrentLyricsStr] = useState<string | null>(null);
   const [lyricsOffset, setLyricsOffset] = useState(DEFAULT_LYRICS_OFFSET_SEC);
-
+  const [adjustedElapsedMs, setAdjustedElapsedMs] = useState(0);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestSearch, setRequestSearch] = useState("");
   const [requestMessage, setRequestMessage] = useState("");
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestableSongs, setRequestableSongs] = useState<RequestSongItem[]>([]);
   const [requestedSongIds, setRequestedSongIds] = useState<Set<string>>(new Set());
+  const [listeningTime, setListeningTime] = useState(0);
+  const guestLimitReachedRef = useRef(false);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // ── Refs ──────────────────────────────────────────────────────────────────
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
-  const elapsedRef = useRef<number>(0);
-  // Server timeline baseline for current song.
-  // projectedElapsed = baseServerElapsed + (Date.now() - serverElapsedSyncedAtMs)/1000.
-  const baseServerElapsedRef = useRef<number>(0);
-  const serverElapsedSyncedAtMsRef = useRef<number>(Date.now());
+  const lyricsOffsetRef = useRef(lyricsOffset);
+  const isPlayingRef = useRef(isPlaying);
+  const prevTrackIdRef = useRef<number | undefined>(undefined);
+  const prevTrackDataRef = useRef<any | null>(null);
+  const sessionIdRef = useRef<string | undefined>(sessionId);
 
-  const syncElapsedFromServer = useCallback((serverElapsed: number | null | undefined) => {
-    const parsed = Number(serverElapsed);
-    if (!Number.isFinite(parsed)) {
-      return;
-    }
-    const safeElapsed = Math.max(0, parsed);
-    baseServerElapsedRef.current = safeElapsed;
-    serverElapsedSyncedAtMsRef.current = Date.now();
-    elapsedRef.current = safeElapsed;
-    setElapsed(safeElapsed);
-    playerSetElapsed(safeElapsed);
-  }, [playerSetElapsed]);
+  // Cache user info refs
+  const currentUserIdRef = useRef<string | null>(getCurrentUserId());
+  const currentUserNameRef = useRef<string>(getCurrentUserName());
+  const currentUserAvatarRef = useRef<string>(getCurrentUserAvatar());
+  const currentUserRoleRef = useRef<string>(getCurrentUserRole());
 
-  const maybeResyncElapsed = useCallback((serverElapsed: number | null | undefined) => {
-    const parsed = Number(serverElapsed);
-    if (!Number.isFinite(parsed)) {
-      return;
-    }
+  useEffect(() => { lyricsOffsetRef.current = lyricsOffset; }, [lyricsOffset]);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
 
-    const safeServerElapsed = Math.max(0, parsed);
-    const projectedElapsed = Math.max(
-      0,
-      baseServerElapsedRef.current +
-      (Date.now() - serverElapsedSyncedAtMsRef.current) / 1000,
-    );
+  // ── Join live room on mount (context handles dedup) ───────────────────────
+  useEffect(() => {
+    if (!sessionId) return;
+    // Stop any PlayerContext audio (podcast etc.) to avoid double playback
+    stopPlayerContextAudio();
+    const userId = getCurrentUserId();
+    void joinLiveRoom(sessionId, userId).finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
 
-    // Only fast-forward when server is clearly ahead.
-    // Do not pull back elapsed when server reports stale/lagging values.
-    const serverAheadBySec = safeServerElapsed - projectedElapsed;
-    if (serverAheadBySec >= ELAPSED_DRIFT_RESYNC_THRESHOLD_SEC) {
-      syncElapsedFromServer(safeServerElapsed);
-    }
-  }, [syncElapsedFromServer]);
+  // ── Sync context loading state ────────────────────────────────────────────
+  useEffect(() => {
+    if (!ctxLoading) setLoading(false);
+  }, [ctxLoading]);
 
-  const alignElapsedToPlaybackStart = useCallback(() => {
-    // Keep server elapsed value, but start local projection from actual playback start time.
-    serverElapsedSyncedAtMsRef.current = Date.now();
-  }, []);
+  // ── Map context chatMessages → local DisplayChat format ───────────────────
+  const chats = useMemo(() => ctxChatMessages.map(msg => ({
+    id: msg.id,
+    userId: msg.userId || "",
+    userName: msg.userName || `User-${(msg.userId || "?").slice(0, 6)}`,
+    avatarUrl: msg.avatarUrl || "",
+    message: msg.message,
+    createdAt: msg.createdAt,
+    isDeleted: msg.isDeleted,
+    isSystem: false,
+  })), [ctxChatMessages]);
 
-  const parsedLyrics = useMemo(() => {
-    return parseLyrics(currentLyricsStr);
-  }, [currentLyricsStr]);
-  // Use wall-clock projection in milliseconds directly — no precision loss from Math.floor
-  // projectedMs = baseServerElapsed_s * 1000 + (Date.now() - serverSyncedAtMs)
-  const wallClockElapsedMs = Math.max(
-    0,
-    baseServerElapsedRef.current * 1000 + (Date.now() - serverElapsedSyncedAtMsRef.current),
-  );
-  const adjustedElapsedMs = Math.max(
-    0,
-    wallClockElapsedMs - LIVE_STREAM_LATENCY_COMPENSATION_MS - lyricsOffset * 1000,
-  );
+  // ── Lyrics ────────────────────────────────────────────────────────────────
+  const currentLyricsStr = nowPlaying?.currentTrack?.lyrics ?? null;
+  const parsedLyrics = useMemo(() => parseLyrics(currentLyricsStr), [currentLyricsStr]);
+
+  // Update adjustedElapsedMs every 500ms (for lyrics sync)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!isPlayingRef.current) return;
+      const elapsedSec = elapsed;
+      const wallClockMs = elapsedSec * 1000;
+      setAdjustedElapsedMs(Math.max(0, wallClockMs - LIVE_STREAM_LATENCY_COMPENSATION_MS - lyricsOffsetRef.current * 1000));
+    }, 500);
+    return () => clearInterval(timer);
+  }, [elapsed]);
 
   const activeLyricIndex = useMemo(() => {
     if (!parsedLyrics.length) return -1;
     let idx = -1;
     for (let i = 0; i < parsedLyrics.length; i++) {
-      if (adjustedElapsedMs >= parsedLyrics[i].time) {
-        idx = i;
-      } else {
-        break;
-      }
+      if (adjustedElapsedMs >= parsedLyrics[i].time) idx = i;
+      else break;
     }
     return idx;
   }, [parsedLyrics, adjustedElapsedMs]);
@@ -396,691 +275,62 @@ export function LiveRoomPage() {
   useEffect(() => {
     if (activeLyricIndex >= 0 && lyricsContainerRef.current) {
       const activeEl = lyricsContainerRef.current.querySelector(
-        ".lr-lyric-sync-line.active, .lr-lyric-line.active",
+        ".lr-lyric-sync-line.active, .lr-lyric-line.active"
       ) as HTMLElement | null;
-      if (activeEl) {
-        activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      if (activeEl) activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [activeLyricIndex]);
 
-  // ─── Elapsed Timer: wall-clock projection from last server elapsed sync ─────
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (!isPlaying) return;
-      const projectedElapsed = Math.max(
-        0,
-        baseServerElapsedRef.current +
-        (Date.now() - serverElapsedSyncedAtMsRef.current) / 1000,
-      );
-      const duration = nowPlayingRef.current?.currentTrack?.duration ?? 0;
-      const nextElapsed = duration > 0
-        ? Math.min(projectedElapsed, duration)
-        : projectedElapsed;
-      setElapsed(nextElapsed);
-      elapsedRef.current = nextElapsed;
-      playerSetElapsed(nextElapsed);
-    }, 500); // 2×/s — smooth enough, avoids excessive re-renders
-
-    return () => clearInterval(timer);
-  }, [isPlaying, playerSetElapsed]);
-
-  // Dùng chung để dừng audio ở mọi nơi: navigate, session end, cleanup
-  const cleanupAudio = useCallback(() => {
-    playerLeaveSession();
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; audioRef.current = null; }
-    (window as any).__liveAudioRef = null;
-    playerSetLiveAudioRef(null);
-    setIsPlaying(false);
-    baseServerElapsedRef.current = 0;
-    serverElapsedSyncedAtMsRef.current = Date.now();
-    setElapsed(0);
-    elapsedRef.current = 0;
-    playerSetElapsed(0);
-  }, [playerLeaveSession, playerSetElapsed, playerSetLiveAudioRef]);
-
-  const prevTrackIdRef = useRef<number | undefined>(undefined);
-  const prevTrackDataRef = useRef<TrackInfo | null>(null);
-  const sessionIdRef = useRef<string | undefined>(sessionId);
-  const joinedRef = useRef(false);
-  const nowPlayingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const nowPlayingRef = useRef<NowPlayingData | null>(null); // avoid stale closure in pollNowPlaying
-  const stationIdRef = useRef<string | undefined>(undefined);
-  const autoPlayRef = useRef(false); // chỉ auto-play lần đầu
-  const guestLimitReachedRef = useRef(false);
-
-  useEffect(() => {
-    // LiveRoom owns playback via local audioRef. Clear global player audio to avoid double stream playback.
-    playerLeaveSession();
-  }, [sessionId, playerLeaveSession]);
-
-  // ─── Main load effect ─────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!sessionId || ended) return;
-
-    const userId = getCurrentUserId();
-
-    // Reset per-session state
-    setRequestedSongIds(new Set());
-    setUpNextHistory([]);
-    setPlayedHistory([]);
-    setChats([]);
-    setListeners(0);
-    setListeningTime(0);
-    setCurrentLyricsStr(null);
-    setLyricsOffset(DEFAULT_LYRICS_OFFSET_SEC);
-    baseServerElapsedRef.current = 0;
-    serverElapsedSyncedAtMsRef.current = Date.now();
-    elapsedRef.current = 0;
-    setElapsed(0);
-    playerSetElapsed(0);
-    guestLimitReachedRef.current = false;
-    prevTrackIdRef.current = undefined;
-    prevTrackDataRef.current = null;
-    joinedRef.current = false;
-    autoPlayRef.current = true;
-
-    // ─── Register SignalR handlers (luôn đăng ký, không phụ thuộc async) ───
-    // NOTE: NowPlayingUpdated is broadcast via LiveSessionHub (live-session-{id} group)
-    // from NowPlayingBroadcastService — NOT the old SongChanged event.
-    // Only update state if ShId actually changed to avoid re-rendering lyrics every event.
-    const offNowPlayingUpdated = liveHubService.onNowPlayingUpdated((data: NowPlayingUpdatedEvent) => {
-      if (!data.currentTrack) return;
-      const track = data.currentTrack;
-      const newShId = track.shId;
-      const prevShId = prevTrackIdRef.current;
-
-      if (newShId !== prevShId) {
-        // Song changed — full nowPlaying update (triggers lyrics re-parse + scroll)
-        const current: TrackInfo = {
-          shId: track.shId,
-          title: track.title ?? "—",
-          artist: track.artist ?? "—",
-          album: track.album ?? "",
-          artUrl: proxyUrl(track.artUrl ?? ""),
-          duration: track.duration,
-          elapsed: track.elapsed,
-          isRequest: track.isRequest,
-          lyrics: track.lyrics ?? null,
-          playedAt: track.playedAt,
-        };
-
-        const newNowPlaying: NowPlayingData = {
-          ...(nowPlayingRef.current ?? {
-            currentTrack: null, playingNext: null, songHistory: [],
-            totalListeners: 0, isLive: true, isOnline: true,
-            listenUrl: "", stationName: "Live Station",
-          }),
-          currentTrack: current,
-          playingNext: nowPlayingRef.current?.currentTrack ?? null,
-          songHistory: nowPlayingRef.current?.currentTrack
-            ? [nowPlayingRef.current.currentTrack, ...(nowPlayingRef.current?.songHistory ?? [])].slice(0, 20)
-            : nowPlayingRef.current?.songHistory ?? [],
-          listenUrl: proxyUrl(data.listenUrl ?? nowPlayingRef.current?.listenUrl ?? ""),
-          totalListeners: data.totalListeners ?? nowPlayingRef.current?.totalListeners ?? 0,
-        };
-
-        setNowPlaying(newNowPlaying);
-        nowPlayingRef.current = newNowPlaying;
-
-        // Only update lyrics string when it actually changes — prevents re-parse on every event
-        setCurrentLyricsStr(track.lyrics ?? null);
-        setLyricsOffset(DEFAULT_LYRICS_OFFSET_SEC);
-
-        prevTrackIdRef.current = newShId;
-        syncElapsedFromServer(resolveEffectiveElapsed(track));
-      } else {
-        // Same song: keep local projected elapsed, do not force re-sync mid-song.
-        maybeResyncElapsed(resolveEffectiveElapsed(track));
-
-        if (data.totalListeners !== undefined && data.totalListeners !== null) {
-          setListeners((prev) => toSafeListenerCount(data.totalListeners, prev));
-        }
-      }
-    });
-
-    const offListeners = liveHubService.onListenersUpdated((sid, count) => {
-      if (sid === sessionIdRef.current) setListeners(count);
-    });
-
-    const offChat = liveHubService.onReceiveChat((chat: any) => {
-      if (chat.liveSessionId === sessionIdRef.current || chat.LiveSessionId === sessionIdRef.current) {
-        setChats(prev => [
-          ...prev,
-          {
-            id: chat.id || chat.Id,
-            userId: chat.userId || chat.UserId || "",
-            userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "?").slice(0, 6)}`,
-            avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
-            message: chat.message || chat.Message,
-            createdAt: chat.createdAt || chat.CreatedAt,
-          },
-        ]);
-      }
-    });
-
-    const offChatHistory = liveHubService.onChatHistory((history) => {
-      const mapped = history.map((chat: any) => ({
-        id: chat.id || chat.Id,
-        userId: chat.userId || chat.UserId || "",
-        userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "?").slice(0, 6)}`,
-        avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
-        message: chat.message,
-        createdAt: chat.createdAt,
-      }));
-      setChats(mapped);
-    });
-
-    const offChatDeleted = liveHubService.onChatDeleted((chatId) => {
-      setChats(prev => prev.map(m => m.id === chatId ? { ...m, isDeleted: true } : m));
-    });
-
-    const offJoined = liveHubService.onUserJoined((sid) => {
-      if (sid === sessionIdRef.current) setListeners(c => c + 1);
-    });
-    const offLeft = liveHubService.onUserLeft((sid) => {
-      if (sid === sessionIdRef.current) setListeners(c => Math.max(0, c - 1));
-    });
-
-    const offEnded = liveHubService.onSessionEnded((evt) => {
-      if (evt.id === sessionIdRef.current) setEnded(true);
-    });
-
-    let pollNowPlayingNow: (() => Promise<void>) | null = null;
-
-    const offSongChanged = liveHubService.onSongChanged((event) => {
-      if (event.sessionId !== sessionIdRef.current) {
-        return;
-      }
-
-      // Fast path: don't wait for fallback interval when backend emits SongChanged.
-      if (pollNowPlayingNow) {
-        void pollNowPlayingNow();
-      }
-    });
-
-    const offGuestLimitExceeded = liveHubService.onGuestViewLimitExceeded((event) => {
-      if (event.sessionId === sessionIdRef.current) {
-        if (guestLimitReachedRef.current) {
-          return;
-        }
-
-        const currentUserId = getCurrentUserId();
-        const isAuthenticated = !!(currentUserId && GUID_REGEX.test(currentUserId));
-        if (isAuthenticated) {
-          return;
-        }
-
-        const localGuestId = localStorage.getItem(GUEST_ID_KEY);
-        // Backend broadcasts to whole session group; only handle event for this specific guest.
-        if (!event.anonymousIdentifier || !localGuestId || event.anonymousIdentifier !== localGuestId) {
-          return;
-        }
-
-        console.log("[LiveRoomPage] Guest view limit exceeded:", event);
-        // Stop audio and show login popup
-        guestLimitReachedRef.current = true;
-        cleanupAudio();
-        setIsPlaying(false);
-        setAuthPopupMode("guestLimit");
-        setShowAuthPopup(true);
-        showToast.info("You've reached the 2-minute viewing limit. Please login to continue watching.");
-      }
-    });
-
-    // When user logs in while on the page, re-join with their userId to upgrade from guest → authenticated
-    const offAuthChange = () => {
-      try {
-        const newUserId = getCurrentUserId();
-        const isValid = newUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(newUserId);
-        if (isValid && joinedRef.current) {
-          console.log("[LiveRoomPage] authChange fired — user logged in, re-joining session with userId:", newUserId);
-          liveHubService.joinSession(sessionId, newUserId).catch((err) => {
-            console.error("[LiveRoomPage] authChange joinSession failed:", err);
-          });
-        }
-      } catch (e) {
-        console.error("[LiveRoomPage] authChange handler error:", e);
-      }
-    };
-    window.addEventListener("authChange", offAuthChange);
-
-    // ─── Async load ─────────────────────────────────────────────────────────
-    void (async () => {
-      try {
-        const sessionData = await liveSessionApiService.getLiveSession(sessionId);
-
-        if (
-          sessionData.status?.toLowerCase() === "ended" ||
-          sessionData.status?.toLowerCase() === "cancelled"
-        ) {
-          setEnded(true);
-          setLoading(false);
-          return;
-        }
-
-        setSession(sessionData);
-        setListeners(toSafeListenerCount(sessionData.listenersCount ?? sessionData.totalListeners, 0));
-        stationIdRef.current = String(sessionData.stationId);
-
-        await liveHubService.start();
-
-        try {
-          // Trì hoãn việc gọi JoinSession 1 chút để tránh race condition khi SignalR mới connected
-          setTimeout(async () => {
-            try {
-              const validUserId = userId && GUID_REGEX.test(userId) ? userId : undefined;
-              await liveHubService.joinSession(sessionId, validUserId);
-              joinedRef.current = true;
-            } catch (joinErr: any) {
-              const msg = joinErr?.message ?? "";
-              const fullMsg = joinErr?.toString?.() ?? JSON.stringify(joinErr);
-              if (
-                msg.includes("not active") ||
-                msg.includes("not found") ||
-                msg.includes("Session has ended") ||
-                msg.includes("Session not found")
-              ) {
-                console.warn("[LiveRoomPage] Session is no longer active:", msg);
-                setEnded(true);
-              } else {
-                // Log full detail so we can diagnose root cause
-                console.warn("[LiveRoomPage] JoinSession failed:", msg);
-                console.warn("[LiveRoomPage] Full joinErr:", fullMsg);
-              }
-            }
-          }, 500);
-        } catch (err: any) {
-          console.warn("[LiveRoomPage] Failed to start signalR:", err);
-        }
-
-        const nowPlayingData = sessionData.nowPlaying;
-
-        if (nowPlayingData) {
-          const track = nowPlayingData.currentTrack;
-          const current = mapTrack(track, proxyUrl);
-          const next = mapTrack(nowPlayingData.playingNext || (nowPlayingData as any).nextSong, proxyUrl);
-          const history = (nowPlayingData.songHistory || []).map((h: any) => mapTrack(h, proxyUrl)).filter(Boolean) as TrackInfo[];
-          const listenUrl = proxyUrl(nowPlayingData.listenUrl ?? sessionData.streamUrl);
-          const npData: NowPlayingData = {
-            currentTrack: current,
-            playingNext: next,
-            songHistory: history,
-            totalListeners: toSafeListenerCount(
-              sessionData.listenersCount ?? sessionData.totalListeners ?? nowPlayingData.totalListeners,
-              0,
-            ),
-            isLive: nowPlayingData.isLive ?? true,
-            isOnline: nowPlayingData.isOnline ?? true,
-            listenUrl,
-            stationName: nowPlayingData.stationName || sessionData.stationName || "Live Station",
-          };
-          setNowPlaying(npData);
-          nowPlayingRef.current = npData;
-          if (track) {
-            prevTrackIdRef.current = track.shId;
-            syncElapsedFromServer(resolveEffectiveElapsed(track));
-            setCurrentLyricsStr(track.lyrics ?? null);
-          }
-          // Auto-play lần đầu khi có track (inline để tránh ref)
-          if (autoPlayRef.current && track && listenUrl) {
-            autoPlayRef.current = false;
-            const url = listenUrl;
-            setTimeout(async () => {
-              try {
-                if (audioRef.current) {
-                  audioRef.current.pause();
-                }
-                audioRef.current = new Audio(url);
-                audioRef.current!.volume = player.isMuted ? 0 : (player.volume / 100);
-                // Expose the live-session audio element so MusicPlayer can read its currentTime directly
-                (window as any).__liveAudioRef = audioRef.current;
-                playerSetLiveAudioRef(audioRef.current);
-                await audioRef.current!.play();
-                alignElapsedToPlaybackStart();
-                setIsPlaying(true);
-                playerSetIsPlaying(true);
-              } catch {
-                try {
-                  if (audioRef.current) {
-                    audioRef.current.muted = true;
-                    await audioRef.current.play();
-                    alignElapsedToPlaybackStart();
-                    playerToggleMute();
-                    setIsPlaying(true);
-                    playerSetIsPlaying(true);
-                  }
-                } catch { /* autoplay blocked */ }
-              }
-            }, 50);
-          }
-        } else {
-          const npData: NowPlayingData = {
-            currentTrack: null,
-            playingNext: null,
-            songHistory: [],
-            totalListeners: toSafeListenerCount(sessionData.listenersCount ?? sessionData.totalListeners, 0),
-            isLive: sessionData.status?.toLowerCase() === "live",
-            isOnline: true,
-            listenUrl: proxyUrl(sessionData.streamUrl),
-            stationName: sessionData.stationName || "Live Station",
-          };
-          setNowPlaying(npData);
-          nowPlayingRef.current = npData;
-        }
-      } catch (err: any) {
-        console.error("[LiveRoomPage] Load error:", err?.message ?? err);
-      } finally {
-        setLoading(false);
-      }
-    })();
-
-    // ─── Poll now-playing (fallback nhẹ; realtime chính lấy từ SignalR) ───────────────────────────
-    const pollNowPlaying = async () => {
-      const sid = sessionIdRef.current;
-      if (!sid) return;
-      try {
-        const data = await liveSessionApiService
-          .getLiveSession(sid)
-          .catch(() => null);
-        if (!data || !data.nowPlaying) return;
-        const track = data.nowPlaying.currentTrack;
-        const current = mapTrack(track, proxyUrl);
-        const newShId = current?.shId;
-        // Use prevTrackIdRef (set by initial load + SignalR) to detect song changes.
-        // This avoids calling setNowPlaying on every poll when the song is the same.
-        const prevShId = prevTrackIdRef.current;
-
-        if (newShId !== prevShId) {
-          // Song changed — full nowPlaying update (triggers lyrics re-parse + scroll)
-          const next = mapTrack(data.nowPlaying.playingNext || (data.nowPlaying as any).nextSong, proxyUrl);
-          const history = (data.nowPlaying.songHistory || []).map((h: any) => mapTrack(h, proxyUrl)).filter(Boolean) as TrackInfo[];
-
-          const newNowPlaying: NowPlayingData = {
-            ...(nowPlayingRef.current ?? {
-              currentTrack: null, playingNext: null, songHistory: [],
-              totalListeners: 0, isLive: true, isOnline: true,
-              listenUrl: "", stationName: "Live Station",
-            }),
-            currentTrack: current,
-            playingNext: next,
-            songHistory: history,
-            listenUrl: proxyUrl(data.nowPlaying.listenUrl ?? nowPlayingRef.current?.listenUrl ?? ""),
-          };
-
-          setNowPlaying(newNowPlaying);
-          nowPlayingRef.current = newNowPlaying;
-
-          // Only update lyrics string when it actually changes
-          setCurrentLyricsStr(track.lyrics ?? null);
-          setLyricsOffset(DEFAULT_LYRICS_OFFSET_SEC);
-
-          prevTrackIdRef.current = newShId;
-          syncElapsedFromServer(resolveEffectiveElapsed(track));
-        } else {
-          // Song same: polling endpoint can be stale, so don't re-sync elapsed here.
-          // Still refresh listeners from fallback polling.
-          const latestListeners = data.listenersCount ?? data.totalListeners;
-          if (latestListeners !== undefined && latestListeners !== null) {
-            setListeners(toSafeListenerCount(latestListeners, 0));
-          }
-        }
-      } catch { /* silent */ }
-    };
-    pollNowPlayingNow = pollNowPlaying;
-    // SignalR is primary realtime source; keep 5s fallback polling for track-change detection/listeners.
-    nowPlayingPollRef.current = setInterval(pollNowPlaying, 5000);
-
-    return () => {
-      offNowPlayingUpdated();
-      offListeners();
-      offChat();
-      offJoined();
-      offLeft();
-      offEnded();
-      offSongChanged();
-      offGuestLimitExceeded();
-      window.removeEventListener("authChange", offAuthChange);
-      if (nowPlayingPollRef.current) clearInterval(nowPlayingPollRef.current);
-      void liveHubService.stop();
-      cleanupAudio();
-    };
-  }, [sessionId, ended, cleanupAudio, syncElapsedFromServer, maybeResyncElapsed]);
-
-  // ─── Sync bottom MusicPlayer ─────────────────────────────────────────────
-  useEffect(() => {
-    const track = nowPlaying?.currentTrack;
-    if (!track) return;
-
-    playerSetTrack({
-      title: track.title,
-      artist: track.artist,
-      album: track.album,
-      artUrl: track.artUrl,
-      duration: track.duration,
-      elapsed: resolveEffectiveElapsed(track),
-      listenUrl: nowPlaying?.listenUrl || session?.streamUrl || undefined,
-      lyrics: track.lyrics ?? null,
-    });
-    playerSetIsPlaying(isPlaying);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nowPlaying?.currentTrack?.shId, nowPlaying?.listenUrl, session?.streamUrl, isPlaying]);
-
-  // ─── Session ended → stop audio ────────────────────────────────────────
-  useEffect(() => {
-    if (!ended) return;
-    cleanupAudio();
-  }, [ended, cleanupAudio]);
-
-  // Đồng bộ trạng thái volume và mute từ player context vào audio tag
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = player.isMuted ? 0 : (player.volume / 100);
-      audioRef.current.muted = player.isMuted;
-    }
-  }, [player.volume, player.isMuted]);
-  useEffect(() => {
-    if (player.isPlaying !== isPlaying) {
-      if (guestLimitReachedRef.current) {
-        if (player.isPlaying) {
-          player.setIsPlaying(false);
-        }
-        return;
-      }
-
-      if (player.isPlaying) {
-        if (showAuthPopup) {
-          player.setIsPlaying(false);
-          return;
-        }
-        if (audioRef.current) {
-          audioRef.current
-            .play()
-            .then(() => {
-              alignElapsedToPlaybackStart();
-              setIsPlaying(true);
-            })
-            .catch(() => void playStream());
-        } else {
-          void playStream();
-        }
-      } else {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          setIsPlaying(false);
-        }
-      }
-    }
-  }, [player.isPlaying, showAuthPopup]);
+  // ── Track change: update up-next / played history ─────────────────────────
   useEffect(() => {
     const current = nowPlaying?.currentTrack;
     const next = nowPlaying?.playingNext;
     const currentId = current?.shId;
-
     if (!current) return;
-
     const prevId = prevTrackIdRef.current;
     if (prevId !== currentId) {
-      console.log(`[LiveRoomPage] Track changed: ${prevId} → ${currentId}`);
-
-      // Đẩy track cũ vào playedHistory (dùng ref để lấy track cũ)
-      if (prevId !== undefined) {
-        const prevTrack = prevTrackDataRef.current;
-        if (prevTrack) {
-          setPlayedHistory(prev => [prevTrack, ...prev].slice(0, 10));
-        }
+      if (prevId !== undefined && prevTrackDataRef.current) {
+        setPlayedHistory(prev => [prevTrackDataRef.current!, ...prev].slice(0, 10));
       }
-
-      // Cập nhật upNextHistory
-      if (next) {
-        setUpNextHistory([next]);
-      } else {
-        setUpNextHistory([]);
-      }
-
+      setUpNextHistory(next ? [next] : []);
+      prevTrackDataRef.current = current;
       prevTrackIdRef.current = currentId;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nowPlaying?.currentTrack?.shId, nowPlaying?.playingNext?.shId]);
 
-  // ─── Auto-scroll chat ─────────────────────────────────────────────────
+  // ── Auto-scroll chat ──────────────────────────────────────────────────────
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chats]);
 
-  // ─── Guest Preview Limit ──────────────────────────────────────────────
+  // ── Guest preview limit ───────────────────────────────────────────────────
   useEffect(() => {
-    // Only start timer for guests (no valid userId) — authenticated users are never kicked
     const userId = getCurrentUserId();
-    const isValidUser = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
-    let timer: any = null;
-    if (isValidUser) {
-      setListeningTime(0);
-    }
-    if (isPlaying && !isValidUser) {
-      timer = setInterval(() => {
-        setListeningTime((prev) => {
-          return Math.min(prev + 1, 120);
-        });
-      }, 1000);
-    }
+    const isValidUser = userId && GUID_REGEX.test(userId);
+    if (isValidUser) { setListeningTime(0); return; }
+    if (!isPlaying) return;
+    const timer = setInterval(() => setListeningTime(prev => Math.min(prev + 1, 120)), 1000);
     return () => clearInterval(timer);
-  }, [isPlaying, cleanupAudio]);
+  }, [isPlaying]);
 
   useEffect(() => {
-    if (!isPlaying || listeningTime < 120 || showAuthPopup) {
-      return;
-    }
-
-    if (guestLimitReachedRef.current) {
-      return;
-    }
-
+    if (!isPlaying || listeningTime < 120 || showAuthPopup || guestLimitReachedRef.current) return;
     guestLimitReachedRef.current = true;
-    cleanupAudio();
     setAuthPopupMode("guestLimit");
     setShowAuthPopup(true);
-  }, [isPlaying, listeningTime, showAuthPopup, cleanupAudio]);
+  }, [isPlaying, listeningTime, showAuthPopup]);
 
-  // ─── Audio playback ────────────────────────────────────────────────────
-  const playStream = useCallback(async () => {
-    if (guestLimitReachedRef.current) {
-      player.setIsPlaying(false);
-      return;
-    }
-
-    if (showAuthPopup) {
-      player.setIsPlaying(false);
-      return;
-    }
-    const url = nowPlaying?.listenUrl || session?.streamUrl;
-    if (!url) return;
-
-    const srcChanged = !audioRef.current || audioRef.current.src !== url;
-
-    if (srcChanged) {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; }
-      audioRef.current = new Audio(url);
-      // Áp dụng âm lượng từ player context nều có, thay vì dùng volume state cũ
-      audioRef.current.volume = player.isMuted ? 0 : (player.volume / 100);
-      // Expose the live-session audio element so MusicPlayer can read its currentTime directly
-      (window as any).__liveAudioRef = audioRef.current;
-      playerSetLiveAudioRef(audioRef.current);
-    }
-
-    try {
-      if (!audioRef.current) return;
-
-      // Nếu player đang tắt tiếng do autoplay policy trước đó, đồng bộ lại
-      audioRef.current.muted = player.isMuted;
-
-      await audioRef.current.play();
-      alignElapsedToPlaybackStart();
-      setIsPlaying(true);
-      playerSetIsPlaying(true);
-    } catch {
-      try {
-        if (audioRef.current) {
-          audioRef.current.muted = true;
-          await audioRef.current.play();
-          alignElapsedToPlaybackStart();
-          if (!player.isMuted) {
-            playerToggleMute();
-          }
-          setIsPlaying(true);
-          playerSetIsPlaying(true);
-        }
-      } catch { /* ignore autoplay blocked */ }
-    }
-  }, [
-    nowPlaying?.listenUrl,
-    player.isMuted,
-    player.volume,
-    session?.streamUrl,
-    alignElapsedToPlaybackStart,
-    playerSetIsPlaying,
-    playerSetLiveAudioRef,
-    playerToggleMute,
-  ]);
-
-  const togglePlay = () => {
-    if (guestLimitReachedRef.current) {
-      setAuthPopupMode("guestLimit");
-      setShowAuthPopup(true);
-      return;
-    }
-
-    if (!audioRef.current) { void playStream(); return; }
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-      player.setIsPlaying(false);
-    } else {
-      audioRef.current
-        .play()
-        .then(() => {
-          alignElapsedToPlaybackStart();
-          setIsPlaying(true);
-          player.setIsPlaying(true);
-        })
-        .catch(() => void playStream());
-    }
-  };
-
-  // ─── Song request ─────────────────────────────────────────────────────
+  // ── Song request ──────────────────────────────────────────────────────────
   const loadRequestableSongs = useCallback(async () => {
     if (!session?.stationId) return;
     setRequestLoading(true);
     try {
       const stationSongs = await liveSessionApiService.getStationMusic(String(session.stationId));
-      const mapped: RequestSongItem[] = stationSongs.map((song: SystemMusicItem) => ({
-        id: song.id,
-        title: song.title,
-        artist: song.artist,
-        album: song.album,
-        artUrl: song.artworkUrl || song.artUrl || null
-      }));
-      setRequestableSongs(mapped);
+      setRequestableSongs(stationSongs.map((song: SystemMusicItem) => ({
+        id: song.id, title: song.title, artist: song.artist,
+        album: song.album, artUrl: song.artworkUrl || song.artUrl || null,
+      })));
     } catch (err) {
       console.warn("[LiveRoomPage] loadRequestableSongs failed:", err);
       setRequestableSongs([]);
@@ -1091,71 +341,38 @@ export function LiveRoomPage() {
 
   const handleRequestSong = async (song: RequestSongItem) => {
     const userId = getCurrentUserId();
-    const isValidUser = userId && GUID_REGEX.test(userId);
-    if (!isValidUser) {
-      // Guest trying to request — show login popup instead
-      setAuthPopupMode("requestSong");
-      setShowAuthPopup(true);
-      return;
+    if (!userId || !GUID_REGEX.test(userId)) {
+      setAuthPopupMode("requestSong"); setShowAuthPopup(true); return;
     }
-
     const sid = sessionIdRef.current;
     if (!sid) return;
     try {
       await liveSessionApiService.createSongRequest(sid, {
-        mediaFileId: song.id,
-        message: requestMessage.trim() || undefined,
+        mediaFileId: song.id, message: requestMessage.trim() || undefined,
       });
       setRequestedSongIds(prev => new Set([...prev, song.id]));
       setRequestMessage("");
-      setChats(prev => [
-        ...prev,
-        {
-          id: `req-${Date.now()}`,
-          userId: "",
-          userName: "",
-          message: `Bạn vừa gửi request bài: ${song.title} — ${song.artist}`,
-          createdAt: new Date().toISOString(),
-          isSystem: true,
-        },
-      ]);
       showToast.success(`Đã gửi yêu cầu "${song.title}" - đang chờ host duyệt`);
     } catch (err: any) {
-      console.error("[LiveRoomPage] requestSong failed:", err);
-      // If backend returns 401, show login popup; otherwise generic error
       if (err?.response?.status === 401 || err?.status === 401) {
-        setAuthPopupMode("requestSong");
-        setShowAuthPopup(true);
+        setAuthPopupMode("requestSong"); setShowAuthPopup(true);
       } else {
         showToast.error("Không thể gửi yêu cầu. Vui lòng thử lại.");
       }
     }
   };
 
-  // ─── Chat ─────────────────────────────────────────────────────────────
+  // ── Chat ──────────────────────────────────────────────────────────────────
   const handleSendChat = async () => {
     if (!chatInput.trim() || !sessionIdRef.current) return;
     const userId = getCurrentUserId();
     if (!userId) {
-      setChats(prev => [
-        ...prev,
-        {
-          id: `sys-${Date.now()}`,
-          userId: "",
-          userName: "",
-          message: "Vui lòng đăng nhập để gửi tin nhắn",
-          createdAt: new Date().toISOString(),
-          isSystem: true,
-        },
-      ]);
-      return;
+      showToast.error("Vui lòng đăng nhập để gửi tin nhắn"); return;
     }
     try {
-      const uAvatar = getCurrentUserAvatar();
-      await liveHubService.sendChat(sessionIdRef.current, userId, chatInput.trim(), getCurrentUserName(), uAvatar);
+      ctxSendChat(sessionIdRef.current, userId, chatInput.trim(), getCurrentUserName(), getCurrentUserAvatar());
       setChatInput("");
     } catch (err) {
-      console.error("[LiveRoomPage] Send chat failed:", err);
       showToast.error("Không thể gửi tin nhắn. Vui lòng thử lại.");
     }
   };
@@ -1163,10 +380,7 @@ export function LiveRoomPage() {
   const handleChatKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (chatInput.trim()) {
-        void handleSendChat();
-        e.currentTarget.style.height = '40px';
-      }
+      if (chatInput.trim()) { void handleSendChat(); e.currentTarget.style.height = "40px"; }
     }
   };
 
@@ -1174,11 +388,14 @@ export function LiveRoomPage() {
     new Date(dateStr).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
   const handleNavigate = (path: string) => {
-    console.log(`[LiveRoomPage] Navigate to: ${path}, sessionId: ${sessionIdRef.current}`);
-    cleanupAudio();
+    // Do NOT call leaveLiveRoom — audio continues in mini-player
     navigate(path);
   };
 
+  // ── Volume control ────────────────────────────────────────────────────────
+  const handleVolumeChange = (v: number) => setVolume(v);
+
+  // ── Render guards ─────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="lr-page">
@@ -1261,11 +478,8 @@ export function LiveRoomPage() {
                 className="lr-request-btn"
                 onClick={() => {
                   const uid = getCurrentUserId();
-                  const isValidUser = uid && GUID_REGEX.test(uid);
-                  if (!isValidUser) {
-                    setAuthPopupMode("requestSong");
-                    setShowAuthPopup(true);
-                    return;
+                  if (!uid || !GUID_REGEX.test(uid)) {
+                    setAuthPopupMode("requestSong"); setShowAuthPopup(true); return;
                   }
                   setRequestMessage("");
                   setShowRequestModal(true);
@@ -1281,9 +495,7 @@ export function LiveRoomPage() {
             {nowPlaying?.playingNext && (
               <div className="lr-up-next-card">
                 <div className="lr-up-next-left">
-                  <span className="lr-up-next-label">
-                    <Clock size={14} /> Tiếp theo
-                  </span>
+                  <span className="lr-up-next-label"><Clock size={14} /> Tiếp theo</span>
                   <div className="lr-up-next-info">
                     <div className="lr-up-next-title" title={nowPlaying.playingNext.title}>{nowPlaying.playingNext.title}</div>
                     <div className="lr-up-next-artist" title={nowPlaying.playingNext.artist}>{nowPlaying.playingNext.artist}</div>
@@ -1292,9 +504,7 @@ export function LiveRoomPage() {
                 {nowPlaying.playingNext.artUrl ? (
                   <img src={nowPlaying.playingNext.artUrl} alt={nowPlaying.playingNext.title} className="lr-up-next-art" />
                 ) : (
-                  <div className="lr-up-next-icon-wrap">
-                    <Disc3 size={24} className="lr-up-next-icon" />
-                  </div>
+                  <div className="lr-up-next-icon-wrap"><Disc3 size={24} className="lr-up-next-icon" /></div>
                 )}
               </div>
             )}
@@ -1312,7 +522,6 @@ export function LiveRoomPage() {
                       <Music size={16} className="lr-lyric-icon" /> Đang đợi lời bài hát...
                     </div>
                   )}
-                  {/* Dòng tiếp theo (nhỏ hơn, mờ hơn) */}
                   {activeLyricIndex + 1 < parsedLyrics.length && (
                     <div className="lr-lyric-line next" key={activeLyricIndex + 1}>
                       {parsedLyrics[activeLyricIndex + 1].text}
@@ -1327,26 +536,14 @@ export function LiveRoomPage() {
         {/* Chat Panel */}
         <div className="lr-chat-panel">
           <div className="lr-chat-tabs">
-            <button
-              className={`lr-chat-tab ${activeChatTab === "chat" ? "active" : ""}`}
-              onClick={() => setActiveChatTab("chat")}
-            >
-              <MessageSquare size={13} />
-              Trò chuyện
+            <button className={`lr-chat-tab ${activeChatTab === "chat" ? "active" : ""}`} onClick={() => setActiveChatTab("chat")}>
+              <MessageSquare size={13} /> Trò chuyện
             </button>
-            <button
-              className={`lr-chat-tab ${activeChatTab === "history" ? "active" : ""}`}
-              onClick={() => setActiveChatTab("history")}
-            >
-              <History size={13} />
-              Lịch sử nhạc
+            <button className={`lr-chat-tab ${activeChatTab === "history" ? "active" : ""}`} onClick={() => setActiveChatTab("history")}>
+              <History size={13} /> Lịch sử nhạc
             </button>
-            <button
-              className={`lr-chat-tab ${activeChatTab === "lyrics" ? "active" : ""}`}
-              onClick={() => setActiveChatTab("lyrics")}
-            >
-              <Music size={13} />
-              Lyrics
+            <button className={`lr-chat-tab ${activeChatTab === "lyrics" ? "active" : ""}`} onClick={() => setActiveChatTab("lyrics")}>
+              <Music size={13} /> Lyrics
             </button>
           </div>
 
@@ -1362,19 +559,19 @@ export function LiveRoomPage() {
                   chat.isSystem ? (
                     <div key={chat.id} className="lr-chat-system">{chat.message}</div>
                   ) : (
-                    <div key={chat.id} className="lr-chat-msg" style={{ position: 'relative' }}>
+                    <div key={chat.id} className="lr-chat-msg" style={{ position: "relative" }}>
                       <div className="lr-chat-avatar">
                         {chat.avatarUrl ? (
-                          <img src={chat.avatarUrl} alt="avt" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                          <img src={chat.avatarUrl} alt="avt" style={{ width: "100%", height: "100%", borderRadius: "50%" }} />
                         ) : (
                           chat.userName.charAt(0).toUpperCase()
                         )}
                       </div>
                       <div className="lr-chat-bubble">
-                        <div className="lr-chat-user" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="lr-chat-user" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span>{chat.userName}</span>
-                          {(getCurrentUserRole() === 'Host' || getCurrentUserRole() === 'Staff' || getCurrentUserRole() === 'Admin' || chat.userId === getCurrentUserId()) && !chat.isDeleted && (
-                            <div style={{ position: 'relative' }}>
+                          {(currentUserRoleRef.current === "Host" || currentUserRoleRef.current === "Staff" || currentUserRoleRef.current === "Admin" || chat.userId === currentUserIdRef.current) && !chat.isDeleted && (
+                            <div style={{ position: "relative" }}>
                               <button
                                 className="lr-chat-more-btn"
                                 onClick={() => setActiveDotMenu(activeDotMenu === chat.id ? null : chat.id)}
@@ -1388,7 +585,7 @@ export function LiveRoomPage() {
                                     className="lr-dot-popover-item"
                                     onClick={() => {
                                       if (sessionIdRef.current) {
-                                        liveHubService.deleteChat(sessionIdRef.current, chat.id, getCurrentUserId()!, getCurrentUserRole()).catch(e => console.warn(e));
+                                        ctxDeleteChat(sessionIdRef.current, chat.id, currentUserIdRef.current!, currentUserRoleRef.current);
                                       }
                                       setActiveDotMenu(null);
                                     }}
@@ -1401,7 +598,9 @@ export function LiveRoomPage() {
                           )}
                         </div>
                         {chat.isDeleted ? (
-                          <div className="lr-chat-text" style={{ fontStyle: 'italic', color: '#888' }}>Tin nhắn đã bị thu hồi/xoá.</div>
+                          <div className="lr-chat-text" style={{ fontStyle: "italic", color: "#888" }}>
+                            Tin nhắn đã bị thu hồi/xoá.
+                          </div>
                         ) : (
                           <div className="lr-chat-text">{chat.message}</div>
                         )}
@@ -1415,10 +614,10 @@ export function LiveRoomPage() {
 
               <div className="lr-chat-input-wrap">
                 <div className="lr-chat-avatar-self">
-                  {getCurrentUserAvatar() ? (
-                    <img src={getCurrentUserAvatar()!} alt="avatar" />
+                  {currentUserAvatarRef.current ? (
+                    <img src={currentUserAvatarRef.current} alt="avatar" />
                   ) : (
-                    <span>{(getCurrentUserName() || "B").charAt(0).toUpperCase()}</span>
+                    <span>{(currentUserNameRef.current || "B").charAt(0).toUpperCase()}</span>
                   )}
                 </div>
 
@@ -1428,7 +627,7 @@ export function LiveRoomPage() {
                     value={chatInput}
                     onChange={e => {
                       setChatInput(e.target.value);
-                      e.target.style.height = '40px';
+                      e.target.style.height = "40px";
                       e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
                     }}
                     onKeyDown={handleChatKeyDown}
@@ -1436,23 +635,14 @@ export function LiveRoomPage() {
                     maxLength={500}
                     rows={1}
                   />
-                  <button
-                    className="lr-chat-emoji-btn"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  >
+                  <button className="lr-chat-emoji-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
                     <Smile size={20} />
                   </button>
                 </div>
 
                 <button
                   className="lr-chat-send"
-                  onClick={() => {
-                    setShowEmojiPicker(false);
-                    void handleSendChat();
-                    // Reset height after send
-                    const ta = document.querySelector('.lr-chat-input') as HTMLTextAreaElement;
-                    if (ta) ta.style.height = '40px';
-                  }}
+                  onClick={() => { setShowEmojiPicker(false); void handleSendChat(); }}
                   disabled={!chatInput.trim()}
                 >
                   <Send size={24} />
@@ -1474,17 +664,10 @@ export function LiveRoomPage() {
             <div className="lr-music-history">
               {upNextHistory.length > 0 && (
                 <div className="lr-history-section">
-                  <div className="lr-history-section-title">
-                    <Clock size={12} />
-                    Sắp tới
-                  </div>
+                  <div className="lr-history-section-title"><Clock size={12} /> Sắp tới</div>
                   {upNextHistory.map((t, i) => (
                     <div key={`next-${i}`} className="lr-history-item upcoming">
-                      {t.artUrl ? (
-                        <img src={t.artUrl} alt={t.title} className="lr-history-art" />
-                      ) : (
-                        <Disc3 size={16} className="lr-history-icon" />
-                      )}
+                      {t.artUrl ? <img src={t.artUrl} alt={t.title} className="lr-history-art" /> : <Disc3 size={16} className="lr-history-icon" />}
                       <div className="lr-history-info">
                         <div className="lr-history-title">{t.title}</div>
                         <div className="lr-history-artist">{t.artist}</div>
@@ -1495,17 +678,10 @@ export function LiveRoomPage() {
               )}
               {nowPlaying?.songHistory && nowPlaying.songHistory.length > 0 && (
                 <div className="lr-history-section">
-                  <div className="lr-history-section-title">
-                    <History size={12} />
-                    Đã chạy
-                  </div>
+                  <div className="lr-history-section-title"><History size={12} /> Đã chạy</div>
                   {nowPlaying.songHistory.map((t, i) => (
                     <div key={`played-${i}`} className="lr-history-item played">
-                      {t.artUrl ? (
-                        <img src={t.artUrl} alt={t.title} className="lr-history-art" />
-                      ) : (
-                        <Disc3 size={16} className="lr-history-icon" />
-                      )}
+                      {t.artUrl ? <img src={t.artUrl} alt={t.title} className="lr-history-art" /> : <Disc3 size={16} className="lr-history-icon" />}
                       <div className="lr-history-info">
                         <div className="lr-history-title">{t.title}</div>
                         <div className="lr-history-artist">{t.artist}</div>
@@ -1533,14 +709,11 @@ export function LiveRoomPage() {
                 const isActive = i === activeLyricIndex;
                 return (
                   <button
-                    key={i}
-                    type="button"
-                    className={`lr-lyric-sync-line ${isActive ? 'active' : ''}`}
+                    key={i} type="button"
+                    className={`lr-lyric-sync-line ${isActive ? "active" : ""}`}
                     onClick={() => {
                       if (adjustedElapsedMs > 0) {
-                        setLyricsOffset(
-                          (adjustedElapsedMs - line.time) / 1000,
-                        );
+                        setLyricsOffset((adjustedElapsedMs - line.time) / 1000);
                       }
                     }}
                   >
@@ -1578,10 +751,9 @@ export function LiveRoomPage() {
               <textarea
                 value={requestMessage}
                 onChange={e => setRequestMessage(e.target.value.slice(0, 300))}
-                placeholder="Nhắn host (tuỳ chọn): ví dụ 'Cho mình nghe bài này tặng bạn A'"
+                placeholder="Nhắn host (tuỳ chọn)"
                 className="lr-request-message"
-                rows={3}
-                maxLength={300}
+                rows={3} maxLength={300}
               />
               <div className="lr-request-message-count">{requestMessage.length}/300</div>
             </div>
@@ -1595,11 +767,7 @@ export function LiveRoomPage() {
                 requestableSongs
                   .filter(song => {
                     const q = requestSearch.toLowerCase();
-                    return (
-                      !q ||
-                      song.title.toLowerCase().includes(q) ||
-                      song.artist.toLowerCase().includes(q)
-                    );
+                    return !q || song.title.toLowerCase().includes(q) || song.artist.toLowerCase().includes(q);
                   })
                   .map(song => (
                     <div key={song.id} className="lr-request-item">
@@ -1607,15 +775,12 @@ export function LiveRoomPage() {
                         {song.artUrl ? (
                           <img src={song.artUrl} alt={song.title} className="lr-request-song-art" />
                         ) : (
-                          <div className="lr-request-song-art-placeholder">
-                            <Music size={16} />
-                          </div>
+                          <div className="lr-request-song-art-placeholder"><Music size={16} /></div>
                         )}
                         <div className="lr-request-song-info">
                           <div className="lr-request-song-title">{song.title}</div>
                           <div className="lr-request-song-artist">
-                            {song.artist}
-                            {song.album ? ` • ${song.album}` : ""}
+                            {song.artist}{song.album ? ` • ${song.album}` : ""}
                           </div>
                         </div>
                       </div>
@@ -1633,35 +798,25 @@ export function LiveRoomPage() {
           </div>
         </div>
       )}
+
       {/* Auth Prompt Modal */}
       {showAuthPopup && (
         <div className="lr-request-modal-overlay">
           <div className="lr-request-modal" style={{ textAlign: "center", padding: "30px 20px" }}>
             <h3 style={{ marginBottom: 15, color: "var(--user-theme-text, var(--lr-title))" }}>
-              {authPopupMode === "requestSong" ? "Hết thời gian nghe thử" : "Hết thời gian nghe thử"}
+              Hết thời gian nghe thử
             </h3>
             <p style={{ color: "var(--user-theme-text, var(--lr-muted))", marginBottom: 25, fontSize: "14px" }}>
-              {authPopupMode === "requestSong"
-                ? "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!"
-                : "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!"}
+              Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!
             </p>
             <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-              <button
-                onClick={() => navigate("/login")}
-                style={{ padding: "10px 20px", background: "var(--user-theme-primary, #5cc3f0)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
-              >
+              <button onClick={() => navigate("/login")} style={{ padding: "10px 20px", background: "var(--user-theme-primary, #5cc3f0)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>
                 Đăng nhập
               </button>
-              <button
-                onClick={() => navigate("/register")}
-                style={{ padding: "10px 20px", background: "var(--lr-btn-soft-bg)", color: "var(--user-theme-text, var(--lr-text))", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
-              >
+              <button onClick={() => navigate("/register")} style={{ padding: "10px 20px", background: "var(--lr-btn-soft-bg)", color: "var(--user-theme-text, var(--lr-text))", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>
                 Đăng ký
               </button>
-              <button
-                onClick={() => navigate("/")}
-                style={{ padding: "10px 20px", background: "transparent", color: "var(--user-theme-text, var(--lr-muted))", border: "1px solid var(--lr-border)", borderRadius: "8px", cursor: "pointer" }}
-              >
+              <button onClick={() => navigate("/")} style={{ padding: "10px 20px", background: "transparent", color: "var(--user-theme-text, var(--lr-muted))", border: "1px solid var(--lr-border)", borderRadius: "8px", cursor: "pointer" }}>
                 Về trang chủ
               </button>
             </div>

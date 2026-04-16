@@ -105,6 +105,7 @@ export interface ChatMessage {
   avatarUrl?: string; // NEW
   message: string;
   createdAt: string;
+  isDeleted?: boolean;
 }
 
 export interface LiveSessionEvent {

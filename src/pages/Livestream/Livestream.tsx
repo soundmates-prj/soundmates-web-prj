@@ -377,19 +377,27 @@ const LivestreamPage: React.FC = () => {
     };
 
     void loadLiveSession();
-  }, [player]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // No deps: runs once on mount. player.setTrack is stable; hasLoadedLiveSessionRef guards re-entry.
 
-  // Elapsed timer
+  // Elapsed timer — use a ref for duration to avoid restarting interval every time nowPlaying updates
+  const nowPlayingDurationRef = useRef<number>(0);
+  useEffect(() => {
+    nowPlayingDurationRef.current = nowPlaying?.currentTrack?.duration ?? 0;
+  }, [nowPlaying?.currentTrack?.duration]);
+
   useEffect(() => {
     if (!nowPlaying?.currentTrack) return;
     const timer = setInterval(() => {
       setElapsed((prev) => {
-        if (prev >= (nowPlaying.currentTrack?.duration || 0)) return prev;
+        if (prev >= (nowPlayingDurationRef.current || 0)) return prev;
         return prev + 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [nowPlaying]);
+  // Only restart when track actually changes (shId), not when whole nowPlaying object updates
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nowPlaying?.currentTrack?.shId]);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -399,7 +407,7 @@ const LivestreamPage: React.FC = () => {
   // SignalR real-time: listener count + chat
   useEffect(() => {
     const offListeners = liveHubService.onListenersUpdated((sessionId, count) => {
-      if (activeSessionIdRef.current === sessionId && nowPlaying) {
+      if (activeSessionIdRef.current === sessionId) {
         setListenerCount(count);
         setNowPlaying(prev => prev ? { ...prev, totalListeners: count } : prev);
       }
