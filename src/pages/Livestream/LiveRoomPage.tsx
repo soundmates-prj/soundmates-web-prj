@@ -19,6 +19,7 @@ import {
   History,
   Clock,
   Smile,
+  MoreVertical,
 } from "lucide-react";
 import { showToast } from "../../utils/toast";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
@@ -295,6 +296,7 @@ export function LiveRoomPage() {
   const [chats, setChats] = useState<DisplayChat[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [activeDotMenu, setActiveDotMenu] = useState<string | null>(null);
   const [activeChatTab, setActiveChatTab] = useState<"chat" | "history" | "lyrics">("chat");
   const [upNextHistory, setUpNextHistory] = useState<TrackInfo[]>([]);
   const [playedHistory, setPlayedHistory] = useState<TrackInfo[]>([]);
@@ -1369,20 +1371,33 @@ export function LiveRoomPage() {
                         )}
                       </div>
                       <div className="lr-chat-bubble">
-                        <div className="lr-chat-user">
-                          {chat.userName}
-                          {(getCurrentUserRole() === 'Host' || getCurrentUserRole() === 'Staff' || getCurrentUserRole() === 'Admin' || chat.userId === getCurrentUserId()) && (
-                            <button
-                              onClick={() => {
-                                if (window.confirm("Bạn có chắc chắn muốn xóa tin nhắn này?") && sessionIdRef.current) {
-                                  liveHubService.deleteChat(sessionIdRef.current, chat.id, getCurrentUserId()!, getCurrentUserRole()).catch(e => console.warn(e));
-                                }
-                              }}
-                              style={{ marginLeft: 6, fontSize: '0.7em', color: '#ff4d4f', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                              title="Xóa tin nhắn"
-                            >
-                              [Xóa]
-                            </button>
+                        <div className="lr-chat-user" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{chat.userName}</span>
+                          {(getCurrentUserRole() === 'Host' || getCurrentUserRole() === 'Staff' || getCurrentUserRole() === 'Admin' || chat.userId === getCurrentUserId()) && !chat.isDeleted && (
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                className="lr-chat-more-btn"
+                                onClick={() => setActiveDotMenu(activeDotMenu === chat.id ? null : chat.id)}
+                                title="Thao tác"
+                              >
+                                <MoreVertical size={14} />
+                              </button>
+                              {activeDotMenu === chat.id && (
+                                <div className="lr-dot-popover">
+                                  <button
+                                    className="lr-dot-popover-item"
+                                    onClick={() => {
+                                      if (sessionIdRef.current) {
+                                        liveHubService.deleteChat(sessionIdRef.current, chat.id, getCurrentUserId()!, getCurrentUserRole()).catch(e => console.warn(e));
+                                      }
+                                      setActiveDotMenu(null);
+                                    }}
+                                  >
+                                    Thu hồi
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                         {chat.isDeleted ? (
