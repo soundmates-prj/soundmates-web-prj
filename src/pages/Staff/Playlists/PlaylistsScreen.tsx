@@ -23,14 +23,19 @@ import "./PlaylistsScreen.css";
 
 export function PlaylistsScreen() {
   const [stations, setStations] = useState<StationResult[]>([]);
-  const [selectedStation, setSelectedStation] = useState<StationResult | null>(null);
+  const [selectedStation, setSelectedStation] = useState<StationResult | null>(
+    null,
+  );
   const [playlists, setPlaylists] = useState<PlaylistResult[]>([]);
-  const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistResult | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] =
+    useState<PlaylistResult | null>(null);
   const [tracks, setTracks] = useState<PlaylistMediaResult[]>([]);
   const [stationMusic, setStationMusic] = useState<MusicResult[]>([]);
   const [systemMusic, setSystemMusic] = useState<MusicResult[]>([]);
   const [musicTab, setMusicTab] = useState<"station" | "system">("station");
-  const [selectedSystemMediaIds, setSelectedSystemMediaIds] = useState<string[]>([]);
+  const [selectedSystemMediaIds, setSelectedSystemMediaIds] = useState<
+    string[]
+  >([]);
   const [musicActionLoading, setMusicActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingTracks, setLoadingTracks] = useState(false);
@@ -94,9 +99,16 @@ export function PlaylistsScreen() {
     if (!selectedStation) return;
     setSyncing(true);
     try {
-      const result = await liveSessionApiService.syncStationPlaylists(selectedStation.id);
-      showSuccess("Đồng bộ thành công!", `${result.created} tạo, ${result.updated} cập nhật`);
-      const data = await liveSessionApiService.getStationPlaylists(selectedStation.id);
+      const result = await liveSessionApiService.syncStationPlaylists(
+        selectedStation.id,
+      );
+      showSuccess(
+        "Đồng bộ thành công!",
+        `${result.created} tạo, ${result.updated} cập nhật`,
+      );
+      const data = await liveSessionApiService.getStationPlaylists(
+        selectedStation.id,
+      );
       setPlaylists(data);
     } catch {
       showError("Đồng bộ thất bại", "Không thể đồng bộ playlists");
@@ -114,14 +126,21 @@ export function PlaylistsScreen() {
         description: newPlaylistDesc.trim() || undefined,
         isAutoPlay: false,
       });
-      showSuccess("Tạo thành công!", `Playlist "${newPlaylistName}" đã được tạo`);
+      showSuccess(
+        "Tạo thành công!",
+        `Playlist "${newPlaylistName}" đã được tạo`,
+      );
       setShowCreateModal(false);
       setNewPlaylistName("");
       setNewPlaylistDesc("");
-      const data = await liveSessionApiService.getStationPlaylists(selectedStation.id);
+      const data = await liveSessionApiService.getStationPlaylists(
+        selectedStation.id,
+      );
       setPlaylists(data);
-    } catch {
-      showError("Lỗi", "Không thể tạo playlist");
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message || "Không thể tạo playlist";
+      showError("Lỗi", errorMessage);
     }
   };
 
@@ -150,14 +169,20 @@ export function PlaylistsScreen() {
         isEnabled: editIsEnabled,
       });
 
-      const updatedPlaylists = await liveSessionApiService.getStationPlaylists(selectedStation.id);
+      const updatedPlaylists = await liveSessionApiService.getStationPlaylists(
+        selectedStation.id,
+      );
       setPlaylists(updatedPlaylists);
 
-      const updatedSelected = updatedPlaylists.find((pl) => pl.id === selectedPlaylist.id) ?? null;
+      const updatedSelected =
+        updatedPlaylists.find((pl) => pl.id === selectedPlaylist.id) ?? null;
       setSelectedPlaylist(updatedSelected);
 
       setShowEditModal(false);
-      showSuccess("Cập nhật thành công", `Playlist "${editPlaylistName.trim()}" đã được cập nhật`);
+      showSuccess(
+        "Cập nhật thành công",
+        `Playlist "${editPlaylistName.trim()}" đã được cập nhật`,
+      );
     } catch {
       showError("Lỗi", "Không thể cập nhật playlist");
     }
@@ -166,14 +191,20 @@ export function PlaylistsScreen() {
   const handleDeletePlaylist = async () => {
     if (!selectedPlaylist || !selectedStation) return;
 
-    if (!window.confirm(`Bạn có chắc chắn muốn xoá playlist \"${selectedPlaylist.playlistName}\"?`)) {
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn xoá playlist \"${selectedPlaylist.playlistName}\"?`,
+      )
+    ) {
       return;
     }
 
     try {
       await liveSessionApiService.deletePlaylist(selectedPlaylist.id);
 
-      const updatedPlaylists = await liveSessionApiService.getStationPlaylists(selectedStation.id);
+      const updatedPlaylists = await liveSessionApiService.getStationPlaylists(
+        selectedStation.id,
+      );
       setPlaylists(updatedPlaylists);
       setSelectedPlaylist(null);
       setTracks([]);
@@ -205,9 +236,13 @@ export function PlaylistsScreen() {
   const handleAddTrack = async (musicId: string) => {
     if (!selectedPlaylist) return;
     try {
-      await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, [musicId]);
+      await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, [
+        musicId,
+      ]);
       showSuccess("Đã thêm", "Track đã được thêm vào playlist");
-      const data = await liveSessionApiService.getPlaylistTracks(selectedPlaylist.id);
+      const data = await liveSessionApiService.getPlaylistTracks(
+        selectedPlaylist.id,
+      );
       setTracks(data);
     } catch {
       showError("Lỗi", "Không thể thêm track");
@@ -217,7 +252,10 @@ export function PlaylistsScreen() {
   const handleRemoveTrack = async (musicId: string) => {
     if (!selectedPlaylist) return;
     try {
-      await liveSessionApiService.removeTracksFromPlaylist(selectedPlaylist.id, [musicId]);
+      await liveSessionApiService.removeTracksFromPlaylist(
+        selectedPlaylist.id,
+        [musicId],
+      );
       setTracks((prev) => prev.filter((t) => t.mediaFileId !== musicId));
       showSuccess("Đã xóa", "Track đã được xóa khỏi playlist");
     } catch {
@@ -229,7 +267,7 @@ export function PlaylistsScreen() {
     setSelectedSystemMediaIds((prev) =>
       prev.includes(mediaId)
         ? prev.filter((id) => id !== mediaId)
-        : [...prev, mediaId]
+        : [...prev, mediaId],
     );
   };
 
@@ -238,17 +276,22 @@ export function PlaylistsScreen() {
 
     setMusicActionLoading(true);
     try {
-      const result = await liveSessionApiService.importSystemMediaBatch(selectedStation.id, selectedSystemMediaIds);
+      const result = await liveSessionApiService.importSystemMediaBatch(
+        selectedStation.id,
+        selectedSystemMediaIds,
+      );
       showSuccess(
         "Import thành công",
-        `Imported ${result.importedCount}, skipped ${result.skippedCount}, failed ${result.failedCount}`
+        `Imported ${result.importedCount}, skipped ${result.skippedCount}, failed ${result.failedCount}`,
       );
 
       if (result.errors.length > 0) {
         showError("Một số bài import lỗi", result.errors[0]);
       }
 
-      const stationMedia = await liveSessionApiService.getStationMusic(selectedStation.id);
+      const stationMedia = await liveSessionApiService.getStationMusic(
+        selectedStation.id,
+      );
       setStationMusic(stationMedia);
       setSelectedSystemMediaIds([]);
     } catch {
@@ -259,10 +302,17 @@ export function PlaylistsScreen() {
   };
 
   const handleAddSelectedSystemToPlaylist = async () => {
-    if (!selectedPlaylist || !selectedStation || selectedSystemMediaIds.length === 0) return;
+    if (
+      !selectedPlaylist ||
+      !selectedStation ||
+      selectedSystemMediaIds.length === 0
+    )
+      return;
 
     const existingIds = new Set(tracks.map((t) => t.mediaFileId));
-    const idsToAdd = selectedSystemMediaIds.filter((id) => !existingIds.has(id));
+    const idsToAdd = selectedSystemMediaIds.filter(
+      (id) => !existingIds.has(id),
+    );
 
     if (idsToAdd.length === 0) {
       showError("Đã tồn tại", "Các bài đã được thêm vào playlist trước đó");
@@ -274,13 +324,13 @@ export function PlaylistsScreen() {
       // Bước 1: Import system media lên AzuraCast trước
       const importResult = await liveSessionApiService.importSystemMediaBatch(
         selectedStation.id,
-        idsToAdd
+        idsToAdd,
       );
 
       if (importResult.failedCount > 0) {
         showError(
           "Import lỗi",
-          `${importResult.failedCount} bài không thể import lên AzuraCast. Kiểm tra file trên server.`
+          `${importResult.failedCount} bài không thể import lên AzuraCast. Kiểm tra file trên server.`,
         );
         if (importResult.errors.length > 0) {
           console.warn("Import errors:", importResult.errors);
@@ -290,42 +340,47 @@ export function PlaylistsScreen() {
       if (importResult.importedCount > 0) {
         showSuccess(
           "Import thành công",
-          `Đã import ${importResult.importedCount} bài lên AzuraCast`
+          `Đã import ${importResult.importedCount} bài lên AzuraCast`,
         );
       }
 
-      // Bước 2: Refresh station music để lấy media đã import hoặc đã map trước đó
-      const refreshedStationMedia = await liveSessionApiService.getStationMusic(selectedStation.id);
-      setStationMusic(refreshedStationMedia);
+      // Bước 2: Refresh station music để lấy media mới
+      const stationMedia = await liveSessionApiService.getStationMusic(
+        selectedStation.id,
+      );
+      setStationMusic(stationMedia);
 
       // Bước 3: Chỉ add những bài thực sự đã có trong station media
-      const stationMediaIds = new Set(refreshedStationMedia.map((item) => item.id));
+      const stationMediaIds = new Set(
+        stationMedia.map((item) => item.id),
+      );
       const readyToAddIds = idsToAdd.filter(
-        (id) => stationMediaIds.has(id) && !existingIds.has(id)
+        (id) => stationMediaIds.has(id) && !existingIds.has(id),
       );
 
       if (readyToAddIds.length > 0) {
-        await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, readyToAddIds);
-        showSuccess("Đã thêm", `Đã thêm ${readyToAddIds.length} bài vào playlist`);
-      }
-
-      const unresolvedCount = idsToAdd.length - readyToAddIds.length;
-      if (unresolvedCount > 0) {
-        showError(
-          "Một số bài chưa sẵn sàng",
-          `${unresolvedCount} bài chưa import được vào station nên chưa thêm playlist.`
+        await liveSessionApiService.addTracksToPlaylist(
+          selectedPlaylist.id,
+          readyToAddIds,
+        );
+        showSuccess(
+          "Đã thêm",
+          `Đã thêm ${readyToAddIds.length} bài vào playlist`,
         );
       }
 
       // Refresh playlist tracks
-      const updatedTracks = await liveSessionApiService.getPlaylistTracks(selectedPlaylist.id);
+      const updatedTracks = await liveSessionApiService.getPlaylistTracks(
+        selectedPlaylist.id,
+      );
       setTracks(updatedTracks);
       setSelectedSystemMediaIds([]);
     } catch (err: any) {
       console.error("Add system to playlist error:", err);
       showError(
         "Lỗi",
-        err?.response?.data?.message || "Không thể thêm system media vào playlist"
+        err?.response?.data?.message ||
+          "Không thể thêm system media vào playlist",
       );
     } finally {
       setMusicActionLoading(false);
@@ -352,13 +407,21 @@ export function PlaylistsScreen() {
       {/* Header */}
       <div className="staff-page-header">
         <div>
-          <h1 className="staff-page-title" style={{
-            background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>Playlists</h1>
-          <p className="staff-page-subtitle">Quản lý playlist cho từng station</p>
+          <h1
+            className="staff-page-title"
+            style={{
+              background:
+                "linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Playlist trạm phát
+          </h1>
+          <p className="staff-page-subtitle">
+            Quản lý playlist cho từng station
+          </p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button
@@ -366,7 +429,10 @@ export function PlaylistsScreen() {
             onClick={handleSyncPlaylists}
             disabled={!selectedStation || syncing}
           >
-            <ArrowDownToLine size={16} className={syncing ? "staff-spin" : ""} />
+            <ArrowDownToLine
+              size={16}
+              className={syncing ? "staff-spin" : ""}
+            />
             {syncing ? "Syncing..." : "Sync Playlists"}
           </button>
           <button
@@ -401,7 +467,9 @@ export function PlaylistsScreen() {
             <h3>Playlists ({playlists.length})</h3>
           </div>
           {playlists.length === 0 ? (
-            <p className="staff-empty" style={{ padding: "20px 12px" }}>Chưa có playlist</p>
+            <p className="staff-empty" style={{ padding: "20px 12px" }}>
+              Chưa có playlist
+            </p>
           ) : (
             <div className="pl-list">
               {playlists.map((pl) => (
@@ -414,7 +482,8 @@ export function PlaylistsScreen() {
                   <div className="pl-item-info">
                     <span className="pl-item-name">{pl.playlistName}</span>
                     <span className="pl-item-meta">
-                      {pl.totalTracks} tracks · {formatDuration(pl.totalDuration)}
+                      {pl.totalTracks} tracks ·{" "}
+                      {formatDuration(pl.totalDuration)}
                     </span>
                   </div>
                   <ChevronRight size={14} className="pl-item-arrow" />
@@ -437,23 +506,18 @@ export function PlaylistsScreen() {
                 <div>
                   <h3>{selectedPlaylist.playlistName}</h3>
                   {selectedPlaylist.description && (
-                    <p className="pl-detail-desc">{selectedPlaylist.description}</p>
+                    <p className="pl-detail-desc">
+                      {selectedPlaylist.description}
+                    </p>
                   )}
                 </div>
-                <div className="pl-detail-actions">
-                  <button className="staff-btn staff-btn--outline" onClick={openEditPlaylistModal}>
-                    <Pencil size={15} />
-                    Sửa playlist
-                  </button>
-                  <button className="staff-btn staff-btn--outline" onClick={handleDeletePlaylist}>
-                    <Trash2 size={15} />
-                    Xoá playlist
-                  </button>
-                  <button className="staff-btn staff-btn--primary" onClick={handleOpenAddTracks}>
-                    <Plus size={15} />
-                    Thêm nhạc
-                  </button>
-                </div>
+                <button
+                  className="staff-btn staff-btn--outline"
+                  onClick={handleOpenAddTracks}
+                >
+                  <Plus size={15} />
+                  Thêm nhạc
+                </button>
               </div>
 
               {loadingTracks ? (
@@ -462,20 +526,28 @@ export function PlaylistsScreen() {
                   <p>Đang tải tracks...</p>
                 </div>
               ) : tracks.length === 0 ? (
-                <p className="staff-empty">Playlist trống. Nhấn "Thêm nhạc" để bắt đầu.</p>
+                <p className="staff-empty">
+                  Playlist trống. Nhấn "Thêm nhạc" để bắt đầu.
+                </p>
               ) : (
                 <div className="pl-tracks">
                   {tracks.map((t, i) => (
                     <div className="pl-track-row" key={t.id}>
                       <span className="pl-track-num">{i + 1}</span>
-                      <Music size={16} style={{ color: "#7C5CFC", flexShrink: 0 }} />
+                      <Music
+                        size={16}
+                        style={{ color: "#7C5CFC", flexShrink: 0 }}
+                      />
                       <div className="pl-track-info">
                         <span className="pl-track-title">{t.title}</span>
                         <span className="pl-track-artist">
-                          {t.artist || "Unknown"} {t.album ? `· ${t.album}` : ""}
+                          {t.artist || "Unknown"}{" "}
+                          {t.album ? `· ${t.album}` : ""}
                         </span>
                       </div>
-                      <span className="pl-track-dur">{formatDuration(t.durationSeconds)}</span>
+                      <span className="pl-track-dur">
+                        {formatDuration(t.durationSeconds)}
+                      </span>
                       <button
                         className="pl-track-remove"
                         onClick={() => handleRemoveTrack(t.mediaFileId)}
@@ -494,11 +566,17 @@ export function PlaylistsScreen() {
 
       {/* Create Playlist Modal */}
       {showCreateModal && (
-        <div className="staff-modal-overlay" onClick={() => setShowCreateModal(false)}>
+        <div
+          className="staff-modal-overlay"
+          onClick={() => setShowCreateModal(false)}
+        >
           <div className="staff-modal" onClick={(e) => e.stopPropagation()}>
             <div className="staff-modal-header">
               <h3>Tạo Playlist mới</h3>
-              <button className="staff-modal-close" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="staff-modal-close"
+                onClick={() => setShowCreateModal(false)}
+              >
                 <X size={18} />
               </button>
             </div>
@@ -511,7 +589,9 @@ export function PlaylistsScreen() {
                 placeholder="Nhập tên playlist..."
                 autoFocus
               />
-              <label className="staff-label" style={{ marginTop: 12 }}>Mô tả (tuỳ chọn)</label>
+              <label className="staff-label" style={{ marginTop: 12 }}>
+                Mô tả (tuỳ chọn)
+              </label>
               <textarea
                 className="staff-input staff-textarea"
                 value={newPlaylistDesc}
@@ -521,7 +601,10 @@ export function PlaylistsScreen() {
               />
             </div>
             <div className="staff-modal-footer">
-              <button className="staff-btn staff-btn--outline" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="staff-btn staff-btn--outline"
+                onClick={() => setShowCreateModal(false)}
+              >
                 Huỷ
               </button>
               <button
@@ -538,11 +621,17 @@ export function PlaylistsScreen() {
 
       {/* Edit Playlist Modal */}
       {showEditModal && (
-        <div className="staff-modal-overlay" onClick={() => setShowEditModal(false)}>
+        <div
+          className="staff-modal-overlay"
+          onClick={() => setShowEditModal(false)}
+        >
           <div className="staff-modal" onClick={(e) => e.stopPropagation()}>
             <div className="staff-modal-header">
               <h3>Chỉnh sửa Playlist</h3>
-              <button className="staff-modal-close" onClick={() => setShowEditModal(false)}>
+              <button
+                className="staff-modal-close"
+                onClick={() => setShowEditModal(false)}
+              >
                 <X size={18} />
               </button>
             </div>
@@ -597,7 +686,10 @@ export function PlaylistsScreen() {
             </div>
 
             <div className="staff-modal-footer">
-              <button className="staff-btn staff-btn--outline" onClick={() => setShowEditModal(false)}>
+              <button
+                className="staff-btn staff-btn--outline"
+                onClick={() => setShowEditModal(false)}
+              >
                 Huỷ
               </button>
               <button
@@ -616,15 +708,17 @@ export function PlaylistsScreen() {
       {showAddTracksModal && (
         <div
           className="staff-modal-overlay"
-          onClick={() => !musicActionLoading && setShowAddTracksModal(false)}
+          onClick={() => setShowAddTracksModal(false)}
         >
-          <div className="staff-modal staff-modal--wide" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="staff-modal staff-modal--wide"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="staff-modal-header">
               <h3>Thêm nhạc vào "{selectedPlaylist?.playlistName}"</h3>
               <button
                 className="staff-modal-close"
                 onClick={() => setShowAddTracksModal(false)}
-                disabled={musicActionLoading}
               >
                 <X size={18} />
               </button>
@@ -643,63 +737,82 @@ export function PlaylistsScreen() {
                 System Media ({systemMusic.length})
               </button>
             </div>
-            <div className="staff-modal-body" style={{ maxHeight: 400, overflowY: "auto" }}>
+            <div
+              className="staff-modal-body"
+              style={{ maxHeight: 400, overflowY: "auto" }}
+            >
               {musicTab === "station" && stationMusic.length === 0 ? (
-                <p className="staff-empty">Không có nhạc nào trong station. Hãy sync hoặc upload trước.</p>
+                <p className="staff-empty">
+                  Không có nhạc nào trong station. Hãy sync hoặc upload trước.
+                </p>
               ) : null}
 
               {musicTab === "system" && systemMusic.length === 0 ? (
-                <p className="staff-empty">Không có system media nào. Hãy upload media hệ thống trước.</p>
+                <p className="staff-empty">
+                  Không có system media nào. Hãy upload media hệ thống trước.
+                </p>
               ) : null}
 
-              {musicTab === "station" ? (
-                stationMusic.map((m) => {
-                  const isAdded = tracks.some((t) => t.mediaFileId === m.id);
-                  return (
-                    <div className="pl-track-row" key={m.id}>
-                      <Music size={16} style={{ color: "#7C5CFC", flexShrink: 0 }} />
-                      <div className="pl-track-info">
-                        <span className="pl-track-title">{m.title}</span>
-                        <span className="pl-track-artist">{m.artist} {m.album ? `· ${m.album}` : ""}</span>
+              {musicTab === "station"
+                ? stationMusic.map((m) => {
+                    const isAdded = tracks.some((t) => t.mediaFileId === m.id);
+                    return (
+                      <div className="pl-track-row" key={m.id}>
+                        <Music
+                          size={16}
+                          style={{ color: "#7C5CFC", flexShrink: 0 }}
+                        />
+                        <div className="pl-track-info">
+                          <span className="pl-track-title">{m.title}</span>
+                          <span className="pl-track-artist">
+                            {m.artist} {m.album ? `· ${m.album}` : ""}
+                          </span>
+                        </div>
+                        <span className="pl-track-dur">
+                          {formatDuration(m.duration)}
+                        </span>
+                        <button
+                          className={`staff-btn ${isAdded ? "staff-btn--outline" : "staff-btn--primary"}`}
+                          style={{ padding: "5px 14px", fontSize: 12 }}
+                          onClick={() => !isAdded && handleAddTrack(m.id)}
+                          disabled={isAdded}
+                        >
+                          {isAdded ? "Đã thêm" : "Thêm"}
+                        </button>
                       </div>
-                      <span className="pl-track-dur">{formatDuration(m.duration)}</span>
-                      <button
-                        className={`staff-btn ${isAdded ? "staff-btn--outline" : "staff-btn--primary"}`}
-                        style={{ padding: "5px 14px", fontSize: 12 }}
-                        onClick={() => !isAdded && handleAddTrack(m.id)}
-                        disabled={isAdded}
-                      >
-                        {isAdded ? "Đã thêm" : "Thêm"}
-                      </button>
-                    </div>
-                  );
-                })
-              ) : (
-                systemMusic.map((m) => {
-                  const checked = selectedSystemMediaIds.includes(m.id);
-                  const isAdded = tracks.some((t) => t.mediaFileId === m.id);
+                    );
+                  })
+                : systemMusic.map((m) => {
+                    const checked = selectedSystemMediaIds.includes(m.id);
+                    const isAdded = tracks.some((t) => t.mediaFileId === m.id);
 
-                  return (
-                    <div className="pl-track-row" key={m.id}>
-                      <input
-                        type="checkbox"
-                        className="pl-track-check"
-                        checked={checked}
-                        onChange={() => toggleSystemMediaSelection(m.id)}
-                        disabled={isAdded}
-                      />
-                      <Music size={16} style={{ color: "#7C5CFC", flexShrink: 0 }} />
-                      <div className="pl-track-info">
-                        <span className="pl-track-title">{m.title}</span>
-                        <span className="pl-track-artist">{m.artist} {m.album ? `· ${m.album}` : ""}</span>
+                    return (
+                      <div className="pl-track-row" key={m.id}>
+                        <input
+                          type="checkbox"
+                          className="pl-track-check"
+                          checked={checked}
+                          onChange={() => toggleSystemMediaSelection(m.id)}
+                          disabled={isAdded}
+                        />
+                        <Music
+                          size={16}
+                          style={{ color: "#7C5CFC", flexShrink: 0 }}
+                        />
+                        <div className="pl-track-info">
+                          <span className="pl-track-title">{m.title}</span>
+                          <span className="pl-track-artist">
+                            {m.artist} {m.album ? `· ${m.album}` : ""}
+                          </span>
+                        </div>
+                        <span
+                          className={`pl-source-badge ${isAdded ? "added" : "system"}`}
+                        >
+                          {isAdded ? "Đã có" : "System"}
+                        </span>
                       </div>
-                      <span className={`pl-source-badge ${isAdded ? "added" : "system"}`}>
-                        {isAdded ? "Đã có" : "System"}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
+                    );
+                  })}
             </div>
             <div className="staff-modal-footer">
               {musicTab === "system" && (
@@ -707,23 +820,30 @@ export function PlaylistsScreen() {
                   <button
                     className="staff-btn staff-btn--outline"
                     onClick={handleImportSystemMediaBatch}
-                    disabled={selectedSystemMediaIds.length === 0 || musicActionLoading}
+                    disabled={
+                      selectedSystemMediaIds.length === 0 || musicActionLoading
+                    }
                   >
-                    {musicActionLoading ? "Đang xử lý..." : "Import vào Station"}
+                    {musicActionLoading
+                      ? "Đang xử lý..."
+                      : "Import vào Station"}
                   </button>
                   <button
                     className="staff-btn staff-btn--primary"
                     onClick={handleAddSelectedSystemToPlaylist}
-                    disabled={selectedSystemMediaIds.length === 0 || musicActionLoading}
+                    disabled={
+                      selectedSystemMediaIds.length === 0 || musicActionLoading
+                    }
                   >
-                    {musicActionLoading ? "Đang xử lý..." : "Add to Station Playlist"}
+                    {musicActionLoading
+                      ? "Đang xử lý..."
+                      : "Add to Station Playlist"}
                   </button>
                 </>
               )}
               <button
                 className="staff-btn staff-btn--outline"
                 onClick={() => setShowAddTracksModal(false)}
-                disabled={musicActionLoading}
               >
                 Đóng
               </button>

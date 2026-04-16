@@ -303,11 +303,11 @@ function PodcastRow({
   const statusBadge = () => {
     switch (podcast.status?.toLowerCase()) {
       case "published":
-        return <span className="ops-badge ops-badge--good">Published</span>;
+        return <span className="ops-badge ops-badge--good">Xuất bản</span>;
       case "archived":
-        return <span className="ops-badge ops-badge--warn">Archived</span>;
+        return <span className="ops-badge ops-badge--warn">Lưu trữ</span>;
       default:
-        return <span className="ops-badge">Draft</span>;
+        return <span className="ops-badge">Nháp</span>;
     }
   };
 
