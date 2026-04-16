@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import EmojiPicker from "emoji-picker-react";
 import {
   ArrowLeft,
   Radio,
@@ -17,6 +18,7 @@ import {
   Search,
   History,
   Clock,
+  Smile,
 } from "lucide-react";
 import { showToast } from "../../utils/toast";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
@@ -292,6 +294,7 @@ export function LiveRoomPage() {
   const [listeners, setListeners] = useState(0);
   const [chats, setChats] = useState<DisplayChat[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeChatTab, setActiveChatTab] = useState<"chat" | "history" | "lyrics">("chat");
   const [upNextHistory, setUpNextHistory] = useState<TrackInfo[]>([]);
   const [playedHistory, setPlayedHistory] = useState<TrackInfo[]>([]);
@@ -1396,22 +1399,40 @@ export function LiveRoomPage() {
               </div>
 
               <div className="lr-chat-input-wrap">
-                <textarea
-                  className="lr-chat-input"
-                  value={chatInput}
-                  onChange={e => {
-                    setChatInput(e.target.value);
-                    e.target.style.height = '40px';
-                    e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
-                  }}
-                  onKeyDown={handleChatKeyDown}
-                  placeholder="Nhập tin nhắn..."
-                  maxLength={500}
-                  rows={1}
-                />
+                <div className="lr-chat-avatar-self">
+                  {getCurrentUserAvatar() ? (
+                    <img src={getCurrentUserAvatar()!} alt="avatar" />
+                  ) : (
+                    <span>{(getCurrentUserName() || "B").charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+
+                <div className="lr-chat-input-container">
+                  <textarea
+                    className="lr-chat-input"
+                    value={chatInput}
+                    onChange={e => {
+                      setChatInput(e.target.value);
+                      e.target.style.height = '40px';
+                      e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
+                    }}
+                    onKeyDown={handleChatKeyDown}
+                    placeholder="Nhập tin nhắn..."
+                    maxLength={500}
+                    rows={1}
+                  />
+                  <button
+                    className="lr-chat-emoji-btn"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  >
+                    <Smile size={20} />
+                  </button>
+                </div>
+
                 <button
                   className="lr-chat-send"
                   onClick={() => {
+                    setShowEmojiPicker(false);
                     void handleSendChat();
                     // Reset height after send
                     const ta = document.querySelector('.lr-chat-input') as HTMLTextAreaElement;
@@ -1419,8 +1440,17 @@ export function LiveRoomPage() {
                   }}
                   disabled={!chatInput.trim()}
                 >
-                  <Send size={16} />
+                  <Send size={24} />
                 </button>
+
+                {showEmojiPicker && (
+                  <div className="lr-emoji-picker-container">
+                    <EmojiPicker
+                      onEmojiClick={(e) => setChatInput(prev => prev + e.emoji)}
+                      autoFocusSearch={false}
+                    />
+                  </div>
+                )}
               </div>
             </>
           )}

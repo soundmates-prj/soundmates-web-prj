@@ -500,42 +500,103 @@
     border-top: 1px solid var(--lr-border);
     padding: 12px 16px;
     display: flex;
-    align-items: flex-end;
-    gap: 8px;
+    align-items: center;
+    gap: 12px;
     flex-shrink: 0;
+    position: relative;
+    background: transparent;
+}
+
+.lr-chat-avatar-self {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #1a9fd4;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.lr-chat-avatar-self img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lr-chat-input-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: var(--lr-input-bg);
+    border-radius: 999px;
+    padding: 0 16px;
+    border: 1px solid var(--lr-border);
 }
 
 .lr-chat-input {
     flex: 1;
-    border: 1px solid var(--lr-border);
-    background: var(--lr-input-bg);
+    border: none;
+    background: transparent;
     color: var(--lr-text);
-    border-radius: 12px;
-    padding: 10px 12px;
+    padding: 10px 0;
     outline: none;
     resize: none;
     font-family: inherit;
     line-height: 1.4;
     max-height: 80px;
-    min-height: 45px;
+    min-height: 20px;
+    height: 40px;
 }
 
-.lr-chat-send {
-    width: 40px;
-    height: 40px;
+.lr-chat-emoji-btn {
+    background: transparent;
     border: none;
-    border-radius: 12px;
-    color: #fff;
+    color: var(--lr-muted);
     cursor: pointer;
-    background: linear-gradient(135deg, #1a9fd4, #55c5f1);
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 8px;
+    margin-right: -4px;
+}
+
+.lr-chat-emoji-btn:hover {
+    color: var(--lr-text);
+}
+
+.lr-chat-send {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    color: var(--lr-title);
+    cursor: pointer;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.lr-chat-send:hover {
+    color: var(--user-theme-primary, #1a9fd4);
 }
 
 .lr-chat-send:disabled {
-    opacity: .5;
+    opacity: .3;
     cursor: not-allowed;
+}
+
+.lr-emoji-picker-container {
+    position: absolute;
+    bottom: 70px;
+    right: 20px;
+    z-index: 100;
 }
 
 /* Ended / loading */
