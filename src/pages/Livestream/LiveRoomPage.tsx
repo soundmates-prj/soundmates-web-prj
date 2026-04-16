@@ -197,7 +197,7 @@ export function LiveRoomPage() {
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestableSongs, setRequestableSongs] = useState<RequestSongItem[]>([]);
   const [requestedSongIds, setRequestedSongIds] = useState<Set<string>>(new Set());
-  const [listeningTime, setListeningTime] = useState(0);
+  const [listeningTime, setListeningTime] = useState(0); // kept for type safety (unused — timer moved to context)
   const guestLimitReachedRef = useRef(false);
 
   // ── Refs ──────────────────────────────────────────────────────────────────
@@ -304,22 +304,18 @@ export function LiveRoomPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chats]);
 
-  // ── Guest preview limit ───────────────────────────────────────────────────
+  // ── Guest preview limit — listen to global event from LiveSessionContext ──
+  // Timer now runs in context (survives navigation). Page only shows the popup.
   useEffect(() => {
-    const userId = getCurrentUserId();
-    const isValidUser = userId && GUID_REGEX.test(userId);
-    if (isValidUser) { setListeningTime(0); return; }
-    if (!isPlaying) return;
-    const timer = setInterval(() => setListeningTime(prev => Math.min(prev + 1, 120)), 1000);
-    return () => clearInterval(timer);
-  }, [isPlaying]);
-
-  useEffect(() => {
-    if (!isPlaying || listeningTime < 120 || showAuthPopup || guestLimitReachedRef.current) return;
-    guestLimitReachedRef.current = true;
-    setAuthPopupMode("guestLimit");
-    setShowAuthPopup(true);
-  }, [isPlaying, listeningTime, showAuthPopup]);
+    const handleGuestLimit = () => {
+      if (guestLimitReachedRef.current) return;
+      guestLimitReachedRef.current = true;
+      setAuthPopupMode("guestLimit");
+      setShowAuthPopup(true);
+    };
+    window.addEventListener("guestLimitReached", handleGuestLimit);
+    return () => window.removeEventListener("guestLimitReached", handleGuestLimit);
+  }, []);
 
   // ── Song request ──────────────────────────────────────────────────────────
   const loadRequestableSongs = useCallback(async () => {

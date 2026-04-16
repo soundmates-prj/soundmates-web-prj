@@ -204,14 +204,14 @@ export function MusicPlayer() {
   const displayElapsed = Math.max(0, duration > 0 ? Math.min(elapsed, duration) : elapsed);
   const progressPct = duration > 0 ? Math.min((displayElapsed / duration) * 100, 100) : 0;
   const displayVolume = isMuted ? 0 : volume;
-  const showPlayIcon = !isPlaying || isMuted || volume === 0;
+  const showPlayIcon = isInLiveSession ? isMuted : !isPlaying;
 
   // Whether to show the player at all
   const hasContent = isInLiveSession || !!track;
 
   const handleTogglePlay = () => {
     if (isInLiveSession) {
-      liveCtx.toggleAudio();
+      liveCtx.toggleMute();
     } else {
       toggle();
     }
@@ -219,6 +219,8 @@ export function MusicPlayer() {
 
   const handleLeave = () => {
     if (isInLiveSession) {
+      // Navigate to live listing first, then stop audio
+      navigate("/live");
       liveCtx.leaveLiveRoom();
     } else {
       leaveSession();

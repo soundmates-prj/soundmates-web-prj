@@ -64,6 +64,10 @@ interface LiveSessionContextValue {
   isMuted: boolean;
   displayElapsed: number;
   sessionEnded: boolean;
+  /** Seconds the guest has been listening (0 for authenticated users) */
+  guestListeningTime: number;
+  /** Max guest listening seconds (120 = 2 min) */
+  guestTimeLimit: number;
 
   // ── Actions ───────────────────────────────────────────────────────────────
   /** Listener joins a live room (loads audio + SignalR) */
@@ -179,6 +183,10 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(80);
   const [displayElapsed, setDisplayElapsed] = useState(0);
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [guestListeningTime, setGuestListeningTime] = useState(() => {
+    return Number(localStorage.getItem("guestLiveTime") || 0);
+  });
+  const GUEST_TIME_LIMIT = 120; // seconds
 
   // ── Refs (survive re-renders, no closures) ───────────────────────────────
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -196,11 +204,67 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
   // Cancel token: incremented on each createAndPlay call and on stopAudio.
   // Any in-flight audio.play() checks this after awaiting to self-abort if stale.
   const audioLoadTokenRef = useRef(0);
+  // Cleanup function from last registerSignalRHandlers() call.
+  // MUST be called before re-registering to prevent duplicate message handlers.
+  const signalRCleanupRef = useRef<(() => void) | null>(null);
+  const guestTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const guestListeningTimeRef = useRef(Number(localStorage.getItem("guestLiveTime") || 0));
 
   // Keep refs in sync
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
   useEffect(() => { volumeRef.current = volume; }, [volume]);
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+
+  // ── Global guest listening timer ──────────────────────────────────────────
+  // Runs in context (not in LiveRoomPage) so it works even after navigation.
+  // Only counts for unauthenticated users while audio is actively playing.
+  useEffect(() => {
+    const isGuest = !localStorage.getItem("accessToken");
+
+    if (!isPlaying || !isGuest || !activeSessionId) {
+      // Clear timer when not playing or user is authenticated
+      if (guestTimerRef.current) {
+        clearInterval(guestTimerRef.current);
+        guestTimerRef.current = null;
+      }
+      return;
+    }
+
+    // Start counting
+    guestTimerRef.current = setInterval(() => {
+      guestListeningTimeRef.current += 1;
+      setGuestListeningTime(guestListeningTimeRef.current);
+      localStorage.setItem("guestLiveTime", guestListeningTimeRef.current.toString());
+
+      if (guestListeningTimeRef.current >= GUEST_TIME_LIMIT) {
+        // Time's up — stop audio
+        if (guestTimerRef.current) {
+          clearInterval(guestTimerRef.current);
+          guestTimerRef.current = null;
+        }
+        // Notify LiveRoomPage (if mounted) to show login popup
+        window.dispatchEvent(new CustomEvent("guestLimitReached"));
+        // Stop audio via leaveLiveRoom so mini-player disappears too
+        // Use stopAudio only (not leave) so user can still log in and rejoin
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.src = "";
+          audioRef.current = null;
+          (window as any).__liveAudioRef = null;
+        }
+        audioLoadTokenRef.current++;
+        setIsPlaying(false);
+        isPlayingRef.current = false;
+      }
+    }, 1000);
+
+    return () => {
+      if (guestTimerRef.current) {
+        clearInterval(guestTimerRef.current);
+        guestTimerRef.current = null;
+      }
+    };
+  }, [isPlaying, activeSessionId]);
 
   // ── Elapsed timer (same pattern as mobile: dep on shId + elapsed + duration) ──
   useEffect(() => {
@@ -315,6 +379,10 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         // Autoplay blocked — retry muted
         try {
           audio.muted = true;
+          // VERY IMPORTANT: Sync the UI so the user sees the "Muted" icon
+          // Set this BEFORE await audio.play() so it applies even if play() hangs or aborts
+          setIsMuted(true);
+          isMutedRef.current = true;
           await audio.play();
         } catch { /* ignore */ }
       }
@@ -527,8 +595,13 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         }
       }, 500);
 
-      // Register SignalR handlers
-      registerSignalRHandlers(sessionId);
+      // Unregister old SignalR handlers BEFORE registering new ones
+      // to prevent the same message being delivered multiple times.
+      if (signalRCleanupRef.current) {
+        signalRCleanupRef.current();
+        signalRCleanupRef.current = null;
+      }
+      signalRCleanupRef.current = registerSignalRHandlers(sessionId);
 
       // Start polling (falls back every 10s)
       startPolling(sessionId);
@@ -550,6 +623,11 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     if (sid) {
       const uid = getCurrentUserId();
       void liveHubService.leaveSession(sid, uid);
+    }
+    // Remove all SignalR handlers before clearing state
+    if (signalRCleanupRef.current) {
+      signalRCleanupRef.current();
+      signalRCleanupRef.current = null;
     }
     stopAudio();
     stopPolling();
@@ -596,6 +674,11 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     if (audioRef.current) {
       audioRef.current.muted = newMuted;
       audioRef.current.volume = newMuted ? 0 : volumeRef.current / 100;
+      // If unmuting while supposedly playing, force the browser to evaluate the gesture
+      // This fixes cases where background unmuting doesn't restore sound without pausing/playing
+      if (!newMuted && isPlayingRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
     }
   }, []);
 
@@ -606,7 +689,15 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     const muted = v === 0;
     setIsMuted(muted);
     isMutedRef.current = muted;
-    if (audioRef.current) audioRef.current.volume = v / 100;
+    if (audioRef.current) {
+      audioRef.current.volume = v / 100;
+      audioRef.current.muted = muted;
+      
+      // If unmuting while supposedly playing, force the browser to evaluate the gesture
+      if (!muted && isPlayingRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+    }
   }, []);
 
   // ── Chat ─────────────────────────────────────────────────────────────────
@@ -644,6 +735,28 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     liveHubService.start().then(() => setIsConnected(true)).catch(() => setIsConnected(false));
   }, []);
 
+  // ── Stop live audio when user logs out or token expires ───────────────────
+  // Uses a ref so the handler always captures the latest leaveLiveRoom function.
+  const leaveLiveRoomRef = useRef(leaveLiveRoom);
+  useEffect(() => { leaveLiveRoomRef.current = leaveLiveRoom; }, [leaveLiveRoom]);
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      const hasToken = !!localStorage.getItem("accessToken");
+      // Only stop if actively in a session AND user is now unauthenticated
+      if (!hasToken && activeSessionIdRef.current) {
+        leaveLiveRoomRef.current();
+      }
+    };
+    window.addEventListener("authChange", handleAuthChange);
+    // Also catch tab-cross storage events (e.g. logout from another tab)
+    window.addEventListener("storage", handleAuthChange);
+    return () => {
+      window.removeEventListener("authChange", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
+  }, []); // empty deps — handler uses refs
+
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
@@ -668,6 +781,8 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         volume,
         displayElapsed,
         sessionEnded,
+        guestListeningTime,
+        guestTimeLimit: GUEST_TIME_LIMIT,
         joinLiveRoom,
         leaveLiveRoom,
         toggleAudio,
