@@ -1,15 +1,7 @@
-import { useState } from "react";
-import {
-  Bot,
-  Search,
-  CheckCircle,
-  XCircle,
-  Clock,
-  FileText,
-  Eye,
-} from "lucide-react";
-import { showSuccess, showError } from "../../../components/common/toastUtils";
-import "./ScriptModerationScreen.css";
+import { useState } from 'react';
+import { Bot, Search, CheckCircle, XCircle, Clock, FileText, Eye } from 'lucide-react';
+import { showSuccess, showError } from '../../../components/common/toastUtils';
+import './ScriptModerationScreen.css';
 
 interface PendingScript {
   id: string;
@@ -25,13 +17,13 @@ interface PendingScript {
 export function ScriptModerationScreen() {
   const [scripts, setScripts] = useState<PendingScript[]>([
     {
-      id: "1",
-      title: "Script buổi sáng thứ 2 - Jazz Chill",
-      contextType: "Livestream",
-      requestedBy: "Admin User",
+      id: '1',
+      title: 'Script buổi sáng thứ 2 - Jazz Chill',
+      contextType: 'Livestream',
+      requestedBy: 'Admin User',
       generatedAt: new Date(Date.now() - 3600000).toISOString(),
       wordCount: 845,
-      modelUsed: "gemini-1.5-pro",
+      modelUsed: 'gemini-1.5-pro',
       content: `## INTRO (00:00 - 02:00)
 
 Chào mừng đã đến với buổi sáng thứ 2 đầy năng lượng! Đây là Showbuzzy Radio...
@@ -52,13 +44,13 @@ Chào mừng đã đến với buổi sáng thứ 2 đầy năng lượng! Đây
 - Nhắc subscribe & follow`,
     },
     {
-      id: "2",
-      title: "Script talk show công nghệ",
-      contextType: "Podcast",
-      requestedBy: "Staff Member",
+      id: '2',
+      title: 'Script talk show công nghệ',
+      contextType: 'Podcast',
+      requestedBy: 'Staff Member',
       generatedAt: new Date(Date.now() - 7200000).toISOString(),
       wordCount: 1203,
-      modelUsed: "gemini-1.5-pro",
+      modelUsed: 'gemini-1.5-pro',
       content: `## OPENING (00:00 - 05:00)
 Giới thiệu chủ đề: AI trong năm 2025...
 
@@ -73,37 +65,31 @@ Tóm tắt và lời kêu gọi hành động...`,
     },
   ]);
 
-  const [filter, setFilter] = useState<"pending" | "approved" | "rejected">(
-    "pending",
-  );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedScript, setSelectedScript] = useState<PendingScript | null>(
-    null,
-  );
+  const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedScript, setSelectedScript] = useState<PendingScript | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const filtered = scripts.filter((s) => {
-    const matchFilter = filter === "pending" || s.id === s.id; // simple filter
-    const matchSearch =
-      !searchQuery.trim() ||
-      s.title.toLowerCase().includes(searchQuery.toLowerCase());
+  const filtered = scripts.filter(s => {
+    const matchFilter = filter === 'pending' || s.id === s.id; // simple filter
+    const matchSearch = !searchQuery.trim() || s.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchSearch;
   });
 
   const handleApprove = async (id: string) => {
     setActionLoading(id);
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 500));
     // TODO: call API
-    setScripts((prev) => prev.filter((s) => s.id !== id));
+    setScripts(prev => prev.filter(s => s.id !== id));
     setActionLoading(null);
     showSuccess("Đã duyệt", "Script đã được phê duyệt và sẵn sàng sử dụng");
   };
 
   const handleReject = async (id: string) => {
     setActionLoading(id);
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 500));
     // TODO: call API
-    setScripts((prev) => prev.filter((s) => s.id !== id));
+    setScripts(prev => prev.filter(s => s.id !== id));
     setActionLoading(null);
     showError("Đã từ chối", "Script đã bị từ chối");
   };
@@ -114,11 +100,9 @@ Tóm tắt và lời kêu gọi hành động...`,
         <div>
           <h1 className="script-mod-title">
             <Bot size={24} />
-            Kiểm duyệt Script
+            Script AI
           </h1>
-          <p className="script-mod-subtitle">
-            Duyệt và quản lý các script do AI tạo cho podcast và phát sóng
-          </p>
+          <p className="script-mod-subtitle">Duyệt và quản lý các script do AI tạo cho podcast và phát sóng</p>
         </div>
       </div>
 
@@ -129,28 +113,19 @@ Tóm tắt và lời kêu gọi hành động...`,
             type="text"
             placeholder="Tìm script..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="filter-tabs">
-          <button
-            className={`filter-tab ${filter === "pending" ? "active" : ""}`}
-            onClick={() => setFilter("pending")}
-          >
+          <button className={`filter-tab ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>
             <Clock size={14} />
             Chờ duyệt ({scripts.length})
           </button>
-          <button
-            className={`filter-tab ${filter === "approved" ? "active" : ""}`}
-            onClick={() => setFilter("approved")}
-          >
+          <button className={`filter-tab ${filter === 'approved' ? 'active' : ''}`} onClick={() => setFilter('approved')}>
             <CheckCircle size={14} />
             Đã duyệt
           </button>
-          <button
-            className={`filter-tab ${filter === "rejected" ? "active" : ""}`}
-            onClick={() => setFilter("rejected")}
-          >
+          <button className={`filter-tab ${filter === 'rejected' ? 'active' : ''}`} onClick={() => setFilter('rejected')}>
             <XCircle size={14} />
             Từ chối
           </button>
@@ -164,15 +139,13 @@ Tóm tắt và lời kêu gọi hành động...`,
         </div>
       ) : (
         <div className="script-mod-grid">
-          {filtered.map((script) => (
+          {filtered.map(script => (
             <div key={script.id} className="script-mod-card">
               <div className="script-mod-card-header">
                 <div className="script-mod-card-icon">
                   <FileText size={20} />
                 </div>
-                <span className="script-mod-type-badge">
-                  {script.contextType}
-                </span>
+                <span className="script-mod-type-badge">{script.contextType}</span>
               </div>
 
               <h3 className="script-mod-card-title">{script.title}</h3>
@@ -188,7 +161,7 @@ Tóm tắt và lời kêu gọi hành động...`,
                 </span>
                 <span>
                   <Clock size={12} />
-                  {new Date(script.generatedAt).toLocaleDateString("vi-VN")}
+                  {new Date(script.generatedAt).toLocaleDateString('vi-VN')}
                 </span>
               </div>
 
@@ -229,20 +202,13 @@ Tóm tắt và lời kêu gọi hành động...`,
 
       {/* Script Preview Modal */}
       {selectedScript && (
-        <div
-          className="script-mod-modal-overlay"
-          onClick={() => setSelectedScript(null)}
-        >
-          <div
-            className="script-mod-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="script-mod-modal-overlay" onClick={() => setSelectedScript(null)}>
+          <div className="script-mod-modal" onClick={e => e.stopPropagation()}>
             <div className="script-mod-modal-header">
               <div>
                 <h3>{selectedScript.title}</h3>
                 <span className="script-mod-modal-meta">
-                  {selectedScript.contextType} • {selectedScript.wordCount} từ •{" "}
-                  {selectedScript.modelUsed}
+                  {selectedScript.contextType} • {selectedScript.wordCount} từ • {selectedScript.modelUsed}
                 </span>
               </div>
               <button onClick={() => setSelectedScript(null)}>×</button>
@@ -251,22 +217,10 @@ Tóm tắt và lời kêu gọi hành động...`,
               <pre className="script-mod-content">{selectedScript.content}</pre>
             </div>
             <div className="script-mod-modal-footer">
-              <button
-                className="script-mod-btn script-mod-btn--reject"
-                onClick={() => {
-                  handleReject(selectedScript.id);
-                  setSelectedScript(null);
-                }}
-              >
+              <button className="script-mod-btn script-mod-btn--reject" onClick={() => { handleReject(selectedScript.id); setSelectedScript(null); }}>
                 Từ chối
               </button>
-              <button
-                className="script-mod-btn script-mod-btn--approve"
-                onClick={() => {
-                  handleApprove(selectedScript.id);
-                  setSelectedScript(null);
-                }}
-              >
+              <button className="script-mod-btn script-mod-btn--approve" onClick={() => { handleApprove(selectedScript.id); setSelectedScript(null); }}>
                 Phê duyệt
               </button>
             </div>

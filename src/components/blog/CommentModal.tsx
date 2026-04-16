@@ -62,20 +62,6 @@ export const parseShareMusic = (contentText: string): ShareCardData | null => {
   }
 };
 
-/* ── Flatten nested replies → single level (Facebook-style) ── */
-const flattenComment = (c: Comment): Comment => {
-  const flat: Comment[] = [];
-  const walk = (arr: Comment[]) => {
-    for (const r of arr) {
-      const { replies: nested, ...rest } = r;
-      flat.push({ ...rest, replies: [] });
-      if (nested?.length) walk(nested);
-    }
-  };
-  walk(c.replies ?? []);
-  return { ...c, replies: flat };
-};
-
 /* ── Props ── */
 export interface CommentModalPost {
   id: string;
@@ -124,8 +110,6 @@ function CommentItem({
   comment,
   currentUserId,
   postOwnerId,
-  isReply = false,
-  topLevelId,
   onDelete,
   onUpdate,
   onReply,
@@ -133,19 +117,10 @@ function CommentItem({
   comment: Comment;
   currentUserId: string | null;
   postOwnerId: string;
-  isReply?: boolean;
-  topLevelId?: string;
   onDelete: (id: string) => void;
   onUpdate: (id: string, content: string) => void;
   onReply: (id: string, content: string) => void;
 }) {
-  const replyParentId = isReply ? (topLevelId ?? comment.id) : comment.id;
-
-  const submitReply = async (raw: string) => {
-    const trimmed = raw.trim();
-    if (!trimmed) return;
-    await onReply(replyParentId, trimmed);
-  };
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [replying, setReplying] = useState(false);
@@ -170,7 +145,6 @@ function CommentItem({
   }, [menuOpen]);
 
   const timeAgo = (iso: string) => {
-    // eslint-disable-next-line react-hooks/purity
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return "Vừa xong";
@@ -306,7 +280,7 @@ function CommentItem({
                     void (async () => {
                       if (!replyText.trim()) return;
                       setSubmitting(true);
-                      await submitReply(replyText);
+                      await onReply(comment.id, replyText.trim());
                       setReplyText("");
                       setReplying(false);
                       setSubmitting(false);
@@ -320,7 +294,7 @@ function CommentItem({
                   void (async () => {
                     if (!replyText.trim()) return;
                     setSubmitting(true);
-                    await submitReply(replyText);
+                    await onReply(comment.id, replyText.trim());
                     setReplyText("");
                     setReplying(false);
                     setSubmitting(false);
@@ -341,7 +315,7 @@ function CommentItem({
           </div>
         )}
 
-        {!isReply && comment.replies && comment.replies.length > 0 && (
+        {comment.replies && comment.replies.length > 0 && (
           <div className="cm-replies">
             {comment.replies.map((reply) => (
               <CommentItem
@@ -349,8 +323,6 @@ function CommentItem({
                 comment={reply}
                 currentUserId={currentUserId}
                 postOwnerId={postOwnerId}
-                isReply
-                topLevelId={comment.id}
                 onDelete={onDelete}
                 onUpdate={onUpdate}
                 onReply={onReply}
@@ -499,7 +471,7 @@ export default function CommentModal({
       setLoading(true);
       try {
         const data = await commentService.getComments(post.id, p);
-        setComments(data.items.map(flattenComment));
+        setComments(data.items);
         setTotalCount(data.totalCount);
         setTotalPages(data.totalPages);
         setPage(data.page);
