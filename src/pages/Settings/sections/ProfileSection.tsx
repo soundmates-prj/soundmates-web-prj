@@ -421,25 +421,25 @@ const ProfileSection: React.FC = () => {
   ) => {
     const { name, value } = e.target;
 
-    // ── EF-01 + BR-01: First name required, 1–50 chars ──
-    if (name === "firstName") {
-      if (value === "")
-        setFirstNameError("Tên không được để trống!");
-      else if (value.length > MAX_NAME_LENGTH)
-        setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
-      else
-        setFirstNameError("");
-    }
+    // ── EF-01 + BR-01: Họ (lastName) required, 1–50 chars ──
+  if (name === "lastName") {
+    if (value === "")
+      setLastNameError("Họ không được để trống!");
+    else if (value.length > MAX_NAME_LENGTH)
+      setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
+    else
+      setLastNameError("");
+  }
 
-    // ── EF-01 + BR-01: Last name required, 1–50 chars ──
-    if (name === "lastName") {
-      if (value === "")
-        setLastNameError("Họ không được để trống!");
-      else if (value.length > MAX_NAME_LENGTH)
-        setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
-      else
-        setLastNameError("");
-    }
+  // ── EF-01 + BR-01: Tên (firstName) required, 1–50 chars ──
+  if (name === "firstName") {
+    if (value === "")
+      setFirstNameError("Tên không được để trống!");
+    else if (value.length > MAX_NAME_LENGTH)
+      setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+    else
+      setFirstNameError("");
+  }
 
     // ── EF-02 + EF-03 + BR-03: Phone — non-numeric, >10 digits ──
     if (name === "phone") {
@@ -524,18 +524,18 @@ const ProfileSection: React.FC = () => {
 
     // EF-01: required fields
     if (!form.firstName?.trim()) {
-      setFirstNameError("Tên không được để trống!");
+      setFirstNameError("Họ không được để trống!");
       valid = false;
     } else if (form.firstName.length > MAX_NAME_LENGTH) {
-      setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      setFirstNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
       valid = false;
     }
 
     if (!form.lastName?.trim()) {
-      setLastNameError("Họ không được để trống!");
+      setLastNameError("Tên không được để trống!");
       valid = false;
     } else if (form.lastName.length > MAX_NAME_LENGTH) {
-      setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      setLastNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
       valid = false;
     }
 
@@ -740,37 +740,37 @@ const ProfileSection: React.FC = () => {
           {/* ── FORM ── */}
           <div className="profile-form">
             <div className="form-grid">
-              {/* EF-01 + BR-01: Họ (Last name) required, 1–50 chars */}
+              {/* EF-01 + BR-01: Họ (firstName) required, 1–50 chars */}
               <div className="form-group">
                 <label>Họ</label>
-                <div className={lastNameError ? "input-icon input-error" : "input-icon"}>
-                  <input
-                    name="lastName"
-                    value={form.lastName || ""}
-                    onChange={handleChange}
-                    placeholder="VD: Nguyễn"
-                    maxLength={MAX_NAME_LENGTH}
-                  />
-                </div>
-                {lastNameError && (
-                  <span className="error-text">{lastNameError}</span>
-                )}
-              </div>
-
-              {/* EF-01 + BR-01: Tên (First name) required, 1–50 chars */}
-              <div className="form-group">
-                <label>Tên</label>
                 <div className={firstNameError ? "input-icon input-error" : "input-icon"}>
                   <input
                     name="firstName"
                     value={form.firstName || ""}
                     onChange={handleChange}
-                    placeholder="VD: Minh"
+                    placeholder="VD: Nguyễn"
                     maxLength={MAX_NAME_LENGTH}
                   />
                 </div>
                 {firstNameError && (
                   <span className="error-text">{firstNameError}</span>
+                )}
+              </div>
+
+              {/* EF-01 + BR-01: Tên (lastName) required, 1–50 chars */}
+              <div className="form-group">
+                <label>Tên</label>
+                <div className={lastNameError ? "input-icon input-error" : "input-icon"}>
+                  <input
+                    name="lastName"
+                    value={form.lastName || ""}
+                    onChange={handleChange}
+                    placeholder="VD: Minh"
+                    maxLength={MAX_NAME_LENGTH}
+                  />
+                </div>
+                {lastNameError && (
+                  <span className="error-text">{lastNameError}</span>
                 )}
               </div>
             </div>

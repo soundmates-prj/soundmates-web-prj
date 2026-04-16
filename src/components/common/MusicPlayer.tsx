@@ -64,9 +64,13 @@ export function MusicPlayer() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [drawerTab, setDrawerTab] = useState<DrawerTab>("playlist");
-  const [podcastEpisodes, setPodcastEpisodes] = useState<PodcastEpisode[]>([]);
-  const [podcasts, setPodcasts] = useState<{ id: string; title: string; banner: string | null }[]>([]);
-  const [selectedPodcastId, setSelectedPodcastId] = useState<string | null>(null);
+
+  const [podcasts, setPodcasts] = useState<
+    { id: string; title: string; banner: string | null }[]
+  >([]);
+  const [selectedPodcastId, setSelectedPodcastId] = useState<string | null>(
+    null,
+  );
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
 
   // ─── Poll audio.currentTime directly from the shared audio element ────────
@@ -77,7 +81,10 @@ export function MusicPlayer() {
   useEffect(() => {
     const tick = () => {
       const live = (window as any).__liveAudioRef;
-      const srcAudio = (live ?? ctxAudioRef.current) as HTMLAudioElement | null | undefined;
+      const srcAudio = (live ?? ctxAudioRef.current) as
+        | HTMLAudioElement
+        | null
+        | undefined;
       if (srcAudio && !live) {
         setElapsed(srcAudio.currentTime);
       }
@@ -88,26 +95,25 @@ export function MusicPlayer() {
   }, [ctxAudioRef, setElapsed]);
 
   // Reset favorite when track changes
-  useEffect(() => { setIsFavorite(false); }, [track?.title]);
+  useEffect(() => {
+    setIsFavorite(false);
+  }, [track?.title]);
 
   // Load podcasts when drawer opens on podcast tab
   useEffect(() => {
     if (showPlaylist && drawerTab === "podcast" && podcasts.length === 0) {
-      podcastService.getPublishedPodcasts()
-        .then((data) => setPodcasts(data.slice(0, 10).map((p) => ({ id: p.id, title: p.title, banner: p.banner }))))
+      podcastService
+        .getPublishedPodcasts()
+        .then((data) =>
+          setPodcasts(
+            data
+              .slice(0, 10)
+              .map((p) => ({ id: p.id, title: p.title, banner: p.banner })),
+          ),
+        )
         .catch(() => {});
     }
   }, [showPlaylist, drawerTab]);
-
-  // Load episodes when a podcast is selected
-  useEffect(() => {
-    if (!selectedPodcastId) return;
-    setLoadingEpisodes(true);
-    podcastService.getEpisodes(selectedPodcastId)
-      .then((eps) => setPodcastEpisodes(eps))
-      .catch(() => setPodcastEpisodes([]))
-      .finally(() => setLoadingEpisodes(false));
-  }, [selectedPodcastId]);
 
   const playPodcastEpisode = async (ep: PodcastEpisode) => {
     if (!ep.audioUrl) {
@@ -143,9 +149,14 @@ export function MusicPlayer() {
         });
       }
     };
-    audio.play().then(() => setIsPlaying(true)).catch((err) => {
-      showToast.error(`Không phát được podcast: ${String(err?.message ?? err ?? "Unknown error")}`);
-    });
+    audio
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch((err) => {
+        showToast.error(
+          `Không phát được podcast: ${String(err?.message ?? err ?? "Unknown error")}`,
+        );
+      });
   };
 
   /* ── Pause when navigating to auth pages ─────────────────────────────── */
@@ -167,7 +178,10 @@ export function MusicPlayer() {
   };
 
   const duration = track?.duration ?? 0;
-  const displayElapsed = Math.max(0, duration > 0 ? Math.min(elapsed, duration) : elapsed);
+  const displayElapsed = Math.max(
+    0,
+    duration > 0 ? Math.min(elapsed, duration) : elapsed,
+  );
   // Progress bar now uses the synchronized PlayerContext elapsed.
   const progressPct =
     duration > 0 ? Math.min((displayElapsed / duration) * 100, 100) : 0;
@@ -182,8 +196,10 @@ export function MusicPlayer() {
     if (!track) return;
     try {
       // TODO: wire up favoriteService.addFavorite() once the API is ready
-      setIsFavorite(prev => !prev);
-      showToast.success(isFavorite ? "Đã bỏ yêu thích" : "Đã thêm vào yêu thích");
+      setIsFavorite((prev) => !prev);
+      showToast.success(
+        isFavorite ? "Đã bỏ yêu thích" : "Đã thêm vào yêu thích",
+      );
     } catch {
       showToast.error("Không thể cập nhật yêu thích");
     }
@@ -266,7 +282,7 @@ export function MusicPlayer() {
               className="download-list-icon-container"
               title="Danh sách phát"
               style={{ cursor: "pointer" }}
-              onClick={() => setShowPlaylist(prev => !prev)}
+              onClick={() => setShowPlaylist((prev) => !prev)}
             >
               <ListMusic size={20} strokeWidth={1.8} color={iconAccent} />
             </div>
@@ -351,9 +367,13 @@ export function MusicPlayer() {
                   {selectedPodcastId === null ? (
                     <div className="podcast-drawer-list">
                       {loadingEpisodes ? (
-                        <p className="playlist-drawer-placeholder">Đang tải podcast...</p>
+                        <p className="playlist-drawer-placeholder">
+                          Đang tải podcast...
+                        </p>
                       ) : podcasts.length === 0 ? (
-                        <p className="playlist-drawer-placeholder">Chưa có podcast nào</p>
+                        <p className="playlist-drawer-placeholder">
+                          Chưa có podcast nào
+                        </p>
                       ) : (
                         podcasts.map((pod) => (
                           <div
@@ -369,7 +389,9 @@ export function MusicPlayer() {
                               )}
                             </div>
                             <div className="podcast-drawer-info">
-                              <span className="podcast-drawer-title">{pod.title}</span>
+                              <span className="podcast-drawer-title">
+                                {pod.title}
+                              </span>
                             </div>
                             <Play size={12} fill="currentColor" />
                           </div>
@@ -381,14 +403,21 @@ export function MusicPlayer() {
                     <div className="episode-drawer-list">
                       <button
                         className="episode-drawer-back"
-                        onClick={() => { setSelectedPodcastId(null); setPodcastEpisodes([]); }}
+                        onClick={() => {
+                          setSelectedPodcastId(null);
+                          setPodcastEpisodes([]);
+                        }}
                       >
                         <X size={12} /> Quay lại
                       </button>
                       {loadingEpisodes ? (
-                        <p className="playlist-drawer-placeholder">Đang tải tập...</p>
+                        <p className="playlist-drawer-placeholder">
+                          Đang tải tập...
+                        </p>
                       ) : podcastEpisodes.length === 0 ? (
-                        <p className="playlist-drawer-placeholder">Chưa có tập nào</p>
+                        <p className="playlist-drawer-placeholder">
+                          Chưa có tập nào
+                        </p>
                       ) : (
                         podcastEpisodes.map((ep) => (
                           <div
@@ -398,7 +427,9 @@ export function MusicPlayer() {
                           >
                             <Play size={12} fill="currentColor" />
                             <div className="episode-drawer-info">
-                              <span className="episode-drawer-title">{ep.title}</span>
+                              <span className="episode-drawer-title">
+                                {ep.title}
+                              </span>
                             </div>
                           </div>
                         ))
