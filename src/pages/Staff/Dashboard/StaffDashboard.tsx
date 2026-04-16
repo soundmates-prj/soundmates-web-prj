@@ -7,32 +7,89 @@ import {
   ArrowUp,
   CheckCircle,
   XCircle,
-  AlertCircle
-} from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import './StaffDashboard.css';
+  AlertCircle,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import "./StaffDashboard.css";
 
 const sessionData = [
-  { day: 'T2', sessions: 3, listeners: 245 },
-  { day: 'T3', sessions: 5, listeners: 389 },
-  { day: 'T4', sessions: 4, listeners: 312 },
-  { day: 'T5', sessions: 6, listeners: 456 },
-  { day: 'T6', sessions: 7, listeners: 523 },
-  { day: 'T7', sessions: 8, listeners: 678 },
-  { day: 'CN', sessions: 6, listeners: 534 },
+  { day: "T2", sessions: 3, listeners: 245 },
+  { day: "T3", sessions: 5, listeners: 389 },
+  { day: "T4", sessions: 4, listeners: 312 },
+  { day: "T5", sessions: 6, listeners: 456 },
+  { day: "T6", sessions: 7, listeners: 523 },
+  { day: "T7", sessions: 8, listeners: 678 },
+  { day: "CN", sessions: 6, listeners: 534 },
 ];
 
 const upcomingSessions = [
-  { id: 1, title: 'Chill Night Radio', time: '20:00 - 22:00', date: 'Hôm nay', host: 'DJ Minh', status: 'scheduled' },
-  { id: 2, title: 'Morning Jazz', time: '08:00 - 10:00', date: 'Ngày mai', host: 'Sarah Lee', status: 'scheduled' },
-  { id: 3, title: 'Acoustic Session', time: '15:00 - 17:00', date: 'Ngày mai', host: 'John Doe', status: 'scheduled' },
+  {
+    id: 1,
+    title: "Chill Night Radio",
+    time: "20:00 - 22:00",
+    date: "Hôm nay",
+    host: "DJ Minh",
+    status: "scheduled",
+  },
+  {
+    id: 2,
+    title: "Morning Jazz",
+    time: "08:00 - 10:00",
+    date: "Ngày mai",
+    host: "Sarah Lee",
+    status: "scheduled",
+  },
+  {
+    id: 3,
+    title: "Acoustic Session",
+    time: "15:00 - 17:00",
+    date: "Ngày mai",
+    host: "John Doe",
+    status: "scheduled",
+  },
 ];
 
 const recentRequests = [
-  { id: 1, type: 'music', title: 'Bohemian Rhapsody - Queen', user: 'User123', status: 'pending', time: '5 phút trước' },
-  { id: 2, type: 'podcast', title: 'Tech Talk Episode 5', user: 'PodcastFan', status: 'approved', time: '15 phút trước' },
-  { id: 3, type: 'music', title: 'Imagine - John Lennon', user: 'MusicLover', status: 'pending', time: '23 phút trước' },
-  { id: 4, type: 'podcast', title: 'Daily News Briefing', user: 'NewsJunkie', status: 'rejected', time: '1 giờ trước' },
+  {
+    id: 1,
+    type: "music",
+    title: "Bohemian Rhapsody - Queen",
+    user: "User123",
+    status: "pending",
+    time: "5 phút trước",
+  },
+  {
+    id: 2,
+    type: "podcast",
+    title: "Tech Talk Episode 5",
+    user: "PodcastFan",
+    status: "approved",
+    time: "15 phút trước",
+  },
+  {
+    id: 3,
+    type: "music",
+    title: "Imagine - John Lennon",
+    user: "MusicLover",
+    status: "pending",
+    time: "23 phút trước",
+  },
+  {
+    id: 4,
+    type: "podcast",
+    title: "Daily News Briefing",
+    user: "NewsJunkie",
+    status: "rejected",
+    time: "1 giờ trước",
+  },
 ];
 
 interface StatCardProps {
@@ -44,12 +101,21 @@ interface StatCardProps {
   subtitle?: string;
 }
 
-function StatCard({ title, value, change, isPositive, icon, subtitle }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  change,
+  isPositive,
+  icon,
+  subtitle,
+}: StatCardProps) {
   return (
     <div className="staff-stat-card">
       <div className="staff-stat-header">
         <div className="staff-stat-icon">{icon}</div>
-        <div className={`staff-stat-change ${isPositive ? 'positive' : 'negative'}`}>
+        <div
+          className={`staff-stat-change ${isPositive ? "positive" : "negative"}`}
+        >
           <ArrowUp size={14} />
           <span>{change}</span>
         </div>
@@ -64,9 +130,9 @@ function StatCard({ title, value, change, isPositive, icon, subtitle }: StatCard
 export function StaffDashboard() {
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return <CheckCircle size={16} className="status-icon approved" />;
-      case 'rejected':
+      case "rejected":
         return <XCircle size={16} className="status-icon rejected" />;
       default:
         return <AlertCircle size={16} className="status-icon pending" />;
@@ -75,12 +141,12 @@ export function StaffDashboard() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'approved':
-        return 'Đã duyệt';
-      case 'rejected':
-        return 'Từ chối';
+      case "approved":
+        return "Đã duyệt";
+      case "rejected":
+        return "Từ chối";
       default:
-        return 'Đang chờ';
+        return "Đang chờ";
     }
   };
 
@@ -88,13 +154,21 @@ export function StaffDashboard() {
     <div className="staff-dashboard">
       <div className="staff-dashboard-header">
         <div>
-          <h1 className="staff-dashboard-title" style={{
-            background: 'linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>Bảng Điều Khiển</h1>
-          <p className="staff-dashboard-subtitle">Quản lý phiên phát sóng và yêu cầu nội dung</p>
+          <h1
+            className="staff-dashboard-title"
+            style={{
+              background:
+                "linear-gradient(135deg, #1a9fd4 0%, #55c5f1 50%, #a0e4ff 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Thống kê nền tảng
+          </h1>
+          <p className="staff-dashboard-subtitle">
+            Quản lý phiên phát sóng và yêu cầu nội dung
+          </p>
         </div>
       </div>
 
@@ -167,7 +241,9 @@ export function StaffDashboard() {
                   </p>
                   <p className="staff-session-host">Host: {session.host}</p>
                 </div>
-                <span className="staff-session-badge scheduled">Đã lên lịch</span>
+                <span className="staff-session-badge scheduled">
+                  Đã lên lịch
+                </span>
               </div>
             ))}
           </div>
@@ -196,8 +272,12 @@ export function StaffDashboard() {
                 <tr key={request.id}>
                   <td>
                     <span className={`staff-type-badge ${request.type}`}>
-                      {request.type === 'music' ? <Music size={14} /> : <Mic size={14} />}
-                      {request.type === 'music' ? 'Nhạc' : 'Podcast'}
+                      {request.type === "music" ? (
+                        <Music size={14} />
+                      ) : (
+                        <Mic size={14} />
+                      )}
+                      {request.type === "music" ? "Nhạc" : "Podcast"}
                     </span>
                   </td>
                   <td className="staff-request-title">{request.title}</td>
@@ -210,10 +290,14 @@ export function StaffDashboard() {
                   </td>
                   <td className="staff-request-time">{request.time}</td>
                   <td>
-                    {request.status === 'pending' && (
+                    {request.status === "pending" && (
                       <div className="staff-action-buttons">
-                        <button className="staff-action-btn approve">Duyệt</button>
-                        <button className="staff-action-btn reject">Từ chối</button>
+                        <button className="staff-action-btn approve">
+                          Duyệt
+                        </button>
+                        <button className="staff-action-btn reject">
+                          Từ chối
+                        </button>
                       </div>
                     )}
                   </td>

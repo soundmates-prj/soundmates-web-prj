@@ -410,7 +410,7 @@ const LivestreamPage: React.FC = () => {
         setChatMessages(prev => [...prev, {
           id: msg.id || Date.now().toString(),
           type: 'user' as const,
-          name: msg.userId || 'Khách',
+          name: msg.userName || `User-${(msg.userId || '?').slice(0, 6)}`,
           text: msg.message,
           time: msg.createdAt
             ? new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
