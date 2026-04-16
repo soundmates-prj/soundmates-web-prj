@@ -19,6 +19,7 @@ import {
   ALLOWED_AUDIO_EXTENSIONS,
   ALLOWED_AUDIO_MIME_TYPES,
   MAX_UPLOAD_SIZE_BYTES,
+  MAX_CLOUDINARY_AUDIO_SIZE_BYTES,
 } from "./liveSessionConstants";
 import "./LiveOps.css";
 
@@ -96,6 +97,14 @@ export default function MusicCatalogPage() {
 
     if (input.size > MAX_UPLOAD_SIZE_BYTES) {
       showError("File quá lớn", "Dung lượng tối đa 100MB");
+      return false;
+    }
+
+    if (input.size > MAX_CLOUDINARY_AUDIO_SIZE_BYTES) {
+      showError(
+        "File vượt giới hạn Cloudinary",
+        `File không được vượt quá 10MB (Cloudinary). File "${input.name}" có dung lượng ${formatFileSize(input.size)}.`,
+      );
       return false;
     }
 
@@ -193,8 +202,30 @@ export default function MusicCatalogPage() {
       }
 
       await loadTracks();
-    } catch {
-      showError("Upload thất bại", "Không thể upload file lên server");
+    } catch (err: unknown) {
+      // Extract server error message if available
+      let detailMsg = "Không thể upload file lên server";
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response &&
+        err.response.data &&
+        typeof err.response.data === "object" &&
+        "message" in err.response.data
+      ) {
+        const raw = String((err.response.data as { message?: unknown }).message ?? "");
+        if (raw.toLowerCase().includes("file size too large")) {
+          detailMsg = "File quá lớn — vượt quá giới hạn Cloudinary (10MB)";
+        } else if (raw) {
+          detailMsg = raw;
+        }
+      } else if (err instanceof Error) {
+        detailMsg = err.message;
+      }
+      showError("Upload thất bại", detailMsg);
       setUploadProgress((prev) => {
         const failed: Record<string, number> = {};
         for (const f of files) failed[f.name] = -1;
@@ -357,8 +388,8 @@ export default function MusicCatalogPage() {
                         color: "#94a3b8",
                       }}
                     >
-                      MP3, FLAC, WAV, OGG, M4A • Tối đa 100 file • Mỗi file tối
-                      đa 100MB
+                      MP3, FLAC, WAV, OGG • Tối đa 100 file • Mỗi file tối
+                      đa 10MB (Cloudinary)
                     </p>
 
                     {/* Primary button to open file picker */}
@@ -397,7 +428,7 @@ export default function MusicCatalogPage() {
                 ref={fileInputRef}
                 type="file"
                 style={{ display: "none" }}
-                accept=".mp3,.flac,.wav,.ogg,.m4a,audio/*"
+                accept=".mp3,.flac,.wav,.ogg,audio/*"
                 multiple
                 onChange={(e) => handleMultiFileSelect(e.target.files)}
               />

@@ -141,7 +141,7 @@ function ViewDetailsModal({
               <CheckCircle size={12} /> {user.isVerified ? 'Đã xác minh' : 'Chưa xác minh'}
             </span>
             <span
-              className="lm-status-badge inactive"
+              className="lm-status-badge"
               style={{ color: statusOpt.color, borderColor: `${statusOpt.color}33`, background: `${statusOpt.color}11` }}
             >
               {statusOpt.label}
@@ -211,10 +211,10 @@ function UpdateStatusModal({
       reason: reason || undefined,
     });
     if (res.success) {
-      showSuccess('Đã cập nhật', res.message || 'Trạng thái tài khoản đã được cập nhật.');
+      showSuccess('Đã cập nhật', 'Trạng thái tài khoản đã được cập nhật.');
       onSuccess(user.id, selected); onClose();
     } else {
-      showError('Thất bại', res.message);
+      showError('Thất bại', 'Không thể cập nhật trạng thái tài khoản. Vui lòng thử lại.');
     }
     setSubmitting(false);
   };
@@ -324,10 +324,10 @@ function VerifyEmailModal({
     setSubmitting(true);
     const res = await userService.verifyEmail(user.id);
     if (res.success) {
-      showSuccess('Đã xác minh', res.message || `Email của "${user.name}" đã được xác minh và tài khoản kích hoạt.`);
+      showSuccess('Đã xác minh', `Email của "${user.name}" đã được xác minh và tài khoản kích hoạt.`);
       onSuccess(user.id); onClose();
     } else {
-      showError('Thất bại', res.message);
+      showError('Thất bại', 'Không thể xác minh email. Vui lòng thử lại.');
     }
     setSubmitting(false);
   };
@@ -369,7 +369,7 @@ function DeleteModal({
       showSuccess('Đã xóa', `Tài khoản "${user.name}" đã bị xóa vĩnh viễn.`);
       onSuccess(user.id); onClose();
     } else {
-      showError('Thất bại', res.message);
+      showError('Thất bại', 'Không thể xóa tài khoản. Vui lòng thử lại.');
     }
     setSubmitting(false);
   };
@@ -593,7 +593,7 @@ export function UserManagementScreen() {
 
                       <td className="center">
                         <span
-                          className="lm-status-badge inactive"
+                          className="lm-status-badge"
                           style={{ color: statusOpt.color, borderColor: `${statusOpt.color}33`, background: `${statusOpt.color}11` }}
                         >
                           {statusOpt.label}
