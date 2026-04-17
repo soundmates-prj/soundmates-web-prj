@@ -1216,3 +1216,129 @@
         font-size: 20px;
     }
 }
+
+/* ================================================================
+   Host Mic Controls & Listener Badge
+================================================================ */
+
+/* Host mic section wrapper */
+.lr-host-mic-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Host mic button — idle state */
+.lr-host-mic-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    background: var(--lr-chip-bg);
+    color: var(--lr-title);
+    border: 1px solid var(--lr-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.lr-host-mic-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Host mic button — active (mic on) */
+.lr-host-mic-btn.active {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.45);
+}
+
+.lr-host-mic-btn.active:hover {
+    box-shadow: 0 6px 24px rgba(239, 68, 68, 0.6);
+}
+
+/* Pulsing ring around the active mic button */
+.lr-mic-pulse-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid rgba(239, 68, 68, 0.6);
+    animation: lr-mic-pulse 1.6s ease-out infinite;
+    pointer-events: none;
+}
+
+@keyframes lr-mic-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    70% {
+        transform: scale(1.12);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1.12);
+        opacity: 0;
+    }
+}
+
+/* Mic error message */
+.lr-mic-error {
+    margin: 0;
+    font-size: 11px;
+    color: #ef4444;
+    text-align: center;
+    max-width: 280px;
+    line-height: 1.4;
+}
+
+/* ── Listener: "Host đang nói" badge ── */
+.lr-host-speaking-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    box-shadow: 0 3px 12px rgba(239, 68, 68, 0.4);
+    animation: lr-badge-appear 0.3s ease-out;
+}
+
+/* Pulsing red dot */
+.lr-host-speaking-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    flex-shrink: 0;
+    animation: lr-dot-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes lr-badge-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.85) translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes lr-dot-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}

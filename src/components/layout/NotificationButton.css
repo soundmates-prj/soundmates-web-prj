@@ -191,3 +191,43 @@
 [data-theme="dark"] .notif-dropdown {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
+
+/* Loading state */
+.notif-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 36px 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Empty state */
+.notif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Spinner animation */
+.notif-spin {
+  animation: notif-rotate 0.9s linear infinite;
+}
+
+@keyframes notif-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Disabled mark-all button */
+.notif-mark-read-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

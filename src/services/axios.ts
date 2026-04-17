@@ -55,13 +55,14 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // Skip for guest: /me/* endpoints return 401 for unauthenticated users —
-      // just pass the error through so the component can handle it gracefully
-      // (e.g., show empty data instead of redirecting)
-      const isMeEndpoint = originalRequest.url?.startsWith("me/") ||
-                           originalRequest.url?.includes("/me/");
+      // Skip for guest: if user has NO tokens at all, they are a pure guest.
+      // Just reject the error so the component can handle gracefully (show empty
+      // state / fallback UI) — do NOT redirect to login.
+      const hasAnyToken =
+        !!localStorage.getItem("accessToken") ||
+        !!localStorage.getItem("refreshToken");
 
-      if (isMeEndpoint && !localStorage.getItem("accessToken")) {
+      if (!hasAnyToken) {
         return Promise.reject(error);
       }
 
@@ -83,12 +84,17 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem("refreshToken");
 
       if (!refreshToken) {
-        // Guest user or no refresh token - clean up + redirect to login
+        // accessToken had expired but no refreshToken → session is broken.
+        // Clean up stale data and redirect to login only if there WAS an
+        // access token (i.e. user was previously logged in, not a guest).
+        const hadAccessToken = !!localStorage.getItem("accessToken");
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("userInfo");
         window.dispatchEvent(new Event("authChange"));
-        window.location.href = "/login";
+        if (hadAccessToken) {
+          window.location.href = "/login";
+        }
         return Promise.reject(error);
       }
 

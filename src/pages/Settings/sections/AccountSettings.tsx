@@ -120,7 +120,7 @@ export default function AccountSettings() {
         showSuccess(
           "Đã vô hiệu hóa",
           res.message ||
-            "Tài khoản đã được vô hiệu hóa. Bạn có thể đăng nhập lại trong vòng 90 ngày.",
+          "Tài khoản đã được vô hiệu hóa. Bạn có thể đăng nhập lại trong vòng 90 ngày.",
         );
         setTimeout(() => {
           localStorage.clear();
@@ -187,7 +187,7 @@ export default function AccountSettings() {
         showSuccess(
           "Đã hủy yêu cầu",
           res.message ||
-            "Yêu cầu xóa tài khoản đã được hủy. Tài khoản đã được kích hoạt lại.",
+          "Yêu cầu xóa tài khoản đã được hủy. Tài khoản đã được kích hoạt lại.",
         );
         setTimeout(() => {
           window.location.reload();
@@ -233,7 +233,7 @@ export default function AccountSettings() {
           }}
         >
           <Loader2 size={20} className="spin" />
-          <span>�ang tải...</span>
+          <span>Đang tải...</span>
         </div>
       </div>
     );
@@ -488,7 +488,7 @@ export default function AccountSettings() {
                     required
                     className={
                       deleteConfirmText &&
-                      deleteConfirmText.trim() !== CONFIRM_DELETE_TEXT
+                        deleteConfirmText.trim() !== CONFIRM_DELETE_TEXT
                         ? "input-error"
                         : ""
                     }
