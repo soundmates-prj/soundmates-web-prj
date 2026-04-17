@@ -68,6 +68,7 @@ export function MusicPlayer() {
   const [podcasts, setPodcasts] = useState<
     { id: string; title: string; banner: string | null }[]
   >([]);
+  const [podcastEpisodes, setPodcastEpisodes] = useState<PodcastEpisode[]>([]);
   const [selectedPodcastId, setSelectedPodcastId] = useState<string | null>(
     null,
   );
@@ -102,6 +103,7 @@ export function MusicPlayer() {
   // Load podcasts when drawer opens on podcast tab
   useEffect(() => {
     if (showPlaylist && drawerTab === "podcast" && podcasts.length === 0) {
+      setLoadingEpisodes(true);
       podcastService
         .getPublishedPodcasts()
         .then((data) =>
@@ -111,9 +113,36 @@ export function MusicPlayer() {
               .map((p) => ({ id: p.id, title: p.title, banner: p.banner })),
           ),
         )
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setLoadingEpisodes(false));
     }
-  }, [showPlaylist, drawerTab]);
+  }, [showPlaylist, drawerTab, podcasts.length]);
+
+  useEffect(() => {
+    if (!showPlaylist || drawerTab !== "podcast" || !selectedPodcastId) return;
+
+    let active = true;
+    setLoadingEpisodes(true);
+
+    podcastService
+      .getEpisodes(selectedPodcastId)
+      .then((episodes) => {
+        if (!active) return;
+        setPodcastEpisodes(episodes);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPodcastEpisodes([]);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoadingEpisodes(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [showPlaylist, drawerTab, selectedPodcastId]);
 
   const playPodcastEpisode = async (ep: PodcastEpisode) => {
     if (!ep.audioUrl) {

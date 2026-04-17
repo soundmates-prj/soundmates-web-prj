@@ -23,6 +23,7 @@ import {
   getMoodColor,
   getMoodLabel,
 } from "../../types/forum";
+import { resolveUserDisplayNames } from "../../utils/userProfileNameResolver";
 import "./ForumPage.css";
 import CommentModal from "../../components/blog/CommentModal";
 import type { CommentModalPost } from "../../components/blog/CommentModal";
@@ -35,13 +36,13 @@ import "./ForumPage.css";
 const PAGE_SIZE = 10;
 
 /* ─── Post card ─── */
-function PostCard({ post }: { post: PublishedPost }) {
+function PostCard({ post, authorName }: { post: PublishedPost; authorName?: string }) {
   const [showModal, setShowModal] = useState(false);
 
   const shareData =
     post.postType === "share-music" ? parseShareMusic(post.contentText) : null;
   const moodColor = getMoodColor(post.moodTag);
-  const displayName = post.userFullName?.trim() || "Ẩn danh";
+  const displayName = authorName?.trim() || post.userFullName?.trim() || "Ẩn danh";
 
   const formatDate = (iso: string | null) => {
     if (!iso) return "";
@@ -166,17 +167,20 @@ export default function ForumPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [authorNamesByUserId, setAuthorNamesByUserId] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const q = search.trim().toLowerCase();
     setPosts(
       q
-        ? allPosts.filter((p) =>
-            (p.userFullName ?? "").toLowerCase().includes(q),
-          )
+        ? allPosts.filter((p) => {
+            const resolvedName =
+              authorNamesByUserId[p.userId] ?? p.userFullName ?? "";
+            return resolvedName.toLowerCase().includes(q);
+          })
         : allPosts,
     );
-  }, [search, allPosts]);
+  }, [search, allPosts, authorNamesByUserId]);
 
   const fetchPosts = useCallback(
     async (p: number) => {
@@ -193,6 +197,21 @@ export default function ForumPage() {
           setPage(d.page);
           setTotalPages(d.totalPages);
           setTotalCount(d.totalCount);
+
+          const fallbackNamesByUserId = d.items.reduce<Record<string, string>>(
+            (acc, item) => {
+              acc[item.userId] = item.userFullName ?? "Ẩn danh";
+              return acc;
+            },
+            {},
+          );
+
+          const resolvedNames = await resolveUserDisplayNames(
+            d.items.map((item) => item.userId),
+            fallbackNamesByUserId,
+          );
+
+          setAuthorNamesByUserId((prev) => ({ ...prev, ...resolvedNames }));
         }
       } catch (err) {
         console.error(err);
@@ -429,7 +448,7 @@ export default function ForumPage() {
                     key={post.id}
                     ref={post.id === highlightId ? highlightRef : undefined}
                   >
-                    <PostCard post={post} />
+                    <PostCard post={post} authorName={authorNamesByUserId[post.userId]} />
                   </div>
                 ))}
               </div>
