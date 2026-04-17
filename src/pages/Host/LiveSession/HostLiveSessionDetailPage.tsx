@@ -1,15 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowLeft,
-  Music,
-  Pause,
-  Play,
-  RefreshCw,
-  Send,
-  Square,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ArrowLeft, Pause, Play, RefreshCw, Send, Square, Trash2, Music, X, Mic2, MicOff } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   liveSessionApiService,
@@ -110,6 +100,31 @@ export default function HostLiveSessionDetailPage() {
   const [chatInput, setChatInput] = useState("");
   const [chats, setChats] = useState<DisplayChat[]>([]);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // ── Mic state (Host) ───────────────────────────────────────────
+  const [isMicActive, setIsMicActive] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+
+  // ── WebRTC refs ───────────────────────────────────────────────────────────
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const hostPeerConnsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+
+  const STUN_SERVERS: RTCIceServer[] = useMemo(() => [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+  ], []);
+
+  // Throttle global volume updates to save SignalR bandwidth
+  const updateGlobalVolRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleVolumeSync = useCallback((val: number) => {
+    if (updateGlobalVolRef.current) clearTimeout(updateGlobalVolRef.current);
+    updateGlobalVolRef.current = setTimeout(() => {
+      if (sessionId) {
+        console.log("Sending global volume:", val);
+        void liveHubService.updateGlobalVolume(sessionId, val).catch(e => console.error("Volume sync error", e));
+      }
+    }, 100);
+  }, [sessionId]);
 
   const loadData = useCallback(async () => {
     if (!sessionId) return;
@@ -221,6 +236,66 @@ export default function HostLiveSessionDetailPage() {
       void liveHubService.leaveSession(sessionId, currentUserId);
     };
   }, [sessionId]);
+
+  // ── Host: xử lý khi Listener muốn subscribe & ICE relay ────────────────────────────────
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const offSub = liveHubService.onListenerWantsToSubscribe(async (sid, listenerConnId, sdpOffer) => {
+      if (sid !== sessionId || !isMicActive || !localStreamRef.current) return;
+
+      const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
+      hostPeerConnsRef.current.set(listenerConnId, pc);
+
+      localStreamRef.current.getAudioTracks().forEach(track =>
+        pc.addTrack(track, localStreamRef.current!)
+      );
+
+      // ICE candidate relay qua SignalR
+      pc.onicecandidate = (evt) => {
+        if (evt.candidate) {
+          void liveHubService.iceCandidateRelay(sessionId, listenerConnId, JSON.stringify(evt.candidate));
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "disconnected" || pc.connectionState === "failed" || pc.connectionState === "closed") {
+          hostPeerConnsRef.current.delete(listenerConnId);
+        }
+      };
+
+      await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: sdpOffer }));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await liveHubService.hostAnswerListener(sessionId, listenerConnId, answer.sdp ?? "");
+    });
+
+    const offIce = liveHubService.onReceiveIceCandidate(async (sid, candidateStr) => {
+      if (sid !== sessionId) return;
+      try {
+        const candidate = JSON.parse(candidateStr) as RTCIceCandidateInit;
+        hostPeerConnsRef.current.forEach(async (pc) => {
+          if (pc.remoteDescription) {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => { });
+          }
+        });
+      } catch { /* ignore parse errors */ }
+    });
+
+    return () => {
+      offSub();
+      offIce();
+    };
+  }, [isMicActive, sessionId, STUN_SERVERS]);
+
+  // ── Cleanup peer connections unmount ──────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      hostPeerConnsRef.current.forEach(pc => pc.close());
+      hostPeerConnsRef.current.clear();
+      localStreamRef.current?.getTracks().forEach(track => track.stop());
+    };
+  }, []);
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -356,12 +431,75 @@ export default function HostLiveSessionDetailPage() {
     }
   };
 
+  const handleToggleMic = useCallback(async () => {
+    if (!sessionId) return;
+
+    if (isMicActive) {
+      // ── Tắt mic ──
+      hostPeerConnsRef.current.forEach(pc => pc.close());
+      hostPeerConnsRef.current.clear();
+      localStreamRef.current?.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+      setIsMicActive(false);
+      setMicError(null);
+      try {
+        await liveHubService.stopMicrophone(sessionId);
+      } catch { /* ignore disconnect errors */ }
+      showSuccess("Đã tắt mic");
+    } else {
+      // ── Bật mic ──
+      setMicError(null);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        localStreamRef.current = stream;
+
+        const tempPc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
+        stream.getAudioTracks().forEach(track => tempPc.addTrack(track, stream));
+        const offer = await tempPc.createOffer();
+        tempPc.close();
+
+        await liveHubService.startMicrophone(sessionId, offer.sdp ?? "");
+        setIsMicActive(true);
+        showSuccess("Mic đang bật — Listeners có thể nghe bạn");
+      } catch (err: any) {
+        const msg = err?.name === "NotAllowedError"
+          ? "Trình duyệt chưa cấp quyền micro. Vui lòng cho phép trong cài đặt."
+          : `Không thể bật mic: ${err?.message ?? err}`;
+        setMicError(msg);
+        showError("Lỗi tắt/mở mic", msg);
+      }
+    }
+  }, [isMicActive, sessionId, STUN_SERVERS]);
+
   const formattedSchedules = useMemo(
-    () =>
-      schedules.map((item) => ({
-        ...item,
-        displayRange: `${new Date(item.startTime).toLocaleString(LOCALE_VIETNAMESE)} - ${new Date(item.endTime).toLocaleString(LOCALE_VIETNAMESE)}`,
-      })),
+    () => {
+      return schedules.map((item) => {
+        let startStr = "Invalid Date";
+        let endStr = "Invalid Date";
+
+        if (item.startDate && item.startTime && item.endTime) {
+          const startDateTime = new Date(`${item.startDate}T${item.startTime}`);
+          const endDateTime = new Date(`${item.startDate}T${item.endTime}`);
+
+          // Nếu giờ kết thúc nhỏ hơn giờ bắt đầu (vd: 22:00 -> 02:00), nghĩa là kéo dài qua ngày hôm sau
+          if (endDateTime < startDateTime) {
+            endDateTime.setDate(endDateTime.getDate() + 1);
+          }
+
+          if (!isNaN(startDateTime.getTime())) {
+            startStr = startDateTime.toLocaleString(LOCALE_VIETNAMESE);
+          }
+          if (!isNaN(endDateTime.getTime())) {
+            endStr = endDateTime.toLocaleString(LOCALE_VIETNAMESE);
+          }
+        }
+
+        return {
+          ...item,
+          displayRange: `${startStr} - ${endStr}`,
+        };
+      });
+    },
     [schedules],
   );
 
@@ -378,10 +516,25 @@ export default function HostLiveSessionDetailPage() {
           </p>
         </div>
         <div className="host-live-actions">
-          <button
-            className="host-live-btn host-live-btn--ghost"
-            onClick={handleRefresh}
-          >
+          {/* Host Mic Control Button */}
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+            <button
+              className={`host-live-btn ${isMicActive ? "host-live-btn-mic active" : "host-live-btn-mic"}`}
+              onClick={() => void handleToggleMic()}
+              disabled={session?.status !== "Live"}
+              title={session?.status !== "Live" ? "Chỉ mở mic khi đang Live" : isMicActive ? "Tắt mic" : "Bật mic"}
+            >
+              {isMicActive ? <MicOff size={15} /> : <Mic2 size={15} />}
+              {isMicActive ? "Đang phát mic" : "Bật Mic"}
+              {isMicActive && <span className="host-live-mic-pulse" />}
+            </button>
+            {micError && (
+              <span style={{ position: "absolute", bottom: "-20px", left: 0, fontSize: "11px", color: "#ef4444", whiteSpace: "nowrap" }}>
+                Lỗi: {micError}
+              </span>
+            )}
+          </div>
+          <button className="host-live-btn host-live-btn--ghost" onClick={handleRefresh}>
             <RefreshCw size={15} />
             Làm mới
           </button>
@@ -471,6 +624,35 @@ export default function HostLiveSessionDetailPage() {
                     {nowPlaying.currentTrack.artist || "—"}
                   </div>
                 </div>
+
+                {/* Local Volume Control cho Host */}
+                {session?.streamUrl && session.status === "Live" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", minWidth: 150 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", alignSelf: "center" }}>
+                      Âm lượng nhạc (Toàn hệ thống)
+                    </span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      defaultValue={1.0}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        const audio = document.getElementById("host-local-audio") as HTMLAudioElement;
+                        if (audio) audio.volume = val;
+                        handleVolumeSync(val);
+                      }}
+                      style={{ width: "100%", accentColor: "#ef4444" }}
+                    />
+                    <audio
+                      id="host-local-audio"
+                      src={session.streamUrl.replace(/host\.docker\.internal(:\d+)?/gi, "localhost:5000")}
+                      autoPlay
+                      onLoadedMetadata={(e) => { (e.target as HTMLAudioElement).volume = 1.0; }}
+                    />
+                  </div>
+                )}
               </div>
               <div className="host-live-wave">
                 <div className="host-live-wave-bar" />

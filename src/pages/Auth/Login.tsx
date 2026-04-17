@@ -172,7 +172,7 @@ const Login: React.FC = () => {
       window.dispatchEvent(new Event("authChange"));
 
       setFieldErrors({ emailOrUsername: false, password: false });
-      showSuccess("ăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
+      showSuccess("Đăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
 
       const redirectUrl = userData?.redirectUrl;
       if (redirectUrl) {

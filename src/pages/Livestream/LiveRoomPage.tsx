@@ -28,12 +28,15 @@ import {
   Clock,
   Smile,
   MoreVertical,
+  Mic2,
+  MicOff,
 } from "lucide-react";
 import { showToast } from "../../utils/toast";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
 import type { SongRequestResult } from "../../services/liveSessionApiService";
 import { useLiveSession } from "../../context/LiveSessionContext";
 import { usePlayer } from "../../context/PlayerContext";
+import { liveHubService } from "../../services/liveHubService";
 import "./LiveRoomPage.css";
 
 // ─── Types (local UI only) ────────────────────────────────────────────────────
@@ -200,6 +203,107 @@ export function LiveRoomPage() {
   const [requestedSongIds, setRequestedSongIds] = useState<Set<string>>(new Set());
   const [listeningTime, setListeningTime] = useState(0); // kept for type safety (unused — timer moved to context)
   const guestLimitReachedRef = useRef(false);
+
+  // ── Mic state (Listener) ───────────────────────────────────────────
+  const [hostMicActive, setHostMicActive] = useState(false);      // Listener: Host đang nói
+
+  // ── WebRTC refs (Listener) ───────────────────────────────────────────────────────────
+  const listenerPeerConnRef = useRef<RTCPeerConnection | null>(null);                 // Listener: connection to host
+  const listenerMicAudioRef = useRef<HTMLAudioElement | null>(null);                  // Listener: audio element for host mic
+
+  const STUN_SERVERS: RTCIceServer[] = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+  ];
+
+
+  // ── Listener: xử lý khi Host bật mic ──────────────────────────────────────
+  useEffect(() => {
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+
+    const offStarted = liveHubService.onHostMicStarted(async (sessionId) => {
+      if (sessionId !== sid) return;
+      setHostMicActive(true);
+
+      // Tạo RTCPeerConnection để nhận audio từ Host
+      const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
+      listenerPeerConnRef.current = pc;
+
+      pc.ontrack = (evt) => {
+        // Tạo audio element để phát
+        let audioEl = listenerMicAudioRef.current;
+        if (!audioEl) {
+          audioEl = new Audio();
+          audioEl.autoplay = true;
+          listenerMicAudioRef.current = audioEl;
+        }
+        const [stream] = evt.streams;
+        audioEl.srcObject = stream;
+        void audioEl.play().catch(() => {});
+      };
+
+      pc.onicecandidate = (evt) => {
+        if (evt.candidate) {
+          void liveHubService.iceCandidateRelay(sessionId, "", JSON.stringify(evt.candidate));
+        }
+      };
+
+      // SDP offer để gửi Host (listener muốn nhận track)
+      pc.addTransceiver("audio", { direction: "recvonly" });
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      await liveHubService.listenerRequestMic(sessionId, offer.sdp ?? "");
+    });
+
+    const offStopped = liveHubService.onHostMicStopped((sessionId) => {
+      if (sessionId !== sid) return;
+      setHostMicActive(false);
+      // Dừng playback
+      if (listenerMicAudioRef.current) {
+        listenerMicAudioRef.current.pause();
+        listenerMicAudioRef.current.srcObject = null;
+        listenerMicAudioRef.current = null;
+      }
+      listenerPeerConnRef.current?.close();
+      listenerPeerConnRef.current = null;
+    });
+
+    const offAnswer = liveHubService.onReceiveHostAnswer(async (sessionId, sdpAnswer) => {
+      if (sessionId !== sid || !listenerPeerConnRef.current) return;
+      await listenerPeerConnRef.current.setRemoteDescription(
+        new RTCSessionDescription({ type: "answer", sdp: sdpAnswer })
+      );
+    });
+
+    const offIce = liveHubService.onReceiveIceCandidate(async (sessionId, candidateStr) => {
+      if (sessionId !== sid) return;
+
+      try {
+        const candidate = JSON.parse(candidateStr) as RTCIceCandidateInit;
+        // Check if we're host or listener
+        if (listenerPeerConnRef.current?.remoteDescription) {
+          await listenerPeerConnRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+        }
+      } catch { /* ignore parse errors */ }
+    });
+
+    return () => {
+      offStarted();
+      offStopped();
+      offAnswer();
+      offIce();
+    };
+  }, [sessionId]);
+
+  // ── Cleanup WebRTC on unmount ─────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      // Không dừng mic hoàn toàn khi navigate — chỉ cleanup khi component unmount hẳn
+      // Các peer connections và stream tự cleanup khi tabclose
+    };
+  }, []);
 
   // ── Refs ──────────────────────────────────────────────────────────────────
   const chatEndRef = useRef<HTMLDivElement | null>(null);
@@ -478,6 +582,15 @@ export function LiveRoomPage() {
                 <p className="lr-track-artist">{track?.artist || ""}</p>
                 {track?.album && <p className="lr-track-album">{track.album}</p>}
               </div>
+
+              {/* Host Mic Badge — visible to listeners khi Host đang nói */}
+              {hostMicActive && currentUserRoleRef.current !== "Host" && (
+                <div className="lr-host-speaking-badge">
+                  <span className="lr-host-speaking-dot" />
+                  <Mic2 size={13} />
+                  Host đang nói
+                </div>
+              )}
 
               {/* Request nhạc */}
               <button

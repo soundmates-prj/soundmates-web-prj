@@ -367,7 +367,98 @@ class LiveHubService {
     }
   }
 
-  // ─── Event handlers ───────────────────────────────────────────────────────
+  // ─── WebRTC Signaling ─────────────────────────────────────────────────────
+
+  /** Host: bắt đầu stream mic, gửi SDP Offer lên Hub */
+  async startMicrophone(sessionId: string, sdpOffer: string): Promise<void> {
+    const conn = this.getConnection();
+    if (conn.state !== signalR.HubConnectionState.Connected) await this.start();
+    await conn.invoke("StartMicrophone", sessionId, sdpOffer);
+  }
+
+  /** Host: dừng stream mic */
+  async stopMicrophone(sessionId: string): Promise<void> {
+    const conn = this.getConnection();
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke("StopMicrophone", sessionId);
+    }
+  }
+
+  /** Listener: gửi SDP Offer đến Host để subscribe nhận audio */
+  async listenerRequestMic(sessionId: string, sdpOffer: string): Promise<void> {
+    const conn = this.getConnection();
+    if (conn.state !== signalR.HubConnectionState.Connected) await this.start();
+    await conn.invoke("ListenerRequestMic", sessionId, sdpOffer);
+  }
+
+  /** Host: gửi SDP Answer về cho 1 listener cụ thể */
+  async hostAnswerListener(sessionId: string, listenerConnectionId: string, sdpAnswer: string): Promise<void> {
+    const conn = this.getConnection();
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke("HostAnswerListener", sessionId, listenerConnectionId, sdpAnswer);
+    }
+  }
+
+  /** Relay ICE candidate đến peer cụ thể */
+  async iceCandidateRelay(sessionId: string, targetConnectionId: string, candidate: string): Promise<void> {
+    const conn = this.getConnection();
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke("IceCandidateRelay", sessionId, targetConnectionId, candidate);
+    }
+  }
+
+  /** Host: Cập nhật âm lượng nhạc nền cho tất cả Listeners */
+  async updateGlobalVolume(sessionId: string, volume: number): Promise<void> {
+    const conn = this.getConnection();
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke("HostUpdateGlobalVolume", sessionId, volume);
+    }
+  }
+
+  // ─── WebRTC Event Handlers ────────────────────────────────────────────────
+
+  /** Listener nhận event: Host bắt đầu broadcast mic */
+  onHostMicStarted(callback: (sessionId: string) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("HostMicStarted", callback);
+    return () => conn.off("HostMicStarted", callback);
+  }
+
+  /** Listener nhận event: Host dừng broadcast mic */
+  onHostMicStopped(callback: (sessionId: string) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("HostMicStopped", callback);
+    return () => conn.off("HostMicStopped", callback);
+  }
+
+  /** Host nhận event: 1 listener muốn subscribe → nhận SDP Offer từ listener */
+  onListenerWantsToSubscribe(callback: (sessionId: string, listenerConnId: string, sdpOffer: string) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("ListenerWantsToSubscribe", callback);
+    return () => conn.off("ListenerWantsToSubscribe", callback);
+  }
+
+  /** Listener nhận SDP Answer từ Host */
+  onReceiveHostAnswer(callback: (sessionId: string, sdpAnswer: string) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("ReceiveHostAnswer", callback);
+    return () => conn.off("ReceiveHostAnswer", callback);
+  }
+
+  /** Nhận ICE candidate từ peer (cả 2 chiều) */
+  onReceiveIceCandidate(callback: (sessionId: string, candidate: string) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("ReceiveIceCandidate", callback);
+    return () => conn.off("ReceiveIceCandidate", callback);
+  }
+
+  /** Listener nhận lệnh thay đổi âm lượng nhạc nền chung từ Host */
+  onGlobalVolumeUpdated(callback: (volume: number) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("GlobalVolumeUpdated", callback);
+    return () => conn.off("GlobalVolumeUpdated", callback);
+  }
+
   // Backend sends lowercase event names: sessionstarted, sessionended, userjoined, userleft
 
   onSessionStarted(callback: (session: LiveSessionEvent) => void): () => void {
