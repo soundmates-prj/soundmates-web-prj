@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Pause, Play, RefreshCw, Send, Square, Trash2, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Music,
+  Pause,
+  Play,
+  RefreshCw,
+  Send,
+  Square,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   liveSessionApiService,
@@ -25,7 +35,8 @@ interface DisplayChat {
   isDeleted?: boolean;
 }
 
-const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const GUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function tryParseJwtUserId(token: string | null): string | null {
   if (!token) return null;
@@ -33,7 +44,10 @@ function tryParseJwtUserId(token: string | null): string | null {
     const parts = token.split(".");
     if (parts.length < 2) return null;
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const padded = base64.padEnd(
+      base64.length + ((4 - (base64.length % 4)) % 4),
+      "=",
+    );
     const json = atob(padded);
     const payload = JSON.parse(json);
     const sub = String(payload?.sub ?? "").trim();
@@ -53,7 +67,9 @@ const getCurrentUserId = (): string => {
         return id;
       }
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return tryParseJwtUserId(localStorage.getItem("accessToken")) || "";
 };
 
@@ -64,7 +80,9 @@ const getCurrentUserAvatar = () => {
       const parsed = JSON.parse(raw);
       return parsed.avatarUrl || "";
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return "";
 };
 
@@ -76,8 +94,17 @@ export default function HostLiveSessionDetailPage() {
   const [listener, setListener] = useState<ListenerStatsResult | null>(null);
   const [schedules, setSchedules] = useState<SessionScheduleResult[]>([]);
   const [songRequests, setSongRequests] = useState<SongRequestResult[]>([]);
-  const [nowPlaying, setNowPlaying] = useState<StationNowPlayingResult | null>(null);
+  const [nowPlaying, setNowPlaying] = useState<StationNowPlayingResult | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
+
+  // Song request review modal states
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(
+    null,
+  );
+  const [rejectReason, setRejectReason] = useState("");
 
   // Chat states
   const [chatInput, setChatInput] = useState("");
@@ -88,7 +115,13 @@ export default function HostLiveSessionDetailPage() {
     if (!sessionId) return;
     setLoading(true);
     try {
-      const [sessionData, listenerData, scheduleData, requestsData, nowPlayingData] = await Promise.all([
+      const [
+        sessionData,
+        listenerData,
+        scheduleData,
+        requestsData,
+        nowPlayingData,
+      ] = await Promise.all([
         liveSessionApiService.getLiveSession(sessionId),
         liveSessionApiService.getListenerStats(sessionId),
         liveSessionApiService.getSchedules(sessionId),
@@ -133,16 +166,21 @@ export default function HostLiveSessionDetailPage() {
       const mapped = history.map((chat: any) => ({
         id: chat.id || chat.Id || `hub-${Date.now()}-${Math.random()}`,
         userId: chat.userId || chat.UserId || "",
-        userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
+        userName:
+          chat.userName ||
+          chat.UserName ||
+          `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
         avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
         message: chat.message || chat.Message,
-        createdAt: chat.createdAt || chat.CreatedAt || new Date().toISOString()
+        createdAt: chat.createdAt || chat.CreatedAt || new Date().toISOString(),
       }));
       setChats(mapped);
     });
 
     const offChatDeleted = liveHubService.onChatDeleted((chatId) => {
-      setChats(prev => prev.map(c => c.id === chatId ? { ...c, isDeleted: true } : c));
+      setChats((prev) =>
+        prev.map((c) => (c.id === chatId ? { ...c, isDeleted: true } : c)),
+      );
     });
 
     const offReceiveChat = liveHubService.onReceiveChat((chat: any) => {
@@ -150,12 +188,15 @@ export default function HostLiveSessionDetailPage() {
       const mapped: DisplayChat = {
         id: chat.id || chat.Id || `hub-${Date.now()}-${Math.random()}`,
         userId: chat.userId || chat.UserId || "",
-        userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
+        userName:
+          chat.userName ||
+          chat.UserName ||
+          `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
         avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
         message: chat.message || chat.Message,
-        createdAt: chat.createdAt || chat.CreatedAt || new Date().toISOString()
+        createdAt: chat.createdAt || chat.CreatedAt || new Date().toISOString(),
       };
-      setChats(prev => [...prev, mapped]);
+      setChats((prev) => [...prev, mapped]);
     });
 
     void (async () => {
@@ -195,34 +236,71 @@ export default function HostLiveSessionDetailPage() {
       resume: liveSessionApiService.resumeSession,
       stop: liveSessionApiService.stopSession,
     }),
-    []
+    [],
   );
 
-  const runAction = useCallback(async (type: "start" | "pause" | "resume" | "stop") => {
-    if (!sessionId) return;
+  const runAction = useCallback(
+    async (type: "start" | "pause" | "resume" | "stop") => {
+      if (!sessionId) return;
 
-    try {
-      await sessionActions[type](sessionId);
-      showSuccess(`Đã ${type} session`);
-      await loadData();
-    } catch (error: any) {
-      const msg = error?.response?.data?.message || `Không thể ${type} session`;
-      showError("Thao tác thất bại", msg);
+      try {
+        await sessionActions[type](sessionId);
+        showSuccess(`Đã ${type} session`);
+        await loadData();
+      } catch (error: any) {
+        const msg =
+          error?.response?.data?.message || `Không thể ${type} session`;
+        showError("Thao tác thất bại", msg);
+      }
+    },
+    [loadData, sessionActions, sessionId],
+  );
+
+  const openRejectModal = useCallback((songRequestId: string) => {
+    setRejectingRequestId(songRequestId);
+    setRejectReason("");
+    setReviewModalOpen(true);
+  }, []);
+
+  const closeRejectModal = useCallback(() => {
+    setReviewModalOpen(false);
+    setRejectingRequestId(null);
+    setRejectReason("");
+  }, []);
+
+  const handleApprove = useCallback(
+    async (songRequestId: string) => {
+      try {
+        await liveSessionApiService.reviewSongRequest(songRequestId, {
+          action: "approve",
+        });
+        showSuccess("Đã duyệt yêu cầu");
+        await loadData();
+      } catch {
+        showError("Duyệt thất bại");
+      }
+    },
+    [loadData],
+  );
+
+  const handleReject = useCallback(async () => {
+    if (!rejectingRequestId) return;
+    if (!rejectReason.trim()) {
+      showError("Vui lòng nhập lý do từ chối");
+      return;
     }
-  }, [loadData, sessionActions, sessionId]);
-
-  const reviewRequest = useCallback(async (songRequestId: string, action: "approve" | "reject") => {
     try {
-      await liveSessionApiService.reviewSongRequest(songRequestId, {
-        action,
-        rejectReason: action === "reject" ? "Rejected by admin" : undefined,
+      await liveSessionApiService.reviewSongRequest(rejectingRequestId, {
+        action: "reject",
+        rejectReason: rejectReason.trim(),
       });
-      showSuccess("Review thành công");
+      showSuccess("Đã từ chối yêu cầu");
+      closeRejectModal();
       await loadData();
     } catch {
-      showError("Review thất bại");
+      showError("Từ chối thất bại");
     }
-  }, [loadData]);
+  }, [rejectingRequestId, rejectReason, closeRejectModal, loadData]);
 
   const handleBack = useCallback(() => {
     navigate("/host/sessions");
@@ -241,9 +319,17 @@ export default function HostLiveSessionDetailPage() {
       const uAvatar = getCurrentUserAvatar();
       const raw = localStorage.getItem("userInfo");
       const parsed = raw ? JSON.parse(raw) : {};
-      const uName = parsed.firstName ? `${parsed.lastName} ${parsed.firstName}` : parsed.username || "Host";
-      
-      await liveHubService.sendChat(sessionId, userId, chatInput.trim(), uName, uAvatar);
+      const uName = parsed.firstName
+        ? `${parsed.lastName} ${parsed.firstName}`
+        : parsed.username || "Host";
+
+      await liveHubService.sendChat(
+        sessionId,
+        userId,
+        chatInput.trim(),
+        uName,
+        uAvatar,
+      );
       setChatInput("");
     } catch {
       showError("Lỗi", "Không thể gửi đoạn trò chuyện");
@@ -254,10 +340,15 @@ export default function HostLiveSessionDetailPage() {
     if (!sessionId) return;
     if (!window.confirm("Bạn muốn xóa đoạn trò chuyện này?")) return;
     const userId = getCurrentUserId();
-    console.log("[HostLiveSessionDetail] Attempting to DeleteChat:", { sessionId, chatId, userId });
+    console.log("[HostLiveSessionDetail] Attempting to DeleteChat:", {
+      sessionId,
+      chatId,
+      userId,
+    });
     try {
       await liveHubService.deleteChat(sessionId, chatId, userId, "Host");
-      const deletedName = chats.find(c => c.id === chatId)?.userName || "Ẩn danh";
+      const deletedName =
+        chats.find((c) => c.id === chatId)?.userName || "Ẩn danh";
       showSuccess(`Đã yêu cầu xóa đoạn trò chuyện của ${deletedName}`);
     } catch (err) {
       console.error("[HostLiveSessionDetail] DeleteChat error:", err);
@@ -271,7 +362,7 @@ export default function HostLiveSessionDetailPage() {
         ...item,
         displayRange: `${new Date(item.startTime).toLocaleString(LOCALE_VIETNAMESE)} - ${new Date(item.endTime).toLocaleString(LOCALE_VIETNAMESE)}`,
       })),
-    [schedules]
+    [schedules],
   );
 
   return (
@@ -282,143 +373,206 @@ export default function HostLiveSessionDetailPage() {
             <ArrowLeft size={13} /> Quay lại trang danh sách
           </button>
           <h1 className="host-live-title">Chi Tiết Phiên Phát Sóng</h1>
-          <p className="host-live-subtitle">{session?.sessionName || sessionId}</p>
+          <p className="host-live-subtitle">
+            {session?.sessionName || sessionId}
+          </p>
         </div>
         <div className="host-live-actions">
-          <button className="host-live-btn host-live-btn--ghost" onClick={handleRefresh}>
+          <button
+            className="host-live-btn host-live-btn--ghost"
+            onClick={handleRefresh}
+          >
             <RefreshCw size={15} />
             Làm mới
           </button>
           <button
             className="host-live-btn host-live-btn--primary"
             onClick={() => void runAction("start")}
-            disabled={session?.status === "Live" || session?.status === "Ended" || session?.status === "Cancelled"}
+            disabled={
+              session?.status === "Live" ||
+              session?.status === "Ended" ||
+              session?.status === "Cancelled"
+            }
           >
-            <Play size={15} /> Start
+            <Play size={15} /> Bắt đầu
           </button>
           <button
             className="host-live-btn host-live-btn--ghost"
             onClick={() => void runAction("pause")}
             disabled={session?.status !== "Live"}
           >
-            <Pause size={15} /> Pause
+            <Pause size={15} /> Tạm dừng
           </button>
           <button
             className="host-live-btn host-live-btn--ghost"
             onClick={() => void runAction("resume")}
             disabled={session?.status !== "Paused"}
           >
-            <Play size={15} /> Resume
+            <Play size={15} /> Tiếp tục
           </button>
           <button
             className="host-live-btn host-live-btn--ghost"
             onClick={() => void runAction("stop")}
-            disabled={session?.status === "Ended" || session?.status === "Cancelled"}
+            disabled={
+              session?.status === "Ended" || session?.status === "Cancelled"
+            }
           >
-            <Square size={15} /> Stop
+            <Square size={15} /> Dừng lại
           </button>
         </div>
       </div>
 
-      <div className="host-live-grid" style={{ marginBottom: 14 }}>
-        <div className="host-live-card">
-          <h3 className="host-live-card-title">Listener stats</h3>
-          {loading ? <div className="host-live-skeleton" /> : (
-            <div className="host-live-stack">
-              <div className="host-live-inline-row"><Users size={14} /> Current: {listener?.currentListeners ?? 0}</div>
-              <div>Peak: {listener?.peakListeners ?? 0}</div>
-              <div>Total: {listener?.totalListeners ?? 0}</div>
-            </div>
+      <div className="host-live-overview">
+        {/* Stats bar */}
+        <div className="host-live-overview-card">
+          {loading ? (
+            <div className="host-live-skeleton" />
+          ) : (
+            <>
+              <span className="host-live-overview-title">Người nghe</span>
+              <div className="host-live-stat-item">
+                <div className="host-live-stat-value">{listener?.currentListeners ?? 0}</div>
+                <div className="host-live-stat-label">Hiện tại</div>
+              </div>
+              <div className="host-live-stat-item">
+                <div className="host-live-stat-value">{listener?.peakListeners ?? 0}</div>
+                <div className="host-live-stat-label">Cao nhất</div>
+              </div>
+              <div className="host-live-stat-item">
+                <div className="host-live-stat-value">{listener?.totalListeners ?? 0}</div>
+                <div className="host-live-stat-label">Tổng</div>
+              </div>
+            </>
           )}
         </div>
 
-        <div className="host-live-card" style={{ gridColumn: "span 2" }}>
-          <h3 className="host-live-card-title">Now Playing</h3>
-          <div className="host-live-stack">
-            {nowPlaying?.currentTrack ? (
-              <div className="host-live-inline-row" style={{ alignItems: "center", gap: 12 }}>
-                {nowPlaying.currentTrack.artUrl && (
+        {/* Now Playing */}
+        <div className="host-live-overview-card">
+          {nowPlaying?.currentTrack ? (
+            <>
+              <div className="host-live-now-playing">
+                {nowPlaying.currentTrack.artUrl ? (
                   <img
+                    className="host-live-now-playing-art"
                     src={nowPlaying.currentTrack.artUrl.replace("host.docker.internal", "localhost")}
                     alt="art"
-                    style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover" }}
                   />
+                ) : (
+                  <div className="host-live-now-playing-art">
+                    <Music size={24} />
+                  </div>
                 )}
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 16 }}>{nowPlaying.currentTrack.title || "Unknown Title"}</div>
-                  <div style={{ color: "var(--text-muted)", fontSize: 13 }}>{nowPlaying.currentTrack.artist || "Unknown Artist"}</div>
+                <div className="host-live-now-playing-info">
+                  <div className="host-live-now-playing-eyebrow">Đang phát</div>
+                  <div className="host-live-now-playing-title">
+                    {nowPlaying.currentTrack.title || "—"}
+                  </div>
+                  <div className="host-live-now-playing-artist">
+                    {nowPlaying.currentTrack.artist || "—"}
+                  </div>
                 </div>
               </div>
-            ) : (
-              <div className="host-live-empty" style={{ padding: 16 }}>Không có bài hát đang phát</div>
-            )}
-          </div>
+              <div className="host-live-wave">
+                <div className="host-live-wave-bar" />
+                <div className="host-live-wave-bar" />
+                <div className="host-live-wave-bar" />
+                <div className="host-live-wave-bar" />
+                <div className="host-live-wave-bar" />
+              </div>
+            </>
+          ) : (
+            <div className="host-live-empty">Không có bài hát đang phát</div>
+          )}
         </div>
       </div>
 
-      <div className="host-live-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr", marginBottom: 14 }}>
+      <div className="host-live-bottom-row">
         <div className="host-live-card">
           <h3 className="host-live-card-title">Lịch phát</h3>
           <div className="host-live-stack">
-            {formattedSchedules.length === 0 ? <div className="host-live-empty">Chưa có lịch</div> : formattedSchedules.map((item) => (
-              <div key={item.id} className="host-live-track-item">
-                <div>
-                  <strong>{item.title || "Không tiêu đề"}</strong>
-                  <div style={{ fontSize: 13, color: "#64748b" }}>
-                    {item.displayRange}
+            {formattedSchedules.length === 0 ? (
+              <div className="host-live-empty">Chưa có lịch</div>
+            ) : (
+              formattedSchedules.map((item) => (
+                <div key={item.id} className="host-live-track-item">
+                  <div>
+                    <strong>{item.title || "Không tiêu đề"}</strong>
+                    <div style={{ fontSize: 13, color: "#64748b" }}>
+                      {item.displayRange}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
         <div className="host-live-card">
-          <h3 className="host-live-card-title">Song requests</h3>
+          <h3 className="host-live-card-title">Yêu cầu bài hát</h3>
           <div className="host-live-stack">
-            {songRequests.length === 0 ? <div className="host-live-empty">Chưa có yêu cầu</div> : songRequests.map((item) => (
-              <div key={item.id} className="host-live-track-item">
-                <div>
-                  <strong>{item.songTitle}</strong>
-                  <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{item.status}</div>
-                </div>
-                {item.status === 'PENDING' ? (
-                  <div className="host-live-inline-row">
-                    <button className="host-live-btn host-live-btn--ghost" onClick={() => void reviewRequest(item.id, "reject")}>Reject</button>
-                    <button className="host-live-btn host-live-btn--primary" onClick={() => void reviewRequest(item.id, "approve")}>Approve</button>
+            {songRequests.length === 0 ? (
+              <div className="host-live-empty">Chưa có yêu cầu</div>
+            ) : (
+              songRequests.map((item) => (
+                <div key={item.id} className="host-live-track-item">
+                  <div>
+                    <div className="host-live-track-title">{item.songTitle}</div>
+                    <div className="host-live-track-subtitle" style={{ fontStyle: item.message ? "normal" : "italic", color: item.message ? "inherit" : "var(--neutral-400)" }}>
+                      {item.message || "Không có tin nhắn"}
+                    </div>
+                    <div className={`host-live-badge host-live-badge--${item.status?.toLowerCase()}`}>
+                      {item.status}
+                    </div>
                   </div>
-                ) : null}
-              </div>
-            ))}
+                  {item.status === "PENDING" || item.status === "Pending" ? (
+                    <div className="host-live-inline-row">
+                      <button
+                        className="host-live-btn host-live-btn--approve"
+                        onClick={() => void handleApprove(item.id)}
+                      >
+                        Duyệt
+                      </button>
+                      <button
+                        className="host-live-btn host-live-btn--reject"
+                        onClick={() => openRejectModal(item.id)}
+                      >
+                        Từ chối
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         <div className="host-live-card">
-          <h3 className="host-live-card-title">Live Chat</h3>
-          <div className="host-live-stack" style={{ height: "400px", display: "flex", flexDirection: "column" }}>
-            <div ref={chatScrollRef} style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, paddingRight: 5 }}>
+          <h3 className="host-live-card-title">Trò chuyện</h3>
+          <div className="host-live-chat-container">
+            <div ref={chatScrollRef} className="host-live-chat-messages">
               {chats.length === 0 ? (
-                <div className="host-live-empty" style={{ margin: "auto", border: "none" }}>Chưa có đoạn trò chuyện nào</div>
+                <div className="host-live-empty">Chưa có đoạn trò chuyện nào</div>
               ) : (
                 chats.map((chat) => (
-                  <div key={chat.id} style={{ display: "flex", gap: 8, opacity: chat.isDeleted ? 0.6 : 1 }}>
-                    <div style={{ flexShrink: 0, width: 32, height: 32, borderRadius: "50%", backgroundColor: "#334155", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  <div key={chat.id} className={`host-live-chat-msg${chat.isDeleted ? " is-deleted" : ""}`}>
+                    <div className="host-live-chat-avatar">
                       {chat.avatarUrl ? (
-                        <img src={chat.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={chat.avatarUrl} alt="" />
                       ) : (
-                        <span style={{ fontSize: 12, color: "#fff", fontWeight: "bold" }}>
-                          {(chat.userName || "?").charAt(0).toUpperCase()}
-                        </span>
+                        (chat.userName || "?").charAt(0).toUpperCase()
                       )}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>{chat.userName}</span>
-                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                          {new Date(chat.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className="host-live-chat-body">
+                      <div className="host-live-chat-meta">
+                        <span className="host-live-chat-name">{chat.userName}</span>
+                        <span className="host-live-chat-time">
+                          {new Date(chat.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
-                      <div style={{ fontSize: 14, color: chat.isDeleted ? "var(--text-muted)" : "inherit", fontStyle: chat.isDeleted ? "italic" : "normal", wordBreak: "break-word" }}>
+                      <div className={`host-live-chat-text${chat.isDeleted ? " is-deleted" : ""}`}>
                         {chat.isDeleted ? "đoạn trò chuyện đã bị thu hồi/xoá." : chat.message}
                       </div>
                     </div>
@@ -436,31 +590,70 @@ export default function HostLiveSessionDetailPage() {
                 ))
               )}
             </div>
-            {/* Input area */}
-            <div style={{ display: "flex", gap: 8, marginTop: 10, borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 10 }}>
+            <div className="host-live-chat-input-row">
               <input
+                className="host-live-chat-input"
                 type="text"
                 value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && void handleSendChat()}
-                placeholder="Gửi đoạn trò chuyện với tư cách Host..."
-                style={{
-                  flex: 1, padding: "8px 12px", borderRadius: 6,
-                  border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.2)", color: "#fff"
-                }}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void handleSendChat()}
+                placeholder="Gửi tin nhắn..."
               />
               <button
                 onClick={() => void handleSendChat()}
                 disabled={!chatInput.trim()}
-                className="host-live-btn host-live-btn--primary"
-                style={{ padding: "0 12px", height: "auto" }}
+                className="host-live-chat-send"
+                title="Gửi"
               >
-                <Send size={15} />
+                <Send size={16} />
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Reject modal */}
+      {reviewModalOpen && (
+        <div
+          className="host-live-modal-overlay"
+          onClick={(e) => e.target === e.currentTarget && closeRejectModal()}
+        >
+          <div className="host-live-modal">
+            <div className="host-live-modal-header">
+              <h3 className="host-live-modal-title">
+                <span className="host-live-modal-icon"><X size={16} /></span>
+                Từ chối yêu cầu
+              </h3>
+              <button className="host-live-modal-close" onClick={closeRejectModal}>
+                <X size={16} />
+              </button>
+            </div>
+            <p className="host-live-modal-desc">
+              Vui lòng nhập lý do từ chối yêu cầu bài hát này.
+            </p>
+            <textarea
+              className="host-live-modal-textarea"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Nhập lý do từ chối..."
+              rows={4}
+              autoFocus
+            />
+            <div className="host-live-modal-actions">
+              <button className="host-live-modal-btn-cancel" onClick={closeRejectModal}>
+                Hủy
+              </button>
+              <button
+                className="host-live-modal-btn-confirm"
+                onClick={() => void handleReject()}
+                disabled={!rejectReason.trim()}
+              >
+                Xác nhận từ chối
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
