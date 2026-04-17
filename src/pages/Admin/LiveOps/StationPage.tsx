@@ -63,7 +63,7 @@ export default function StationPage() {
       showSuccess("Đồng bộ thành công", `${res.createdStations} tạo mới, ${res.updatedStations} cập nhật`);
       await loadStations();
     } catch {
-      showError("Đồng bộ thất bại", "Không thể sync station từ AzuraCast");
+      showError("Đồng bộ thất bại", "Không thể sync station từ Streaming Server. Vui lòng thử lại.");
     } finally {
       setSyncing(false);
     }
@@ -254,7 +254,7 @@ export default function StationPage() {
               </div>
 
               <div className="ops-badge ops-badge--warn" style={{ alignSelf: "flex-start" }}>
-                Station sẽ được tạo ở local database. Có thể cần sync sau đó để cập nhật dữ liệu từ AzuraCast.
+                Station sẽ được tạo ở local database. Có thể cần sync sau đó để cập nhật dữ liệu từ Streaming Server.
               </div>
             </div>
 

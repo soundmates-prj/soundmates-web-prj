@@ -49,11 +49,8 @@ import TransactionsPage from "./pages/Admin/LiveOps/TransactionsPage";
 // ── Host Page Imports ──
 import { HostDashboard } from "./pages/Host/Dashboard/HostDashboard";
 import { HostScheduleView } from "./pages/Host/Schedule/HostScheduleView";
-import { HostMusicRequestsScreen } from "./pages/Host/Requests/HostMusicRequestsScreen";
-import { HostPodcastRequestsScreen } from "./pages/Host/Requests/HostPodcastRequestsScreen";
 import HostLiveSessionPage from "./pages/Host/LiveSession/HostLiveSessionPage";
 import HostLiveSessionDetailPage from "./pages/Host/LiveSession/HostLiveSessionDetailPage";
-
 import { HostAnalyticsScreen } from "./pages/Host/Analytics/HostAnalyticsScreen";
 import HostSettingsPage from "./pages/Host/Settings/HostSettingsPage";
 
@@ -67,6 +64,7 @@ import { LiveStreamScriptEditor } from "./pages/Staff/Schedule/LiveStreamScriptE
 // ── Admin Page Imports ──
 import { UserPostsManagementScreen } from "./pages/Admin/Posts/UserPostsManagementScreen";
 import { SystemConfigScreen } from "./pages/Admin/SystemConfig/SystemConfigScreen";
+import { RoleManagementScreen } from "./pages/Admin/Roles/RoleManagementScreen";
 import PodcastScreen from "./pages/Podcast/PodcastScreen";
 import PodcastDetailScreen from "./pages/Podcast/PodcastDetailScreen";
 
@@ -80,8 +78,9 @@ function App() {
   return (
     <ThemeProvider>
       <PlayerProvider>
-        <ToastProvider />
-        <Routes>
+        <LiveSessionProvider>
+          <ToastProvider />
+          <Routes>
           {/* ── Auth Routes (no layout) ── */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -108,13 +107,20 @@ function App() {
                 </ErrorBoundary>
               }
             />
+            <Route
+              path="roles"
+              element={
+                <ErrorBoundary>
+                  <RoleManagementScreen />
+                </ErrorBoundary>
+              }
+            />
             <Route path="stations" element={<StationPage />} />
             <Route path="playlists" element={<PlaylistPage />} />
             <Route
               path="playlists/:playlistId"
               element={<PlaylistDetailPage />}
             />
-
             <Route path="podcasts" element={<PodcastPage />} />
             <Route path="podcasts/new" element={<PodcastEditor />} />
             <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
@@ -160,9 +166,7 @@ function App() {
             path="/host"
             element={
               <ProtectedRoute requiredRole="HOST">
-                <LiveSessionProvider>
-                  <HostLayout />
-                </LiveSessionProvider>
+                <HostLayout />
               </ProtectedRoute>
             }
           >
@@ -173,14 +177,6 @@ function App() {
               element={<HostLiveSessionDetailPage />}
             />
             <Route path="schedule" element={<HostScheduleView />} />
-            <Route
-              path="music-requests"
-              element={<HostMusicRequestsScreen />}
-            />
-            <Route
-              path="podcast-requests"
-              element={<HostPodcastRequestsScreen />}
-            />
             <Route path="analytics" element={<HostAnalyticsScreen />} />
             <Route path="settings" element={<HostSettingsPage />} />
           </Route>
@@ -225,6 +221,7 @@ function App() {
             />
           </Route>
         </Routes>
+        </LiveSessionProvider>
       </PlayerProvider>
     </ThemeProvider>
   );

@@ -1,4 +1,4 @@
-import { Search, Bell, Calendar, Shield, Mic2, Menu } from "lucide-react";
+import { Bell, Calendar, Shield, Mic2, Menu } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./SharedLayout.css";
@@ -68,21 +68,6 @@ export default function SharedHeader({ role, onToggleSidebar }: SharedHeaderProp
                     <Calendar size={18} />
                     <span>{currentDate}</span>
                 </div>
-            </div>
-
-            <div className="shared-header-search">
-                <Search size={18} />
-                <input
-                    type="text"
-                    placeholder={
-                        role === 'ADMIN'
-                            ? "Tìm kiếm người dùng, bài viết, phiên..."
-                            : role === 'STAFF'
-                                ? "Tìm kiếm phiên, yêu cầu, playlist..."
-                                : "Tìm kiếm phiên, lịch trình, yêu cầu..."
-                    }
-                    className="shared-search-input"
-                />
             </div>
 
             <div className="shared-header-actions">

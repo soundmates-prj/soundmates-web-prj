@@ -94,7 +94,9 @@ export default function PodcastScreen() {
   const filtered = useMemo(() => {
     let list = podcasts;
     if (activeType !== "all") {
-      list = list.filter((p) => p.type?.toLowerCase() === activeType);
+      list = list.filter(
+        (p) => p.type?.toLowerCase() === activeType.toLowerCase(),
+      );
     }
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -110,7 +112,7 @@ export default function PodcastScreen() {
 
   /* tách featured (bài đầu) và phần còn lại */
   const featured = filtered.length > 0 ? filtered[0] : null;
-  const rest = filtered.length > 1 ? filtered.slice(1) : [];
+  const rest = filtered.slice(1);
 
   const toggleSave = async (podcastId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -267,7 +269,7 @@ export default function PodcastScreen() {
         {!loading && !error && filtered.length > 0 && (
           <>
             {/* Featured */}
-            {featured && !search && activeType === "all" && (
+            {featured && !search && (
               <FeaturedCard
                 podcast={featured}
                 onClick={() => navigate(`/podcast/${featured.id}`)}
@@ -276,32 +278,31 @@ export default function PodcastScreen() {
               />
             )}
 
-            {/* Count */}
-            <div className="pds-section-header">
-              <h2 className="pds-section-title">
-                {search || activeType !== "all" ? "Kết quả" : "Tất cả Podcast"}
-              </h2>
-              <span className="pds-section-count">{filtered.length}</span>
-            </div>
-
-            {/* Grid */}
-            <div className="pds-grid" ref={gridRef}>
-              {(search || activeType !== "all"
-                ? filtered
-                : rest.length > 0
-                  ? rest
-                  : filtered
-              ).map((podcast, i) => (
-                <PodcastCard
-                  key={podcast.id}
-                  podcast={podcast}
-                  index={i}
-                  onClick={() => navigate(`/podcast/${podcast.id}`)}
-                  isSaved={savedIds.has(podcast.id)}
-                  onToggleSave={toggleSave}
-                />
-              ))}
-            </div>
+            {/* Grid — only when there are remaining items */}
+            {rest.length > 0 && (
+              <>
+                <div className="pds-section-header">
+                  <h2 className="pds-section-title">
+                    {search || activeType !== "all"
+                      ? "Kết quả"
+                      : "Tất cả Podcast"}
+                  </h2>
+                  <span className="pds-section-count">{rest.length}</span>
+                </div>
+                <div className="pds-grid" ref={gridRef}>
+                  {rest.map((podcast, i) => (
+                    <PodcastCard
+                      key={podcast.id}
+                      podcast={podcast}
+                      index={i}
+                      onClick={() => navigate(`/podcast/${podcast.id}`)}
+                      isSaved={savedIds.has(podcast.id)}
+                      onToggleSave={toggleSave}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
       </section>

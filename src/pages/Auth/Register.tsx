@@ -15,7 +15,6 @@ const Register: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Redirect if already logged in
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) {
@@ -34,7 +33,6 @@ const Register: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
 
-  // ── Field-level inline errors (EF-01) ──
   const [firstNameError, setFirstNameError] = useState("");
   const [lastNameError, setLastNameError] = useState("");
   const [usernameError, setUsernameError] = useState("");
@@ -43,7 +41,7 @@ const Register: React.FC = () => {
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
   // ── Constants (BR-02, BR-03) ──
-  const MAX_NAME_LENGTH = 50;
+  const MAX_NAME_LENGTH = 20;
   const MIN_NAME_LENGTH = 1;
   const MAX_USERNAME_LEN = 30;
   const MIN_USERNAME_LEN = 3;
@@ -51,29 +49,24 @@ const Register: React.FC = () => {
     /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  /* ── Live validation per field (EF-01) ── */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
 
-    // ── FirstName (BR-01): required, 1–50 chars ──
-    if (name === "firstName") {
-      if (!value.trim())
-        setFirstNameError("Tên không được để trống!");
-      else if (value.trim().length > MAX_NAME_LENGTH)
-        setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
-      else
-        setFirstNameError("");
-    }
-
-    // ── LastName (BR-01): required, 1–50 chars ──
+    // ── Họ (lastName): required, 1–20 chars ──
     if (name === "lastName") {
-      if (!value.trim())
-        setLastNameError("Họ không được để trống!");
+      if (!value.trim()) setLastNameError("Họ không được để trống!");
       else if (value.trim().length > MAX_NAME_LENGTH)
         setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
-      else
-        setLastNameError("");
+      else setLastNameError("");
+    }
+
+    // ── Tên (firstName): required, 1–20 chars ──
+    if (name === "firstName") {
+      if (!value.trim()) setFirstNameError("Tên không được để trống!");
+      else if (value.trim().length > MAX_NAME_LENGTH)
+        setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      else setFirstNameError("");
     }
 
     // ── Username: 3–30 chars ──
@@ -81,88 +74,98 @@ const Register: React.FC = () => {
       if (!value.trim())
         setUsernameError("Tên người dùng không được để trống!");
       else if (value.trim().length < MIN_USERNAME_LEN)
-        setUsernameError(`Tên người dùng phải có ít nhất ${MIN_USERNAME_LEN} ký tự!`);
+        setUsernameError(
+          `Tên người dùng phải có ít nhất ${MIN_USERNAME_LEN} ký tự!`,
+        );
       else if (value.trim().length > MAX_USERNAME_LEN)
-        setUsernameError(`Tên người dùng không được quá ${MAX_USERNAME_LEN} ký tự!`);
-      else
-        setUsernameError("");
+        setUsernameError(
+          `Tên người dùng không được quá ${MAX_USERNAME_LEN} ký tự!`,
+        );
+      else setUsernameError("");
     }
 
-    // ── Email (BR-02): valid RFC format ──
     if (name === "email") {
-      if (!value.trim())
-        setEmailError("Email không được để trống!");
+      if (!value.trim()) setEmailError("Email không được để trống!");
       else if (!EMAIL_REGEX.test(value.trim()))
         setEmailError("Email không đúng định dạng!");
-      else
-        setEmailError("");
+      else setEmailError("");
     }
 
-    // ── Password (BR-03): ≥8, 1 uppercase, 1 lowercase, 1 number, 1 special ──
     if (name === "password") {
-      if (!value)
-        setPasswordError("");
+      if (!value) setPasswordError("");
       else if (!PASSWORD_REGEX.test(value))
         setPasswordError(
           "Mật khẩu phải có ít nhất 8 ký tự, 1 chữ in hoa, 1 số và 1 ký tự đặc biệt!",
         );
-      else
-        setPasswordError("");
+      else setPasswordError("");
     }
 
-    // ── Confirm Password (BR-04): must match password ──
     if (name === "confirmPassword") {
-      if (!value)
-        setConfirmPasswordError("");
+      if (!value) setConfirmPasswordError("");
       else if (value !== form.password)
         setConfirmPasswordError("Mật khẩu xác nhận không khớp!");
-      else
-        setConfirmPasswordError("");
+      else setConfirmPasswordError("");
     }
   };
 
-  /* ── Centralised pre-submit validation (EF-01) ── */
   const validateAll = (): boolean => {
     let valid = true;
 
     if (!form.firstName?.trim()) {
-      setFirstNameError("Tên không được để trống!"); valid = false;
+      setFirstNameError("Tên không được để trống!");
+      valid = false;
     } else if (form.firstName.trim().length > MAX_NAME_LENGTH) {
-      setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`); valid = false;
+      setFirstNameError(`Tên không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      valid = false;
     }
 
     if (!form.lastName?.trim()) {
-      setLastNameError("Họ không được để trống!"); valid = false;
+      setLastNameError("Họ không được để trống!");
+      valid = false;
     } else if (form.lastName.trim().length > MAX_NAME_LENGTH) {
-      setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`); valid = false;
+      setLastNameError(`Họ không được quá ${MAX_NAME_LENGTH} ký tự!`);
+      valid = false;
     }
 
     if (!form.username?.trim()) {
-      setUsernameError("Tên người dùng không được để trống!"); valid = false;
+      setUsernameError("Tên người dùng không được để trống!");
+      valid = false;
     } else if (form.username.trim().length < MIN_USERNAME_LEN) {
-      setUsernameError(`Tên người dùng phải có ít nhất ${MIN_USERNAME_LEN} ký tự!`); valid = false;
+      setUsernameError(
+        `Tên người dùng phải có ít nhất ${MIN_USERNAME_LEN} ký tự!`,
+      );
+      valid = false;
     } else if (form.username.trim().length > MAX_USERNAME_LEN) {
-      setUsernameError(`Tên người dùng không được quá ${MAX_USERNAME_LEN} ký tự!`); valid = false;
+      setUsernameError(
+        `Tên người dùng không được quá ${MAX_USERNAME_LEN} ký tự!`,
+      );
+      valid = false;
     }
 
     if (!form.email?.trim()) {
-      setEmailError("Email không được để trống!"); valid = false;
+      setEmailError("Email không được để trống!");
+      valid = false;
     } else if (!EMAIL_REGEX.test(form.email.trim())) {
-      setEmailError("Email không đúng định dạng!"); valid = false;
+      setEmailError("Email không đúng định dạng!");
+      valid = false;
     }
 
     if (!form.password) {
-      setPasswordError("Mật khẩu không được để trống!"); valid = false;
+      setPasswordError("Mật khẩu không được để trống!");
+      valid = false;
     } else if (!PASSWORD_REGEX.test(form.password)) {
       setPasswordError(
         "Mật khẩu phải có ít nhất 8 ký tự, 1 chữ in hoa, 1 số và 1 ký tự đặc biệt!",
-      ); valid = false;
+      );
+      valid = false;
     }
 
     if (!form.confirmPassword) {
-      setConfirmPasswordError("Vui lòng xác nhận mật khẩu!"); valid = false;
+      setConfirmPasswordError("Vui lòng xác nhận mật khẩu!");
+      valid = false;
     } else if (form.confirmPassword !== form.password) {
-      setConfirmPasswordError("Mật khẩu xác nhận không khớp!"); valid = false;
+      setConfirmPasswordError("Mật khẩu xác nhận không khớp!");
+      valid = false;
     }
 
     return valid;
@@ -189,9 +192,18 @@ const Register: React.FC = () => {
         "Vui lòng kiểm tra email để lấy mã OTP",
       );
 
-      navigate("/verify-otp", { state: { email, firstName: firstName.trim(), lastName: lastName.trim(), username: username.trim() } });
+      navigate("/verify-otp", {
+        state: {
+          email,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          username: username.trim(),
+        },
+      });
     } catch (error: any) {
-      const message = error.response?.data?.message || "Địa chỉ email hoặc tên người dùng đã tồn tại";
+      const message =
+        error.response?.data?.message ||
+        "Địa chỉ email hoặc tên người dùng đã tồn tại";
       showError("Đăng ký thất bại", message);
     } finally {
       setLoading(false);
@@ -220,8 +232,10 @@ const Register: React.FC = () => {
           <p className="subtitle">Bắt đầu hành trình cùng SoundMate</p>
 
           <div className="name-row">
-            {/* EF-01 + BR-01: Họ — required, 1–50 chars */}
-            <div className={`input-wrapper${lastNameError ? " input-error" : ""}`}>
+            {/* EF-01 + BR-01: Họ (lastName) — required, 1–20 chars */}
+            <div
+              className={`input-wrapper${lastNameError ? " input-error" : ""}`}
+            >
               <User size={18} />
               <input
                 type="text"
@@ -234,8 +248,10 @@ const Register: React.FC = () => {
               />
             </div>
 
-            {/* EF-01 + BR-01: Tên — required, 1–50 chars */}
-            <div className={`input-wrapper${firstNameError ? " input-error" : ""}`}>
+            {/* EF-01 + BR-01: Tên (firstName) — required, 1–20 chars */}
+            <div
+              className={`input-wrapper${firstNameError ? " input-error" : ""}`}
+            >
               <User size={18} />
               <input
                 type="text"
@@ -251,8 +267,9 @@ const Register: React.FC = () => {
           {lastNameError && <p className="error-text">{lastNameError}</p>}
           {firstNameError && <p className="error-text">{firstNameError}</p>}
 
-          {/* EF-01: Username — required, 3–30 chars */}
-          <div className={`input-wrapper${usernameError ? " input-error" : ""}`}>
+          <div
+            className={`input-wrapper${usernameError ? " input-error" : ""}`}
+          >
             <User size={18} />
             <input
               type="text"
@@ -266,7 +283,6 @@ const Register: React.FC = () => {
           </div>
           {usernameError && <p className="error-text">{usernameError}</p>}
 
-          {/* BR-02: Email — valid RFC format */}
           <div className={`input-wrapper${emailError ? " input-error" : ""}`}>
             <Mail size={18} />
             <input
@@ -280,8 +296,9 @@ const Register: React.FC = () => {
           </div>
           {emailError && <p className="error-text">{emailError}</p>}
 
-          {/* BR-03: Password — ≥8, 1 uppercase, 1 lowercase, 1 number, 1 special */}
-          <div className={`input-wrapper${passwordError ? " input-error" : ""}`}>
+          <div
+            className={`input-wrapper${passwordError ? " input-error" : ""}`}
+          >
             <Lock size={18} />
             <input
               name="password"
@@ -300,8 +317,9 @@ const Register: React.FC = () => {
           </div>
           {passwordError && <p className="error-text">{passwordError}</p>}
 
-          {/* BR-04: Confirm Password — must match password */}
-          <div className={`input-wrapper${confirmPasswordError ? " input-error" : ""}`}>
+          <div
+            className={`input-wrapper${confirmPasswordError ? " input-error" : ""}`}
+          >
             <Lock size={18} />
             <input
               name="confirmPassword"

@@ -105,6 +105,7 @@ export interface ChatMessage {
   avatarUrl?: string; // NEW
   message: string;
   createdAt: string;
+  isDeleted?: boolean;
 }
 
 export interface LiveSessionEvent {
@@ -228,6 +229,7 @@ class LiveHubService {
   private connection: signalR.HubConnection | null = null;
   private reconnectAttempt = 0;
   private joinedSessions = new Map<string, { userId: string | null; anonymousIdentifier: string | null }>();
+  private startPromise: Promise<void> | null = null;
 
   getConnection(): signalR.HubConnection {
     if (!this.connection) {
@@ -263,14 +265,26 @@ class LiveHubService {
 
   async start(): Promise<void> {
     const conn = this.getConnection();
+
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      return;
+    }
+
+    if (this.startPromise) {
+      return this.startPromise;
+    }
+
     if (conn.state === signalR.HubConnectionState.Disconnected) {
-      try {
-        await conn.start();
+      this.startPromise = conn.start().then(() => {
         console.log("[LiveHub] Connected");
         this.reconnectAttempt = 0;
-      } catch (err) {
+        this.startPromise = null;
+      }).catch((err) => {
         console.error("[LiveHub] Connection failed:", err);
-      }
+        this.startPromise = null;
+        throw err;
+      });
+      return this.startPromise;
     }
   }
 

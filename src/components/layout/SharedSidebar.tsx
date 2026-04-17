@@ -17,7 +17,7 @@ import {
     Antenna,
     MessageSquare,
     FileText as FileTextIcon,
-    Play,
+    ShieldCheck,
 } from 'lucide-react';
 import logoLight from "../../assets/light_logo.png";
 import logoDark from "../../assets/dark_logo.png";
@@ -41,6 +41,7 @@ interface SharedSidebarProps {
 const adminMenuItems: MenuItem[] = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: '/admin/dashboard' },
     { id: 'users', icon: <Users size={20} />, label: 'Người dùng', path: '/admin/users' },
+    { id: 'roles', icon: <ShieldCheck size={20} />, label: 'Quyền người dùng', path: '/admin/roles' },
     { id: 'music', icon: <Headphones size={20} />, label: 'Kho nhạc', path: '/admin/music' },
     { id: 'stations', icon: <Music2 size={20} />, label: 'Đài phát', path: '/admin/stations' },
     { id: 'playlists', icon: <ListMusic size={20} />, label: 'Playlist', path: '/admin/playlists' },
@@ -70,8 +71,6 @@ const hostMenuItems: MenuItem[] = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: '/host/dashboard' },
     { id: 'sessions', icon: <Radio size={20} />, label: 'Phiên phát sóng', path: '/host/sessions' },
     { id: 'schedule', icon: <Calendar size={20} />, label: 'Lịch trình', path: '/host/schedule' },
-    { id: 'music-requests', icon: <Music size={20} />, label: 'Yêu cầu nhạc', path: '/host/music-requests' },
-    { id: 'podcast-requests', icon: <Mic size={20} />, label: 'Yêu cầu podcast', path: '/host/podcast-requests' },
     { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Phân tích', path: '/host/analytics' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Cài đặt', path: '/host/settings' },
 ];

@@ -25,15 +25,36 @@ interface DisplayChat {
   isDeleted?: boolean;
 }
 
-const getCurrentUserId = () => {
+const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function tryParseJwtUserId(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const json = atob(padded);
+    const payload = JSON.parse(json);
+    const sub = String(payload?.sub ?? "").trim();
+    return GUID_REGEX.test(sub) ? sub : null;
+  } catch {
+    return null;
+  }
+}
+
+const getCurrentUserId = (): string => {
   try {
     const raw = localStorage.getItem("userInfo");
-    if (!raw) return "";
-    const user = JSON.parse(raw);
-    return user?.id || user?.userId || "";
-  } catch {
-    return "";
-  }
+    if (raw) {
+      const user = JSON.parse(raw);
+      const id = String(user?.id ?? user?.userId ?? "").trim();
+      if (GUID_REGEX.test(id)) {
+        return id;
+      }
+    }
+  } catch { /* ignore */ }
+  return tryParseJwtUserId(localStorage.getItem("accessToken")) || "";
 };
 
 const getCurrentUserAvatar = () => {
@@ -106,15 +127,16 @@ export default function HostLiveSessionDetailPage() {
   useEffect(() => {
     if (!sessionId) return;
     const currentUserId = getCurrentUserId();
-    
+
     const offChatHistory = liveHubService.onChatHistory((history) => {
+      console.log("[HostLiveSessionDetail] ChatHistory RAW:", history);
       const mapped = history.map((chat: any) => ({
-        id: chat.id || `hub-${Date.now()}-${Math.random()}`,
-        userId: chat.userId || "",
-        userName: chat.userName || `User-${String(chat.userId || "??").slice(0, 6)}`,
+        id: chat.id || chat.Id || `hub-${Date.now()}-${Math.random()}`,
+        userId: chat.userId || chat.UserId || "",
+        userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
         avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
-        message: chat.message,
-        createdAt: chat.createdAt || new Date().toISOString()
+        message: chat.message || chat.Message,
+        createdAt: chat.createdAt || chat.CreatedAt || new Date().toISOString()
       }));
       setChats(mapped);
     });
@@ -124,13 +146,14 @@ export default function HostLiveSessionDetailPage() {
     });
 
     const offReceiveChat = liveHubService.onReceiveChat((chat: any) => {
+      console.log("[HostLiveSessionDetail] ReceiveChat RAW:", chat);
       const mapped: DisplayChat = {
-        id: chat.id || `hub-${Date.now()}-${Math.random()}`,
-        userId: chat.userId || "",
-        userName: chat.userName || `User-${String(chat.userId || "??").slice(0, 6)}`,
+        id: chat.id || chat.Id || `hub-${Date.now()}-${Math.random()}`,
+        userId: chat.userId || chat.UserId || "",
+        userName: chat.userName || chat.UserName || `User-${String(chat.userId || chat.UserId || "??").slice(0, 6)}`,
         avatarUrl: chat.avatarUrl || chat.AvatarUrl || "",
-        message: chat.message,
-        createdAt: chat.createdAt || new Date().toISOString()
+        message: chat.message || chat.Message,
+        createdAt: chat.createdAt || chat.CreatedAt || new Date().toISOString()
       };
       setChats(prev => [...prev, mapped]);
     });
@@ -141,7 +164,7 @@ export default function HostLiveSessionDetailPage() {
         setTimeout(async () => {
           try {
             await liveHubService.joinSession(sessionId, currentUserId);
-          } catch(err) {
+          } catch (err) {
             console.warn("SignalR Join Error:", err);
           }
         }, 500);
@@ -213,29 +236,32 @@ export default function HostLiveSessionDetailPage() {
     if (!chatInput.trim() || !sessionId) return;
     const userId = getCurrentUserId();
     if (!userId) return;
-    
+
     try {
       const uAvatar = getCurrentUserAvatar();
       const raw = localStorage.getItem("userInfo");
       const parsed = raw ? JSON.parse(raw) : {};
-      const uName = parsed.firstName ? `${parsed.firstName} ${parsed.lastName}` : parsed.username || "Host";
+      const uName = parsed.firstName ? `${parsed.lastName} ${parsed.firstName}` : parsed.username || "Host";
       
       await liveHubService.sendChat(sessionId, userId, chatInput.trim(), uName, uAvatar);
       setChatInput("");
     } catch {
-      showError("Lỗi", "Không thể gửi tin nhắn");
+      showError("Lỗi", "Không thể gửi đoạn trò chuyện");
     }
   };
 
   const handleDeleteChat = async (chatId: string) => {
     if (!sessionId) return;
-    if (!window.confirm("Bạn muốn xóa tin nhắn này?")) return;
+    if (!window.confirm("Bạn muốn xóa đoạn trò chuyện này?")) return;
     const userId = getCurrentUserId();
+    console.log("[HostLiveSessionDetail] Attempting to DeleteChat:", { sessionId, chatId, userId });
     try {
       await liveHubService.deleteChat(sessionId, chatId, userId, "Host");
-      showSuccess("Đã yêu cầu xóa tin nhắn");
-    } catch {
-      showError("Lỗi", "Không thể xóa tin nhắn");
+      const deletedName = chats.find(c => c.id === chatId)?.userName || "Ẩn danh";
+      showSuccess(`Đã yêu cầu xóa đoạn trò chuyện của ${deletedName}`);
+    } catch (err) {
+      console.error("[HostLiveSessionDetail] DeleteChat error:", err);
+      showError("Lỗi", "Không thể xóa đoạn trò chuyện. Vui lòng xem Console.");
     }
   };
 
@@ -263,29 +289,29 @@ export default function HostLiveSessionDetailPage() {
             <RefreshCw size={15} />
             Làm mới
           </button>
-          <button 
-            className="host-live-btn host-live-btn--primary" 
+          <button
+            className="host-live-btn host-live-btn--primary"
             onClick={() => void runAction("start")}
             disabled={session?.status === "Live" || session?.status === "Ended" || session?.status === "Cancelled"}
           >
             <Play size={15} /> Start
           </button>
-          <button 
-            className="host-live-btn host-live-btn--ghost" 
+          <button
+            className="host-live-btn host-live-btn--ghost"
             onClick={() => void runAction("pause")}
             disabled={session?.status !== "Live"}
           >
             <Pause size={15} /> Pause
           </button>
-          <button 
-            className="host-live-btn host-live-btn--ghost" 
+          <button
+            className="host-live-btn host-live-btn--ghost"
             onClick={() => void runAction("resume")}
             disabled={session?.status !== "Paused"}
           >
             <Play size={15} /> Resume
           </button>
-          <button 
-            className="host-live-btn host-live-btn--ghost" 
+          <button
+            className="host-live-btn host-live-btn--ghost"
             onClick={() => void runAction("stop")}
             disabled={session?.status === "Ended" || session?.status === "Cancelled"}
           >
@@ -312,10 +338,10 @@ export default function HostLiveSessionDetailPage() {
             {nowPlaying?.currentTrack ? (
               <div className="host-live-inline-row" style={{ alignItems: "center", gap: 12 }}>
                 {nowPlaying.currentTrack.artUrl && (
-                  <img 
-                    src={nowPlaying.currentTrack.artUrl.replace("host.docker.internal", "localhost")} 
-                    alt="art" 
-                    style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover" }} 
+                  <img
+                    src={nowPlaying.currentTrack.artUrl.replace("host.docker.internal", "localhost")}
+                    alt="art"
+                    style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover" }}
                   />
                 )}
                 <div>
@@ -372,7 +398,7 @@ export default function HostLiveSessionDetailPage() {
           <div className="host-live-stack" style={{ height: "400px", display: "flex", flexDirection: "column" }}>
             <div ref={chatScrollRef} style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, paddingRight: 5 }}>
               {chats.length === 0 ? (
-                <div className="host-live-empty" style={{ margin: "auto", border: "none" }}>Chưa có tin nhắn nào</div>
+                <div className="host-live-empty" style={{ margin: "auto", border: "none" }}>Chưa có đoạn trò chuyện nào</div>
               ) : (
                 chats.map((chat) => (
                   <div key={chat.id} style={{ display: "flex", gap: 8, opacity: chat.isDeleted ? 0.6 : 1 }}>
@@ -393,7 +419,7 @@ export default function HostLiveSessionDetailPage() {
                         </span>
                       </div>
                       <div style={{ fontSize: 14, color: chat.isDeleted ? "var(--text-muted)" : "inherit", fontStyle: chat.isDeleted ? "italic" : "normal", wordBreak: "break-word" }}>
-                        {chat.isDeleted ? "Tin nhắn đã bị thu hồi/xoá." : chat.message}
+                        {chat.isDeleted ? "đoạn trò chuyện đã bị thu hồi/xoá." : chat.message}
                       </div>
                     </div>
                     {!chat.isSystem && !chat.isDeleted && (
@@ -401,7 +427,7 @@ export default function HostLiveSessionDetailPage() {
                         onClick={() => void handleDeleteChat(chat.id)}
                         className="host-live-btn host-live-btn--ghost"
                         style={{ padding: 4, height: "auto", color: "#ef4444" }}
-                        title="Xóa tin nhắn"
+                        title="Xóa đoạn trò chuyện"
                       >
                         <Trash2 size={15} />
                       </button>
@@ -417,13 +443,13 @@ export default function HostLiveSessionDetailPage() {
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && void handleSendChat()}
-                placeholder="Gửi tin nhắn với tư cách Host..."
-                style={{ 
-                  flex: 1, padding: "8px 12px", borderRadius: 6, 
-                  border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.2)", color: "#fff" 
+                placeholder="Gửi đoạn trò chuyện với tư cách Host..."
+                style={{
+                  flex: 1, padding: "8px 12px", borderRadius: 6,
+                  border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.2)", color: "#fff"
                 }}
               />
-              <button 
+              <button
                 onClick={() => void handleSendChat()}
                 disabled={!chatInput.trim()}
                 className="host-live-btn host-live-btn--primary"

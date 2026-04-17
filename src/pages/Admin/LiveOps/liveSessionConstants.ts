@@ -16,3 +16,5 @@ export const ALLOWED_AUDIO_MIME_TYPES = [
   "audio/x-wav",
 ] as const;
 export const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;
+/** Cloudinary Free/Pro plan audio file size limit (10 MB). */
+export const MAX_CLOUDINARY_AUDIO_SIZE_BYTES = 10 * 1024 * 1024;

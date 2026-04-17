@@ -173,7 +173,7 @@ export default function Profile() {
                 <h1 className="pf-name">{name}</h1>
                 <span className="pf-check">✔</span>
               </div>
-              <p className="pf-bio">{user.bio || "Music Enthusiast"}</p>
+              <p className="pf-bio">{user.bio || ""}</p>
               {dob && (
                 <p className="pf-dob">
                   <Calendar1 size={13} />

@@ -539,6 +539,40 @@
   color: #fff;
 }
 
+/* Stop button */
+
+.pdd-ep-stop {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.pdd-ep-stop:hover {
+  background: #ef4444;
+  color: #fff;
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .pdd-ep-stop {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+[data-theme="dark"] .pdd-ep-stop:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
 /* Thumbnail */
 
 .pdd-ep-thumb {

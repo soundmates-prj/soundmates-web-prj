@@ -9,9 +9,11 @@ import {
   X,
   Mic2,
   Music,
+  Radio,
 } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { usePlayer } from "../../context/PlayerContext";
+import { useLiveSession } from "../../context/LiveSessionContext";
 import { showToast } from "../../utils/toast";
 import podcastService from "../../services/podcastService";
 import type { PodcastEpisode } from "../../types/podcast";
@@ -26,20 +28,34 @@ type DrawerTab = "playlist" | "podcast";
 export function MusicPlayer() {
   const {
     track,
-    isPlaying,
-    volume,
-    isMuted,
-    elapsed,
+    isPlaying: playerIsPlaying,
+    volume: playerVolume,
+    isMuted: playerIsMuted,
+    elapsed: playerElapsed,
     toggle,
-    setVolume,
+    setVolume: playerSetVolume,
     setElapsed,
-    toggleMute,
+    toggleMute: playerToggleMute,
     leaveSession,
     setTrack,
     setIsPlaying,
     audioRef: ctxAudioRef,
   } = usePlayer();
 
+  const liveCtx = useLiveSession();
+  const isInLiveSession = !!liveCtx.activeSessionId;
+
+  // Use live context values when in a live session, otherwise use PlayerContext
+  const isPlaying = isInLiveSession ? liveCtx.isPlaying : playerIsPlaying;
+  const volume = isInLiveSession ? liveCtx.volume : playerVolume;
+  const isMuted = isInLiveSession ? liveCtx.isMuted : playerIsMuted;
+  const elapsed = isInLiveSession ? liveCtx.displayElapsed : playerElapsed;
+  const toggleMute = isInLiveSession ? liveCtx.toggleMute : playerToggleMute;
+  const setVolume = isInLiveSession
+    ? liveCtx.setVolume
+    : playerSetVolume;
+
+  const navigate = useNavigate();
   const location = useLocation();
 
   // ─── Theme detection via MutationObserver (not on every render) ────────────
@@ -64,9 +80,14 @@ export function MusicPlayer() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [drawerTab, setDrawerTab] = useState<DrawerTab>("playlist");
+
+  const [podcasts, setPodcasts] = useState<
+    { id: string; title: string; banner: string | null }[]
+  >([]);
   const [podcastEpisodes, setPodcastEpisodes] = useState<PodcastEpisode[]>([]);
-  const [podcasts, setPodcasts] = useState<{ id: string; title: string; banner: string | null }[]>([]);
-  const [selectedPodcastId, setSelectedPodcastId] = useState<string | null>(null);
+  const [selectedPodcastId, setSelectedPodcastId] = useState<string | null>(
+    null,
+  );
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
 
   // ─── Poll audio.currentTime directly from the shared audio element ────────
@@ -77,7 +98,10 @@ export function MusicPlayer() {
   useEffect(() => {
     const tick = () => {
       const live = (window as any).__liveAudioRef;
-      const srcAudio = (live ?? ctxAudioRef.current) as HTMLAudioElement | null | undefined;
+      const srcAudio = (live ?? ctxAudioRef.current) as
+        | HTMLAudioElement
+        | null
+        | undefined;
       if (srcAudio && !live) {
         setElapsed(srcAudio.currentTime);
       }
@@ -88,26 +112,53 @@ export function MusicPlayer() {
   }, [ctxAudioRef, setElapsed]);
 
   // Reset favorite when track changes
-  useEffect(() => { setIsFavorite(false); }, [track?.title]);
+  useEffect(() => {
+    setIsFavorite(false);
+  }, [track?.title]);
 
   // Load podcasts when drawer opens on podcast tab
   useEffect(() => {
     if (showPlaylist && drawerTab === "podcast" && podcasts.length === 0) {
-      podcastService.getPublishedPodcasts()
-        .then((data) => setPodcasts(data.slice(0, 10).map((p) => ({ id: p.id, title: p.title, banner: p.banner }))))
-        .catch(() => {});
+      setLoadingEpisodes(true);
+      podcastService
+        .getPublishedPodcasts()
+        .then((data) =>
+          setPodcasts(
+            data
+              .slice(0, 10)
+              .map((p) => ({ id: p.id, title: p.title, banner: p.banner })),
+          ),
+        )
+        .catch(() => {})
+        .finally(() => setLoadingEpisodes(false));
     }
-  }, [showPlaylist, drawerTab]);
+  }, [showPlaylist, drawerTab, podcasts.length]);
 
-  // Load episodes when a podcast is selected
   useEffect(() => {
-    if (!selectedPodcastId) return;
+    if (!showPlaylist || drawerTab !== "podcast" || !selectedPodcastId) return;
+
+    let active = true;
     setLoadingEpisodes(true);
-    podcastService.getEpisodes(selectedPodcastId)
-      .then((eps) => setPodcastEpisodes(eps))
-      .catch(() => setPodcastEpisodes([]))
-      .finally(() => setLoadingEpisodes(false));
-  }, [selectedPodcastId]);
+
+    podcastService
+      .getEpisodes(selectedPodcastId)
+      .then((episodes) => {
+        if (!active) return;
+        setPodcastEpisodes(episodes);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPodcastEpisodes([]);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoadingEpisodes(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [showPlaylist, drawerTab, selectedPodcastId]);
 
   const playPodcastEpisode = async (ep: PodcastEpisode) => {
     if (!ep.audioUrl) {
@@ -143,9 +194,14 @@ export function MusicPlayer() {
         });
       }
     };
-    audio.play().then(() => setIsPlaying(true)).catch((err) => {
-      showToast.error(`Không phát được podcast: ${String(err?.message ?? err ?? "Unknown error")}`);
-    });
+    audio
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch((err) => {
+        showToast.error(
+          `Không phát được podcast: ${String(err?.message ?? err ?? "Unknown error")}`,
+        );
+      });
   };
 
   /* ── Pause when navigating to auth pages ─────────────────────────────── */
@@ -166,28 +222,72 @@ export function MusicPlayer() {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  const duration = track?.duration ?? 0;
-  const displayElapsed = Math.max(0, duration > 0 ? Math.min(elapsed, duration) : elapsed);
-  // Progress bar now uses the synchronized PlayerContext elapsed.
-  const progressPct =
-    duration > 0 ? Math.min((displayElapsed / duration) * 100, 100) : 0;
+  // Live session: derive track info from context
+  const liveTrack = isInLiveSession ? liveCtx.nowPlaying?.currentTrack : null;
+  const displayTrack = isInLiveSession
+    ? (liveTrack
+        ? {
+            title: liveTrack.title,
+            artist: liveTrack.artist,
+            artUrl: liveTrack.artUrl,
+            duration: liveTrack.duration,
+          }
+        : null)
+    : track;
 
-  const title = track?.title ?? "Chưa có bài phát";
-  const artist = track?.artist ?? "...";
-  const artUrl = track?.artUrl ?? PLACEHOLDER_ART;
+  const title = displayTrack?.title ?? "Chưa có bài phát";
+  const artist = isInLiveSession
+    ? (liveCtx.activeSession?.stationName || liveCtx.nowPlaying?.stationName || "Live")
+    : (displayTrack?.artist ?? "...");
+  const artUrl = displayTrack?.artUrl ?? PLACEHOLDER_ART;
+  const duration = (isInLiveSession ? liveTrack?.duration : track?.duration) ?? 0;
+  const displayElapsed = Math.max(0, duration > 0 ? Math.min(elapsed, duration) : elapsed);
+  const progressPct = duration > 0 ? Math.min((displayElapsed / duration) * 100, 100) : 0;
   const displayVolume = isMuted ? 0 : volume;
-  const showPlayIcon = !isPlaying || isMuted || volume === 0;
+  const showPlayIcon = isInLiveSession ? isMuted : !isPlaying;
+
+  // Whether to show the player at all
+  const hasContent = isInLiveSession || !!track;
+
+  const handleTogglePlay = () => {
+    if (isInLiveSession) {
+      liveCtx.toggleMute();
+    } else {
+      toggle();
+    }
+  };
+
+  const handleLeave = () => {
+    if (isInLiveSession) {
+      // Navigate to live listing first, then stop audio
+      navigate("/live");
+      liveCtx.leaveLiveRoom();
+    } else {
+      leaveSession();
+    }
+  };
+
+  const handleNavigateToLive = () => {
+    if (liveCtx.activeSessionId) {
+      navigate(`/live/${liveCtx.activeSessionId}`);
+    }
+  };
 
   const handleFavorite = async () => {
     if (!track) return;
     try {
       // TODO: wire up favoriteService.addFavorite() once the API is ready
-      setIsFavorite(prev => !prev);
-      showToast.success(isFavorite ? "Đã bỏ yêu thích" : "Đã thêm vào yêu thích");
+      setIsFavorite((prev) => !prev);
+      showToast.success(
+        isFavorite ? "Đã bỏ yêu thích" : "Đã thêm vào yêu thích",
+      );
     } catch {
       showToast.error("Không thể cập nhật yêu thích");
     }
   };
+
+  // Hide the player entirely when there's nothing to play
+  if (!hasContent) return null;
 
   return (
     <div className="music-player">
@@ -195,10 +295,7 @@ export function MusicPlayer() {
         {/* Progress Bar */}
         <div className="progress-section">
           <div className="progress-bar-track">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${progressPct}%` }}
-            />
+            <div className="progress-bar-fill" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
@@ -206,21 +303,32 @@ export function MusicPlayer() {
         <div className="player-content">
           {/* Left Section */}
           <div className="left-section">
-            <div className="album-art-container">
+            <div
+              className="album-art-container"
+              style={{ cursor: isInLiveSession ? "pointer" : "default" }}
+              onClick={isInLiveSession ? handleNavigateToLive : undefined}
+              title={isInLiveSession ? "Quay lại phòng Live" : undefined}
+            >
               <img
                 src={artUrl}
                 alt={title}
-                className={`album-art ${!track ? "album-art--placeholder" : ""}`}
+                className={`album-art ${!hasContent ? "album-art--placeholder" : ""}`}
               />
+              {isInLiveSession && (
+                <div className="live-badge-overlay">
+                  <Radio size={10} />
+                  LIVE
+                </div>
+              )}
             </div>
 
             <div className="track-info-container">
-              <p className="track-title">{title}</p>
+              <p className="track-title" style={{ cursor: isInLiveSession ? "pointer" : "default" }} onClick={isInLiveSession ? handleNavigateToLive : undefined}>{title}</p>
               <p className="track-artist">{artist}</p>
             </div>
 
-            {/* Heart — wired up */}
-            {track && (
+            {/* Heart — only for non-live */}
+            {!isInLiveSession && track && (
               <div
                 className="heart-icon-container"
                 title={isFavorite ? "Bỏ yêu thích" : "Yêu thích"}
@@ -243,8 +351,8 @@ export function MusicPlayer() {
 
             <button
               className="play-button-clean"
-              onClick={toggle}
-              disabled={!track}
+              onClick={handleTogglePlay}
+              disabled={!hasContent}
               title={showPlayIcon ? "Phát nhạc" : "Tạm dừng"}
             >
               {showPlayIcon ? (
@@ -266,7 +374,7 @@ export function MusicPlayer() {
               className="download-list-icon-container"
               title="Danh sách phát"
               style={{ cursor: "pointer" }}
-              onClick={() => setShowPlaylist(prev => !prev)}
+              onClick={() => setShowPlaylist((prev) => !prev)}
             >
               <ListMusic size={20} strokeWidth={1.8} color={iconAccent} />
             </div>
@@ -301,11 +409,11 @@ export function MusicPlayer() {
             </div>
 
             {/* Leave session button */}
-            {track && (
+            {hasContent && (
               <div
                 className="leave-session-btn"
-                onClick={leaveSession}
-                title="Thoát Live Session"
+                onClick={handleLeave}
+                title={isInLiveSession ? "Thoát Live Session" : "Dừng phát"}
                 style={{ cursor: "pointer" }}
               >
                 <X size={18} strokeWidth={2} color={iconMuted} />
@@ -351,9 +459,13 @@ export function MusicPlayer() {
                   {selectedPodcastId === null ? (
                     <div className="podcast-drawer-list">
                       {loadingEpisodes ? (
-                        <p className="playlist-drawer-placeholder">Đang tải podcast...</p>
+                        <p className="playlist-drawer-placeholder">
+                          Đang tải podcast...
+                        </p>
                       ) : podcasts.length === 0 ? (
-                        <p className="playlist-drawer-placeholder">Chưa có podcast nào</p>
+                        <p className="playlist-drawer-placeholder">
+                          Chưa có podcast nào
+                        </p>
                       ) : (
                         podcasts.map((pod) => (
                           <div
@@ -369,7 +481,9 @@ export function MusicPlayer() {
                               )}
                             </div>
                             <div className="podcast-drawer-info">
-                              <span className="podcast-drawer-title">{pod.title}</span>
+                              <span className="podcast-drawer-title">
+                                {pod.title}
+                              </span>
                             </div>
                             <Play size={12} fill="currentColor" />
                           </div>
@@ -381,14 +495,21 @@ export function MusicPlayer() {
                     <div className="episode-drawer-list">
                       <button
                         className="episode-drawer-back"
-                        onClick={() => { setSelectedPodcastId(null); setPodcastEpisodes([]); }}
+                        onClick={() => {
+                          setSelectedPodcastId(null);
+                          setPodcastEpisodes([]);
+                        }}
                       >
                         <X size={12} /> Quay lại
                       </button>
                       {loadingEpisodes ? (
-                        <p className="playlist-drawer-placeholder">Đang tải tập...</p>
+                        <p className="playlist-drawer-placeholder">
+                          Đang tải tập...
+                        </p>
                       ) : podcastEpisodes.length === 0 ? (
-                        <p className="playlist-drawer-placeholder">Chưa có tập nào</p>
+                        <p className="playlist-drawer-placeholder">
+                          Chưa có tập nào
+                        </p>
                       ) : (
                         podcastEpisodes.map((ep) => (
                           <div
@@ -398,7 +519,9 @@ export function MusicPlayer() {
                           >
                             <Play size={12} fill="currentColor" />
                             <div className="episode-drawer-info">
-                              <span className="episode-drawer-title">{ep.title}</span>
+                              <span className="episode-drawer-title">
+                                {ep.title}
+                              </span>
                             </div>
                           </div>
                         ))

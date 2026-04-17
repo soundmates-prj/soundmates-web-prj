@@ -133,7 +133,7 @@ export function CreateLiveSessionScreen() {
               <option value="">-- Chọn MC --</option>
               {hosts.map(h => (
                 <option key={h.id} value={h.id}>
-                  {h.firstName && h.lastName ? `${h.firstName} ${h.lastName}` : h.username || h.id}
+                  {h.firstName && h.lastName ? `${h.lastName} ${h.firstName}` : h.username || h.id}
                 </option>
               ))}
             </select>

@@ -114,15 +114,21 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setVolume = useCallback((v: number) => {
     setVolumeState(v);
-    // Kéo volume về 0 → tắt tiếng (nút play đổi sang icon Play)
-    setIsMuted(v === 0);
-    if (audioRef.current) audioRef.current.volume = v / 100;
+    const muted = v === 0;
+    setIsMuted(muted);
+    if (audioRef.current) {
+      audioRef.current.volume = v / 100;
+      audioRef.current.muted = muted;
+    }
   }, []);
 
   const toggleMute = useCallback(() => {
     const next = !isMuted;
     setIsMuted(next);
-    if (audioRef.current) audioRef.current.volume = next ? 0 : volume / 100;
+    if (audioRef.current) {
+      audioRef.current.volume = next ? 0 : volume / 100;
+      audioRef.current.muted = next;
+    }
   }, [isMuted, volume]);
 
   /* -------- LEAVE SESSION: dừng hẳn + xoá track -------- */

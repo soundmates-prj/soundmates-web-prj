@@ -18,6 +18,7 @@ import {
   PowerOff,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import './UserManagement.css';
 import userService, {
   type UserDto,
@@ -39,6 +40,37 @@ type StatusOption = typeof STATUS_OPTIONS[number];
 
 const getStatusOption = (status: number): StatusOption =>
   STATUS_OPTIONS.find(o => o.value === status) ?? STATUS_OPTIONS[1];
+
+const normalizeRole = (roleName?: string): string =>
+  (roleName || '').trim().toUpperCase();
+
+const isAdminRole = (roleName?: string): boolean => {
+  const role = normalizeRole(roleName);
+  return role === 'ADMIN' || role === 'ROLE_ADMIN';
+};
+
+const getCurrentUserIdFromStorage = (): string => {
+  try {
+    const raw = localStorage.getItem('userInfo');
+    if (!raw) return '';
+    const parsed = JSON.parse(raw) as { id?: string | number };
+    if (parsed?.id === undefined || parsed?.id === null) return '';
+    return String(parsed.id);
+  } catch {
+    return '';
+  }
+};
+
+const getDeleteBlockedReason = (targetUser: User | null, currentUserId: string): string | null => {
+  if (!targetUser) return null;
+  if (currentUserId && targetUser.id === currentUserId) {
+    return 'Không thể xóa tài khoản của chính bạn.';
+  }
+  if (isAdminRole(targetUser.roleName)) {
+    return 'Không thể xóa tài khoản Admin.';
+  }
+  return null;
+};
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -87,15 +119,15 @@ function mapUserDtoToUser(dto: UserDto): User {
 
 // ── Modal Base ───────────────────────────────────────────────
 function ModalBase({
-  isOpen, onClose, title, children, size = 'medium',
+  isOpen, onClose, title, children, size = 'medium', className,
 }: {
   isOpen: boolean; onClose: () => void; title: string;
-  children: React.ReactNode; size?: 'small' | 'medium' | 'large';
+  children: React.ReactNode; size?: 'small' | 'medium' | 'large'; className?: string;
 }) {
   if (!isOpen) return null;
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-content ${size}`} onClick={e => e.stopPropagation()}>
+      <div className={`modal-content ${size}${className ? ` ${className}` : ''}`} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3 className="modal-title">{title}</h3>
           <button onClick={onClose} className="modal-close-btn">
@@ -127,13 +159,19 @@ function ViewDetailsModal({
     d ? new Date(d).toLocaleString('vi-VN') : '—';
   const statusOpt = getStatusOption(user.accountStatus);
   return (
-    <ModalBase isOpen={isOpen} onClose={onClose} title="Chi tiết người dùng" size="large">
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 20 }}>
+    <ModalBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Chi tiết người dùng"
+      size="large"
+      className="view-details-modal"
+    >
+      <div className="view-details-header">
         <UserAvatar name={user.name} />
-        <div>
-          <h4 style={{ margin: 0 }}>{user.name}</h4>
-          <p style={{ margin: '4px 0 8px', color: 'var(--neutral-500)', fontSize: 13 }}>{user.email}</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <div className="user-details-info">
+          <h4 className="user-details-name view-details-name">{user.name}</h4>
+          <p className="user-details-email view-details-email">{user.email}</p>
+          <div className="user-details-badges view-details-badges">
             <span className={`lm-role-badge lm-role-${user.roleName?.toLowerCase()}`}>
               {user.roleName?.toUpperCase() || 'USER'}
             </span>
@@ -141,7 +179,7 @@ function ViewDetailsModal({
               <CheckCircle size={12} /> {user.isVerified ? 'Đã xác minh' : 'Chưa xác minh'}
             </span>
             <span
-              className="lm-status-badge inactive"
+              className="lm-status-badge"
               style={{ color: statusOpt.color, borderColor: `${statusOpt.color}33`, background: `${statusOpt.color}11` }}
             >
               {statusOpt.label}
@@ -150,7 +188,7 @@ function ViewDetailsModal({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div className="view-details-grid">
         <DetailField label="Username" value={user.username} />
         <DetailField label="Email" value={user.email} />
         <DetailField label="Vai trò" value={user.roleName} />
@@ -163,7 +201,7 @@ function ViewDetailsModal({
         <DetailField label="Ngày vô hiệu hóa" value={fmt(user.deactivatedAt)} />
       </div>
 
-      <div className="modal-footer" style={{ marginTop: 20 }}>
+      <div className="modal-footer view-details-footer">
         <button onClick={onClose} className="btn btn-secondary">Đóng</button>
       </div>
     </ModalBase>
@@ -172,9 +210,9 @@ function ViewDetailsModal({
 
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ background: 'var(--neutral-50)', borderRadius: 10, padding: '10px 14px' }}>
-      <div style={{ fontSize: 11, color: 'var(--neutral-400)', marginBottom: 2, fontWeight: 600 }}>{label}</div>
-      <div style={{ fontSize: 13, color: 'var(--neutral-800)', fontWeight: 500 }}>{value}</div>
+    <div className="view-detail-card">
+      <div className="view-detail-label">{label}</div>
+      <div className="view-detail-value">{value}</div>
     </div>
   );
 }
@@ -211,10 +249,10 @@ function UpdateStatusModal({
       reason: reason || undefined,
     });
     if (res.success) {
-      showSuccess('Đã cập nhật', res.message || 'Trạng thái tài khoản đã được cập nhật.');
+      showSuccess('Đã cập nhật', 'Trạng thái tài khoản đã được cập nhật.');
       onSuccess(user.id, selected); onClose();
     } else {
-      showError('Thất bại', res.message);
+      showError('Thất bại', 'Không thể cập nhật trạng thái tài khoản. Vui lòng thử lại.');
     }
     setSubmitting(false);
   };
@@ -225,22 +263,38 @@ function UpdateStatusModal({
   const isSame = selected === currentStatus;
 
   return (
-    <ModalBase isOpen={isOpen} onClose={onClose} title="Cập nhật trạng thái" size="small">
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
+    <ModalBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Cập nhật trạng thái"
+      size="small"
+      className="update-status-modal"
+    >
+      <div className="update-status-user">
         <UserAvatar name={user.name} />
-        <div>
-          <h4 style={{ margin: 0 }}>{user.name}</h4>
-          <p style={{ margin: 0, color: 'var(--neutral-500)', fontSize: 13 }}>{user.email}</p>
-          <span className="lm-status-badge inactive"
-            style={{ color: currentOpt.color, borderColor: `${currentOpt.color}33`, background: `${currentOpt.color}11`, marginTop: 4 }}>
-            Hiện tại: {currentOpt.label}
-          </span>
+        <div className="update-status-user-info">
+          <h4 className="user-details-name update-status-name">{user.name}</h4>
+          <p className="user-details-email update-status-email">{user.email}</p>
+          <div className="update-status-meta">
+            <span
+              className="lm-status-badge"
+              style={{ color: currentOpt.color, borderColor: `${currentOpt.color}33`, background: `${currentOpt.color}11` }}
+            >
+              Hiện tại: {currentOpt.label}
+            </span>
+            <span
+              className="lm-status-badge"
+              style={{ color: selectedOpt.color, borderColor: `${selectedOpt.color}33`, background: `${selectedOpt.color}11` }}
+            >
+              Sắp cập nhật: {selectedOpt.label}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Status picker */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-        <label className="form-label">Chọn trạng thái mới</label>
+      <div className="update-status-picker">
+        <label className="form-label update-status-picker-label">Chọn trạng thái mới</label>
         {STATUS_OPTIONS.map(opt => (
           <button
             key={opt.value}
@@ -257,16 +311,19 @@ function UpdateStatusModal({
               textAlign: 'left',
               fontFamily: 'inherit',
             }}
+            className="status-picker-btn"
+            data-selected={selected === opt.value}
+            data-color={opt.color}
           >
             <div style={{
               width: 18, height: 18, borderRadius: '50%',
               border: `2px solid ${selected === opt.value ? opt.color : 'var(--neutral-300)'}`,
               background: selected === opt.value ? opt.color : 'transparent',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              {selected === opt.value && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} />}
+            }} className="sp-icon">
+              {selected === opt.value && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} className="sp-icon-dot" />}
             </div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: opt.color }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: opt.color }} className="sp-label">
               {opt.value === AccountStatusEnum.Active && <Power size={15} style={{ marginRight: 6, display: 'inline' }} />}
               {opt.value === AccountStatusEnum.Deactivated && <PowerOff size={15} style={{ marginRight: 6, display: 'inline' }} />}
               {opt.value === AccountStatusEnum.Suspended && <AlertTriangle size={15} style={{ marginRight: 6, display: 'inline', color: opt.color }} />}
@@ -292,11 +349,11 @@ function UpdateStatusModal({
         />
       </div>
 
-      <div className="modal-footer">
-        <button onClick={onClose} className="btn btn-secondary" disabled={submitting}>Hủy</button>
+      <div className="modal-footer modal-footer--actions update-status-footer">
+        <button onClick={onClose} className="btn btn-secondary update-status-btn update-status-btn--cancel" disabled={submitting}>Hủy</button>
         <button
           onClick={handle}
-          className={isSame ? 'btn btn-secondary' : 'btn btn-primary'}
+          className={`update-status-btn update-status-btn--confirm ${isSame ? 'btn btn-secondary' : 'btn btn-primary'}`}
           disabled={submitting || (!isSame && selected !== AccountStatusEnum.Active && !reason.trim())}
         >
           {submitting ? (
@@ -324,29 +381,35 @@ function VerifyEmailModal({
     setSubmitting(true);
     const res = await userService.verifyEmail(user.id);
     if (res.success) {
-      showSuccess('Đã xác minh', res.message || `Email của "${user.name}" đã được xác minh và tài khoản kích hoạt.`);
+      showSuccess('Đã xác minh', `Email của "${user.name}" đã được xác minh và tài khoản kích hoạt.`);
       onSuccess(user.id); onClose();
     } else {
-      showError('Thất bại', res.message);
+      showError('Thất bại', 'Không thể xác minh email. Vui lòng thử lại.');
     }
     setSubmitting(false);
   };
   return (
-    <ModalBase isOpen={isOpen} onClose={onClose} title="Xác minh email người dùng" size="small">
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16 }}>
+    <ModalBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Xác minh email người dùng"
+      size="small"
+      className="verify-email-modal"
+    >
+      <div className="verify-email-user">
         <UserAvatar name={user?.name || ''} />
-        <div>
-          <h4 style={{ margin: 0 }}>{user?.name}</h4>
-          <p style={{ margin: 0, color: 'var(--neutral-500)', fontSize: 13 }}>{user?.email}</p>
+        <div className="verify-email-user-info">
+          <h4 className="user-details-name verify-email-name">{user?.name}</h4>
+          <p className="user-details-email verify-email-address">{user?.email}</p>
         </div>
       </div>
-      <div className="alert-box info" style={{ marginBottom: 16 }}>
+      <div className="alert-box info verify-email-note">
         <MailCheck size={20} style={{ color: '#1a9fd4', flexShrink: 0 }} />
         <p style={{ margin: 0, fontSize: 13 }}>Email sẽ được xác minh và tài khoản kích hoạt mà không cần OTP.</p>
       </div>
-      <div className="modal-footer">
-        <button onClick={onClose} className="btn btn-secondary" disabled={submitting}>Hủy</button>
-        <button onClick={handle} className="btn btn-primary" disabled={submitting}>
+      <div className="modal-footer modal-footer--actions verify-email-footer">
+        <button onClick={onClose} className="btn btn-secondary verify-email-btn verify-email-btn--cancel" disabled={submitting}>Hủy</button>
+        <button onClick={handle} className="btn btn-primary verify-email-btn verify-email-btn--confirm" disabled={submitting}>
           {submitting ? <><Loader2 size={14} className="spinner" /> Đang xử lý...</> : <><MailCheck size={14} /> Xác minh email</>}
         </button>
       </div>
@@ -356,20 +419,27 @@ function VerifyEmailModal({
 
 // ── 4. Delete Confirmation Modal ──────────────────────────────────
 function DeleteModal({
-  isOpen, onClose, user, onSuccess,
+  isOpen, onClose, user, onSuccess, currentUserId,
 }: {
-  isOpen: boolean; onClose: () => void; user: User | null; onSuccess: (userId: string) => void;
+  isOpen: boolean; onClose: () => void; user: User | null; onSuccess: (userId: string) => void; currentUserId: string;
 }) {
   const [submitting, setSubmitting] = useState(false);
+  const deleteBlockedReason = getDeleteBlockedReason(user, currentUserId);
+  const isDeleteBlocked = !!deleteBlockedReason;
+
   const handle = async () => {
     if (!user) return;
+    if (isDeleteBlocked) {
+      showError('Không thể xóa', deleteBlockedReason || 'Tài khoản này không thể bị xóa.');
+      return;
+    }
     setSubmitting(true);
     const res = await userService.deleteUser(user.id);
     if (res.success) {
       showSuccess('Đã xóa', `Tài khoản "${user.name}" đã bị xóa vĩnh viễn.`);
       onSuccess(user.id); onClose();
     } else {
-      showError('Thất bại', res.message);
+      showError('Thất bại', 'Không thể xóa tài khoản. Vui lòng thử lại.');
     }
     setSubmitting(false);
   };
@@ -382,17 +452,30 @@ function DeleteModal({
           <p style={{ margin: 0, color: 'var(--neutral-500)', fontSize: 13 }}>{user?.email}</p>
         </div>
       </div>
-      <div className="alert-box danger">
-        <AlertTriangle size={20} style={{ color: '#dc2626', flexShrink: 0 }} />
+      <div className={`alert-box ${isDeleteBlocked ? 'info' : 'danger'}`}>
+        <AlertTriangle size={20} style={{ color: isDeleteBlocked ? '#f59e0b' : '#dc2626', flexShrink: 0 }} />
         <div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#dc2626' }}>Hành động này không thể hoàn tác!</p>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--neutral-500)' }}>Tài khoản sẽ bị xóa vĩnh viễn cùng với tất cả dữ liệu liên quan.</p>
+          {isDeleteBlocked ? (
+            <>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#f59e0b' }}>Tài khoản được bảo vệ</p>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--neutral-500)' }}>{deleteBlockedReason}</p>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#dc2626' }}>Hành động này không thể hoàn tác!</p>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--neutral-500)' }}>Tài khoản sẽ bị xóa vĩnh viễn cùng với tất cả dữ liệu liên quan.</p>
+            </>
+          )}
         </div>
       </div>
       <div className="modal-footer" style={{ marginTop: 16 }}>
         <button onClick={onClose} className="btn btn-secondary" disabled={submitting}>Hủy</button>
-        <button onClick={handle} className="btn btn-danger" disabled={submitting}>
-          {submitting ? <><Loader2 size={14} className="spinner" /> Đang xóa...</> : <><Trash2 size={14} /> Xóa vĩnh viễn</>}
+        <button onClick={handle} className="btn btn-danger" disabled={submitting || isDeleteBlocked}>
+          {isDeleteBlocked
+            ? <><XCircle size={14} /> Không thể xóa</>
+            : submitting
+              ? <><Loader2 size={14} className="spinner" /> Đang xóa...</>
+              : <><Trash2 size={14} /> Xóa vĩnh viễn</>}
         </button>
       </div>
     </ModalBase>
@@ -422,6 +505,7 @@ export function UserManagementScreen() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null);
+  const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   // Modal states
   const [viewModal, setViewModal] = useState(false);
@@ -430,18 +514,90 @@ export function UserManagementScreen() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [addUserModal, setAddUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [currentUserId, setCurrentUserId] = useState('');
 
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const closeActionMenu = () => {
+    setActiveActionMenu(null);
+    setActionMenuPosition(null);
+  };
+
+  const positionActionMenu = (userId: string) => {
+    const wrapper = rowRefs.current.get(userId);
+    const trigger = wrapper?.querySelector<HTMLButtonElement>('.lm-action-btn');
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const viewportPadding = 8;
+    const menuEl = actionMenuRef.current;
+    const menuWidth = menuEl?.offsetWidth ?? 192;
+    const menuHeight = menuEl?.offsetHeight ?? 0;
+
+    let left = rect.right - menuWidth;
+    left = Math.max(
+      viewportPadding,
+      Math.min(left, window.innerWidth - menuWidth - viewportPadding),
+    );
+
+    let top = rect.bottom + 6;
+    if (menuHeight > 0 && top + menuHeight > window.innerHeight - viewportPadding) {
+      top = rect.top - menuHeight - 6;
+    }
+
+    if (menuHeight > 0) {
+      top = Math.max(
+        viewportPadding,
+        Math.min(top, window.innerHeight - menuHeight - viewportPadding),
+      );
+    }
+
+    setActionMenuPosition(prev => {
+      if (prev && Math.abs(prev.top - top) < 0.5 && Math.abs(prev.left - left) < 0.5) {
+        return prev;
+      }
+      return { top, left };
+    });
+  };
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!activeActionMenu) return;
-      const el = rowRefs.current.get(activeActionMenu);
-      if (el && !el.contains(e.target as Node)) setActiveActionMenu(null);
+      const target = e.target as Node;
+      const triggerWrapper = rowRefs.current.get(activeActionMenu);
+      if (triggerWrapper?.contains(target) || actionMenuRef.current?.contains(target)) return;
+      closeActionMenu();
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [activeActionMenu]);
+
+  useEffect(() => {
+    if (!activeActionMenu) return;
+
+    const syncPosition = () => positionActionMenu(activeActionMenu);
+    syncPosition();
+
+    window.addEventListener('resize', syncPosition);
+    window.addEventListener('scroll', syncPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', syncPosition);
+      window.removeEventListener('scroll', syncPosition, true);
+    };
+  }, [activeActionMenu]);
+
+  useEffect(() => {
+    const syncCurrentUser = () => setCurrentUserId(getCurrentUserIdFromStorage());
+    syncCurrentUser();
+    window.addEventListener('authChange', syncCurrentUser);
+    window.addEventListener('storage', syncCurrentUser);
+    return () => {
+      window.removeEventListener('authChange', syncCurrentUser);
+      window.removeEventListener('storage', syncCurrentUser);
+    };
+  }, []);
 
   useEffect(() => {
     const id = setTimeout(() => fetchUsers(), 500);
@@ -470,7 +626,7 @@ export function UserManagementScreen() {
   const openModal = (setter: React.Dispatch<React.SetStateAction<boolean>>, user: User) => {
     setSelectedUser(user);
     setter(true);
-    setActiveActionMenu(null);
+    closeActionMenu();
   };
 
   // Reset to page 1 + clear search after any mutation so the table always shows valid data
@@ -486,6 +642,12 @@ export function UserManagementScreen() {
   const activeCount = users.filter(u => u.accountStatus === AccountStatusEnum.Active).length;
   const inactiveCount = users.filter(u => u.accountStatus !== AccountStatusEnum.Active).length;
   const verifiedCount = users.filter(u => u.isVerified).length;
+  const activeActionUser = users.find(u => u.id === activeActionMenu) ?? null;
+  const activeDeleteBlockedReason = getDeleteBlockedReason(activeActionUser, currentUserId);
+  const activeIsDeleteBlocked = !!activeDeleteBlockedReason;
+  const activeDeleteActionLabel = activeIsDeleteBlocked
+    ? (activeActionUser && currentUserId && activeActionUser.id === currentUserId ? 'Không thể xóa bản thân' : 'Không thể xóa Admin')
+    : 'Xóa vĩnh viễn';
 
   return (
     <div className="lm-page">
@@ -593,7 +755,7 @@ export function UserManagementScreen() {
 
                       <td className="center">
                         <span
-                          className="lm-status-badge inactive"
+                          className="lm-status-badge"
                           style={{ color: statusOpt.color, borderColor: `${statusOpt.color}33`, background: `${statusOpt.color}11` }}
                         >
                           {statusOpt.label}
@@ -613,45 +775,18 @@ export function UserManagementScreen() {
                           }}
                         >
                           <button
-                            onClick={() => setActiveActionMenu(activeActionMenu === user.id ? null : user.id)}
+                            onClick={() => {
+                              if (activeActionMenu === user.id) {
+                                closeActionMenu();
+                                return;
+                              }
+                              setActiveActionMenu(user.id);
+                              positionActionMenu(user.id);
+                            }}
                             className="lm-action-btn"
                           >
                             <MoreVertical size={16} />
                           </button>
-
-                          {activeActionMenu === user.id && (
-                            <div className="lm-action-dropdown">
-                              {/* View */}
-                              <button className="lm-action-item"
-                                onClick={() => openModal(setViewModal, user)}>
-                                <Eye size={16} /><span>Xem chi tiết</span>
-                              </button>
-
-                              <div className="lm-action-divider" />
-
-                              {/* Verify Email — only if not verified */}
-                              {!user.isVerified && (
-                                <button className="lm-action-item"
-                                  onClick={() => openModal(setVerifyModal, user)}>
-                                  <MailCheck size={16} /><span>Xác minh email</span>
-                                </button>
-                              )}
-
-                              {/* Update Status */}
-                              <button className="lm-action-item"
-                                onClick={() => openModal(setStatusModal, user)}>
-                                <UserCog size={16} /><span>Cập nhật trạng thái</span>
-                              </button>
-
-                              <div className="lm-action-divider" />
-
-                              {/* Delete */}
-                              <button className="lm-action-item danger"
-                                onClick={() => openModal(setDeleteModal, user)}>
-                                <Trash2 size={16} /><span>Xóa vĩnh viễn</span>
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -692,6 +827,52 @@ export function UserManagementScreen() {
         )}
       </div>
 
+      {activeActionUser && actionMenuPosition && createPortal(
+        <div
+          ref={actionMenuRef}
+          className="lm-action-dropdown lm-action-dropdown--floating"
+          style={{ top: actionMenuPosition.top, left: actionMenuPosition.left }}
+        >
+          {/* View */}
+          <button className="lm-action-item"
+            onClick={() => openModal(setViewModal, activeActionUser)}>
+            <Eye size={16} /><span>Xem chi tiết</span>
+          </button>
+
+          <div className="lm-action-divider" />
+
+          {/* Verify Email — only if not verified */}
+          {!activeActionUser.isVerified && (
+            <button className="lm-action-item"
+              onClick={() => openModal(setVerifyModal, activeActionUser)}>
+              <MailCheck size={16} /><span>Xác minh email</span>
+            </button>
+          )}
+
+          {/* Update Status */}
+          <button className="lm-action-item"
+            onClick={() => openModal(setStatusModal, activeActionUser)}>
+            <UserCog size={16} /><span>Cập nhật trạng thái</span>
+          </button>
+
+          <div className="lm-action-divider" />
+
+          {/* Delete */}
+          <button
+            className="lm-action-item danger"
+            onClick={() => {
+              if (activeIsDeleteBlocked) return;
+              openModal(setDeleteModal, activeActionUser);
+            }}
+            disabled={activeIsDeleteBlocked}
+            title={activeDeleteBlockedReason || undefined}
+          >
+            <Trash2 size={16} /><span>{activeDeleteActionLabel}</span>
+          </button>
+        </div>,
+        document.body,
+      )}
+
       {/* Modals */}
       <ViewDetailsModal isOpen={viewModal} onClose={() => setViewModal(false)} user={selectedUser} />
       <UpdateStatusModal
@@ -720,6 +901,7 @@ export function UserManagementScreen() {
         isOpen={deleteModal}
         onClose={() => setDeleteModal(false)}
         user={selectedUser}
+        currentUserId={currentUserId}
         onSuccess={(userId) => {
           // Optimistic: remove deleted user from local list
           setUsers(prev => prev.filter(u => u.id !== userId));
