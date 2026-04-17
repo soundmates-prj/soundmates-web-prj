@@ -57,6 +57,11 @@ export function HostScheduleView() {
     const now = new Date();
     const start = new Date(`${s.startDate}T${s.startTime}`);
     const end = new Date(`${s.startDate}T${s.endTime}`);
+    
+    if (end < start) {
+      end.setDate(end.getDate() + 1);
+    }
+    
     if (start <= now && now <= end) return "live";
     if (start > now) return "upcoming";
     return "ended";

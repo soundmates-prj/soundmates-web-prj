@@ -4,14 +4,18 @@ import { useNavigate } from "react-router-dom";
 import {
   liveSessionApiService,
   type LiveSessionResult,
+  type SessionScheduleResult,
 } from "../../../services/liveSessionApiService";
-import { showError, showSuccess } from "../../../components/common/toastUtils";
+import { showError } from "../../../components/common/toastUtils";
 import { LIVE_SESSION_LIST_PAGE_SIZE } from "../../Admin/LiveOps/liveSessionConstants";
 import "./HostLiveSession.css";
+
+const LOCALE_VIETNAMESE = "vi-VN";
 
 export default function HostLiveSessionPage() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<LiveSessionResult[]>([]);
+  const [schedules, setSchedules] = useState<SessionScheduleResult[]>([]);
   const [loading, setLoading] = useState(true);
 
   const isMountedRef = useRef(true);
@@ -23,18 +27,21 @@ export default function HostLiveSessionPage() {
       const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null;
       const params: any = { pageSize: LIVE_SESSION_LIST_PAGE_SIZE };
 
-      // If the current user is a Host, only fetch their sessions
       if (userInfo && userInfo.role === "HOST") {
         params.userId = userInfo.id || userInfo.userId;
       }
 
-      const sessionData = await liveSessionApiService.getLiveSessions(params);
+      const [sessionData, schedulesData] = await Promise.all([
+        liveSessionApiService.getLiveSessions(params),
+        liveSessionApiService.getSchedules(),
+      ]);
 
       if (!isMountedRef.current) {
         return;
       }
 
       setSessions(sessionData.items);
+      setSchedules(schedulesData);
     } catch {
       showError("Lỗi", "Không thể tải dữ liệu live session");
     } finally {
@@ -59,17 +66,27 @@ export default function HostLiveSessionPage() {
 
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    // API trả về giờ Việt Nam nhưng ghi Z (UTC) → bỏ Z để parse đúng
-    const isoStr = dateStr.endsWith("Z") ? dateStr.slice(0, -1) : dateStr;
-    return new Date(isoStr).toLocaleString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "Asia/Ho_Chi_Minh",
-      hour12: false,
-    });
+    
+    try {
+      const isoStr = dateStr.endsWith("Z") ? dateStr.slice(0, -1) : dateStr;
+      const date = new Date(isoStr);
+      
+      if (isNaN(date.getTime())) {
+        return "—";
+      }
+
+      return date.toLocaleString(LOCALE_VIETNAMESE, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Ho_Chi_Minh",
+        hour12: false,
+      });
+    } catch {
+      return "—";
+    }
   };
 
   const handleOpenDetail = useCallback(
@@ -122,36 +139,75 @@ export default function HostLiveSessionPage() {
                 </tr>
               </thead>
               <tbody>
-                {sessions.map((session) => (
-                  <tr key={session.id}>
-                    <td>{session.sessionName}</td>
-                    <td>{session.stationName || "-"}</td>
-                    <td>
-                      <span className="host-live-badge">
-                        <Radio size={12} />
-                        {session.status === "Created"
-                          ? "Chờ lên lịch"
-                          : session.status === "Scheduled"
-                            ? "Đã lên lịch"
-                            : session.status === "Live"
-                              ? "Đang phát"
-                              : session.status === "Ended"
-                                ? "Đã kết thúc"
-                                : "Không xác định"}
-                      </span>
-                    </td>
-                    <td>{formatDateTime(session.scheduledStartAt || "")}</td>
-                    <td>{session.listenersCount}</td>
-                    <td>
-                      <button
-                        className="host-live-link-btn"
-                        onClick={() => handleOpenDetail(session.id)}
-                      >
-                        Mở chi tiết
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {sessions.map((session) => {
+                  const sessionSchedules = schedules.filter(s => s.liveSessionId === session.id);
+
+                  return (
+                    <tr key={session.id}>
+                      <td>{session.sessionName}</td>
+                      <td>{session.stationName || "-"}</td>
+                      <td>
+                        <span className="host-live-badge">
+                          <Radio size={12} />
+                          {session.status === "Created"
+                            ? "Chờ lên lịch"
+                            : session.status === "Scheduled"
+                              ? "Đã lên lịch"
+                              : session.status === "Live"
+                                ? "Đang phát"
+                                : session.status === "Ended"
+                                  ? "Đã kết thúc"
+                                  : "Không xác định"}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {sessionSchedules.length > 0 ? (
+                            sessionSchedules.map((sch) => {
+                              let startStr = "—";
+                              let endStr = "—";
+                              if (sch.startDate && sch.startTime && sch.endTime) {
+                                const startDateTime = new Date(`${sch.startDate}T${sch.startTime}`);
+                                const endDateTime = new Date(`${sch.startDate}T${sch.endTime}`);
+                                
+                                if (endDateTime < startDateTime) {
+                                  endDateTime.setDate(endDateTime.getDate() + 1);
+                                }
+                                
+                                if (!isNaN(startDateTime.getTime())) startStr = startDateTime.toLocaleString(LOCALE_VIETNAMESE);
+                                if (!isNaN(endDateTime.getTime())) endStr = endDateTime.toLocaleString(LOCALE_VIETNAMESE);
+                              }
+                              return (
+                                <span key={sch.id} style={{ fontSize: '12px' }}>
+                                  {startStr} - {endStr}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            session.startedAt ? (
+                              <span style={{ fontSize: '12px' }}>
+                                {formatDateTime(session.startedAt)} - {session.endedAt ? formatDateTime(session.endedAt) : "Đang phát"}
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '12px' }}>
+                                {formatDateTime(session.scheduledStartAt)}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </td>
+                      <td>{session.listenersCount}</td>
+                      <td>
+                        <button
+                          className="host-live-link-btn"
+                          onClick={() => handleOpenDetail(session.id)}
+                        >
+                          Mở chi tiết
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

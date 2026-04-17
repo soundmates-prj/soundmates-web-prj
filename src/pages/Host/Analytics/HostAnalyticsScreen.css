@@ -2,7 +2,9 @@
    Host Analytics Screen Styles
    ============================================ */
 
-.host-an-page { max-width: 1200px; }
+.host-an-page {
+    max-width: 100vw;
+}
 
 .host-an-header {
     display: flex;
@@ -18,7 +20,9 @@
     color: var(--neutral-900);
 }
 
-[data-theme="dark"] .host-an-header h1 { color: #fff; }
+[data-theme="dark"] .host-an-header h1 {
+    color: #fff;
+}
 
 .host-an-header p {
     font-size: 14px;
@@ -46,9 +50,9 @@
 }
 
 [data-theme="dark"] .host-an-btn--outline {
-    background: rgba(255,255,255,0.05);
-    border-color: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.8);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 /* Stats */
@@ -59,8 +63,17 @@
     margin-bottom: 20px;
 }
 
-@media (max-width: 900px) { .host-an-stats-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 500px) { .host-an-stats-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+    .host-an-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .host-an-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
 
 .host-an-card {
     background: #fff;
@@ -73,14 +86,14 @@
 }
 
 [data-theme="dark"] .host-an-card {
-    background: rgba(255,255,255,0.03);
-    border-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .host-an-icon {
     width: 44px;
     height: 44px;
-    background: linear-gradient(135deg, rgba(26,159,212,0.1), rgba(85,197,241,0.15));
+    background: linear-gradient(135deg, rgba(26, 159, 212, 0.1), rgba(85, 197, 241, 0.15));
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -89,7 +102,9 @@
     flex-shrink: 0;
 }
 
-.host-an-content { flex: 1; }
+.host-an-content {
+    flex: 1;
+}
 
 .host-an-label {
     display: block;
@@ -106,7 +121,9 @@
     color: var(--neutral-900);
 }
 
-[data-theme="dark"] .host-an-value { color: #fff; }
+[data-theme="dark"] .host-an-value {
+    color: #fff;
+}
 
 .host-an-change {
     display: inline-flex;
@@ -117,8 +134,13 @@
     margin-top: 4px;
 }
 
-.host-an-change.positive { color: #16a34a; }
-.host-an-change.negative { color: #dc2626; }
+.host-an-change.positive {
+    color: #16a34a;
+}
+
+.host-an-change.negative {
+    color: #dc2626;
+}
 
 /* Charts */
 .host-an-charts-row {
@@ -128,7 +150,11 @@
     margin-bottom: 20px;
 }
 
-@media (max-width: 900px) { .host-an-charts-row { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+    .host-an-charts-row {
+        grid-template-columns: 1fr;
+    }
+}
 
 .host-an-chart-card {
     background: #fff;
@@ -138,8 +164,8 @@
 }
 
 [data-theme="dark"] .host-an-chart-card {
-    background: rgba(255,255,255,0.03);
-    border-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .host-an-chart-title {
@@ -149,7 +175,9 @@
     margin: 0 0 16px 0;
 }
 
-[data-theme="dark"] .host-an-chart-title { color: #fff; }
+[data-theme="dark"] .host-an-chart-title {
+    color: #fff;
+}
 
 /* Top Requests */
 .host-an-top-requests {
@@ -160,8 +188,8 @@
 }
 
 [data-theme="dark"] .host-an-top-requests {
-    background: rgba(255,255,255,0.03);
-    border-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .host-an-top-header h3 {
@@ -171,9 +199,15 @@
     margin: 0 0 16px 0;
 }
 
-[data-theme="dark"] .host-an-top-header h3 { color: #fff; }
+[data-theme="dark"] .host-an-top-header h3 {
+    color: #fff;
+}
 
-.host-an-top-list { display: flex; flex-direction: column; gap: 8px; }
+.host-an-top-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
 .host-an-top-item {
     display: flex;
@@ -185,8 +219,13 @@
     transition: background 0.2s;
 }
 
-[data-theme="dark"] .host-an-top-item { background: rgba(255,255,255,0.04); }
-.host-an-top-item:hover { background: rgba(26,159,212,0.06); }
+[data-theme="dark"] .host-an-top-item {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.host-an-top-item:hover {
+    background: rgba(26, 159, 212, 0.06);
+}
 
 .host-an-rank {
     font-size: 13px;
@@ -195,7 +234,9 @@
     min-width: 24px;
 }
 
-.host-an-top-icon { color: #a855f7; }
+.host-an-top-icon {
+    color: #a855f7;
+}
 
 .host-an-top-title {
     flex: 1;
@@ -204,7 +245,9 @@
     color: var(--neutral-800);
 }
 
-[data-theme="dark"] .host-an-top-title { color: rgba(255,255,255,0.8); }
+[data-theme="dark"] .host-an-top-title {
+    color: rgba(255, 255, 255, 0.8);
+}
 
 .host-an-top-count {
     font-size: 13px;

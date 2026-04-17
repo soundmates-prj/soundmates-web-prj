@@ -276,7 +276,7 @@ export default function HostLiveSessionDetailPage() {
         const candidate = JSON.parse(candidateStr) as RTCIceCandidateInit;
         hostPeerConnsRef.current.forEach(async (pc) => {
           if (pc.remoteDescription) {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+            await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => { });
           }
         });
       } catch { /* ignore parse errors */ }
@@ -472,11 +472,34 @@ export default function HostLiveSessionDetailPage() {
   }, [isMicActive, sessionId, STUN_SERVERS]);
 
   const formattedSchedules = useMemo(
-    () =>
-      schedules.map((item) => ({
-        ...item,
-        displayRange: `${new Date(item.startTime).toLocaleString(LOCALE_VIETNAMESE)} - ${new Date(item.endTime).toLocaleString(LOCALE_VIETNAMESE)}`,
-      })),
+    () => {
+      return schedules.map((item) => {
+        let startStr = "Invalid Date";
+        let endStr = "Invalid Date";
+
+        if (item.startDate && item.startTime && item.endTime) {
+          const startDateTime = new Date(`${item.startDate}T${item.startTime}`);
+          const endDateTime = new Date(`${item.startDate}T${item.endTime}`);
+
+          // Nếu giờ kết thúc nhỏ hơn giờ bắt đầu (vd: 22:00 -> 02:00), nghĩa là kéo dài qua ngày hôm sau
+          if (endDateTime < startDateTime) {
+            endDateTime.setDate(endDateTime.getDate() + 1);
+          }
+
+          if (!isNaN(startDateTime.getTime())) {
+            startStr = startDateTime.toLocaleString(LOCALE_VIETNAMESE);
+          }
+          if (!isNaN(endDateTime.getTime())) {
+            endStr = endDateTime.toLocaleString(LOCALE_VIETNAMESE);
+          }
+        }
+
+        return {
+          ...item,
+          displayRange: `${startStr} - ${endStr}`,
+        };
+      });
+    },
     [schedules],
   );
 
@@ -622,10 +645,10 @@ export default function HostLiveSessionDetailPage() {
                       }}
                       style={{ width: "100%", accentColor: "#ef4444" }}
                     />
-                    <audio 
-                      id="host-local-audio" 
-                      src={session.streamUrl.replace(/host\.docker\.internal(:\d+)?/gi, "localhost:5000")} 
-                      autoPlay 
+                    <audio
+                      id="host-local-audio"
+                      src={session.streamUrl.replace(/host\.docker\.internal(:\d+)?/gi, "localhost:5000")}
+                      autoPlay
                       onLoadedMetadata={(e) => { (e.target as HTMLAudioElement).volume = 1.0; }}
                     />
                   </div>
