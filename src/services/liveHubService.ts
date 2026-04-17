@@ -407,6 +407,14 @@ class LiveHubService {
     }
   }
 
+  /** Host: Cập nhật âm lượng nhạc nền cho tất cả Listeners */
+  async updateGlobalVolume(sessionId: string, volume: number): Promise<void> {
+    const conn = this.getConnection();
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke("HostUpdateGlobalVolume", sessionId, volume);
+    }
+  }
+
   // ─── WebRTC Event Handlers ────────────────────────────────────────────────
 
   /** Listener nhận event: Host bắt đầu broadcast mic */
@@ -442,6 +450,13 @@ class LiveHubService {
     const conn = this.getConnection();
     conn.on("ReceiveIceCandidate", callback);
     return () => conn.off("ReceiveIceCandidate", callback);
+  }
+
+  /** Listener nhận lệnh thay đổi âm lượng nhạc nền chung từ Host */
+  onGlobalVolumeUpdated(callback: (volume: number) => void): () => void {
+    const conn = this.getConnection();
+    conn.on("GlobalVolumeUpdated", callback);
+    return () => conn.off("GlobalVolumeUpdated", callback);
   }
 
   // Backend sends lowercase event names: sessionstarted, sessionended, userjoined, userleft

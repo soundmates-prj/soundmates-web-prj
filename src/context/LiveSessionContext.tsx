@@ -181,6 +181,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolumeState] = useState(80);
+  const [hostMusicMultiplier, setHostMusicMultiplier] = useState(1.0);
   const [displayElapsed, setDisplayElapsed] = useState(0);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [guestListeningTime, setGuestListeningTime] = useState(() => {
@@ -200,6 +201,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
   const serverElapsedSyncedAtMsRef = useRef(Date.now());
   const isPlayingRef = useRef(false);
   const volumeRef = useRef(80);
+  const hostMusicMultiplierRef = useRef(1.0);
   const isMutedRef = useRef(false);
   // Cancel token: incremented on each createAndPlay call and on stopAudio.
   // Any in-flight audio.play() checks this after awaiting to self-abort if stale.
@@ -340,12 +342,12 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
           // Same song: refresh listener count and resync elapsed time
           const latestCount = data.listenersCount ?? data.totalListeners;
           if (latestCount !== undefined) setListeners(toSafeListenerCount(latestCount));
-          
+
           if (track && nowPlayingRef.current) {
             // Update elapsed sync point
             baseServerElapsedRef.current = resolveEffectiveElapsed(track);
             serverElapsedSyncedAtMsRef.current = Date.now();
-            
+
             // Reassign track with latest data to trigger React effects (like lyrics reset)
             const updated = {
               ...nowPlayingRef.current,
@@ -383,7 +385,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         audioRef.current = null;
       }
       const audio = new Audio(url);
-      audio.volume = isMutedRef.current ? 0 : volumeRef.current / 100;
+      audio.volume = isMutedRef.current ? 0 : (volumeRef.current / 100) * hostMusicMultiplierRef.current;
       audio.muted = isMutedRef.current;
       (window as any).__liveAudioRef = audio;
       audioRef.current = audio;
@@ -472,7 +474,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         if (data.totalListeners !== undefined && data.totalListeners !== null) {
           setListeners(toSafeListenerCount(data.totalListeners));
         }
-        
+
         // Always resync track elapsed to maintain tight lyric sync
         const current: TrackInfo = {
           shId: track.shId, title: track.title ?? "—", artist: track.artist ?? "—",
@@ -483,12 +485,12 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         };
         baseServerElapsedRef.current = resolveEffectiveElapsed(current);
         serverElapsedSyncedAtMsRef.current = Date.now();
-        
+
         if (nowPlayingRef.current) {
-          const updated = { 
-            ...nowPlayingRef.current, 
+          const updated = {
+            ...nowPlayingRef.current,
             currentTrack: current,
-            totalListeners: data.totalListeners ?? nowPlayingRef.current.totalListeners 
+            totalListeners: data.totalListeners ?? nowPlayingRef.current.totalListeners
           };
           nowPlayingRef.current = updated;
           setNowPlaying(updated);
@@ -531,6 +533,15 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
       if (activeSessionIdRef.current) startPolling(activeSessionIdRef.current);
     });
 
+    const offGlobalVol = liveHubService.onGlobalVolumeUpdated((mult: number) => {
+      console.log("[LiveSession] GlobalVolumeUpdated event received:", mult);
+      hostMusicMultiplierRef.current = mult;
+      setHostMusicMultiplier(mult);
+      if (audioRef.current && !isMutedRef.current) {
+        audioRef.current.volume = (volumeRef.current / 100) * mult;
+      }
+    });
+
     return () => {
       offNowPlayingUpdated();
       offListeners();
@@ -540,6 +551,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
       offSessionStarted();
       offSessionEnded();
       offSongChanged();
+      offGlobalVol();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopAudio, startPolling]);
@@ -704,11 +716,11 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     isMutedRef.current = newMuted;
     if (audioRef.current) {
       audioRef.current.muted = newMuted;
-      audioRef.current.volume = newMuted ? 0 : volumeRef.current / 100;
+      audioRef.current.volume = newMuted ? 0 : (volumeRef.current / 100) * hostMusicMultiplierRef.current;
       // If unmuting while supposedly playing, force the browser to evaluate the gesture
       // This fixes cases where background unmuting doesn't restore sound without pausing/playing
       if (!newMuted && isPlayingRef.current) {
-        audioRef.current.play().catch(() => {});
+        audioRef.current.play().catch(() => { });
       }
     }
   }, []);
@@ -721,12 +733,12 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     setIsMuted(muted);
     isMutedRef.current = muted;
     if (audioRef.current) {
-      audioRef.current.volume = v / 100;
+      audioRef.current.volume = (v / 100) * hostMusicMultiplierRef.current;
       audioRef.current.muted = muted;
-      
+
       // If unmuting while supposedly playing, force the browser to evaluate the gesture
       if (!muted && isPlayingRef.current) {
-        audioRef.current.play().catch(() => {});
+        audioRef.current.play().catch(() => { });
       }
     }
   }, []);
