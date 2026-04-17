@@ -17,11 +17,9 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  // EF-02: Field-level error state for empty-input highlighting
   const [fieldErrors, setFieldErrors] = useState({ emailOrUsername: false, password: false });
   const navigate = useNavigate();
 
-  // Redirect if already logged in
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) {
@@ -62,14 +60,11 @@ const Login: React.FC = () => {
     );
   };
 
-  /** Map HTTP status codes / backend messages to Vietnamese UX messages per use-case */
   const getLoginErrorMessage = (error: any): { title: string; description: string } => {
     const status = error?.response?.status;
     const serverMsg: string = error?.response?.data?.message || "";
 
-    // EF-03: Account locked / disabled
     if (status === 403) {
-      // Distinguish between brute-force lockout (temporary) vs deactivated/banned
       if (serverMsg.toLowerCase().includes("15 minutes") || serverMsg.toLowerCase().includes("locked due to too many")) {
         return {
           title: "Tài khoản bị khóa tạm thời",
@@ -82,7 +77,6 @@ const Login: React.FC = () => {
       };
     }
 
-    // EF-01: Invalid credentials
     if (status === 401 || status === 400) {
       return {
         title: "Sai thông tin đăng nhập",
@@ -90,7 +84,6 @@ const Login: React.FC = () => {
       };
     }
 
-    // Network error (no response from server)
     if (!error?.response) {
       return {
         title: "Lỗi kết nối",
@@ -98,7 +91,6 @@ const Login: React.FC = () => {
       };
     }
 
-    // Generic server error
     return {
       title: "Đăng nhập không thành công",
       description: serverMsg || "Có lỗi xảy ra. Vui lòng thử lại sau.",
@@ -107,10 +99,8 @@ const Login: React.FC = () => {
 
   const handleLogin = async (e?: React.MouseEvent | React.FormEvent | React.KeyboardEvent) => {
     if (e && e.preventDefault) e.preventDefault();
-    // Guard: prevent double-submit while loading
     if (loading) return;
 
-    // EF-02: Validate empty fields and highlight them
     const errors = {
       emailOrUsername: !emailOrUsername.trim(),
       password: !password,
@@ -122,7 +112,6 @@ const Login: React.FC = () => {
       return;
     }
 
-    // BR-01: Email format check (only when user typed an @)
     if (emailOrUsername.includes("@") && !EMAIL_REGEX.test(emailOrUsername.trim())) {
       setFieldErrors((prev) => ({ ...prev, emailOrUsername: true }));
       showError("Email không hợp lệ", "Vui lòng kiểm tra lại địa chỉ email");
@@ -182,11 +171,9 @@ const Login: React.FC = () => {
       }
       window.dispatchEvent(new Event("authChange"));
 
-      // Clear field errors on success
       setFieldErrors({ emailOrUsername: false, password: false });
-      showSuccess("Đăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
+      showSuccess("ăng nhập thành công!", "Chào mừng bạn quay trở lại SoundMates");
 
-      // P5: Use redirectUrl from BE response (source of truth for role-based navigation)
       const redirectUrl = userData?.redirectUrl;
       if (redirectUrl) {
         navigate(redirectUrl);
@@ -223,7 +210,6 @@ const Login: React.FC = () => {
     }
   };
 
-  // Replace deprecated onKeyPress with onKeyDown
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       if (!loading) {
@@ -251,7 +237,6 @@ const Login: React.FC = () => {
           <h2>Đăng nhập</h2>
           <p className="subtitle">Chào mừng bạn quay trở lại !</p>
 
-          {/* Email / Username — highlights red if empty (EF-02) */}
           <div className={`input-wrapper ${fieldErrors.emailOrUsername ? "input-error" : ""}`}>
             <Mail size={18} />
             <input
@@ -267,7 +252,6 @@ const Login: React.FC = () => {
             />
           </div>
 
-          {/* Password — highlights red if empty (EF-02) */}
           <div className={`input-wrapper ${fieldErrors.password ? "input-error" : ""}`}>
             <Lock size={18} />
             <input
@@ -290,7 +274,6 @@ const Login: React.FC = () => {
           </div>
 
           <div className="actions">
-            {/* P4: Remember Me checkbox */}
             <label className="remember-me">
               <input
                 type="checkbox"
@@ -302,7 +285,6 @@ const Login: React.FC = () => {
             <span className="forgot" onClick={() => navigate("/forget-password")}>Quên mật khẩu?</span>
           </div>
 
-          {/* type="button" prevents implicit form submission that caused page reload */}
           <Button
             type="button"
             className="btn-primary"
@@ -359,7 +341,6 @@ const Login: React.FC = () => {
 
                   showSuccess("Đăng nhập Google thành công!", "Chào mừng bạn quay trở lại SoundMates");
 
-                  // P5: Use redirectUrl from BE response
                   const redirectUrl = googleUserData?.redirectUrl;
                   if (redirectUrl) {
                     navigate(redirectUrl);

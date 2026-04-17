@@ -130,7 +130,7 @@ const ForgetPassword: React.FC = () => {
         }
         try {
             setResetLoading(true);
-            await api.post("/auth/forget-password", {
+            await api.post("/auth/reset-password", {
                 email: email.trim(),
                 otpCode: otp,
                 newPassword,

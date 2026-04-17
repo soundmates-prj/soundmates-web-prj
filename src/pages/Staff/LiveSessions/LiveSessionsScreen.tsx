@@ -450,7 +450,7 @@ export function LiveSessionsScreen() {
                     {hostUsers.map((u) => (
                       <option key={u.id} value={u.id}>
                         {u.firstName || u.lastName
-                          ? `${u.firstName || ""} ${u.lastName || ""}`.trim()
+                          ? `${u.lastName || ""} ${u.firstName || ""}`.trim()
                           : u.username}{" "}
                         ({u.email})
                       </option>

@@ -33,7 +33,7 @@ import {
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import "./AdminSystemSettings.css";
 
-type Tab = "ai" | "azuracast";
+type Tab = "ai" | "streaming";
 
 // ── AI Model Section ──────────────────────────────────────────────
 function AIModelSection() {
@@ -187,8 +187,8 @@ function AIModelSection() {
   );
 }
 
-// ── AzuraCast Section ─────────────────────────────────────────────
-function AzuraCastSection() {
+// ── Streaming Service Section ─────────────────────────────────────
+function StreamingServiceSection() {
   const [config, setConfig] = useState<AzuraCastConfigResponse | null>(null);
   const [health, setHealth] = useState<AzuraCastHealthResult | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(false);
@@ -262,7 +262,7 @@ function AzuraCastSection() {
       const result = await upsertAzuraCastConfig({ baseUrl: baseUrl.trim(), apiKey: apiKeyInput.trim(), isActive });
       setConfig(result);
       setApiKeyInput("");
-      showSuccess("Đã lưu cấu hình AzuraCast thành công!");
+      showSuccess("Đã lưu cấu hình Streaming Service thành công!");
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } }; message?: string };
       showError("Lưu thất bại", e?.response?.data?.message || e?.message || "Không thể lưu cấu hình.");
@@ -294,9 +294,9 @@ function AzuraCastSection() {
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
         <Radio size={20} style={{ color: "var(--text-muted)" }} />
         <div>
-          <h3 className="admin-system-card-title" style={{ margin: 0 }}>Cấu hình AzuraCast</h3>
+          <h3 className="admin-system-card-title" style={{ margin: 0 }}>Cấu hình Streaming Service</h3>
           <p style={{ color: "var(--text-muted)", fontSize: 12, margin: "2px 0 0" }}>
-            Kết nối AzuraCast để đồng bộ đài phát và nội dung nhạc
+            Kết nối Streaming Service để đồng bộ đài phát và nội dung nhạc
           </p>
         </div>
       </div>
@@ -368,7 +368,7 @@ function AzuraCastSection() {
               type={showApiKey ? "text" : "password"}
               value={apiKeyInput}
               onChange={e => { setApiKeyInput(e.target.value); setApiKeyError(""); }}
-              placeholder={config?.isConfigured ? "Nhập key mới để thay thế (để trống = giữ nguyên)" : "Nhập API Key của AzuraCast"}
+              placeholder={config?.isConfigured ? "Nhập key mới để thay thế (để trống = giữ nguyên)" : "Nhập API Key của Streaming Service"}
             />
             <button className="ops-btn ops-btn--ghost" onClick={() => setShowApiKey(v => !v)} type="button">
               {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -396,7 +396,7 @@ function AzuraCastSection() {
         </div>
 
         <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-          API Key từ AzuraCast → Admin → API Keys
+          API Key từ Streaming Service → Admin → API Keys
         </div>
       </div>
     </div>
@@ -434,16 +434,16 @@ export default function AdminSystemSettings() {
           AI Model
         </button>
         <button
-          className={`sys-config-tab ${activeTab === "azuracast" ? "active" : ""}`}
-          onClick={() => setActiveTab("azuracast")}
+          className={`sys-config-tab ${activeTab === "streaming" ? "active" : ""}`}
+          onClick={() => setActiveTab("streaming")}
         >
           <Radio size={16} />
-          AzuraCast
+          Streaming Service
         </button>
       </div>
 
       {activeTab === "ai" && <AIModelSection />}
-      {activeTab === "azuracast" && <AzuraCastSection />}
+      {activeTab === "streaming" && <StreamingServiceSection />}
 
       <style>{`
         .spin { animation: spin 1s linear infinite; }

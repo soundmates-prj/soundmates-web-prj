@@ -121,7 +121,7 @@ function AlbumRow({ a }: { a: SpotifyAlbum }) {
 // ── User row ─────────────────────────────────────────────────────
 
 function UserRow({ u, onNavigate }: { u: SearchUser; onNavigate: (path: string) => void }) {
-  const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || u.username || u.email;
+  const name = [u.lastName, u.firstName].filter(Boolean).join(" ") || u.username || u.email;
   return (
     <div className="sb-row" onClick={() => { onNavigate(`/profile/${u.id}`); onCloseRef.current?.(); }}>
       <ResultThumb src={u.profileImageUrl} alt={name} fallback={Users} rounded />

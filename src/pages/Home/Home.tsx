@@ -18,6 +18,7 @@ import type {
   TrendingPostsResponse,
   TrendingPost,
 } from "../../types/forum";
+import { resolveUserDisplayNames } from "../../utils/userProfileNameResolver";
 
 import playlistCover1 from "../../assets/images/playlist_cover_1.png";
 import playlistCover2 from "../../assets/images/playlist_cover_2.png";
@@ -151,9 +152,13 @@ const pickTopScheduleItems = (items: SessionScheduleResult[]): HomeScheduleItem[
   return merged.map(mapScheduleToHomeItem);
 };
 
-const mapPostToHomeItem = (p: PublishedPost, index: number): HomeForumItem => ({
+const mapPostToHomeItem = (
+  p: PublishedPost,
+  index: number,
+  authorNamesByUserId: Record<string, string>,
+): HomeForumItem => ({
   id: p.id,
-  author: p.userFullName || "Thành viên SoundMates",
+  author: authorNamesByUserId[p.userId] || p.userFullName || "Thành viên SoundMates",
   badge: p.moodTag ? p.moodTag : p.isGenerated ? "AI" : "Community",
   avatar: p.userAvatarUrl || `https://i.pravatar.cc/100?img=${(index % 10) + 1}`,
   title: p.title || p.contentText || "Bài viết mới từ cộng đồng",
@@ -162,9 +167,16 @@ const mapPostToHomeItem = (p: PublishedPost, index: number): HomeForumItem => ({
   time: formatRelativeTime(p.publishedAt || p.createdAt),
 });
 
-const mapTrendingToHomeItem = (p: TrendingPost, index: number): HomeForumItem => ({
+const mapTrendingToHomeItem = (
+  p: TrendingPost,
+  index: number,
+  authorNamesByUserId: Record<string, string>,
+): HomeForumItem => ({
   id: p.id,
-  author: p.userFullName?.trim() || "Thành viên SoundMates",
+  author:
+    authorNamesByUserId[p.userId] ||
+    p.userFullName?.trim() ||
+    "Thành viên SoundMates",
   badge: p.moodTag ? p.moodTag : p.isGenerated ? "AI" : "Community",
   avatar: p.userAvatarUrl || `https://i.pravatar.cc/100?img=${(index % 10) + 1}`,
   title: p.title || p.contentText || "Bài viết từ cộng đồng",
@@ -173,7 +185,10 @@ const mapTrendingToHomeItem = (p: TrendingPost, index: number): HomeForumItem =>
   time: formatRelativeTime(p.publishedAt || p.createdAt),
 });
 
-const pickTopForumItems = (items: PublishedPost[]): HomeForumItem[] =>
+const pickTopForumItems = (
+  items: PublishedPost[],
+  authorNamesByUserId: Record<string, string>,
+): HomeForumItem[] =>
   [...items]
     .sort((a, b) => {
       const tb = new Date(b.publishedAt ?? b.createdAt).getTime();
@@ -181,9 +196,12 @@ const pickTopForumItems = (items: PublishedPost[]): HomeForumItem[] =>
       return tb - ta;
     })
     .slice(0, 3)
-    .map((p, i) => mapPostToHomeItem(p, i));
+    .map((p, i) => mapPostToHomeItem(p, i, authorNamesByUserId));
 
-const pickTopForumFromTrending = (items: TrendingPost[]): HomeForumItem[] =>
+const pickTopForumFromTrending = (
+  items: TrendingPost[],
+  authorNamesByUserId: Record<string, string>,
+): HomeForumItem[] =>
   [...items]
     .sort((a, b) => {
       const scoreB = (b.reactionCount ?? 0) + (b.commentCount ?? 0);
@@ -191,7 +209,7 @@ const pickTopForumFromTrending = (items: TrendingPost[]): HomeForumItem[] =>
       return scoreB - scoreA;
     })
     .slice(0, 3)
-    .map((p, i) => mapTrendingToHomeItem(p, i));
+    .map((p, i) => mapTrendingToHomeItem(p, i, authorNamesByUserId));
 
 // ── Framer Motion Variants ─────────────────────────────────────────────────
 
@@ -280,7 +298,23 @@ export default function Home() {
 
       const trendItems = (trendRes.data as any)?.data?.items ?? [];
       if (trendItems.length > 0) {
-        setForumPosts(pickTopForumFromTrending(trendItems as TrendingPost[]));
+        const typedTrendItems = trendItems as TrendingPost[];
+        const fallbackByUserId = typedTrendItems.reduce<Record<string, string>>(
+          (acc, item) => {
+            acc[item.userId] = item.userFullName ?? "Thành viên SoundMates";
+            return acc;
+          },
+          {},
+        );
+
+        const resolvedAuthorNames = await resolveUserDisplayNames(
+          typedTrendItems.map((item) => item.userId),
+          fallbackByUserId,
+        );
+
+        setForumPosts(
+          pickTopForumFromTrending(typedTrendItems, resolvedAuthorNames),
+        );
         setIsForumLoading(false);
         return;
       }
@@ -295,7 +329,21 @@ export default function Home() {
       });
 
       const pubItems = (pubRes.data as any)?.data?.items ?? [];
-      setForumPosts(pickTopForumItems(pubItems as PublishedPost[]));
+      const typedPubItems = pubItems as PublishedPost[];
+      const fallbackByUserId = typedPubItems.reduce<Record<string, string>>(
+        (acc, item) => {
+          acc[item.userId] = item.userFullName ?? "Thành viên SoundMates";
+          return acc;
+        },
+        {},
+      );
+
+      const resolvedAuthorNames = await resolveUserDisplayNames(
+        typedPubItems.map((item) => item.userId),
+        fallbackByUserId,
+      );
+
+      setForumPosts(pickTopForumItems(typedPubItems, resolvedAuthorNames));
     } catch {
       setForumPosts([]);
     } finally {

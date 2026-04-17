@@ -122,10 +122,6 @@ export default function PodcastPage() {
       <div className="ops-header">
         <div>
           <h1 className="ops-title">
-            <Mic2
-              size={26}
-              style={{ display: "inline", verticalAlign: "middle" }}
-            />{" "}
             Trang Podcast
           </h1>
           <p className="ops-subtitle">Quản lý podcast và các tập phát sóng</p>

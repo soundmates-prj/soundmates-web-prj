@@ -257,7 +257,10 @@ const Header: React.FC = () => {
           </nav>
 
           <div className="header-right">
-            <button className="icon-btn hide-on-mobile" onClick={() => setShowSearch(true)}>
+            <button
+              className="icon-btn hide-on-mobile"
+              onClick={() => setShowSearch(true)}
+            >
               <Icon name="search" size={18} />
             </button>
 
@@ -307,7 +310,7 @@ const Header: React.FC = () => {
                         </div>
                         <div>
                           <p className="avatar-dropdown-name">
-                            {userInfo?.firstName && userInfo?.lastName
+                            {userInfo?.lastName && userInfo?.firstName
                               ? `${userInfo.lastName} ${userInfo.firstName}`
                               : userInfo?.username || "Người dùng"}
                           </p>
@@ -374,40 +377,71 @@ const Header: React.FC = () => {
         </div>
       </header>
 
-        {/* Mobile Navigation Overlay */}
-        {showMobileMenu && (
-          <div className="mobile-nav-overlay">
-            <nav className="mobile-nav">
-              <Link to="/" onClick={() => setShowMobileMenu(false)} className={activeTab === "/" ? "active" : ""}>
-                <Home size={18} />Trang Chủ
-              </Link>
-              <Link to="/live" onClick={() => setShowMobileMenu(false)} className={activeTab === "/live" ? "active" : ""}>
-                <Radio size={18} />Live Sessions
-              </Link>
-              <Link to="/schedule-public" onClick={() => setShowMobileMenu(false)} className={activeTab === "/schedule-public" ? "active" : ""}>
-                <Calendar size={18} />Lịch Phát Sóng
-              </Link>
-              <Link to="/podcast" onClick={() => setShowMobileMenu(false)} className={activeTab === "/podcast" ? "active" : ""}>
-                <Podcast size={18} />Podcast
-              </Link>
-              <Link to="/forum" onClick={() => setShowMobileMenu(false)} className={activeTab === "/forum" ? "active" : ""}>
-                <MessageSquare size={18} />Diễn Đàn
-              </Link>
-              <Link to="/subscription" onClick={() => setShowMobileMenu(false)} className={activeTab === "/subscription" ? "active" : ""}>
-                <CreditCard size={18} />Gói Dịch Vụ
-              </Link>
-              <button
-                className="mobile-search-btn"
-                onClick={() => {
-                  setShowMobileMenu(false);
-                  setShowSearch(true);
-                }}
-              >
-                <Search size={18} />Tìm kiếm...
-              </button>
-            </nav>
-          </div>
-        )}
+      {/* Mobile Navigation Overlay */}
+      {showMobileMenu && (
+        <div className="mobile-nav-overlay">
+          <nav className="mobile-nav">
+            <Link
+              to="/"
+              onClick={() => setShowMobileMenu(false)}
+              className={activeTab === "/" ? "active" : ""}
+            >
+              <Home size={18} />
+              Trang Chủ
+            </Link>
+            <Link
+              to="/live"
+              onClick={() => setShowMobileMenu(false)}
+              className={activeTab === "/live" ? "active" : ""}
+            >
+              <Radio size={18} />
+              Live Sessions
+            </Link>
+            <Link
+              to="/schedule-public"
+              onClick={() => setShowMobileMenu(false)}
+              className={activeTab === "/schedule-public" ? "active" : ""}
+            >
+              <Calendar size={18} />
+              Lịch Phát Sóng
+            </Link>
+            <Link
+              to="/podcast"
+              onClick={() => setShowMobileMenu(false)}
+              className={activeTab === "/podcast" ? "active" : ""}
+            >
+              <Podcast size={18} />
+              Podcast
+            </Link>
+            <Link
+              to="/forum"
+              onClick={() => setShowMobileMenu(false)}
+              className={activeTab === "/forum" ? "active" : ""}
+            >
+              <MessageSquare size={18} />
+              Diễn Đàn
+            </Link>
+            <Link
+              to="/subscription"
+              onClick={() => setShowMobileMenu(false)}
+              className={activeTab === "/subscription" ? "active" : ""}
+            >
+              <CreditCard size={18} />
+              Gói Dịch Vụ
+            </Link>
+            <button
+              className="mobile-search-btn"
+              onClick={() => {
+                setShowMobileMenu(false);
+                setShowSearch(true);
+              }}
+            >
+              <Search size={18} />
+              Tìm kiếm...
+            </button>
+          </nav>
+        </div>
+      )}
 
       <SearchBar isOpen={showSearch} onClose={() => setShowSearch(false)} />
     </div>
