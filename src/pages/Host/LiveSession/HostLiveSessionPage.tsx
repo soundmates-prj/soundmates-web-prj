@@ -22,7 +22,7 @@ export default function HostLiveSessionPage() {
       const userInfoStr = localStorage.getItem("userInfo");
       const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null;
       const params: any = { pageSize: LIVE_SESSION_LIST_PAGE_SIZE };
-      
+
       // If the current user is a Host, only fetch their sessions
       if (userInfo && userInfo.role === "HOST") {
         params.userId = userInfo.id || userInfo.userId;
@@ -57,13 +57,26 @@ export default function HostLiveSessionPage() {
     void loadData();
   }, [loadData]);
 
-
+  const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return "—";
+    // API trả về giờ Việt Nam nhưng ghi Z (UTC) → bỏ Z để parse đúng
+    const isoStr = dateStr.endsWith("Z") ? dateStr.slice(0, -1) : dateStr;
+    return new Date(isoStr).toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Ho_Chi_Minh",
+      hour12: false,
+    });
+  };
 
   const handleOpenDetail = useCallback(
     (sessionDetailId: string) => {
       navigate(`/host/sessions/${sessionDetailId}`);
     },
-    [navigate]
+    [navigate],
   );
 
   return (
@@ -71,17 +84,20 @@ export default function HostLiveSessionPage() {
       <div className="host-live-header">
         <div>
           <h1 className="host-live-title">Trang Phiên Phát Sóng</h1>
-          <p className="host-live-subtitle">Quản lý và cập nhật phiên phát sóng trực tiếp</p>
+          <p className="host-live-subtitle">
+            Quản lý và cập nhật phiên phát sóng trực tiếp
+          </p>
         </div>
         <div className="host-live-actions">
-          <button className="host-live-btn host-live-btn--ghost" onClick={handleRefreshClick}>
+          <button
+            className="host-live-btn host-live-btn--ghost"
+            onClick={handleRefreshClick}
+          >
             <RefreshCw size={15} />
             Làm mới
           </button>
         </div>
       </div>
-
-
 
       <div className="host-live-card">
         <h3 className="host-live-card-title">Danh sách phiên</h3>
@@ -100,6 +116,7 @@ export default function HostLiveSessionPage() {
                   <th>Tên phiên</th>
                   <th>Đài phát</th>
                   <th>Trạng thái</th>
+                  <th>Thời gian phát sóng</th>
                   <th>Người nghe</th>
                   <th />
                 </tr>
@@ -109,10 +126,27 @@ export default function HostLiveSessionPage() {
                   <tr key={session.id}>
                     <td>{session.sessionName}</td>
                     <td>{session.stationName || "-"}</td>
-                    <td><span className="host-live-badge"><Radio size={12} /> {session.status}</span></td>
+                    <td>
+                      <span className="host-live-badge">
+                        <Radio size={12} />
+                        {session.status === "Created"
+                          ? "Chờ lên lịch"
+                          : session.status === "Scheduled"
+                            ? "Đã lên lịch"
+                            : session.status === "Live"
+                              ? "Đang phát"
+                              : session.status === "Ended"
+                                ? "Đã kết thúc"
+                                : "Không xác định"}
+                      </span>
+                    </td>
+                    <td>{formatDateTime(session.scheduledStartAt || "")}</td>
                     <td>{session.listenersCount}</td>
                     <td>
-                      <button className="host-live-link-btn" onClick={() => handleOpenDetail(session.id)}>
+                      <button
+                        className="host-live-link-btn"
+                        onClick={() => handleOpenDetail(session.id)}
+                      >
                         Mở chi tiết
                       </button>
                     </td>
