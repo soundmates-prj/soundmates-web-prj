@@ -101,8 +101,10 @@ export default function HostLiveSessionDetailPage() {
   const [chats, setChats] = useState<DisplayChat[]>([]);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
-  // ── Mic state (Host) ───────────────────────────────────────────
+  // ── Mic state (Host) ───────────────────────────────────────────────
   const [isMicActive, setIsMicActive] = useState(false);
+  // Ref mirrors isMicActive — đọc sync trong handler WebRTC (tránh stale closure)
+  const isMicActiveRef = useRef(false);
   const [micError, setMicError] = useState<string | null>(null);
 
   // ── WebRTC refs ───────────────────────────────────────────────────────────
@@ -246,12 +248,13 @@ export default function HostLiveSessionDetailPage() {
     };
   }, [sessionId]);
 
-  // ── Host: xử lý khi Listener muốn subscribe & ICE relay ────────────────────────────────
+  // ── Host: xử lý khi Listener muốn subscribe & ICE relay ───────────────────────────────────
   useEffect(() => {
     if (!sessionId) return;
 
     const offSub = liveHubService.onListenerWantsToSubscribe(async (sid, listenerConnId, sdpOffer) => {
-      if (sid !== sessionId || !isMicActive || !localStreamRef.current) return;
+      // Dùng isMicActiveRef thay vì isMicActive — tránh stale closure khi state chưa re-render kịp
+      if (sid !== sessionId || !isMicActiveRef.current || !localStreamRef.current) return;
 
       const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
       hostPeerConnsRef.current.set(listenerConnId, pc);
@@ -295,7 +298,8 @@ export default function HostLiveSessionDetailPage() {
       offSub();
       offIce();
     };
-  }, [isMicActive, sessionId, STUN_SERVERS]);
+  // Chỉ phụ thuộc sessionId — isMicActive được đọc qua ref, STUN_SERVERS là hằng số
+  }, [sessionId, STUN_SERVERS]);
 
   // ── Cleanup peer connections unmount ──────────────────────────────────────
   useEffect(() => {
@@ -445,6 +449,7 @@ export default function HostLiveSessionDetailPage() {
 
     if (isMicActive) {
       // ── Tắt mic ──
+      isMicActiveRef.current = false;          // Cập nhật ref NGAY LẬP TỨC trước setState
       hostPeerConnsRef.current.forEach(pc => pc.close());
       hostPeerConnsRef.current.clear();
       localStreamRef.current?.getTracks().forEach(track => track.stop());
@@ -462,15 +467,13 @@ export default function HostLiveSessionDetailPage() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         localStreamRef.current = stream;
 
-        const tempPc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
-        stream.getAudioTracks().forEach(track => tempPc.addTrack(track, stream));
-        const offer = await tempPc.createOffer();
-        tempPc.close();
-
-        await liveHubService.startMicrophone(sessionId, offer.sdp ?? "");
+        // Gửi thông báo lên hub (backend chỉ cần biết host connectionId, sdpOffer được bỏ qua)
+        isMicActiveRef.current = true;         // Cập nhật ref NGAY LẬP TỨC trước setState
+        await liveHubService.startMicrophone(sessionId, "");
         setIsMicActive(true);
         showSuccess("Mic đang bật — Listeners có thể nghe bạn");
       } catch (err: any) {
+        isMicActiveRef.current = false;        // rollback nếu lỗi
         const msg = err?.name === "NotAllowedError"
           ? "Trình duyệt chưa cấp quyền micro. Vui lòng cho phép trong cài đặt."
           : `Không thể bật mic: ${err?.message ?? err}`;
@@ -478,7 +481,7 @@ export default function HostLiveSessionDetailPage() {
         showError("Lỗi tắt/mở mic", msg);
       }
     }
-  }, [isMicActive, sessionId, STUN_SERVERS]);
+  }, [isMicActive, sessionId]);
 
   const formattedSchedules = useMemo(
     () => {
