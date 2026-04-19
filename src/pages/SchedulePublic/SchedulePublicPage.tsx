@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Calendar,
   Clock,
@@ -13,9 +14,11 @@ import {
 } from "lucide-react";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
 import type { SessionScheduleResult } from "../../services/liveSessionApiService";
+import { showToast } from "../../utils/toast";
 import "./SchedulePublicPage.css";
 
 export default function SchedulePublicPage() {
+  const navigate = useNavigate();
   const [schedules, setSchedules] = useState<SessionScheduleResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -371,18 +374,21 @@ export default function SchedulePublicPage() {
                                 {formatTime(sch.startTime)} –{" "}
                                 {formatTime(sch.endTime)}
                               </span>
-                              {sch.liveSession?.station?.publicPlayerUrl && (
-                                <a
-                                  href={sch.liveSession.station.publicPlayerUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="sp-listen-btn"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Play size={11} />
-                                  Nghe trực tiếp
-                                </a>
-                              )}
+                              <button
+                                className="sp-listen-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isLive) {
+                                    const sid = sch.liveSession?.id || sch.id;
+                                    void navigate(`/live/${sid}`);
+                                  } else {
+                                    showToast.warning("Live Stream chưa phát");
+                                  }
+                                }}
+                              >
+                                <Play size={11} />
+                                Nghe trực tiếp
+                              </button>
                             </div>
                           </div>
                         </div>

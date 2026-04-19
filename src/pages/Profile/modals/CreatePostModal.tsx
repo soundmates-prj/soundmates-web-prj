@@ -135,7 +135,7 @@ export default function CreatePostModal({
 
         <input
           className="cp-input cp-input-title"
-          placeholder="Tiêu đề (tuỳ chọn)"
+          placeholder="Tiêu đề"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={200}
