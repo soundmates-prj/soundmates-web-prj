@@ -8,6 +8,8 @@ import {
   type SessionScheduleResult,
   type SongRequestResult,
   type StationNowPlayingResult,
+  type LiveSessionQueueResult,
+  type NowPlayingTrackResult,
 } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import { LOCALE_VIETNAMESE } from "../../Admin/LiveOps/liveSessionConstants";
@@ -85,9 +87,8 @@ export default function HostLiveSessionDetailPage() {
   const [listener, setListener] = useState<ListenerStatsResult | null>(null);
   const [schedules, setSchedules] = useState<SessionScheduleResult[]>([]);
   const [songRequests, setSongRequests] = useState<SongRequestResult[]>([]);
-  const [nowPlaying, setNowPlaying] = useState<StationNowPlayingResult | null>(
-    null,
-  );
+  const [nowPlaying, setNowPlaying] = useState<StationNowPlayingResult | null>(null);
+  const [queue, setQueue] = useState<NowPlayingTrackResult[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Song request review modal states
@@ -158,6 +159,7 @@ export default function HostLiveSessionDetailPage() {
         liveSessionApiService.getSchedules(sessionId),
         liveSessionApiService.getSongRequests(sessionId),
         liveSessionApiService.getNowPlaying(sessionId).catch(() => null),
+        liveSessionApiService.getQueue(sessionId).catch(() => null),
       ]);
 
       if (!isMountedRef.current) {
@@ -169,6 +171,7 @@ export default function HostLiveSessionDetailPage() {
       setSchedules(scheduleData);
       setSongRequests(requestsData);
       setNowPlaying(nowPlayingData);
+      setQueue(queueData ? queueData.queue : []);
     } catch {
       showError("Lỗi", "Không thể tải chi tiết live session");
     } finally {
@@ -181,6 +184,21 @@ export default function HostLiveSessionDetailPage() {
   useEffect(() => {
     isMountedRef.current = true;
     void loadData();
+
+    const interval = setInterval(() => {
+      if (sessionId) {
+        liveSessionApiService.getNowPlaying(sessionId)
+          .then((data) => {
+            if (isMountedRef.current) setNowPlaying(data);
+          })
+          .catch(() => {});
+        liveSessionApiService.getQueue(sessionId)
+          .then((data) => {
+            if (isMountedRef.current) setQueue(data ? data.queue : []);
+          })
+          .catch(() => {});
+      }
+    }, 10000);
 
     // Lấy danh sách mic ngay khi mount
     navigator.mediaDevices?.enumerateDevices()
@@ -196,6 +214,7 @@ export default function HostLiveSessionDetailPage() {
 
     return () => {
       isMountedRef.current = false;
+      clearInterval(interval);
     };
   }, [sessionId, loadData]);
 
@@ -697,6 +716,17 @@ export default function HostLiveSessionDetailPage() {
                   <div className="host-live-now-playing-artist">
                     {nowPlaying.currentTrack.artist || "—"}
                   </div>
+                  {nowPlaying.currentTrack.duration && nowPlaying.currentTrack.duration > 0 && (
+                    <div style={{ marginTop: "4px" }}>
+                      <div style={{ width: "100%", height: "4px", background: "var(--neutral-200)", borderRadius: "2px", overflow: "hidden" }}>
+                        <div style={{ width: `${Math.min((nowPlaying.currentTrack.elapsed / nowPlaying.currentTrack.duration) * 100, 100)}%`, height: "100%", background: "#55c5f1" }}></div>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "2px", fontSize: "10px", color: "var(--neutral-500)" }}>
+                        <span>{Math.floor(nowPlaying.currentTrack.elapsed / 60)}:{Math.floor(nowPlaying.currentTrack.elapsed % 60).toString().padStart(2, '0')}</span>
+                        <span>{Math.floor(nowPlaying.currentTrack.duration / 60)}:{Math.floor(nowPlaying.currentTrack.duration % 60).toString().padStart(2, '0')}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Local Volume Control & Actions cho Host */}
@@ -798,6 +828,36 @@ export default function HostLiveSessionDetailPage() {
                     <strong>{item.title || "Không tiêu đề"}</strong>
                     <div style={{ fontSize: 13, color: "#64748b" }}>
                       {item.displayRange}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="host-live-card">
+          <h3 className="host-live-card-title">Bài hát tiếp theo</h3>
+          <div className="host-live-stack">
+            {queue.length === 0 ? (
+              <div className="host-live-empty">Hàng đợi trống</div>
+            ) : (
+              queue.slice(0, 15).map((item, index) => (
+                <div key={item.shId || index} className="host-live-track-item">
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    {item.artUrl ? (
+                       <img src={item.artUrl.replace("host.docker.internal", "localhost")} alt="cover" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
+                    ) : (
+                       <div style={{ width: 36, height: 36, borderRadius: 6, background: 'var(--neutral-200)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                         <Music size={16} color="var(--neutral-400)" />
+                       </div>
+                    )}
+                    <div>
+                      <div className="host-live-track-title" style={{ fontSize: 13, marginBottom: 1 }}>{item.title || "Không rõ"}</div>
+                      <div className="host-live-track-subtitle" style={{ fontSize: 11 }}>{item.artist || "Không rõ nghệ sĩ"}</div>
+                      {item.isRequest && (
+                        <div className="host-live-badge host-live-badge--pending" style={{ padding: "2px 6px", fontSize: 9, marginTop: 4 }}>Yêu cầu</div>
+                      )}
                     </div>
                   </div>
                 </div>

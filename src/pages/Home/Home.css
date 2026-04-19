@@ -605,6 +605,7 @@ a.forum-item-action {
     box-shadow: var(--sm-card-shadow);
     transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     will-change: transform, box-shadow;
+    max-width: 12vw;
 }
 
 .podcast-card:hover {
