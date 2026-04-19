@@ -1,13 +1,8 @@
 import {
   Radio,
   Calendar,
-  Music,
-  Mic,
   Clock,
   ArrowUp,
-  CheckCircle,
-  XCircle,
-  AlertCircle
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './StaffDashboard.css';
@@ -26,13 +21,6 @@ const upcomingSessions = [
   { id: 1, title: 'Chill Night Radio', time: '20:00 - 22:00', date: 'Hôm nay', host: 'DJ Minh', status: 'scheduled' },
   { id: 2, title: 'Morning Jazz', time: '08:00 - 10:00', date: 'Ngày mai', host: 'Sarah Lee', status: 'scheduled' },
   { id: 3, title: 'Acoustic Session', time: '15:00 - 17:00', date: 'Ngày mai', host: 'John Doe', status: 'scheduled' },
-];
-
-const recentRequests = [
-  { id: 1, type: 'music', title: 'Bohemian Rhapsody - Queen', user: 'User123', status: 'pending', time: '5 phút trước' },
-  { id: 2, type: 'podcast', title: 'Tech Talk Episode 5', user: 'PodcastFan', status: 'approved', time: '15 phút trước' },
-  { id: 3, type: 'music', title: 'Imagine - John Lennon', user: 'MusicLover', status: 'pending', time: '23 phút trước' },
-  { id: 4, type: 'podcast', title: 'Daily News Briefing', user: 'NewsJunkie', status: 'rejected', time: '1 giờ trước' },
 ];
 
 interface StatCardProps {
@@ -62,28 +50,6 @@ function StatCard({ title, value, change, isPositive, icon, subtitle }: StatCard
 }
 
 export function StaffDashboard() {
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle size={16} className="status-icon approved" />;
-      case 'rejected':
-        return <XCircle size={16} className="status-icon rejected" />;
-      default:
-        return <AlertCircle size={16} className="status-icon pending" />;
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'Đã duyệt';
-      case 'rejected':
-        return 'Từ chối';
-      default:
-        return 'Đang chờ';
-    }
-  };
-
   return (
     <div className="staff-dashboard">
       <div className="staff-dashboard-header">
@@ -115,22 +81,7 @@ export function StaffDashboard() {
           icon={<Calendar size={24} />}
           subtitle="Phiên đã lên kế hoạch"
         />
-        <StatCard
-          title="Yêu cầu nhạc"
-          value="12"
-          change="+5"
-          isPositive={true}
-          icon={<Music size={24} />}
-          subtitle="Đang chờ duyệt"
-        />
-        <StatCard
-          title="Yêu cầu podcast"
-          value="8"
-          change="+3"
-          isPositive={true}
-          icon={<Mic size={24} />}
-          subtitle="Đang chờ xem xét"
-        />
+
       </div>
 
       <div className="staff-content-grid">
@@ -174,55 +125,7 @@ export function StaffDashboard() {
         </div>
       </div>
 
-      <div className="staff-requests-card">
-        <div className="staff-list-header">
-          <h3 className="staff-list-title">Yêu cầu gần đây</h3>
-          <button className="staff-view-all-btn">Xem tất cả</button>
-        </div>
-        <div className="staff-requests-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Loại</th>
-                <th>Tiêu đề</th>
-                <th>Người dùng</th>
-                <th>Trạng thái</th>
-                <th>Thời gian</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentRequests.map((request) => (
-                <tr key={request.id}>
-                  <td>
-                    <span className={`staff-type-badge ${request.type}`}>
-                      {request.type === 'music' ? <Music size={14} /> : <Mic size={14} />}
-                      {request.type === 'music' ? 'Nhạc' : 'Podcast'}
-                    </span>
-                  </td>
-                  <td className="staff-request-title">{request.title}</td>
-                  <td>{request.user}</td>
-                  <td>
-                    <span className={`staff-status-badge ${request.status}`}>
-                      {getStatusIcon(request.status)}
-                      {getStatusLabel(request.status)}
-                    </span>
-                  </td>
-                  <td className="staff-request-time">{request.time}</td>
-                  <td>
-                    {request.status === 'pending' && (
-                      <div className="staff-action-buttons">
-                        <button className="staff-action-btn approve">Duyệt</button>
-                        <button className="staff-action-btn reject">Từ chối</button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+
     </div>
   );
 }

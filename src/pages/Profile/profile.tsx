@@ -14,7 +14,7 @@ import {
   ListMusic,
 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
 import "./profile.css";
@@ -63,6 +63,7 @@ const formatDate = (d?: string | null) =>
    PROFILE
 ────────────────────────────────────────── */
 export default function Profile() {
+  const { userId: routeUserId } = useParams<{ userId?: string }>();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [tab, setTab] = useState<Tab>("overview");
@@ -73,61 +74,80 @@ export default function Profile() {
   const [favTracks, setFavTracks] = useState<FavoriteItem[]>([]);
   const [savedPodcasts, setSavedPodcasts] = useState<PodcastItem[]>([]);
   const [userPlaylists, setUserPlaylists] = useState<UserPlaylist[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const loadFavorites = useCallback(async () => {
+  const isOwnProfile = !routeUserId || routeUserId === currentUser?.id;
+  const targetUserId = routeUserId || currentUser?.id;
+
+  const loadFavorites = useCallback(async (uid: string) => {
     try {
-      const res = await favoriteService.getFavorites("track");
+      const res = isOwnProfile 
+        ? await favoriteService.getFavorites("track")
+        : await favoriteService.getFavoritesByUserId(uid, "track");
+        
       if (res.success && res.data) {
         setFavTracks(res.data);
       }
     } catch (err) {
       console.error("Load favorites failed", err);
     }
-  }, []);
+  }, [isOwnProfile]);
 
-  const loadSavedPodcasts = useCallback(async () => {
+  const loadSavedPodcasts = useCallback(async (uid: string) => {
     try {
-      const data = await podcastService.getSavedPodcasts();
+      const data = isOwnProfile 
+        ? await podcastService.getSavedPodcasts()
+        : await podcastService.getSavedPodcastsByUserId(uid);
       setSavedPodcasts(data);
     } catch (err) {
       console.error("Load saved podcasts failed", err);
     }
-  }, []);
+  }, [isOwnProfile]);
 
-  const loadPlaylists = useCallback(async () => {
+  const loadPlaylists = useCallback(async (uid: string) => {
     try {
-      const data = await userPlaylistService.getAll();
+      const data = isOwnProfile 
+        ? await userPlaylistService.getAll()
+        : await userPlaylistService.getByUser(uid);
       setUserPlaylists(data);
     } catch (err) {
       console.error("Load playlists failed", err);
     }
+  }, [isOwnProfile]);
+
+  // Load Current User (Me) once
+  useEffect(() => {
+    // Only try to load "me" if we have a token or aren't explicitly avoiding it
+    // axios interceptor will handle token if exists.
+    api.get("users/me/profile/full")
+      .then(r => setCurrentUser(r.data.data))
+      .catch(e => {
+        if (e.response?.status !== 401) {
+          console.error("Load me failed", e);
+        }
+      });
   }, []);
 
-  const handleUnsavePodcast = async (podcastId: string) => {
-    setSavedPodcasts((prev) => prev.filter((p) => p.id !== podcastId));
-    try {
-      await podcastService.unsavePodcast(podcastId);
-    } catch {
-      loadSavedPodcasts();
-    }
-  };
-
+  // Main data loader based on targetUserId
   useEffect(() => {
-    api
-      .get("users/me/profile/full")
+    if (!targetUserId) return;
+
+    // Load Profile
+    const profileUrl = isOwnProfile ? "users/me/profile/full" : `users/${targetUserId}/public-profile`;
+    api.get(profileUrl)
       .then((r) => setUser(r.data.data))
       .catch((e) => console.error("Load profile failed", e));
 
-    api
-      .get("me/posts")
+    // Load Posts
+    const postsUrl = isOwnProfile ? "me/posts" : `users/${targetUserId}/posts`;
+    api.get(postsUrl)
       .then((r) => setPosts(r.data?.data?.items ?? []))
       .catch((e) => console.error("Load posts failed", e));
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadFavorites();
-    loadSavedPodcasts();
-    loadPlaylists();
-  }, [loadFavorites, loadSavedPodcasts, loadPlaylists]);
+    loadFavorites(targetUserId);
+    loadSavedPodcasts(targetUserId);
+    loadPlaylists(targetUserId);
+  }, [targetUserId, isOwnProfile, loadFavorites, loadSavedPodcasts, loadPlaylists]);
 
   if (!user) return <div className="pf-loading">Đang tải...</div>;
 
@@ -152,59 +172,67 @@ export default function Profile() {
 
   return (
     <div className="pf">
-      {/* COVER */}
-      <div className="pf-cover">
-        <img src={user.backgroundImageUrl || defaultCover} alt="cover" />
-      </div>
+      {/* HEADER WRAP */}
+      <div className="pf-header-wrap">
+        {/* COVER */}
+        <div className="pf-cover">
+          <img src={user.backgroundImageUrl || defaultCover} alt="cover" />
+        </div>
 
-      {/* PROFILE BAR */}
-      <div className="pf-bar">
-        <div className="pf-bar-inner">
-          {/* Avatar + info */}
-          <div className="pf-left">
-            <Avatar
-              src={user.profileImageUrl || defaultAv}
-              name={name}
-              size="xl"
-              className="pf-av"
-            />
-            <div className="pf-info">
-              <div className="pf-name-row">
-                <h1 className="pf-name">{name}</h1>
-                <span className="pf-check">✔</span>
+        {/* PROFILE BAR */}
+        <div className="pf-bar">
+          <div className="pf-bar-inner">
+            {/* Avatar + info */}
+            <div className="pf-left">
+              <Avatar
+                src={user.profileImageUrl || defaultAv}
+                name={name}
+                size="xl"
+                className="pf-av"
+              />
+              <div className="pf-info">
+                <div className="pf-name-row">
+                  <h1 className="pf-name">{name}</h1>
+                  <span className="pf-check">✔</span>
+                </div>
+                <p className="pf-bio">{user.bio || ""}</p>
+                {dob && (
+                  <p className="pf-dob">
+                    <Calendar1 size={13} />
+                    {dob}
+                  </p>
+                )}
               </div>
-              <p className="pf-bio">{user.bio || ""}</p>
-              {dob && (
-                <p className="pf-dob">
-                  <Calendar1 size={13} />
-                  {dob}
-                </p>
+            </div>
+
+            {/* Stats + edit */}
+            <div className="pf-right">
+              {isOwnProfile ? (
+                <Link to="/settings" className="pf-edit-btn">
+                  <SquarePen size={14} />
+                  Chỉnh sửa
+                </Link>
+              ) : (
+                <button className="pf-edit-btn">
+                  <Plus size={14} />
+                  Theo dõi
+                </button>
               )}
             </div>
           </div>
 
-          {/* Stats + edit */}
-          <div className="pf-right">
-            <Link to="/settings" className="pf-edit-btn">
-              <SquarePen size={14} />
-              Chỉnh sửa
-            </Link>
+          {/* TABS moved inside pf-bar */}
+          <div className="pf-tabs">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                className={`pf-tab ${tab === t.key ? "active" : ""}`}
+                onClick={() => setTab(t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
-        </div>
-      </div>
-
-      {/* TABS */}
-      <div className="pf-tabs-row">
-        <div className="pf-tabs">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              className={`pf-tab ${tab === t.key ? "active" : ""}`}
-              onClick={() => setTab(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -274,88 +302,94 @@ export default function Profile() {
                     <ChartBar size={18} /> Cộng đồng
                   </h3>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      className="pf-create-post-btn"
-                      onClick={() => setShowShareMusic(true)}
-                    >
-                      <Sparkles size={13} />
-                      Share bài hát
-                    </button>
-                    <button
-                      className="pf-create-post-btn"
-                      onClick={() => setShowCreatePost(true)}
-                    >
-                      <Plus size={13} />
-                      Tạo bài đăng
-                    </button>
+                    {isOwnProfile && (
+                      <>
+                        <button
+                          className="pf-create-post-btn"
+                          onClick={() => setShowShareMusic(true)}
+                        >
+                          <Sparkles size={13} />
+                          Share bài hát
+                        </button>
+                        <button
+                          className="pf-create-post-btn"
+                          onClick={() => setShowCreatePost(true)}
+                        >
+                          <Plus size={13} />
+                          Tạo bài đăng
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 {/* Quick compose bar */}
-                <div
-                  className="pf-compose-bar"
-                  onClick={() => setShowCreatePost(true)}
-                >
-                  <Avatar
-                    src={user.profileImageUrl || defaultAv}
-                    name={name}
-                    size="sm"
-                  />
-                  <span className="pf-compose-placeholder">
-                    Bạn đang nghĩ gì về âm nhạc hôm nay?
-                  </span>
-                  <div className="pf-compose-actions">
-                    <span className="pf-compose-action-btn" title="Thêm ảnh">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <polyline points="21 15 16 10 5 21" />
-                      </svg>
+                {isOwnProfile && (
+                  <div
+                    className="pf-compose-bar"
+                    onClick={() => setShowCreatePost(true)}
+                  >
+                    <Avatar
+                      src={user.profileImageUrl || defaultAv}
+                      name={name}
+                      size="sm"
+                    />
+                    <span className="pf-compose-placeholder">
+                      Bạn đang nghĩ gì về âm nhạc hôm nay?
                     </span>
-                    <span className="pf-compose-action-btn" title="Thêm audio">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="12" y1="19" x2="12" y2="22" />
-                      </svg>
-                    </span>
-                    <span className="pf-compose-action-btn" title="Tâm trạng">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                        <line x1="9" y1="9" x2="9.01" y2="9" />
-                        <line x1="15" y1="9" x2="15.01" y2="9" />
-                      </svg>
-                    </span>
+                    <div className="pf-compose-actions">
+                      <span className="pf-compose-action-btn" title="Thêm ảnh">
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <polyline points="21 15 16 10 5 21" />
+                        </svg>
+                      </span>
+                      <span className="pf-compose-action-btn" title="Thêm audio">
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" />
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                          <line x1="12" y1="19" x2="12" y2="22" />
+                        </svg>
+                      </span>
+                      <span className="pf-compose-action-btn" title="Tâm trạng">
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                          <line x1="9" y1="9" x2="9.01" y2="9" />
+                          <line x1="15" y1="9" x2="15.01" y2="9" />
+                        </svg>
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {posts.length === 0 ? (
                   <p className="post-empty">Chưa có bài đăng nào.</p>
@@ -370,6 +404,7 @@ export default function Profile() {
                         defaultAv={defaultAv}
                         onEdit={setEditPost}
                         onDelete={handlePostDeleted}
+                        isOwnProfile={isOwnProfile}
                       />
                     ))}
                   </div>
@@ -431,15 +466,15 @@ export default function Profile() {
                       fontSize: 13,
                     }}
                   >
-                    Chưa lưu podcast nào
-                  </p>
+                  {isOwnProfile ? "Chưa lưu podcast nào" : "Người dùng chưa lưu podcast nào"}
+                </p>
                 )}
               </div>
 
               {/* Playlist của tôi */}
               <div className="pf-card">
                 <div className="pf-card-top">
-                  <h3>Playlist của tôi</h3>
+                  <h3>{isOwnProfile ? "Playlist của tôi" : "Playlist"}</h3>
                   {userPlaylists.length > 0 && (
                     <button
                       className="pf-link"
@@ -485,8 +520,8 @@ export default function Profile() {
                       fontSize: 13,
                     }}
                   >
-                    Chưa có playlist nào
-                  </p>
+                  {isOwnProfile ? "Chưa có playlist nào" : "Người dùng chưa có playlist nào"}
+                </p>
                 )}
               </div>
             </div>
@@ -497,39 +532,45 @@ export default function Profile() {
         {tab === "community" && (
           <div className="pf-community-full">
             <div className="pf-community-header">
-              <h2 className="pf-community-title">Bài đăng của tôi</h2>
+              <h2 className="pf-community-title">{isOwnProfile ? "Bài đăng của tôi" : "Bài đăng"}</h2>
               <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  className="pf-create-post-btn"
-                  onClick={() => setShowShareMusic(true)}
-                >
-                  <Sparkles size={14} />
-                  Share bài hát
-                </button>
-                <button
-                  className="pf-create-post-btn"
-                  onClick={() => setShowCreatePost(true)}
-                >
-                  <Plus size={14} />
-                  Tạo bài đăng
-                </button>
+                {isOwnProfile && (
+                  <>
+                    <button
+                      className="pf-create-post-btn"
+                      onClick={() => setShowShareMusic(true)}
+                    >
+                      <Sparkles size={14} />
+                      Share bài hát
+                    </button>
+                    <button
+                      className="pf-create-post-btn"
+                      onClick={() => setShowCreatePost(true)}
+                    >
+                      <Plus size={14} />
+                      Tạo bài đăng
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Quick compose bar */}
-            <div
-              className="pf-compose-bar pf-compose-bar--full"
-              onClick={() => setShowCreatePost(true)}
-            >
-              <Avatar
-                src={user.profileImageUrl || defaultAv}
-                name={name}
-                size="sm"
-              />
-              <span className="pf-compose-placeholder">
-                Bạn đang nghĩ gì về âm nhạc hôm nay?
-              </span>
-            </div>
+            {isOwnProfile && (
+              <div
+                className="pf-compose-bar pf-compose-bar--full"
+                onClick={() => setShowCreatePost(true)}
+              >
+                <Avatar
+                  src={user.profileImageUrl || defaultAv}
+                  name={name}
+                  size="sm"
+                />
+                <span className="pf-compose-placeholder">
+                  Bạn đang nghĩ gì về âm nhạc hôm nay?
+                </span>
+              </div>
+            )}
 
             {posts.length === 0 ? (
               <div className="pf-empty">
@@ -553,6 +594,7 @@ export default function Profile() {
                     defaultAv={defaultAv}
                     onEdit={setEditPost}
                     onDelete={handlePostDeleted}
+                    isOwnProfile={isOwnProfile}
                   />
                 ))}
               </div>
@@ -611,7 +653,7 @@ export default function Profile() {
           </div>
         )}
 
-        {tab === "playlists" && <UserPlaylistTab />}
+        {tab === "playlists" && <UserPlaylistTab userId={targetUserId} isOwnProfile={isOwnProfile} />}
 
         {tab === "podcasts" && (
           <div className="pf-card">
@@ -656,16 +698,18 @@ export default function Profile() {
                         </p>
                       )}
                     </div>
-                    <button
-                      className="pf-podcast-card-unsave"
-                      title="Bỏ lưu"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUnsavePodcast(p.id);
-                      }}
-                    >
-                      <Bookmark size={14} fill="currentColor" />
-                    </button>
+                    {isOwnProfile && (
+                      <button
+                        className="pf-podcast-card-unsave"
+                        title="Bỏ lưu"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnsavePodcast(p.id);
+                        }}
+                      >
+                        <Bookmark size={14} fill="currentColor" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

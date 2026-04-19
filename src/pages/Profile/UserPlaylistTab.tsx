@@ -191,7 +191,12 @@ const INIT: FormState = {
   visibility: 0,
 };
 
-export default function UserPlaylistTab() {
+interface UserPlaylistTabProps {
+  userId?: string;
+  isOwnProfile?: boolean;
+}
+
+export default function UserPlaylistTab({ userId, isOwnProfile = true }: UserPlaylistTabProps) {
   const [playlists, setPlaylists] = useState<UserPlaylist[]>([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<UserPlaylist | null>(null);
@@ -355,13 +360,17 @@ export default function UserPlaylistTab() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setPlaylists(await userPlaylistService.getAll());
+      if (isOwnProfile) {
+        setPlaylists(await userPlaylistService.getAll());
+      } else if (userId) {
+        setPlaylists(await userPlaylistService.getByUser(userId));
+      }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isOwnProfile, userId]);
   useEffect(() => {
     load();
   }, [load]);
@@ -604,26 +613,30 @@ export default function UserPlaylistTab() {
                   >
                     <Play size={14} fill="white" /> Phát tất cả
                   </button>
-                  <button
-                    className="upl-banner-btn add-music"
-                    onClick={openCatalog}
-                  >
-                    <Plus size={13} /> Thêm nhạc
-                  </button>
-                  <button
-                    className="upl-banner-btn icon-only"
-                    onClick={(e) => openEdit(selected, e)}
-                    title="Chỉnh sửa"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    className="upl-banner-btn icon-only danger"
-                    onClick={() => setDeleteTarget(selected)}
-                    title="Xoá"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {isOwnProfile && (
+                    <>
+                      <button
+                        className="upl-banner-btn add-music"
+                        onClick={openCatalog}
+                      >
+                        <Plus size={13} /> Thêm nhạc
+                      </button>
+                      <button
+                        className="upl-banner-btn icon-only"
+                        onClick={(e) => openEdit(selected, e)}
+                        title="Chỉnh sửa"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        className="upl-banner-btn icon-only danger"
+                        onClick={() => setDeleteTarget(selected)}
+                        title="Xoá"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -698,18 +711,20 @@ export default function UserPlaylistTab() {
                       <span className="upl-track-dur">
                         {fmtDur(t.durationSeconds)}
                       </span>
-                      <button
-                        className="upl-track-del"
-                        onClick={() => handleRemoveTrack(t)}
-                        disabled={removingId === t.id}
-                        title="Xoá khỏi playlist"
-                      >
-                        {removingId === t.id ? (
-                          <Loader2 size={14} className="upl-spin" />
-                        ) : (
-                          <X size={14} />
-                        )}
-                      </button>
+                      {isOwnProfile && (
+                        <button
+                          className="upl-track-del"
+                          onClick={() => handleRemoveTrack(t)}
+                          disabled={removingId === t.id}
+                          title="Xoá khỏi playlist"
+                        >
+                          {removingId === t.id ? (
+                            <Loader2 size={14} className="upl-spin" />
+                          ) : (
+                            <X size={14} />
+                          )}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -721,11 +736,13 @@ export default function UserPlaylistTab() {
         <>
           <div className="upl-header">
             <h3 className="upl-title">
-              <ListMusic size={18} /> Playlist của tôi
+              <ListMusic size={18} /> {isOwnProfile ? "Playlist của tôi" : "Playlist"}
             </h3>
-            <button className="upl-create-btn" onClick={openCreate}>
-              <Plus size={14} /> Tạo playlist
-            </button>
+            {isOwnProfile && (
+              <button className="upl-create-btn" onClick={openCreate}>
+                <Plus size={14} /> Tạo playlist
+              </button>
+            )}
           </div>
 
           {loading ? (
@@ -798,25 +815,27 @@ export default function UserPlaylistTab() {
                         <p className="upl-desc">{pl.description}</p>
                       )}
                     </div>
-                    <div className="upl-btns">
-                      <button
-                        className="upl-icon-btn edit"
-                        onClick={(e) => openEdit(pl, e)}
-                        title="Chỉnh sửa"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        className="upl-icon-btn del"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteTarget(pl);
-                        }}
-                        title="Xoá"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    {isOwnProfile && (
+                      <div className="upl-btns">
+                        <button
+                          className="upl-icon-btn edit"
+                          onClick={(e) => openEdit(pl, e)}
+                          title="Chỉnh sửa"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          className="upl-icon-btn del"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(pl);
+                          }}
+                          title="Xoá"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

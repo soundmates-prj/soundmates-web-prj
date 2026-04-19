@@ -91,6 +91,12 @@ const userPlaylistService = {
     return res.data.data ?? [];
   },
 
+  /** GET /api/v1/userplaylist/user/{userId} */
+  getByUser: async (userId: string): Promise<UserPlaylist[]> => {
+    const res = await api.get<ApiResponse<UserPlaylist[]>>(`/userplaylist/user/${userId}`);
+    return res.data.data ?? [];
+  },
+
   /** GET /api/v1/userplaylist/public — Get all public user playlists */
   getPublic: async (): Promise<UserPlaylist[]> => {
     const res = await api.get<ApiResponse<UserPlaylist[]>>("/userplaylist/public");

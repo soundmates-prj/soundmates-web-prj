@@ -17,6 +17,63 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// Curated Premium Fallback Themes for a guaranteed high-end experience
+const FALLBACK_THEMES: ThemeResult[] = [
+  {
+    id: "premium-midnight",
+    name: "Midnight Oasis (Premium)",
+    mode: "dark",
+    primaryColor: "#6366f1", // Indigo
+    backgroundColor: "#070b17",
+    textColor: "#f1f5f9",
+    secondaryColor: "#1e293b",
+    gradientBackground: "linear-gradient(160deg, #070b17 0%, #0d1428 45%, #090d1e 100%)",
+    configJson: {
+      borderRadius: "16px",
+      boxShadow: "0 10px 40px rgba(0,0,0,0.4)"
+    }
+  },
+  {
+    id: "premium-sunset",
+    name: "Golden Hour (Premium)",
+    mode: "dark",
+    primaryColor: "#f59e0b", // Amber
+    backgroundColor: "#160d08",
+    textColor: "#fef3c7",
+    secondaryColor: "#2d1b0a",
+    gradientBackground: "linear-gradient(135deg, #160d08 0%, #2d1b0a 100%)",
+    configJson: {
+      backgroundImage: "https://images.unsplash.com/photo-1472120482482-d43ba79ef546?q=80&w=2070&auto=format&fit=crop"
+    }
+  },
+  {
+    id: "premium-ocean",
+    name: "Deep Ocean (Premium)",
+    mode: "dark",
+    primaryColor: "#0ea5e9", // Sky
+    backgroundColor: "#020617",
+    textColor: "#e0f2fe",
+    secondaryColor: "#082f49",
+    gradientBackground: "linear-gradient(180deg, #020617 0%, #075985 100%)",
+  },
+  {
+    id: "premium-sunset-balcony",
+    name: "Sunset Balcony (Premium)",
+    mode: "dark",
+    primaryColor: "#FF8A65",
+    backgroundColor: "#2A233C",
+    textColor: "#FFE0B2",
+    secondaryColor: "#FFB74D",
+    gradientBackground: "linear-gradient(135deg, #2A233C 0%, #4A3B52 60%, #FF8A65 100%)",
+    configJson: {
+      borderRadius: "12px",
+      boxShadow: "0 8px 32px rgba(255, 138, 101, 0.25)",
+      backgroundImage: "https://i.postimg.cc/ZR0F56kY/bcf4f37fcab5a44ddf8c2b4cb6279e84.jpg"
+    }
+  }
+];
+
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mode, setModeState] = useState<ThemeMode>(() => {
     const savedMode = localStorage.getItem('theme_mode');
@@ -30,18 +87,32 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [availableThemes, setAvailableThemes] = useState<ThemeResult[]>([]);
 
   useEffect(() => {
-    // Load available themes from backend API
+    // Load available themes from backend API + fallback themes
     const loadThemes = async () => {
-      const themes = await themeApiService.getActiveThemes();
-      setAvailableThemes(themes);
+      try {
+        const apiThemes = await themeApiService.getActiveThemes();
+        
+        // Merge with fallbacks, removing any that might have been added to the DB already (by ID)
+        const merged = [...apiThemes];
+        FALLBACK_THEMES.forEach(fb => {
+          if (!merged.find(t => t.id === fb.id || t.name === fb.name)) {
+            merged.push(fb);
+          }
+        });
 
-      // Auto-apply saved theme if it exists in the fetched list
-      const savedThemeId = localStorage.getItem('active_theme_id');
-      if (savedThemeId) {
-        const themeToApply = themes.find(t => t.id === savedThemeId);
-        if (themeToApply) {
-          applyTheme(themeToApply);
+        setAvailableThemes(merged);
+
+        // Auto-apply saved theme if it exists in the fetched list
+        const savedThemeId = localStorage.getItem('active_theme_id');
+        if (savedThemeId) {
+          const themeToApply = merged.find(t => t.id === savedThemeId);
+          if (themeToApply) {
+            applyTheme(themeToApply);
+          }
         }
+      } catch (error) {
+        console.error("ThemeContext: Error loading themes", error);
+        setAvailableThemes(FALLBACK_THEMES);
       }
     };
     loadThemes();

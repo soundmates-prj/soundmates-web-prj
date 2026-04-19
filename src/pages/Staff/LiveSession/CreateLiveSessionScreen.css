@@ -91,9 +91,15 @@
 [data-theme="dark"] .create-ls-input,
 [data-theme="dark"] .create-ls-select,
 [data-theme="dark"] .create-ls-textarea {
-    background: rgba(255,255,255,0.05);
-    border-color: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.9);
+    background: #0f172a;
+    border-color: rgba(255,255,255,0.15);
+    color: #f1f5f9;
+    color-scheme: dark;
+}
+
+[data-theme="dark"] .create-ls-select option {
+    background: #1e293b;
+    color: #f1f5f9;
 }
 
 .create-ls-input:focus,

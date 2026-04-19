@@ -806,17 +806,22 @@ export function PlaylistsScreen() {
                     );
                   })
                 : systemMusic.map((m) => {
+                    const isAddedToPlaylist = tracks.some((t) => t.mediaFileId === m.id);
+                    const alreadyInStation = stationMusic.some((sm) => sm.id === m.id);
                     const checked = selectedSystemMediaIds.includes(m.id);
-                    const isAdded = tracks.some((t) => t.mediaFileId === m.id);
 
                     return (
-                      <div className="pl-track-row" key={m.id}>
+                      <div
+                        className={`pl-track-row ${alreadyInStation ? "in-station" : ""}`}
+                        key={m.id}
+                        style={alreadyInStation ? { background: "rgba(0,0,0,0.02)", opacity: 0.8 } : {}}
+                      >
                         <input
                           type="checkbox"
                           className="pl-track-check"
                           checked={checked}
                           onChange={() => toggleSystemMediaSelection(m.id)}
-                          disabled={isAdded}
+                          disabled={isAddedToPlaylist}
                         />
                         <Music
                           size={16}
@@ -829,9 +834,15 @@ export function PlaylistsScreen() {
                           </span>
                         </div>
                         <span
-                          className={`pl-source-badge ${isAdded ? "added" : "system"}`}
+                          className={`pl-source-badge ${
+                            isAddedToPlaylist ? "added" : alreadyInStation ? "station" : "system"
+                          }`}
                         >
-                          {isAdded ? "Đã có" : "System"}
+                          {isAddedToPlaylist
+                            ? "Trong Playlist"
+                            : alreadyInStation
+                            ? "Đã có trong Station"
+                            : "Từ System"}
                         </span>
                       </div>
                     );

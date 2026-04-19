@@ -233,6 +233,21 @@ class PodcastService {
     }
   }
 
+  async getSavedPodcastsByUserId(userId: string): Promise<PodcastItem[]> {
+    try {
+      const response =
+        await api.get<ApiResponse<PodcastItem[]>>(`/users/${userId}/saved-podcasts`);
+      return response.data.data ?? [];
+    } catch (error: any) {
+      console.error("Error fetching user saved podcasts:", error);
+      throw new Error(
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể tải podcast đã lưu của người dùng",
+      );
+    }
+  }
+
   async savePodcast(podcastId: string): Promise<void> {
     try {
       await api.post(`/me/saved-podcasts/${podcastId}`);
