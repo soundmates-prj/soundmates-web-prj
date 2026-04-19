@@ -405,10 +405,10 @@ export function LiveRoomPage() {
   // ── Upcoming Queue Filter (exclude playingNext) ──────────────────────────
   const filteredQueue = useMemo(() => {
     if (!nowPlaying?.upcomingQueue) return [];
-    const nextText = nowPlaying?.playingNext?.title + nowPlaying?.playingNext?.artist;
+    const nextText = (nowPlaying?.playingNext?.title || "") + (nowPlaying?.playingNext?.artist || "");
     
     return nowPlaying.upcomingQueue.filter(q => {
-      const qText = q.title + q.artist;
+      const qText = (q.title || "") + (q.artist || "");
       return qText !== nextText;
     });
   }, [nowPlaying?.upcomingQueue, nowPlaying?.playingNext]);
