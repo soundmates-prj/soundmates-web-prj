@@ -339,9 +339,9 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
             serverElapsedSyncedAtMsRef.current = Date.now();
           }
         } else {
-          // Same song: refresh listener count and resync elapsed time
+          // Same song: resync elapsed time
           const latestCount = data.listenersCount ?? data.totalListeners;
-          if (latestCount !== undefined) setListeners(toSafeListenerCount(latestCount));
+          // if (latestCount !== undefined) setListeners(toSafeListenerCount(latestCount));
 
           if (track && nowPlayingRef.current) {
             // Update elapsed sync point
@@ -470,11 +470,10 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         nowPlayingRef.current = np;
         prevTrackIdRef.current = newShId;
       } else {
-        // Same song — refresh listeners and resync elapsed time
-        if (data.totalListeners !== undefined && data.totalListeners !== null) {
-          setListeners(toSafeListenerCount(data.totalListeners));
-        }
-
+        // Same song — resync elapsed time only
+        // Dừng ghi đè listener từ Icecast (data.totalListeners) xuống state `listeners`, 
+        // để hệ thống web dùng số người nghe từ websocket (SignalR ListenersUpdated event) chính xác hơn.
+        
         // Always resync track elapsed to maintain tight lyric sync
         const current: TrackInfo = {
           shId: track.shId, title: track.title ?? "—", artist: track.artist ?? "—",
