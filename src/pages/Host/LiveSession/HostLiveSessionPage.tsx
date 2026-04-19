@@ -41,7 +41,8 @@ export default function HostLiveSessionPage() {
         return;
       }
 
-      setSessions(sessionData.items);
+      const activeSessions = sessionData.items.filter(s => s.status !== "Ended");
+      setSessions(activeSessions);
       setSchedules(schedulesData);
     } catch {
       showError("Lỗi", "Không thể tải dữ liệu live session");

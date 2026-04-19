@@ -16,6 +16,7 @@ import {
 import podcastService from "../../services/podcastService";
 import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
 import { usePlayer } from "../../context/PlayerContext";
+import { useLiveSession } from "../../context/LiveSessionContext";
 import "./PodcastDetailScreen.css";
 
 const fmtDate = (d?: string) => {
@@ -51,15 +52,26 @@ export default function PodcastDetailScreen() {
   >({});
   const resolvedDurationsRef = useRef<Record<string, number>>({});
 
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [audioDuration, setAudioDuration] = useState(0);
-  // Ref always holds the latest value — RAF reads through it to avoid stale closures
-  const isSeekingRef = useRef(false);
-
-  const { audioRef, setIsPlaying } = usePlayer();
-  const rafRef = useRef<number | null>(null);
+  const {
+    track,
+    isPlaying: ctxIsPlaying,
+    audioRef: ctxAudioRef,
+    setIsPlaying,
+    setTrack,
+    volume: ctxVolume,
+  } = usePlayer();
+  const liveCtx = useLiveSession();
+  
+  // We no longer need local playingId, isPaused, currentTime, etc.
+  // We'll map them from PlayerContext.
+  const playingId = track?.listenUrl ? episodes.find(e => e.audioUrl === track.listenUrl)?.id : null;
+  const isActive = (ep: PodcastEpisode) => playingId === ep.id && !!track;
+  const isActuallyPlaying = (ep: PodcastEpisode) => isActive(ep) && ctxIsPlaying;
+  
+  // We shouldn't duplicate tracking RAF, the MusicPlayer component polls the elapsed time.
+  // Wait, PodcastDetailScreen needs `currentTime` to render the progress bar!
+  // We can just use a generic interval or rely on PlayerContext.elapsed.
+  const { elapsed: ctxElapsed } = usePlayer();
 
   useEffect(() => {
     if (!id) return;
@@ -125,75 +137,79 @@ export default function PodcastDetailScreen() {
     };
   }, [episodes]);
 
-  const startTracking = useCallback(() => {
-    const tick = () => {
-      if (audioRef.current && !isSeekingRef.current) {
-        setCurrentTime(audioRef.current.currentTime);
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-  }, [audioRef]);
-
-  const stopTracking = useCallback(() => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-  }, []);
+  // Instead of stopTracking, we just use PlayerContext methods
 
   const stopPlayback = () => {
-    if (!audioRef.current) return;
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-    stopTracking();
+    if (!ctxAudioRef.current) return;
+    ctxAudioRef.current.pause();
+    ctxAudioRef.current.currentTime = 0;
+    ctxAudioRef.current = null;
     setIsPlaying(false);
-    setPlayingId(null);
-    setIsPaused(false);
-    setCurrentTime(0);
-    setAudioDuration(0);
+    setTrack(null);
   };
 
   const togglePlay = (ep: PodcastEpisode) => {
     if (!ep.audioUrl) return;
 
     if (playingId === ep.id) {
-      // Same episode — toggle pause/resume without resetting position
-      if (audioRef.current?.paused) {
-        audioRef.current
-          .play()
-          .then(() => {
-            setIsPlaying(true);
-            setIsPaused(false);
-          })
-          .catch((e) => console.error("Resume failed:", e));
-        startTracking();
-      } else {
-        audioRef.current?.pause();
-        stopTracking();
-        setIsPlaying(false);
-        setIsPaused(true);
+      // Same episode — toggle pause/resume
+      if (ctxAudioRef.current) {
+        if (ctxAudioRef.current.paused) {
+          if (liveCtx.activeSessionId && !liveCtx.isMuted) {
+            liveCtx.toggleMute();
+          }
+          ctxAudioRef.current.play()
+            .then(() => setIsPlaying(true))
+            .catch((e) => console.error("Resume failed:", e));
+        } else {
+          ctxAudioRef.current.pause();
+          setIsPlaying(false);
+        }
       }
       return;
     }
 
-    if (audioRef.current) {
-      audioRef.current.pause();
-      stopTracking();
+    // Play new podcast
+    if (ctxAudioRef.current) {
+      ctxAudioRef.current.pause();
+      ctxAudioRef.current = null;
+    }
+
+    // Mute live session if playing so they don't overlap!
+    if (liveCtx.activeSessionId && !liveCtx.isMuted) {
+      liveCtx.toggleMute();
     }
 
     const audio = new Audio(ep.audioUrl);
+    ctxAudioRef.current = audio;
+    audio.volume = ctxVolume / 100;
+    
+    const baseDuration = resolvedDurations[ep.id] ?? ep.duration ?? 0;
+    
+    setTrack({
+      title: ep.title,
+      artist: "Podcast",
+      artUrl: ep.thumbnailUrl || podcast?.banner || "",
+      duration: baseDuration > 0 ? baseDuration : 0,
+      elapsed: 0,
+      listenUrl: ep.audioUrl,
+    });
 
     audio.onloadedmetadata = () => {
-      setAudioDuration(audio.duration);
+      const d = Math.max(0, Math.floor(audio.duration || 0));
+      if (d > 0 && d !== baseDuration) {
+        setTrack({
+          title: ep.title,
+          artist: "Podcast",
+          artUrl: ep.thumbnailUrl || podcast?.banner || "",
+          duration: d,
+          elapsed: 0,
+          listenUrl: ep.audioUrl,
+        });
+      }
     };
 
     audio.onended = () => {
-      setPlayingId(null);
-      setIsPaused(false);
-      setCurrentTime(0);
-      setAudioDuration(0);
-      stopTracking();
       setIsPlaying(false);
     };
 
@@ -201,29 +217,22 @@ export default function PodcastDetailScreen() {
       .play()
       .then(() => setIsPlaying(true))
       .catch((e) => console.error("Playback failed:", e));
-    audioRef.current = audio;
-
-    setPlayingId(ep.id);
-    setIsPaused(false);
-    setCurrentTime(0);
-    setAudioDuration(0);
-    startTracking();
-    // Intentionally do NOT call setTrack — keep podcast playback local to this screen
   };
 
+  // Handle Seek from Bar
+  const isSeekingRef = useRef(false);
   const seekFromEvent = (
     e: React.MouseEvent<HTMLDivElement> | MouseEvent,
     bar: HTMLDivElement,
   ) => {
-    if (!audioRef.current) return;
+    if (!ctxAudioRef.current) return;
     const rect = bar.getBoundingClientRect();
     const ratio = Math.max(
       0,
       Math.min(1, (e.clientX - rect.left) / rect.width),
     );
-    const newTime = ratio * (audioRef.current.duration || 0);
-    audioRef.current.currentTime = newTime;
-    setCurrentTime(newTime);
+    const newTime = ratio * (ctxAudioRef.current.duration || 0);
+    ctxAudioRef.current.currentTime = newTime;
   };
 
   const handleBarMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -241,14 +250,6 @@ export default function PodcastDetailScreen() {
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   };
-
-  useEffect(() => {
-    return () => {
-      audioRef.current?.pause();
-      stopTracking();
-      setIsPlaying(false);
-    };
-  }, [audioRef, setIsPlaying, stopTracking]);
 
   if (loading) {
     return (
@@ -340,41 +341,43 @@ export default function PodcastDetailScreen() {
         ) : (
           <div className="pdd-ep-list">
             {episodes.map((ep, i) => {
-              const isActive = playingId === ep.id;
-              const isActuallyPlaying = isActive && !isPaused;
+              const active = isActive(ep);
+              const actuallyPlaying = isActuallyPlaying(ep);
+              const epDuration = resolvedDurations[ep.id] ?? ep.duration ?? 0;
+              const displayDuration = (active && track?.duration) ? track.duration : epDuration;
               const progress =
-                isActive && audioDuration > 0
-                  ? (currentTime / audioDuration) * 100
+                active && displayDuration > 0
+                  ? (ctxElapsed / displayDuration) * 100
                   : 0;
 
               return (
                 <div
                   key={ep.id}
-                  className={`pdd-ep${isActive ? " playing" : ""}`}
+                  className={`pdd-ep${active ? " playing" : ""}`}
                   style={{ animationDelay: `${Math.min(i * 0.05, 0.5)}s` }}
                 >
                   <button
-                    className={`pdd-ep-play${isActive ? " active" : ""}`}
+                    className={`pdd-ep-play${active ? " active" : ""}`}
                     onClick={() => togglePlay(ep)}
                     disabled={!ep.audioUrl}
                     title={
                       ep.audioUrl
-                        ? isActuallyPlaying
+                        ? actuallyPlaying
                           ? "Tạm dừng"
-                          : isPaused && isActive
+                          : active
                             ? "Tiếp tục"
                             : "Phát"
                         : "Chưa có audio"
                     }
                   >
-                    {isActuallyPlaying ? (
+                    {actuallyPlaying ? (
                       <Pause size={18} fill="currentColor" />
                     ) : (
                       <Play size={18} fill="currentColor" />
                     )}
                   </button>
 
-                  {isActive && (
+                  {active && (
                     <button
                       className="pdd-ep-stop"
                       onClick={stopPlayback}
@@ -403,7 +406,7 @@ export default function PodcastDetailScreen() {
                       )}
                       <span className="pdd-ep-duration">
                         <Clock size={12} />
-                        {fmtTime(resolvedDurations[ep.id] ?? ep.duration ?? 0)}
+                        {fmtTime(displayDuration)}
                       </span>
                       {ep.publishDate && (
                         <span className="pdd-ep-date">
@@ -417,10 +420,10 @@ export default function PodcastDetailScreen() {
                       <p className="pdd-ep-desc">{ep.description}</p>
                     )}
 
-                    {isActive && (
+                    {active && (
                       <div className="pdd-ep-player">
                         <span className="pdd-ep-time">
-                          {fmtTime(currentTime)}
+                          {fmtTime(ctxElapsed)}
                         </span>
                         <div
                           className="pdd-ep-bar"
@@ -437,7 +440,7 @@ export default function PodcastDetailScreen() {
                           />
                         </div>
                         <span className="pdd-ep-time">
-                          {fmtTime(audioDuration)}
+                          {fmtTime(displayDuration)}
                         </span>
                       </div>
                     )}

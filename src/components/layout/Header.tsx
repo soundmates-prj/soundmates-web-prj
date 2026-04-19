@@ -149,8 +149,6 @@ const Header: React.FC = () => {
   };
 
   const handleProfile = () => {
-    // Dừng nhạc hẳn khi chuyển sang trang cá nhân
-    player.leaveSession();
     setShowDropdown(false);
     navigate("/profile");
   };

@@ -96,6 +96,26 @@ export default function PlaylistDetailPage() {
     }
   };
 
+  const restartStation = async () => {
+    if (!stationId) return;
+    try {
+      await liveSessionApiService.restartStation(stationId);
+      showSuccess("Đã yêu cầu Restart Broadcasting");
+    } catch {
+      showError("Restart thất bại");
+    }
+  };
+
+  const reloadStation = async () => {
+    if (!stationId) return;
+    try {
+      await liveSessionApiService.reloadStation(stationId);
+      showSuccess("Đã yêu cầu Reload Config");
+    } catch {
+      showError("Reload thất bại");
+    }
+  };
+
   const handleDrop = (targetId: string) => {
     if (!draggingId || draggingId === targetId) return;
 
@@ -125,8 +145,11 @@ export default function PlaylistDetailPage() {
             <RefreshCw size={15} />
             Làm mới
           </button>
-          <button className="ops-btn ops-btn--primary" onClick={syncPlaylist}>
-            Sync playlist
+          <button className="ops-btn ops-btn--outline" onClick={reloadStation} title="Reload AzuraCast mà không rớt kết nối">
+            Reload Config
+          </button>
+          <button className="ops-btn ops-btn--primary" onClick={restartStation} title="Khởi động lại toàn bộ trạm phát sóng">
+            Restart Broadcast
           </button>
         </div>
       </div>

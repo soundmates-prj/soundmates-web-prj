@@ -178,10 +178,6 @@ export function LiveRoomPage() {
     sendChat: ctxSendChat,
     deleteChat: ctxDeleteChat,
   } = useLiveSession();
-
-  // Stop PlayerContext audio (podcast etc.) so it doesn't play over the live stream
-  const { leaveSession: stopPlayerContextAudio } = usePlayer();
-
   // ── Local UI state only ───────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
   const [chatInput, setChatInput] = useState("");
@@ -332,8 +328,6 @@ export function LiveRoomPage() {
   // ── Join live room on mount (context handles dedup) ───────────────────────
   useEffect(() => {
     if (!sessionId) return;
-    // Stop any PlayerContext audio (podcast etc.) to avoid double playback
-    stopPlayerContextAudio();
     const userId = getCurrentUserId();
     void joinLiveRoom(sessionId, userId).finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -405,10 +399,10 @@ export function LiveRoomPage() {
   // ── Upcoming Queue Filter (exclude playingNext) ──────────────────────────
   const filteredQueue = useMemo(() => {
     if (!nowPlaying?.upcomingQueue) return [];
-    const nextText = nowPlaying?.playingNext?.title + nowPlaying?.playingNext?.artist;
+    const nextText = (nowPlaying?.playingNext?.title || "") + (nowPlaying?.playingNext?.artist || "");
     
     return nowPlaying.upcomingQueue.filter(q => {
-      const qText = q.title + q.artist;
+      const qText = (q.title || "") + (q.artist || "");
       return qText !== nextText;
     });
   }, [nowPlaying?.upcomingQueue, nowPlaying?.playingNext]);

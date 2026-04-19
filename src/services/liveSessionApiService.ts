@@ -669,6 +669,10 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async skipTrack(id: string): Promise<void> {
+    await api.post(`/livesession/${id}/skip`);
+  }
+
   async createSchedule(
     id: string,
     data: {
@@ -782,6 +786,28 @@ class LiveSessionApiService {
       `/livesession/song-requests/${songRequestId}/review`,
       data,
     );
+    return res.data.data;
+  }
+
+  /* ── Station / LiveSession Controls ── */
+
+  async restartStation(id: string): Promise<boolean> {
+    const res = await api.post<ApiResponse<boolean>>(`/station/${id}/restart`);
+    return res.data.data;
+  }
+
+  async reloadStation(id: string): Promise<boolean> {
+    const res = await api.post<ApiResponse<boolean>>(`/station/${id}/reload`);
+    return res.data.data;
+  }
+
+  async restartLiveSession(id: string): Promise<boolean> {
+    const res = await api.post<ApiResponse<boolean>>(`/livesession/${id}/restart`);
+    return res.data.data;
+  }
+
+  async reloadLiveSession(id: string): Promise<boolean> {
+    const res = await api.post<ApiResponse<boolean>>(`/livesession/${id}/reload`);
     return res.data.data;
   }
 

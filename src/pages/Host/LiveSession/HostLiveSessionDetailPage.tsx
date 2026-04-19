@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Pause, Play, RefreshCw, Send, Square, Trash2, Music, X, Mic2, MicOff } from "lucide-react";
+import { ArrowLeft, Pause, Play, RefreshCw, Send, Square, Trash2, Music, X, Mic2, MicOff, SkipForward } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   liveSessionApiService,
@@ -96,6 +96,8 @@ export default function HostLiveSessionDetailPage() {
     null,
   );
   const [rejectReason, setRejectReason] = useState("");
+  const [songRequestPage, setSongRequestPage] = useState(1);
+  const requestsPerPage = 4;
 
   // Chat states
   const [chatInput, setChatInput] = useState("");
@@ -107,6 +109,8 @@ export default function HostLiveSessionDetailPage() {
   // Ref mirrors isMicActive — đọc sync trong handler WebRTC (tránh stale closure)
   const isMicActiveRef = useRef(false);
   const [micError, setMicError] = useState<string | null>(null);
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
 
   // ── WebRTC refs ───────────────────────────────────────────────────────────
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -177,6 +181,18 @@ export default function HostLiveSessionDetailPage() {
   useEffect(() => {
     isMountedRef.current = true;
     void loadData();
+
+    // Lấy danh sách mic ngay khi mount
+    navigator.mediaDevices?.enumerateDevices()
+      .then((devices) => {
+        const audioInputDevices = devices.filter((d) => d.kind === "audioinput");
+        setAudioDevices(audioInputDevices);
+        if (audioInputDevices.length > 0) {
+          // Gán mặc định nếu có (nhưng label có thể rỗng nếu chưa request permission)
+          setSelectedDeviceId((prev) => prev || audioInputDevices[0].deviceId);
+        }
+      })
+      .catch((err) => console.warn("Lỗi list device:", err));
 
     return () => {
       isMountedRef.current = false;
@@ -299,7 +315,7 @@ export default function HostLiveSessionDetailPage() {
       offSub();
       offIce();
     };
-  // Chỉ phụ thuộc sessionId — isMicActive được đọc qua ref, STUN_SERVERS là hằng số
+    // Chỉ phụ thuộc sessionId — isMicActive được đọc qua ref, STUN_SERVERS là hằng số
   }, [sessionId, STUN_SERVERS]);
 
   // ── Cleanup peer connections unmount ──────────────────────────────────────
@@ -399,6 +415,27 @@ export default function HostLiveSessionDetailPage() {
     void loadData();
   }, [loadData]);
 
+  const handleRestartSession = async () => {
+    if (!sessionId) return;
+    if (!window.confirm("Kết nối của tất cả người nghe sẽ bị ngắt trong khoảng 10 giây. Bạn có chắc chắn muốn khởi động lại trạm phát sóng?")) return;
+    try {
+      await liveSessionApiService.restartLiveSession(sessionId);
+      showSuccess("Đã yêu cầu Restart Broadcasting");
+    } catch {
+      showError("Restart thất bại");
+    }
+  };
+
+  const handleReloadSession = async () => {
+    if (!sessionId) return;
+    try {
+      await liveSessionApiService.reloadLiveSession(sessionId);
+      showSuccess("Đã yêu cầu Reload Config");
+    } catch {
+      showError("Reload thất bại");
+    }
+  };
+
   const handleSendChat = async () => {
     if (!chatInput.trim() || !sessionId) return;
     const userId = getCurrentUserId();
@@ -465,8 +502,14 @@ export default function HostLiveSessionDetailPage() {
       // ── Bật mic ──
       setMicError(null);
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const audioConstraints = selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints, video: false });
         localStreamRef.current = stream;
+
+        // Cập nhật lại device để lấy được tên hiển thị sau khi đã cấp quyền permission
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter((d) => d.kind === "audioinput");
+        setAudioDevices(audioInputs);
 
         // Gửi thông báo lên hub (backend chỉ cần biết host connectionId, sdpOffer được bỏ qua)
         isMicActiveRef.current = true;         // Cập nhật ref NGAY LẬP TỨC trước setState
@@ -530,7 +573,33 @@ export default function HostLiveSessionDetailPage() {
         </div>
         <div className="host-live-actions">
           {/* Host Mic Control Button */}
-          <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 8 }}>
+            {audioDevices.length > 0 && (
+              <select
+                value={selectedDeviceId}
+                onChange={(e) => setSelectedDeviceId(e.target.value)}
+                disabled={isMicActive || session?.status !== "Live"}
+                style={{
+                  padding: "8px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  background: "var(--layer-2)",
+                  color: "var(--text-1)",
+                  border: "1px solid var(--border-color)",
+                  maxWidth: "180px",
+                  outline: "none",
+                  cursor: "pointer"
+                }}
+                title="Chọn Microphone"
+              >
+                {audioDevices.map((device, idx) => (
+                  <option key={device.deviceId || idx} value={device.deviceId}>
+                    {device.label || `Microphone ${idx + 1}`}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <button
               className={`host-live-btn ${isMicActive ? "host-live-btn-mic active" : "host-live-btn-mic"}`}
               onClick={() => void handleToggleMic()}
@@ -551,6 +620,12 @@ export default function HostLiveSessionDetailPage() {
             <RefreshCw size={15} />
             Làm mới
           </button>
+          <button className="host-live-btn host-live-btn--ghost" onClick={handleReloadSession} title="Reload AzuraCast config mà không ngắt kết nối">
+            Reload Config
+          </button>
+          <button className="host-live-btn host-live-btn--ghost" onClick={handleRestartSession} title="Khởi động lại toàn bộ trạm phát sóng (ngắt kết nối)">
+            Restart Broadcast
+          </button>
           <button
             className="host-live-btn host-live-btn--primary"
             onClick={() => void runAction("start")}
@@ -561,20 +636,6 @@ export default function HostLiveSessionDetailPage() {
             }
           >
             <Play size={15} /> Bắt đầu
-          </button>
-          <button
-            className="host-live-btn host-live-btn--ghost"
-            onClick={() => void runAction("pause")}
-            disabled={session?.status !== "Live"}
-          >
-            <Pause size={15} /> Tạm dừng
-          </button>
-          <button
-            className="host-live-btn host-live-btn--ghost"
-            onClick={() => void runAction("resume")}
-            disabled={session?.status !== "Paused"}
-          >
-            <Play size={15} /> Tiếp tục
           </button>
           <button
             className="host-live-btn host-live-btn--ghost"
@@ -638,32 +699,75 @@ export default function HostLiveSessionDetailPage() {
                   </div>
                 </div>
 
-                {/* Local Volume Control cho Host */}
+                {/* Local Volume Control & Actions cho Host */}
                 {session?.streamUrl && session.status === "Live" && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", minWidth: 150 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", alignSelf: "center" }}>
-                      Âm lượng nhạc (Toàn hệ thống)
-                    </span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      defaultValue={1.0}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        const audio = document.getElementById("host-local-audio") as HTMLAudioElement;
-                        if (audio) audio.volume = val;
-                        handleVolumeSync(val);
+                  <div style={{ display: "flex", gap: "24px", alignItems: "center", marginTop: "8px" }}>
+                    {/* Âm lượng nhạc trên stream của khán giả */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", minWidth: 100 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", alignSelf: "center", textAlign: "center" }}>
+                        Khán giả nghe<br />(Toàn hệ thống)
+                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        defaultValue={1.0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          handleVolumeSync(val);
+                        }}
+                        style={{ width: "100%", accentColor: "#ef4444" }}
+                        title="Điều chỉnh âm lượng nhạc nền cho TẤT CẢ khán giả đang nghe"
+                      />
+                    </div>
+                    {/* Âm lượng nhạc trên tai nghe/loa của Host */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", minWidth: 100 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", alignSelf: "center", textAlign: "center" }}>
+                        Host nghe<br />(Riêng máy bạn)
+                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        defaultValue={1.0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          const audio = document.getElementById("host-local-audio") as HTMLAudioElement;
+                          if (audio) audio.volume = val;
+                        }}
+                        style={{ width: "100%", accentColor: "#3b82f6" }}
+                        title="Chỉnh âm lượng nhạc mà BẠN nghe thấy (không ảnh hưởng tới khán giả)"
+                      />
+                      <audio
+                        id="host-local-audio"
+                        src={session.streamUrl.replace(/host\.docker\.internal(:\d+)?/gi, "localhost:5000")}
+                        autoPlay
+                        onLoadedMetadata={(e) => { (e.target as HTMLAudioElement).volume = 1.0; }}
+                      />
+                    </div>
+
+                    {/* Nút Skip */}
+                    <button
+                      className="host-live-btn outline danger"
+                      title="Chuyển sang bài tiếp theo (Bỏ qua bài này)"
+                      style={{ padding: "10px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ef4444" }}
+                      onClick={async () => {
+                        const confirmSkip = window.confirm("Bạn có chắc chắn muốn bỏ qua (Skip) bài hát này không?");
+                        if (!confirmSkip) return;
+
+                        try {
+                          await liveSessionApiService.skipTrack(sessionId);
+                          showSuccess("Yêu cầu skip bài đã được gửi. Đang đợi hệ thống xử lý...");
+                        } catch (err) {
+                          console.error("Lỗi khi skip bài", err);
+                          showError("Không thể qua bài lúc này. Vui lòng thử lại sau.");
+                        }
                       }}
-                      style={{ width: "100%", accentColor: "#ef4444" }}
-                    />
-                    <audio
-                      id="host-local-audio"
-                      src={session.streamUrl.replace(/host\.docker\.internal(:\d+)?/gi, "localhost:5000")}
-                      autoPlay
-                      onLoadedMetadata={(e) => { (e.target as HTMLAudioElement).volume = 1.0; }}
-                    />
+                    >
+                      <SkipForward size={20} color="#ef4444" />
+                    </button>
                   </div>
                 )}
               </div>
@@ -708,7 +812,7 @@ export default function HostLiveSessionDetailPage() {
             {songRequests.length === 0 ? (
               <div className="host-live-empty">Chưa có yêu cầu</div>
             ) : (
-              songRequests.map((item) => (
+              songRequests.slice((songRequestPage - 1) * requestsPerPage, songRequestPage * requestsPerPage).map((item) => (
                 <div key={item.id} className="host-live-track-item">
                   <div>
                     <div className="host-live-track-title">{item.songTitle}</div>
@@ -739,6 +843,29 @@ export default function HostLiveSessionDetailPage() {
               ))
             )}
           </div>
+          {songRequests.length > requestsPerPage && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: "10px" }}>
+              <button
+                className="host-live-btn host-live-btn--ghost"
+                disabled={songRequestPage <= 1}
+                onClick={() => setSongRequestPage(p => Math.max(1, p - 1))}
+                style={{ padding: "4px 8px", fontSize: "12px", background: "var(--layer-2)" }}
+              >
+                Trước
+              </button>
+              <span style={{ fontSize: "12px", color: "var(--text-2)", fontWeight: 500 }}>
+                Trang {songRequestPage} / {Math.max(1, Math.ceil(songRequests.length / requestsPerPage))}
+              </span>
+              <button
+                className="host-live-btn host-live-btn--ghost"
+                disabled={songRequestPage >= Math.ceil(songRequests.length / requestsPerPage)}
+                onClick={() => setSongRequestPage(p => p + 1)}
+                style={{ padding: "4px 8px", fontSize: "12px", background: "var(--layer-2)" }}
+              >
+                Sau
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="host-live-card">
