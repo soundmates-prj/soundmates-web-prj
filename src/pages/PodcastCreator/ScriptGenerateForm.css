@@ -503,3 +503,47 @@
   background: var(--neutral-700);
   border-color: var(--neutral-600);
 }
+
+/* ── Tabs ────────────────────────────────────────────────────────────── */
+.sgf-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--neutral-100);
+  padding: 0.35rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+[data-theme="dark"] .sgf-tabs {
+  background: var(--neutral-800);
+}
+.sgf-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--neutral-500);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sgf-tab:hover:not(.sgf-tab--active) {
+  color: var(--neutral-700);
+}
+[data-theme="dark"] .sgf-tab:hover:not(.sgf-tab--active) {
+  color: var(--neutral-300);
+}
+.sgf-tab--active {
+  background: white;
+  color: var(--primary-600);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+[data-theme="dark"] .sgf-tab--active {
+  background: var(--neutral-700);
+  color: white;
+}
