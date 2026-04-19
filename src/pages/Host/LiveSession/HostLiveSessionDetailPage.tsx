@@ -96,6 +96,8 @@ export default function HostLiveSessionDetailPage() {
     null,
   );
   const [rejectReason, setRejectReason] = useState("");
+  const [songRequestPage, setSongRequestPage] = useState(1);
+  const requestsPerPage = 4;
 
   // Chat states
   const [chatInput, setChatInput] = useState("");
@@ -313,7 +315,7 @@ export default function HostLiveSessionDetailPage() {
       offSub();
       offIce();
     };
-  // Chỉ phụ thuộc sessionId — isMicActive được đọc qua ref, STUN_SERVERS là hằng số
+    // Chỉ phụ thuộc sessionId — isMicActive được đọc qua ref, STUN_SERVERS là hằng số
   }, [sessionId, STUN_SERVERS]);
 
   // ── Cleanup peer connections unmount ──────────────────────────────────────
@@ -412,6 +414,27 @@ export default function HostLiveSessionDetailPage() {
   const handleRefresh = useCallback(() => {
     void loadData();
   }, [loadData]);
+
+  const handleRestartSession = async () => {
+    if (!sessionId) return;
+    if (!window.confirm("Kết nối của tất cả người nghe sẽ bị ngắt trong khoảng 10 giây. Bạn có chắc chắn muốn khởi động lại trạm phát sóng?")) return;
+    try {
+      await liveSessionApiService.restartLiveSession(sessionId);
+      showSuccess("Đã yêu cầu Restart Broadcasting");
+    } catch {
+      showError("Restart thất bại");
+    }
+  };
+
+  const handleReloadSession = async () => {
+    if (!sessionId) return;
+    try {
+      await liveSessionApiService.reloadLiveSession(sessionId);
+      showSuccess("Đã yêu cầu Reload Config");
+    } catch {
+      showError("Reload thất bại");
+    }
+  };
 
   const handleSendChat = async () => {
     if (!chatInput.trim() || !sessionId) return;
@@ -597,6 +620,12 @@ export default function HostLiveSessionDetailPage() {
             <RefreshCw size={15} />
             Làm mới
           </button>
+          <button className="host-live-btn host-live-btn--ghost" onClick={handleReloadSession} title="Reload AzuraCast config mà không ngắt kết nối">
+            Reload Config
+          </button>
+          <button className="host-live-btn host-live-btn--ghost" onClick={handleRestartSession} title="Khởi động lại toàn bộ trạm phát sóng (ngắt kết nối)">
+            Restart Broadcast
+          </button>
           <button
             className="host-live-btn host-live-btn--primary"
             onClick={() => void runAction("start")}
@@ -676,7 +705,7 @@ export default function HostLiveSessionDetailPage() {
                     {/* Âm lượng nhạc trên stream của khán giả */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", minWidth: 100 }}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", alignSelf: "center", textAlign: "center" }}>
-                        Khán giả nghe<br/>(Toàn hệ thống)
+                        Khán giả nghe<br />(Toàn hệ thống)
                       </span>
                       <input
                         type="range"
@@ -695,7 +724,7 @@ export default function HostLiveSessionDetailPage() {
                     {/* Âm lượng nhạc trên tai nghe/loa của Host */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", minWidth: 100 }}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", alignSelf: "center", textAlign: "center" }}>
-                        Host nghe<br/>(Riêng máy bạn)
+                        Host nghe<br />(Riêng máy bạn)
                       </span>
                       <input
                         type="range"
@@ -718,7 +747,7 @@ export default function HostLiveSessionDetailPage() {
                         onLoadedMetadata={(e) => { (e.target as HTMLAudioElement).volume = 1.0; }}
                       />
                     </div>
-                    
+
                     {/* Nút Skip */}
                     <button
                       className="host-live-btn outline danger"
@@ -727,7 +756,7 @@ export default function HostLiveSessionDetailPage() {
                       onClick={async () => {
                         const confirmSkip = window.confirm("Bạn có chắc chắn muốn bỏ qua (Skip) bài hát này không?");
                         if (!confirmSkip) return;
-                        
+
                         try {
                           await liveSessionApiService.skipTrack(sessionId);
                           showSuccess("Yêu cầu skip bài đã được gửi. Đang đợi hệ thống xử lý...");
@@ -783,7 +812,7 @@ export default function HostLiveSessionDetailPage() {
             {songRequests.length === 0 ? (
               <div className="host-live-empty">Chưa có yêu cầu</div>
             ) : (
-              songRequests.map((item) => (
+              songRequests.slice((songRequestPage - 1) * requestsPerPage, songRequestPage * requestsPerPage).map((item) => (
                 <div key={item.id} className="host-live-track-item">
                   <div>
                     <div className="host-live-track-title">{item.songTitle}</div>
@@ -814,6 +843,29 @@ export default function HostLiveSessionDetailPage() {
               ))
             )}
           </div>
+          {songRequests.length > requestsPerPage && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: "10px" }}>
+              <button
+                className="host-live-btn host-live-btn--ghost"
+                disabled={songRequestPage <= 1}
+                onClick={() => setSongRequestPage(p => Math.max(1, p - 1))}
+                style={{ padding: "4px 8px", fontSize: "12px", background: "var(--layer-2)" }}
+              >
+                Trước
+              </button>
+              <span style={{ fontSize: "12px", color: "var(--text-2)", fontWeight: 500 }}>
+                Trang {songRequestPage} / {Math.max(1, Math.ceil(songRequests.length / requestsPerPage))}
+              </span>
+              <button
+                className="host-live-btn host-live-btn--ghost"
+                disabled={songRequestPage >= Math.ceil(songRequests.length / requestsPerPage)}
+                onClick={() => setSongRequestPage(p => p + 1)}
+                style={{ padding: "4px 8px", fontSize: "12px", background: "var(--layer-2)" }}
+              >
+                Sau
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="host-live-card">

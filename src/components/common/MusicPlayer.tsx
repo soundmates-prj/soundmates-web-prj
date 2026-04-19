@@ -45,15 +45,26 @@ export function MusicPlayer() {
   const liveCtx = useLiveSession();
   const isInLiveSession = !!liveCtx.activeSessionId;
 
-  // Use live context values when in a live session, otherwise use PlayerContext
-  const isPlaying = isInLiveSession ? liveCtx.isPlaying : playerIsPlaying;
-  const volume = isInLiveSession ? liveCtx.volume : playerVolume;
-  const isMuted = isInLiveSession ? liveCtx.isMuted : playerIsMuted;
-  const elapsed = isInLiveSession ? liveCtx.displayElapsed : playerElapsed;
-  const toggleMute = isInLiveSession ? liveCtx.toggleMute : playerToggleMute;
-  const setVolume = isInLiveSession
-    ? liveCtx.setVolume
-    : playerSetVolume;
+  // Track which audio is "active" to display in this bottom player.
+  const [activeSource, setActiveSource] = useState<"live" | "podcast">(isInLiveSession ? "live" : "podcast");
+
+  // Keep activeSource synced:
+  // If user joins a live session and we don't have a podcast playing, default to live.
+  useEffect(() => {
+    if (isInLiveSession && (!track || !playerIsPlaying)) {
+      setActiveSource("live");
+    } else if (!isInLiveSession && track) {
+      setActiveSource("podcast");
+    }
+  }, [isInLiveSession, track, playerIsPlaying]);
+
+  // Use values based on activeSource
+  const isPlaying = activeSource === "live" && isInLiveSession ? liveCtx.isPlaying : playerIsPlaying;
+  const volume = activeSource === "live" && isInLiveSession ? liveCtx.volume : playerVolume;
+  const isMuted = activeSource === "live" && isInLiveSession ? liveCtx.isMuted : playerIsMuted;
+  const elapsed = activeSource === "live" && isInLiveSession ? liveCtx.displayElapsed : playerElapsed;
+  const toggleMute = activeSource === "live" && isInLiveSession ? liveCtx.toggleMute : playerToggleMute;
+  const setVolume = activeSource === "live" && isInLiveSession ? liveCtx.setVolume : playerSetVolume;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -173,6 +184,10 @@ export function MusicPlayer() {
     ctxAudioRef.current = audio;
     audio.volume = volume / 100;
     const baseDuration = ep.duration ?? 0;
+    if (activeSource === "live" && isInLiveSession && !liveCtx.isMuted) {
+      liveCtx.toggleMute(); // Tắt Live Session khi bật Podcast
+    }
+    setActiveSource("podcast");
     setTrack({
       title: ep.title,
       artist: "Podcast",
@@ -222,35 +237,33 @@ export function MusicPlayer() {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  // Live session: derive track info from context
+  // Determine what to display based on activeSource!
   const liveTrack = isInLiveSession ? liveCtx.nowPlaying?.currentTrack : null;
-  const displayTrack = isInLiveSession
-    ? (liveTrack
-        ? {
-            title: liveTrack.title,
-            artist: liveTrack.artist,
-            artUrl: liveTrack.artUrl,
-            duration: liveTrack.duration,
-          }
-        : null)
+  const displayTrack = (activeSource === "live" && isInLiveSession && liveTrack)
+    ? {
+        title: liveTrack.title,
+        artist: liveTrack.artist,
+        artUrl: liveTrack.artUrl,
+        duration: liveTrack.duration,
+      }
     : track;
 
   const title = displayTrack?.title ?? "Chưa có bài phát";
-  const artist = isInLiveSession
+  const artist = (activeSource === "live" && isInLiveSession)
     ? (liveCtx.activeSession?.stationName || liveCtx.nowPlaying?.stationName || "Live")
     : (displayTrack?.artist ?? "...");
   const artUrl = displayTrack?.artUrl ?? PLACEHOLDER_ART;
-  const duration = (isInLiveSession ? liveTrack?.duration : track?.duration) ?? 0;
+  const duration = ((activeSource === "live" && isInLiveSession) ? liveTrack?.duration : track?.duration) ?? 0;
   const displayElapsed = Math.max(0, duration > 0 ? Math.min(elapsed, duration) : elapsed);
   const progressPct = duration > 0 ? Math.min((displayElapsed / duration) * 100, 100) : 0;
   const displayVolume = isMuted ? 0 : volume;
-  const showPlayIcon = isInLiveSession ? isMuted : !isPlaying;
+  const showPlayIcon = (activeSource === "live" && isInLiveSession) ? isMuted : !isPlaying;
 
   // Whether to show the player at all
-  const hasContent = isInLiveSession || !!track;
+  const hasContent = (activeSource === "live" && isInLiveSession) || !!track;
 
   const handleTogglePlay = () => {
-    if (isInLiveSession) {
+    if (activeSource === "live" && isInLiveSession) {
       liveCtx.toggleMute();
     } else {
       toggle();
@@ -258,17 +271,20 @@ export function MusicPlayer() {
   };
 
   const handleLeave = () => {
-    if (isInLiveSession) {
-      // Navigate to live listing first, then stop audio
+    if (activeSource === "live" && isInLiveSession) {
       navigate("/live");
       liveCtx.leaveLiveRoom();
+      // If there's a podcast paused in the background, we can switch back to it
+      if (track) setActiveSource("podcast");
     } else {
       leaveSession();
+      // If we are in a live session when leaving podcast, switch back to live
+      if (isInLiveSession) setActiveSource("live");
     }
   };
 
   const handleNavigateToLive = () => {
-    if (liveCtx.activeSessionId) {
+    if (activeSource === "live" && liveCtx.activeSessionId) {
       navigate(`/live/${liveCtx.activeSessionId}`);
     }
   };
@@ -305,16 +321,16 @@ export function MusicPlayer() {
           <div className="left-section">
             <div
               className="album-art-container"
-              style={{ cursor: isInLiveSession ? "pointer" : "default" }}
-              onClick={isInLiveSession ? handleNavigateToLive : undefined}
-              title={isInLiveSession ? "Quay lại phòng Live" : undefined}
+              style={{ cursor: (activeSource === "live" && isInLiveSession) ? "pointer" : "default" }}
+              onClick={(activeSource === "live" && isInLiveSession) ? handleNavigateToLive : undefined}
+              title={(activeSource === "live" && isInLiveSession) ? "Quay lại phòng Live" : undefined}
             >
               <img
                 src={artUrl}
                 alt={title}
                 className={`album-art ${!hasContent ? "album-art--placeholder" : ""}`}
               />
-              {isInLiveSession && (
+              {(activeSource === "live" && isInLiveSession) && (
                 <div className="live-badge-overlay">
                   <Radio size={10} />
                   LIVE
@@ -323,12 +339,12 @@ export function MusicPlayer() {
             </div>
 
             <div className="track-info-container">
-              <p className="track-title" style={{ cursor: isInLiveSession ? "pointer" : "default" }} onClick={isInLiveSession ? handleNavigateToLive : undefined}>{title}</p>
+              <p className="track-title" style={{ cursor: (activeSource === "live" && isInLiveSession) ? "pointer" : "default" }} onClick={(activeSource === "live" && isInLiveSession) ? handleNavigateToLive : undefined}>{title}</p>
               <p className="track-artist">{artist}</p>
             </div>
 
             {/* Heart — only for non-live */}
-            {!isInLiveSession && track && (
+            {!(activeSource === "live" && isInLiveSession) && track && (
               <div
                 className="heart-icon-container"
                 title={isFavorite ? "Bỏ yêu thích" : "Yêu thích"}
@@ -413,7 +429,7 @@ export function MusicPlayer() {
               <div
                 className="leave-session-btn"
                 onClick={handleLeave}
-                title={isInLiveSession ? "Thoát Live Session" : "Dừng phát"}
+                title={(activeSource === "live" && isInLiveSession) ? "Thoát Live Session" : "Dừng Podcast"}
                 style={{ cursor: "pointer" }}
               >
                 <X size={18} strokeWidth={2} color={iconMuted} />
