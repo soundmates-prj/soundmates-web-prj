@@ -17,6 +17,7 @@ export function ToastProvider() {
       draggable
       theme={mode}
       toastClassName="custom-toast"
+      style={{ zIndex: 100000 }}
     />
   );
 }

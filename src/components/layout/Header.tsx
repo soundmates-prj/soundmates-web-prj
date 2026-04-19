@@ -45,6 +45,8 @@ const Header: React.FC = () => {
   const [showLiveDropdown, setShowLiveDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>(location.pathname);
@@ -101,10 +103,42 @@ const Header: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    const getScrollY = () =>
+      Math.max(
+        window.scrollY || 0,
+        document.documentElement.scrollTop || 0,
+        document.body.scrollTop || 0,
+      );
+
+    const handleScroll = () => {
+      const currentScrollY = getScrollY();
+      const delta = currentScrollY - lastScrollY.current;
+
+      // Luôn cập nhật vị trí trước khi check
+      lastScrollY.current = currentScrollY;
+
+      setIsScrolled(currentScrollY > 20);
+
+      if (currentScrollY < 50 || showMobileMenu) {
+        setIsVisible(true);
+      } else if (delta > 10) {
+        // Scroll xuống rõ ràng → ẩn
+        setIsVisible(false);
+      } else if (delta < -5) {
+        // Scroll lên → hiện ngay
+        setIsVisible(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("scroll", handleScroll, { passive: true });
+    document.body.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("scroll", handleScroll);
+      document.body.removeEventListener("scroll", handleScroll);
+    };
+  }, [showMobileMenu]);
 
   useEffect(() => {
     syncAuthState();
@@ -155,7 +189,12 @@ const Header: React.FC = () => {
 
   return (
     <div className="header">
-      <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
+      {/* Spacer: position:fixed lấy header ra khỏi flow,
+          div này giữ chỗ 64px để content không nhảy lên */}
+      <div style={{ height: '64px', flexShrink: 0 }} />
+      <header
+        className={`home-header ${isScrolled ? "scrolled" : ""} ${!isVisible ? "hidden" : ""}`}
+      >
         <div className="header-container">
           <div className="header-left" onClick={() => navigate("/")}>
             <img

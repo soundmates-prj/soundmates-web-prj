@@ -205,48 +205,60 @@
 /* ── Responsive: 1024px ── */
 @media (max-width: 1024px) {
     .footer-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
         gap: 32px;
         margin-bottom: 28px;
     }
 
     .footer-brand {
-        grid-column: 1 / -1;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        justify-self: stretch;
         width: 100%;
     }
 
+    /* Links group: vẫn 3 cột ngang */
     .footer-links-group {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
         gap: 24px;
+        width: 100%;
+    }
+
+    /* App section: full width, centered */
+    .footer-app-section {
+        width: 100%;
+        align-items: center;
+        text-align: center;
+    }
+
+    .apps {
+        flex-direction: row;
+        justify-content: center;
+        gap: 12px;
     }
 }
 
 /* ── Responsive: 768px ── */
 @media (max-width: 768px) {
     .home-footer {
-        padding: 32px 24px calc(16px + 75px);
+        padding: 32px 20px calc(16px + 75px);
     }
 
     .footer-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
+        gap: 28px;
         margin-bottom: 24px;
     }
 
     .footer-brand {
-        grid-column: 1 / -1;
         flex-direction: column;
         align-items: center;
         gap: 16px;
-        width: 100%;
+        text-align: center;
     }
 
-    .footer-links-group {
-        grid-column: 1 / -1;
-        gap: 20px;
+    .footer-logo {
+        justify-content: center;
     }
 
     .footer-logo img {
@@ -257,9 +269,36 @@
         font-size: 1.12rem;
     }
 
+    .footer-social {
+        justify-content: center;
+    }
+
     .footer-social-link {
         width: 34px;
         height: 34px;
+    }
+
+    /* Links: vẫn 3 cột ngang, thu nhỏ gap */
+    .footer-links-group {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .footer-section-title {
+        font-size: 0.88rem;
+        margin-bottom: 6px;
+    }
+
+    .footer-links a {
+        font-size: 0.82rem;
+    }
+
+    .footer-app-section {
+        align-items: center;
+    }
+
+    .apps {
+        justify-content: center;
     }
 
     .footer-bottom {
@@ -272,26 +311,20 @@
     }
 }
 
-/* ── Responsive: 480px ── */
+/* ── Responsive: 480px — Stack everything ── */
 @media (max-width: 480px) {
     .home-footer {
         padding: 24px 16px calc(12px + 75px);
     }
 
     .footer-grid {
-        grid-template-columns: 1fr;
         gap: 20px;
         margin-bottom: 20px;
     }
 
-    .footer-brand,
-    .footer-links-group,
-    .footer-app-section {
-        grid-column: auto;
-    }
-
+    /* Links: 3 cột → 1 cột dọc */
     .footer-links-group {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         gap: 20px;
     }
 
@@ -300,7 +333,7 @@
     }
 
     .footer-logo-text {
-        font-size: 1.02rem;
+        font-size: 1rem;
     }
 
     .footer-tagline {
@@ -308,22 +341,22 @@
     }
 
     .footer-section-title {
-        font-size: 0.9rem;
-        margin-bottom: 6px;
+        font-size: 0.88rem;
     }
 
     .footer-links a {
-        font-size: 0.85rem;
+        font-size: 0.83rem;
     }
 
     .apps {
-        flex-direction: row;
+        flex-direction: column;
+        align-items: center;
         gap: 10px;
     }
 
     .app-store-link img {
-        height: 36px;
-        width: 110px;
+        height: 38px;
+        width: 130px;
     }
 
     .footer-bottom {
@@ -358,7 +391,7 @@
     }
 
     .footer-links a {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
     }
 
     .footer-social-link {

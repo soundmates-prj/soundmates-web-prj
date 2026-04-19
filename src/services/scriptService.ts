@@ -58,6 +58,25 @@ class ScriptService {
       return this.normalizeScript(response.data.data.script);
     } catch (error: any) {
       console.error('Error generating script:', error);
+
+      // Detect Gemini 503 / Polly circuit breaker errors and surface clearly
+      const status = error.response?.status;
+      const serverMsg: string = error.response?.data?.message ?? error.message ?? '';
+      const isGeminiDown =
+        status === 503 ||
+        serverMsg.toLowerCase().includes('503') ||
+        serverMsg.toLowerCase().includes('circuit') ||
+        serverMsg.toLowerCase().includes('circuit is now open') ||
+        serverMsg.toLowerCase().includes('unavailable') ||
+        serverMsg.toLowerCase().includes('high demand');
+
+      if (isGeminiDown) {
+        throw new Error(
+          'AI đang tải cao, không thể tạo script lúc này. ' +
+          'Vui lòng thử lại sau vài phút, hoặc chọn "Tự viết Script" để không cần AI.'
+        );
+      }
+
       throw new Error(
         error.response?.data?.message || 
         error.message || 
