@@ -31,6 +31,7 @@ import { parseShareMusic } from "../../components/blog/CommentModal";
 import ReactionButton, {
   ReactionSummary,
 } from "../../components/blog/ReactionButton";
+import AuthPromptModal from "../../components/common/AuthPromptModal";
 import "./ForumPage.css";
 
 const PAGE_SIZE = 10;
@@ -39,12 +40,16 @@ const PAGE_SIZE = 10;
 function PostCard({
   post,
   authorName,
+  onRequireAuth,
 }: {
   post: PublishedPost;
   authorName?: string;
+  onRequireAuth: () => void;
 }) {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  
+  const isLoggedIn = !!localStorage.getItem("accessToken");
 
   const shareData =
     post.postType === "share-music" ? parseShareMusic(post.contentText) : null;
@@ -154,8 +159,12 @@ function PostCard({
           <ReactionButton
             postId={post.id}
             initialCount={post.reactionCount ?? 0}
+            onRequireAuth={onRequireAuth}
           />
-          <button className="fp-action-btn" onClick={() => setShowModal(true)}>
+          <button className="fp-action-btn" onClick={() => {
+            if (!isLoggedIn) onRequireAuth();
+            else setShowModal(true);
+          }}>
             <MessageCircle size={15} /> Bình luận
           </button>
           {/* <button className="fp-action-btn">
@@ -188,6 +197,7 @@ export default function ForumPage() {
   const [authorNamesByUserId, setAuthorNamesByUserId] = useState<
     Record<string, string>
   >({});
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     const q = search.trim().toLowerCase();
@@ -474,6 +484,7 @@ export default function ForumPage() {
                     <PostCard
                       post={post}
                       authorName={authorNamesByUserId[post.userId]}
+                      onRequireAuth={() => setShowAuthModal(true)}
                     />
                   </div>
                 ))}
@@ -526,6 +537,13 @@ export default function ForumPage() {
           )}
         </main>
       </div>
+      
+      <AuthPromptModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        title="Yêu cầu đăng nhập"
+        message="Vui lòng đăng nhập hoặc đăng ký để thả cảm xúc và bình luận bài viết của mọi người nhé!"
+      />
     </div>
   );
 }

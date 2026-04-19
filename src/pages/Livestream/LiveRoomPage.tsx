@@ -37,6 +37,7 @@ import type { SongRequestResult } from "../../services/liveSessionApiService";
 import { useLiveSession } from "../../context/LiveSessionContext";
 import { usePlayer } from "../../context/PlayerContext";
 import { liveHubService } from "../../services/liveHubService";
+import AuthPromptModal from "../../components/common/AuthPromptModal";
 import "./LiveRoomPage.css";
 
 // ─── Types (local UI only) ────────────────────────────────────────────────────
@@ -950,30 +951,14 @@ export function LiveRoomPage() {
         </div>
       )}
 
-      {/* Auth Prompt Modal */}
-      {showAuthPopup && (
-        <div className="lr-request-modal-overlay">
-          <div className="lr-request-modal" style={{ textAlign: "center", padding: "30px 20px" }}>
-            <h3 style={{ marginBottom: 15, color: "var(--user-theme-text, var(--lr-title))" }}>
-              Hết thời gian nghe thử
-            </h3>
-            <p style={{ color: "var(--user-theme-text, var(--lr-muted))", marginBottom: 25, fontSize: "14px" }}>
-              Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!
-            </p>
-            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-              <button onClick={() => navigate("/login")} style={{ padding: "10px 20px", background: "var(--user-theme-primary, #5cc3f0)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>
-                Đăng nhập
-              </button>
-              <button onClick={() => navigate("/register")} style={{ padding: "10px 20px", background: "var(--lr-btn-soft-bg)", color: "var(--user-theme-text, var(--lr-text))", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>
-                Đăng ký
-              </button>
-              <button onClick={() => navigate("/")} style={{ padding: "10px 20px", background: "transparent", color: "var(--user-theme-text, var(--lr-muted))", border: "1px solid var(--lr-border)", borderRadius: "8px", cursor: "pointer" }}>
-                Về trang chủ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AuthPromptModal 
+        isOpen={showAuthPopup} 
+        onClose={() => setShowAuthPopup(false)}
+        title={authPopupMode === "guestLimit" ? "Hết thời gian nghe thử" : "Yêu cầu đăng nhập"}
+        message={authPopupMode === "guestLimit" 
+          ? "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!" 
+          : "Vui lòng đăng nhập hoặc đăng ký để tiếp tục sử dụng tính năng này nhé!"}
+      />
     </div>
   );
 }

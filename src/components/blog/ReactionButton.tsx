@@ -128,12 +128,14 @@ interface ReactionButtonProps {
   initialCount?: number;
   initialReaction?: ReactionType | null;
   initialReactionId?: string | null;
+  onRequireAuth?: () => void;
 }
 
 export default function ReactionButton({
   postId,
   initialCount = 0,
   initialReaction = null,
+  onRequireAuth,
 }: ReactionButtonProps) {
   const [count, setCount] = useState(initialCount);
   const [myReaction, setMyReaction] = useState<ReactionType | null>(
@@ -212,7 +214,11 @@ export default function ReactionButton({
 
   /* Click = quick toggle like/unlike */
   const onMainClick = () => {
-    if (!isLoggedIn || loading) return;
+    if (!isLoggedIn) {
+      if (onRequireAuth) onRequireAuth();
+      return;
+    }
+    if (loading) return;
 
     if (showPicker) {
       setShowPicker(false);

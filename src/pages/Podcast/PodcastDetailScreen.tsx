@@ -18,6 +18,7 @@ import podcastService from "../../services/podcastService";
 import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
 import { usePlayer } from "../../context/PlayerContext";
 import { useLiveSession } from "../../context/LiveSessionContext";
+import AuthPromptModal from "../../components/common/AuthPromptModal";
 import "./PodcastDetailScreen.css";
 
 const fmtDate = (d?: string) => {
@@ -50,6 +51,7 @@ export default function PodcastDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [resolvingSave, setResolvingSave] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [resolvedDurations, setResolvedDurations] = useState<
     Record<string, number>
   >({});
@@ -175,6 +177,12 @@ export default function PodcastDetailScreen() {
 
   const togglePlay = (ep: PodcastEpisode) => {
     if (!ep.audioUrl) return;
+
+    const isLoggedIn = !!localStorage.getItem("accessToken");
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
 
     if (playingId === ep.id) {
       // Same episode — toggle pause/resume
@@ -486,6 +494,12 @@ export default function PodcastDetailScreen() {
           </div>
         )}
       </section>
+      <AuthPromptModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        title="Yêu cầu đăng nhập"
+        message="Vui lòng đăng nhập hoặc đăng ký để phát Podcast nhé!"
+      />
     </div>
   );
 }

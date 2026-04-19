@@ -250,6 +250,8 @@ export default function Home() {
   const { containerRef: playlistRef, handlers: playlistHandlers } = useDragScroll();
   const { containerRef: podcastRef, handlers: podcastHandlers } = useDragScroll();
 
+  const liveSession = scheduleItems.find((item) => item.isLive);
+
   // ── Fetch Functions ──────────────────────────────────────────────────────
 
   const fetchUserPlaylists = useCallback(async () => {
@@ -482,39 +484,45 @@ export default function Home() {
       </motion.section>
 
       {/* ── Live Room ── */}
-      <motion.section
-        className="sm-section"
-        variants={sectionReveal}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.15 }}
-      >
-        <div className="sm-container">
-          <div className="section-header">
-            <h2 className="section-title">Phòng Đang Phát</h2>
-            <Link to="/live" className="section-link">
-              Xem thêm <Icon name="chevron-right" size={16} />
-            </Link>
-          </div>
-
-          <div className="live-room-card">
-            <div className="live-room-badge">LIVE</div>
-            <div className="live-room-content">
-              <div className="live-room-info">
-                <h3 className="live-room-title">Đêm nhạc cổ điển êm dịu</h3>
-                <div className="live-room-meta">
-                  <span><Icon name="users" size={16} /> 33 Kết nối</span>
-                  <span><Icon name="heart" size={16} /> 156 lượt thích</span>
-                </div>
-                <Link to="/live" className="live-room-link">
-                  Xem danh sách phát <Icon name="chevron-right" size={14} />
-                </Link>
-              </div>
-              <Link to="/live" className="live-room-cta">Tham Gia</Link>
+      {(isScheduleLoading || liveSession) && (
+        <motion.section
+          className="sm-section"
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+        >
+          <div className="sm-container">
+            <div className="section-header">
+              <h2 className="section-title">Phòng Đang Phát</h2>
+              <Link to="/live" className="section-link">
+                Xem thêm <Icon name="chevron-right" size={16} />
+              </Link>
             </div>
+
+            {isScheduleLoading ? (
+              <div className="live-room-card skeleton" style={{ height: 160 }} />
+            ) : liveSession ? (
+              <div className="live-room-card">
+                <div className="live-room-badge">LIVE</div>
+                <div className="live-room-content">
+                  <div className="live-room-info">
+                    <h3 className="live-room-title">{liveSession.title}</h3>
+                    <div className="live-room-meta">
+                      <span><Icon name="users" size={16} /> {/* Mock số lượng hoặc từ API nếu có */} Người nghe ẩn danh</span>
+                      <span><Icon name="user" size={16} /> {liveSession.host}</span>
+                    </div>
+                    <Link to={`/live/${liveSession.id}`} className="live-room-link">
+                      Xem danh sách phát <Icon name="chevron-right" size={14} />
+                    </Link>
+                  </div>
+                  <Link to={`/live/${liveSession.id}`} className="live-room-cta">Tham Gia</Link>
+                </div>
+              </div>
+            ) : null}
           </div>
-        </div>
-      </motion.section>
+        </motion.section>
+      )}
 
       {/* ── Schedule ── */}
       <motion.section
