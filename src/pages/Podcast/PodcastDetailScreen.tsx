@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
+import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
 import { usePlayer } from "../../context/PlayerContext";
 import { useLiveSession } from "../../context/LiveSessionContext";
 import "./PodcastDetailScreen.css";
