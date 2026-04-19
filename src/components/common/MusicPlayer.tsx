@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Play,
   Pause,
@@ -49,9 +49,10 @@ export function MusicPlayer() {
   const [activeSource, setActiveSource] = useState<"live" | "podcast">(isInLiveSession ? "live" : "podcast");
 
   // Keep activeSource synced:
-  // If user joins a live session and we don't have a podcast playing, default to live.
   useEffect(() => {
-    if (isInLiveSession && (!track || !playerIsPlaying)) {
+    if (playerIsPlaying && track) {
+      setActiveSource("podcast");
+    } else if (isInLiveSession && (!track || !playerIsPlaying)) {
       setActiveSource("live");
     } else if (!isInLiveSession && track) {
       setActiveSource("podcast");
@@ -68,6 +69,7 @@ export function MusicPlayer() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const progressRef = useRef<HTMLDivElement>(null);
 
   // ─── Theme detection via MutationObserver (not on every render) ────────────
   const [isDark, setIsDark] = useState(
@@ -278,6 +280,16 @@ export function MusicPlayer() {
     }
   };
 
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (activeSource === "live" && isInLiveSession) return;
+    if (!ctxAudioRef.current || duration <= 0 || !progressRef.current) return;
+    const rect = progressRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const newTime = ratio * duration;
+    ctxAudioRef.current.currentTime = newTime;
+    setElapsed(newTime);
+  };
+
   const handleLeave = () => {
     if (activeSource === "live" && isInLiveSession) {
       navigate("/live");
@@ -317,7 +329,12 @@ export function MusicPlayer() {
     <div className="music-player">
       <div className="music-player-container">
         {/* Progress Bar */}
-        <div className="progress-section">
+        <div 
+          className="progress-section" 
+          ref={progressRef}
+          onClick={handleSeek}
+          style={{ cursor: (activeSource === "live" && isInLiveSession) ? "default" : "pointer" }}
+        >
           <div className="progress-bar-track">
             <div className="progress-bar-fill" style={{ width: `${progressPct}%` }} />
           </div>

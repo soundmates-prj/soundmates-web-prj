@@ -25,6 +25,7 @@ import type {
   MusicCatalogItem,
 } from "../../services/userPlaylistService";
 import { usePlayer } from "../../context/PlayerContext";
+import { useLiveSession } from "../../context/LiveSessionContext";
 import ImageUploader from "./modals/ImageUploader";
 import musicCatalogService from "../../services/musicCatalogService";
 import api from "../../services/axios";
@@ -221,6 +222,7 @@ export default function UserPlaylistTab({ userId, isOwnProfile = true }: UserPla
   const blobUrlRef = useRef<string | null>(null);
 
   const { setTrack, setIsPlaying, audioRef, isPlaying } = usePlayer();
+  const liveCtx = useLiveSession();
 
   const notifyError = (message: string, detail?: string) => {
     console.error(message, detail ?? "");
@@ -269,6 +271,11 @@ export default function UserPlaylistTab({ userId, isOwnProfile = true }: UserPla
       audioRef.current.pause();
       audioRef.current = null;
     }
+
+    if (liveCtx.activeSessionId && !liveCtx.isMuted) {
+      liveCtx.toggleMute();
+    }
+
     const audio = new Audio();
     audioRef.current = audio;
     audio.volume = 0.8;
