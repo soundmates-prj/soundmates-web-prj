@@ -151,6 +151,7 @@ export interface NowPlayingUpdatedEvent {
     isRequest: boolean;
     lyrics?: string | null;
   } | null;
+  upcomingQueue?: any[];
   listenUrl: string | null;
   totalListeners: number;
 }
