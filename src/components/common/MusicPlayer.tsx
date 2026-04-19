@@ -264,8 +264,16 @@ export function MusicPlayer() {
 
   const handleTogglePlay = () => {
     if (activeSource === "live" && isInLiveSession) {
+      if (liveCtx.isMuted && playerIsPlaying) {
+        // Pausing podcast when playing live
+        toggle();
+      }
       liveCtx.toggleMute();
     } else {
+      if (!playerIsPlaying && isInLiveSession && !liveCtx.isMuted) {
+        // Mute live when playing podcast
+        liveCtx.toggleMute();
+      }
       toggle();
     }
   };
