@@ -214,6 +214,15 @@ export function LiveRoomPage() {
   const STUN_SERVERS: RTCIceServer[] = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
+    // TURN server — relay audio khi NAT/Firewall chặn P2P trực tiếp
+    {
+      urls: [
+        `turn:${import.meta.env.VITE_TURN_HOST ?? "161.97.85.232"}:3478?transport=udp`,
+        `turn:${import.meta.env.VITE_TURN_HOST ?? "161.97.85.232"}:3478?transport=tcp`,
+      ],
+      username: import.meta.env.VITE_TURN_USERNAME ?? "soundmates",
+      credential: import.meta.env.VITE_TURN_PASSWORD ?? "SoundmatesTurn@2024!",
+    },
   ];
 
 
