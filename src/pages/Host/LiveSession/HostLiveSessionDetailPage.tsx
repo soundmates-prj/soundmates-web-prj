@@ -107,6 +107,8 @@ export default function HostLiveSessionDetailPage() {
   // Ref mirrors isMicActive — đọc sync trong handler WebRTC (tránh stale closure)
   const isMicActiveRef = useRef(false);
   const [micError, setMicError] = useState<string | null>(null);
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
 
   // ── WebRTC refs ───────────────────────────────────────────────────────────
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -177,6 +179,18 @@ export default function HostLiveSessionDetailPage() {
   useEffect(() => {
     isMountedRef.current = true;
     void loadData();
+
+    // Lấy danh sách mic ngay khi mount
+    navigator.mediaDevices?.enumerateDevices()
+      .then((devices) => {
+        const audioInputDevices = devices.filter((d) => d.kind === "audioinput");
+        setAudioDevices(audioInputDevices);
+        if (audioInputDevices.length > 0) {
+          // Gán mặc định nếu có (nhưng label có thể rỗng nếu chưa request permission)
+          setSelectedDeviceId((prev) => prev || audioInputDevices[0].deviceId);
+        }
+      })
+      .catch((err) => console.warn("Lỗi list device:", err));
 
     return () => {
       isMountedRef.current = false;
@@ -465,8 +479,14 @@ export default function HostLiveSessionDetailPage() {
       // ── Bật mic ──
       setMicError(null);
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const audioConstraints = selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints, video: false });
         localStreamRef.current = stream;
+
+        // Cập nhật lại device để lấy được tên hiển thị sau khi đã cấp quyền permission
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter((d) => d.kind === "audioinput");
+        setAudioDevices(audioInputs);
 
         // Gửi thông báo lên hub (backend chỉ cần biết host connectionId, sdpOffer được bỏ qua)
         isMicActiveRef.current = true;         // Cập nhật ref NGAY LẬP TỨC trước setState
@@ -530,7 +550,33 @@ export default function HostLiveSessionDetailPage() {
         </div>
         <div className="host-live-actions">
           {/* Host Mic Control Button */}
-          <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 8 }}>
+            {audioDevices.length > 0 && (
+              <select
+                value={selectedDeviceId}
+                onChange={(e) => setSelectedDeviceId(e.target.value)}
+                disabled={isMicActive || session?.status !== "Live"}
+                style={{
+                  padding: "8px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  background: "var(--layer-2)",
+                  color: "var(--text-1)",
+                  border: "1px solid var(--border-color)",
+                  maxWidth: "180px",
+                  outline: "none",
+                  cursor: "pointer"
+                }}
+                title="Chọn Microphone"
+              >
+                {audioDevices.map((device, idx) => (
+                  <option key={device.deviceId || idx} value={device.deviceId}>
+                    {device.label || `Microphone ${idx + 1}`}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <button
               className={`host-live-btn ${isMicActive ? "host-live-btn-mic active" : "host-live-btn-mic"}`}
               onClick={() => void handleToggleMic()}
@@ -561,20 +607,6 @@ export default function HostLiveSessionDetailPage() {
             }
           >
             <Play size={15} /> Bắt đầu
-          </button>
-          <button
-            className="host-live-btn host-live-btn--ghost"
-            onClick={() => void runAction("pause")}
-            disabled={session?.status !== "Live"}
-          >
-            <Pause size={15} /> Tạm dừng
-          </button>
-          <button
-            className="host-live-btn host-live-btn--ghost"
-            onClick={() => void runAction("resume")}
-            disabled={session?.status !== "Paused"}
-          >
-            <Play size={15} /> Tiếp tục
           </button>
           <button
             className="host-live-btn host-live-btn--ghost"
