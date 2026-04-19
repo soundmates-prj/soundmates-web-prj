@@ -669,6 +669,10 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async skipTrack(id: string): Promise<void> {
+    await api.post(`/livesession/${id}/skip`);
+  }
+
   async createSchedule(
     id: string,
     data: {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Pause, Play, RefreshCw, Send, Square, Trash2, Music, X, Mic2, MicOff } from "lucide-react";
+import { ArrowLeft, Pause, Play, RefreshCw, Send, Square, Trash2, Music, X, Mic2, MicOff, SkipForward } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   liveSessionApiService,
@@ -638,32 +638,75 @@ export default function HostLiveSessionDetailPage() {
                   </div>
                 </div>
 
-                {/* Local Volume Control cho Host */}
+                {/* Local Volume Control & Actions cho Host */}
                 {session?.streamUrl && session.status === "Live" && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", minWidth: 150 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", alignSelf: "center" }}>
-                      Âm lượng nhạc (Toàn hệ thống)
-                    </span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      defaultValue={1.0}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        const audio = document.getElementById("host-local-audio") as HTMLAudioElement;
-                        if (audio) audio.volume = val;
-                        handleVolumeSync(val);
+                  <div style={{ display: "flex", gap: "24px", alignItems: "center", marginTop: "8px" }}>
+                    {/* Âm lượng nhạc trên stream của khán giả */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", minWidth: 100 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", alignSelf: "center", textAlign: "center" }}>
+                        Khán giả nghe<br/>(Toàn hệ thống)
+                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        defaultValue={1.0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          handleVolumeSync(val);
+                        }}
+                        style={{ width: "100%", accentColor: "#ef4444" }}
+                        title="Điều chỉnh âm lượng nhạc nền cho TẤT CẢ khán giả đang nghe"
+                      />
+                    </div>
+                    {/* Âm lượng nhạc trên tai nghe/loa của Host */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", minWidth: 100 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", alignSelf: "center", textAlign: "center" }}>
+                        Host nghe<br/>(Riêng máy bạn)
+                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        defaultValue={1.0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          const audio = document.getElementById("host-local-audio") as HTMLAudioElement;
+                          if (audio) audio.volume = val;
+                        }}
+                        style={{ width: "100%", accentColor: "#3b82f6" }}
+                        title="Chỉnh âm lượng nhạc mà BẠN nghe thấy (không ảnh hưởng tới khán giả)"
+                      />
+                      <audio
+                        id="host-local-audio"
+                        src={session.streamUrl.replace(/host\.docker\.internal(:\d+)?/gi, "localhost:5000")}
+                        autoPlay
+                        onLoadedMetadata={(e) => { (e.target as HTMLAudioElement).volume = 1.0; }}
+                      />
+                    </div>
+                    
+                    {/* Nút Skip */}
+                    <button
+                      className="host-live-btn outline danger"
+                      title="Chuyển sang bài tiếp theo (Bỏ qua bài này)"
+                      style={{ padding: "10px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ef4444" }}
+                      onClick={async () => {
+                        const confirmSkip = window.confirm("Bạn có chắc chắn muốn bỏ qua (Skip) bài hát này không?");
+                        if (!confirmSkip) return;
+                        
+                        try {
+                          await liveSessionApiService.skipTrack(sessionId);
+                          showSuccess("Yêu cầu skip bài đã được gửi. Đang đợi hệ thống xử lý...");
+                        } catch (err) {
+                          console.error("Lỗi khi skip bài", err);
+                          showError("Không thể qua bài lúc này. Vui lòng thử lại sau.");
+                        }
                       }}
-                      style={{ width: "100%", accentColor: "#ef4444" }}
-                    />
-                    <audio
-                      id="host-local-audio"
-                      src={session.streamUrl.replace(/host\.docker\.internal(:\d+)?/gi, "localhost:5000")}
-                      autoPlay
-                      onLoadedMetadata={(e) => { (e.target as HTMLAudioElement).volume = 1.0; }}
-                    />
+                    >
+                      <SkipForward size={20} color="#ef4444" />
+                    </button>
                   </div>
                 )}
               </div>
