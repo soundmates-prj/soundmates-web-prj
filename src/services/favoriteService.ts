@@ -131,6 +131,23 @@ class FavoriteService {
   }
 
   /**
+   * Get favourites for a specific user
+   */
+  async getFavoritesByUserId(
+    userId: string,
+    itemType?: string,
+    source?: string,
+  ): Promise<FavoritesResponse> {
+    const response = await api.get<FavoritesResponse>(`/users/${userId}/favorites`, {
+      params: {
+        ...(itemType ? { itemType } : {}),
+        ...(source ? { source } : {}),
+      },
+    });
+    return response.data;
+  }
+
+  /**
    * Add an item to the current user's favourites
    */
   async addFavorite(data: AddFavoriteRequest): Promise<{ success: boolean; message: string }> {

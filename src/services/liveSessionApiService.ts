@@ -134,7 +134,10 @@ export interface StationNowPlayingResult {
   publicPlayerUrl: string | null;
   currentTrack: any;
   playingNext: any;
+  upcomingQueue: any[];
   songHistory: any[];
+  totalListeners: number;
+  uniqueListeners: number;
 }
 
 export interface LiveSessionResult {

@@ -444,8 +444,22 @@
 /* ── Drawer Body ── */
 .playlist-drawer-body {
   padding: 0;
-  max-height: 320px;
+  max-height: 380px;
   overflow-y: auto;
+}
+
+.playlist-drawer-section {
+  padding: 10px 0;
+}
+
+.playlist-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mp-icon-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 14px 6px;
+  margin: 0;
 }
 
 .playlist-drawer-placeholder {
@@ -509,6 +523,20 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.podcast-drawer-subtitle {
+  font-size: 11px;
+  color: var(--mp-track-artist);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.podcast-drawer-item.active {
+  background: var(--mp-progress-bg);
+  border-left: 3px solid var(--mp-icon-accent);
 }
 
 .podcast-drawer-item > svg {

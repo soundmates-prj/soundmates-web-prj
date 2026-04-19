@@ -8,10 +8,24 @@ import {
   FileMusic,
   Music,
   ListMusic,
+  CloudUpload,
+  Upload,
+  Check,
+  AlertCircle,
 } from "lucide-react";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
-import type { StationResult, MusicResult } from "../../../services/liveSessionApiService";
+import type {
+  StationResult,
+  MusicResult,
+  BulkUploadMusicResult,
+} from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
+import {
+  ALLOWED_AUDIO_EXTENSIONS,
+  ALLOWED_AUDIO_MIME_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
+  MAX_CLOUDINARY_AUDIO_SIZE_BYTES,
+} from "../../Admin/LiveOps/liveSessionConstants";
 import "./MusicCatalogScreen.css";
 
 export function MusicCatalogScreen() {
@@ -49,6 +63,14 @@ export function MusicCatalogScreen() {
   const [editAlbum, setEditAlbum] = useState("");
   const [editLyrics, setEditLyrics] = useState("");
   const [updatingMetadata, setUpdatingMetadata] = useState(false);
+  
+  // Bulk upload state
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [bulkResult, setBulkResult] = useState<BulkUploadMusicResult | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   /* ── Load stations on mount ── */
   useEffect(() => {
@@ -128,8 +150,11 @@ export function MusicCatalogScreen() {
   }, []);
 
   const selectAllSystem = useCallback(() => {
-    setSelectedSystemIds(systemMusic.map((m) => m.id));
-  }, [systemMusic]);
+    const nonImportedIds = systemMusic
+      .filter((m) => !stationMusic.some((sm) => sm.id === m.id))
+      .map((m) => m.id);
+    setSelectedSystemIds(nonImportedIds);
+  }, [systemMusic, stationMusic]);
 
   const clearSelectionSystem = useCallback(() => {
     setSelectedSystemIds([]);
@@ -266,6 +291,121 @@ export function MusicCatalogScreen() {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes >= 1024 * 1024) {
+      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+    return `${(bytes / 1024).toFixed(2)} KB`;
+  };
+
+  /* ── Bulk Upload Logic ── */
+  const validateFile = useCallback((input: File) => {
+    const ext = input.name.split(".").pop()?.toLowerCase() || "";
+    const extAllowed = ALLOWED_AUDIO_EXTENSIONS.includes(
+      ext as (typeof ALLOWED_AUDIO_EXTENSIONS)[number],
+    );
+
+    if (
+      !extAllowed &&
+      !ALLOWED_AUDIO_MIME_TYPES.includes(
+        input.type as (typeof ALLOWED_AUDIO_MIME_TYPES)[number],
+      )
+    ) {
+      showError("File không hợp lệ", "Chỉ hỗ trợ MP3, FLAC, WAV, OGG");
+      return false;
+    }
+
+    if (input.size > MAX_UPLOAD_SIZE_BYTES) {
+      showError("File quá lớn", "Dung lượng tối đa 100MB");
+      return false;
+    }
+
+    if (input.size > MAX_CLOUDINARY_AUDIO_SIZE_BYTES) {
+      showError(
+        "File vượt giới hạn Cloudinary",
+        `File không được vượt quá 10MB (Cloudinary). File "${input.name}" có dung lượng ${formatFileSize(input.size)}.`,
+      );
+      return false;
+    }
+
+    return true;
+  }, []);
+
+  const handleMultiFileSelect = useCallback(
+    (inputFiles: FileList | null) => {
+      if (!inputFiles || inputFiles.length === 0) return;
+      const validFiles: File[] = [];
+      for (const file of Array.from(inputFiles)) {
+        if (validateFile(file)) {
+          validFiles.push(file);
+        }
+      }
+      if (validFiles.length === 0) return;
+      setUploadFiles((prev) => {
+        const existing = new Set(prev.map((f) => f.name));
+        const newFiles = validFiles.filter((f) => !existing.has(f.name));
+        return [...prev, ...newFiles];
+      });
+    },
+    [validateFile],
+  );
+
+  const removeUploadFile = useCallback((fileName: string) => {
+    setUploadFiles((prev) => prev.filter((f) => f.name !== fileName));
+  }, []);
+
+  const handleBulkUpload = useCallback(async () => {
+    if (uploadFiles.length === 0) return;
+
+    const initialProgress: Record<string, number> = {};
+    for (const f of uploadFiles) initialProgress[f.name] = 0;
+    setUploadProgress(initialProgress);
+    setUploading(true);
+
+    const intervals: Record<string, any> = {};
+    for (const f of uploadFiles) {
+      let progress = 0;
+      intervals[f.name] = setInterval(() => {
+        progress = Math.min(progress + Math.floor(Math.random() * 15) + 5, 90);
+        setUploadProgress((prev) => ({ ...prev, [f.name]: progress }));
+      }, 300);
+    }
+
+    try {
+      // Staff upload to System Media — no stationId
+      const result = await liveSessionApiService.bulkUploadMusic(undefined, uploadFiles);
+      
+      setUploadProgress((prev) => {
+        const done: Record<string, number> = {};
+        for (const f of uploadFiles) done[f.name] = 100;
+        return done;
+      });
+      setBulkResult(result);
+
+      if (result.isSuccess) {
+        showSuccess("Thành công", `Đã thêm ${result.successCount} bài vào hệ thống`);
+        // Refresh system music
+        const all = await liveSessionApiService.getAllMusic();
+        setSystemMusic(all.filter((m) => m.sourceType === "system"));
+      } else {
+        showError("Hoàn tất (một phần)", `${result.successCount}/${result.totalFiles} thành công`);
+      }
+    } catch {
+      showError("Lỗi", "Không thể upload nhạc lên hệ thống");
+    } finally {
+      Object.values(intervals).forEach(clearInterval);
+      setUploading(false);
+    }
+  }, [uploadFiles]);
+
+  const closeBulkUpload = useCallback(() => {
+    if (uploading) return;
+    setShowBulkUpload(false);
+    setUploadFiles([]);
+    setBulkResult(null);
+    setUploadProgress({});
+  }, [uploading]);
+
   const displayStationMusic = stationMusic.filter(
     (m) => m.sourceType === "station",
   );
@@ -295,21 +435,30 @@ export function MusicCatalogScreen() {
 
           {/* Import button only shown in System Media tab */}
           {activeTab === "system" && (
-            <button
-              className="staff-btn staff-btn--primary"
-              onClick={() => {
-                if (selectedSystemIds.length === 0) {
-                  showError("Chưa chọn", "Vui lòng chọn ít nhất 1 bài để import");
-                  return;
-                }
-                setShowImportModal(true);
-              }}
-            >
-              <ArrowDownToLine size={16} />
-              Import vào Station
-              {selectedSystemIds.length > 0 &&
-                ` (${selectedSystemIds.length})`}
-            </button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                className="staff-btn staff-btn--outline"
+                onClick={() => setShowBulkUpload(true)}
+              >
+                <Upload size={16} />
+                Thêm nhạc vào System
+              </button>
+              <button
+                className="staff-btn staff-btn--primary"
+                onClick={() => {
+                  if (selectedSystemIds.length === 0) {
+                    showError("Chưa chọn", "Vui lòng chọn ít nhất 1 bài để import");
+                    return;
+                  }
+                  setShowImportModal(true);
+                }}
+              >
+                <ArrowDownToLine size={16} />
+                Import vào Station
+                {selectedSystemIds.length > 0 &&
+                  ` (${selectedSystemIds.length})`}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -534,12 +683,15 @@ export function MusicCatalogScreen() {
                 </thead>
                 <tbody>
                   {systemMusic.map((m) => {
+                    const alreadyInStation = stationMusic.some((sm) => sm.id === m.id);
                     const checked = selectedSystemIds.includes(m.id);
                     return (
                       <tr
                         key={m.id}
                         style={
-                          checked
+                          alreadyInStation
+                            ? { opacity: 0.8, background: "rgba(0,0,0,0.02)" }
+                            : checked
                             ? { background: "rgba(124, 58, 237, 0.07)" }
                             : {}
                         }
@@ -548,14 +700,35 @@ export function MusicCatalogScreen() {
                           <input
                             type="checkbox"
                             checked={checked}
+                            disabled={alreadyInStation}
                             onChange={() => toggleSystemSelection(m.id)}
-                            style={{ width: 16, height: 16, cursor: "pointer" }}
+                            style={{
+                              width: 16,
+                              height: 16,
+                              cursor: alreadyInStation ? "not-allowed" : "pointer",
+                            }}
                           />
                         </td>
                         <td>
                           <div className="mc-track-title">
                             <Music size={16} color="#4338ca" />
                             {m.title}
+                            {alreadyInStation && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  background: "#ecfdf5",
+                                  color: "#059669",
+                                  marginLeft: 8,
+                                  fontWeight: 700,
+                                  textTransform: "uppercase",
+                                }}
+                              >
+                                Đã có
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="mc-track-artist">{m.artist}</td>
@@ -839,6 +1012,200 @@ export function MusicCatalogScreen() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bulk Upload Modal ── */}
+      {showBulkUpload && (
+        <div
+          className="staff-modal-overlay"
+          onClick={closeBulkUpload}
+        >
+          <div
+            className="staff-modal mc-upload-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="staff-modal-header">
+              <h3>
+                <CloudUpload
+                  size={18}
+                  style={{ marginRight: 8, color: "#1a9fd4" }}
+                />
+                Tải lên nhạc vào Hệ Thống
+              </h3>
+              <button
+                className="staff-modal-close"
+                onClick={closeBulkUpload}
+                disabled={uploading}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="staff-modal-body">
+              {!uploading && !bulkResult && (
+                <div
+                  className="file-drop-area"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleMultiFileSelect(e.dataTransfer.files);
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <CloudUpload
+                    size={40}
+                    style={{ marginBottom: 12, color: "#1a9fd4", opacity: 0.8 }}
+                  />
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 16 }}>
+                    Chọn hoặc thả file nhạc tại đây
+                  </p>
+                  <p style={{ margin: "8px 0 0", fontSize: 12, color: "#94a3b8" }}>
+                    MP3, FLAC, WAV, OGG • Tối đa 100MB • Mỗi file giới hạn 10MB
+                  </p>
+                  <button className="staff-btn staff-btn--outline" style={{ marginTop: 16 }}>
+                    Chọn file âm thanh
+                  </button>
+                </div>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                style={{ display: "none" }}
+                accept=".mp3,.flac,.wav,.ogg,audio/*"
+                multiple
+                onChange={(e) => handleMultiFileSelect(e.target.files)}
+              />
+
+              {uploadFiles.length > 0 && !bulkResult && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#1a9fd4" }}>
+                      Số lượng: {uploadFiles.length} file
+                    </span>
+                    <button
+                      className="staff-btn staff-btn--ghost"
+                      style={{ padding: "4px 8px", fontSize: 12 }}
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                    >
+                      + Thêm file
+                    </button>
+                  </div>
+
+                  <div className="mc-upload-list">
+                    {uploadFiles.map((f, i) => {
+                      const progress = uploadProgress[f.name] ?? 0;
+                      const isDone = progress === 100;
+                      return (
+                        <div key={f.name + i} className={`mc-upload-item ${isDone ? "done" : ""}`}>
+                          <Music size={16} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="mc-upload-name">{f.name}</div>
+                            <div className="mc-upload-meta">
+                              {formatFileSize(f.size)}
+                              {progress > 0 && progress < 100 && (
+                                <span style={{ marginLeft: 8, color: "#1a9fd4" }}>{progress}%</span>
+                              )}
+                              {isDone && (
+                                <span style={{ marginLeft: 8, color: "#10b981", fontWeight: 700 }}>
+                                  Hoàn tất
+                                </span>
+                              )}
+                            </div>
+                            {progress > 0 && progress < 100 && (
+                              <div className="mc-upload-progress">
+                                <div
+                                  className="mc-upload-progress-bar"
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          {!uploading && (
+                            <button className="mc-upload-remove" onClick={() => removeUploadFile(f.name)}>
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {bulkResult && (
+                <div className="mc-bulk-result">
+                  <div className={`mc-result-header ${bulkResult.isSuccess ? "success" : "partial"}`}>
+                    {bulkResult.isSuccess ? <Check size={24} /> : <AlertCircle size={24} />}
+                    <div>
+                      <div className="mc-result-title">
+                        {bulkResult.isSuccess ? "Tải lên thành công" : "Hoàn tất một phần"}
+                      </div>
+                      <div className="mc-result-desc">
+                        {bulkResult.successCount}/{bulkResult.totalFiles} file thành công
+                      </div>
+                    </div>
+                  </div>
+
+                  {bulkResult.uploadedFiles.length > 0 && (
+                    <div className="mc-result-list">
+                      <p className="mc-result-label success">Đã thêm vào catalog:</p>
+                      {bulkResult.uploadedFiles.slice(0, 10).map((f) => (
+                        <div key={f.id} className="mc-result-item">
+                          <Check size={12} /> {f.title} — {f.artist}
+                        </div>
+                      ))}
+                      {bulkResult.uploadedFiles.length > 10 && (
+                        <p className="mc-result-more">... và {bulkResult.uploadedFiles.length - 10} bài khác</p>
+                      )}
+                    </div>
+                  )}
+
+                  {bulkResult.failedFiles.length > 0 && (
+                    <div className="mc-result-list">
+                      <p className="mc-result-label error">Lỗi upload:</p>
+                      {bulkResult.failedFiles.map((f, i) => (
+                        <div key={i} className="mc-result-item error">
+                          <X size={12} /> {f.fileName}: {f.errorMessage}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="staff-modal-footer">
+              <button
+                className="staff-btn staff-btn--outline"
+                onClick={closeBulkUpload}
+                disabled={uploading}
+              >
+                {bulkResult ? "Đóng" : "Hủy"}
+              </button>
+              {!bulkResult && (
+                <button
+                  className="staff-btn staff-btn--primary"
+                  onClick={() => void handleBulkUpload()}
+                  disabled={uploadFiles.length === 0 || uploading}
+                >
+                  {uploading ? (
+                    <>
+                      <RefreshCw size={14} className="staff-spin" />
+                      Đang tải lên...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={14} />
+                      Tải lên {uploadFiles.length > 0 ? `(${uploadFiles.length})` : ""}
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

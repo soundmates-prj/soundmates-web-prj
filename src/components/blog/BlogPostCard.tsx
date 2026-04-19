@@ -23,6 +23,7 @@ interface BlogPostCardProps {
   defaultAv: string;
   onEdit: (post: Post) => void;
   onDelete: (postId: string) => void;
+  isOwnProfile?: boolean;
 }
 
 export default function BlogPostCard({
@@ -32,6 +33,7 @@ export default function BlogPostCard({
   defaultAv,
   onEdit,
   onDelete,
+  isOwnProfile = true,
 }: BlogPostCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -103,38 +105,40 @@ export default function BlogPostCard({
             </p>
           </div>
 
-          <div className="post-menu-wrap" ref={menuRef}>
-            <button
-              className="post-menu-btn"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label="Tuỳ chọn"
-            >
-              <MoreHorizontal size={16} />
-            </button>
-            {menuOpen && (
-              <div className="post-menu-dropdown">
-                <button
-                  className="post-menu-item"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onEdit(post);
-                  }}
-                >
-                  <Pencil size={14} /> Chỉnh sửa
-                </button>
-                <div className="post-menu-divider" />
-                <button
-                  className="post-menu-item post-menu-item--danger"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    void handleDelete();
-                  }}
-                >
-                  <Trash2 size={14} /> Xoá bài
-                </button>
-              </div>
-            )}
-          </div>
+          {isOwnProfile && (
+            <div className="post-menu-wrap" ref={menuRef}>
+              <button
+                className="post-menu-btn"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Tuỳ chọn"
+              >
+                <MoreHorizontal size={16} />
+              </button>
+              {menuOpen && (
+                <div className="post-menu-dropdown">
+                  <button
+                    className="post-menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onEdit(post);
+                    }}
+                  >
+                    <Pencil size={14} /> Chỉnh sửa
+                  </button>
+                  <div className="post-menu-divider" />
+                  <button
+                    className="post-menu-item post-menu-item--danger"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void handleDelete();
+                    }}
+                  >
+                    <Trash2 size={14} /> Xoa bài
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {isShareMusic && post.shareMusic ? (
