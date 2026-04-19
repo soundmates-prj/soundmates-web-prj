@@ -29,6 +29,13 @@ const MainLayout = () => {
     };
   }, [hideFooter]);
 
+  // Scroll-to-top khi chuyển trang
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location.pathname]);
+
   return (
     <div className={needsDefaultBackground ? "page-wrapper" : ""}>
       {!hideHeader && <Header />}
