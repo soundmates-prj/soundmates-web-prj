@@ -52,6 +52,7 @@ export default function PodcastDetailScreen() {
   const resolvedDurationsRef = useRef<Record<string, number>>({});
 
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   // Ref always holds the latest value — RAF reads through it to avoid stale closures
@@ -148,6 +149,7 @@ export default function PodcastDetailScreen() {
     stopTracking();
     setIsPlaying(false);
     setPlayingId(null);
+    setIsPaused(false);
     setCurrentTime(0);
     setAudioDuration(0);
   };
@@ -158,12 +160,19 @@ export default function PodcastDetailScreen() {
     if (playingId === ep.id) {
       // Same episode — toggle pause/resume without resetting position
       if (audioRef.current?.paused) {
-        audioRef.current.play().then(() => setIsPlaying(true));
+        audioRef.current
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+            setIsPaused(false);
+          })
+          .catch((e) => console.error("Resume failed:", e));
         startTracking();
       } else {
         audioRef.current?.pause();
         stopTracking();
         setIsPlaying(false);
+        setIsPaused(true);
       }
       return;
     }
@@ -181,6 +190,7 @@ export default function PodcastDetailScreen() {
 
     audio.onended = () => {
       setPlayingId(null);
+      setIsPaused(false);
       setCurrentTime(0);
       setAudioDuration(0);
       stopTracking();
@@ -194,6 +204,7 @@ export default function PodcastDetailScreen() {
     audioRef.current = audio;
 
     setPlayingId(ep.id);
+    setIsPaused(false);
     setCurrentTime(0);
     setAudioDuration(0);
     startTracking();
@@ -329,38 +340,41 @@ export default function PodcastDetailScreen() {
         ) : (
           <div className="pdd-ep-list">
             {episodes.map((ep, i) => {
-              const isPlaying = playingId === ep.id;
+              const isActive = playingId === ep.id;
+              const isActuallyPlaying = isActive && !isPaused;
               const progress =
-                isPlaying && audioDuration > 0
+                isActive && audioDuration > 0
                   ? (currentTime / audioDuration) * 100
                   : 0;
 
               return (
                 <div
                   key={ep.id}
-                  className={`pdd-ep${isPlaying ? " playing" : ""}`}
+                  className={`pdd-ep${isActive ? " playing" : ""}`}
                   style={{ animationDelay: `${Math.min(i * 0.05, 0.5)}s` }}
                 >
                   <button
-                    className={`pdd-ep-play${isPlaying ? " active" : ""}`}
+                    className={`pdd-ep-play${isActive ? " active" : ""}`}
                     onClick={() => togglePlay(ep)}
                     disabled={!ep.audioUrl}
                     title={
                       ep.audioUrl
-                        ? isPlaying
+                        ? isActuallyPlaying
                           ? "Tạm dừng"
-                          : "Phát"
+                          : isPaused && isActive
+                            ? "Tiếp tục"
+                            : "Phát"
                         : "Chưa có audio"
                     }
                   >
-                    {isPlaying ? (
+                    {isActuallyPlaying ? (
                       <Pause size={18} fill="currentColor" />
                     ) : (
                       <Play size={18} fill="currentColor" />
                     )}
                   </button>
 
-                  {isPlaying && (
+                  {isActive && (
                     <button
                       className="pdd-ep-stop"
                       onClick={stopPlayback}
@@ -403,7 +417,7 @@ export default function PodcastDetailScreen() {
                       <p className="pdd-ep-desc">{ep.description}</p>
                     )}
 
-                    {isPlaying && (
+                    {isActive && (
                       <div className="pdd-ep-player">
                         <span className="pdd-ep-time">
                           {fmtTime(currentTime)}

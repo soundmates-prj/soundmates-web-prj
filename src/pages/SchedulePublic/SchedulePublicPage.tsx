@@ -83,7 +83,8 @@ export default function SchedulePublicPage() {
 
   const getStatusLabel = (sch: SessionScheduleResult) => {
     if (isLiveNow(sch)) return { label: "Đang phát", cls: "live" as const };
-    if (isUpcoming(sch)) return { label: "Sắp diễn ra", cls: "upcoming" as const };
+    if (isUpcoming(sch))
+      return { label: "Sắp diễn ra", cls: "upcoming" as const };
     return { label: "Đã kết thúc", cls: "ended" as const };
   };
 
@@ -152,7 +153,9 @@ export default function SchedulePublicPage() {
                 <div key={sch.id} className="sp-live-badge">
                   <span className="sp-hero-live-dot" />
                   <span className="sp-live-name">
-                    {sch.liveSession?.sessionName || sch.title || "Phiên đang phát"}
+                    {sch.liveSession?.sessionName ||
+                      sch.title ||
+                      "Phiên đang phát"}
                   </span>
                   {sch.liveSession?.station?.stationName && (
                     <span className="sp-live-station">
@@ -306,7 +309,8 @@ export default function SchedulePublicPage() {
                                 src={sch.liveSession.thumbnailUrl}
                                 alt={sch.liveSession.sessionName}
                                 onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = "none";
+                                  (e.target as HTMLImageElement).style.display =
+                                    "none";
                                 }}
                               />
                             </div>
@@ -381,6 +385,8 @@ export default function SchedulePublicPage() {
                                   if (isLive) {
                                     const sid = sch.liveSession?.id || sch.id;
                                     void navigate(`/live/${sid}`);
+                                  } else if (isPast(sch)) {
+                                    showToast.warning("Live Stream đã kết thúc");
                                   } else {
                                     showToast.warning("Live Stream chưa phát");
                                   }

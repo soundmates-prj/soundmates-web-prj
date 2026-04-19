@@ -36,14 +36,21 @@ import "./ForumPage.css";
 const PAGE_SIZE = 10;
 
 /* ─── Post card ─── */
-function PostCard({ post, authorName }: { post: PublishedPost; authorName?: string }) {
+function PostCard({
+  post,
+  authorName,
+}: {
+  post: PublishedPost;
+  authorName?: string;
+}) {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
   const shareData =
     post.postType === "share-music" ? parseShareMusic(post.contentText) : null;
   const moodColor = getMoodColor(post.moodTag);
-  const displayName = authorName?.trim() || post.userFullName?.trim() || "Ẩn danh";
+  const displayName =
+    authorName?.trim() || post.userFullName?.trim() || "Ẩn danh";
 
   const formatDate = (iso: string | null) => {
     if (!iso) return "";
@@ -151,9 +158,9 @@ function PostCard({ post, authorName }: { post: PublishedPost; authorName?: stri
           <button className="fp-action-btn" onClick={() => setShowModal(true)}>
             <MessageCircle size={15} /> Bình luận
           </button>
-          <button className="fp-action-btn">
+          {/* <button className="fp-action-btn">
             <Share2 size={15} /> Chia sẻ
-          </button>
+          </button> */}
         </div>
       </article>
 
@@ -178,7 +185,9 @@ export default function ForumPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [authorNamesByUserId, setAuthorNamesByUserId] = useState<Record<string, string>>({});
+  const [authorNamesByUserId, setAuthorNamesByUserId] = useState<
+    Record<string, string>
+  >({});
 
   useEffect(() => {
     const q = search.trim().toLowerCase();
@@ -242,7 +251,10 @@ export default function ForumPage() {
   useEffect(() => {
     if (!highlightId || !highlightRef.current) return;
     setTimeout(() => {
-      highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      highlightRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
       highlightRef.current?.classList.add("fp-post-highlight");
       const timer = setTimeout(() => {
         highlightRef.current?.classList.remove("fp-post-highlight");
@@ -459,7 +471,10 @@ export default function ForumPage() {
                     key={post.id}
                     ref={post.id === highlightId ? highlightRef : undefined}
                   >
-                    <PostCard post={post} authorName={authorNamesByUserId[post.userId]} />
+                    <PostCard
+                      post={post}
+                      authorName={authorNamesByUserId[post.userId]}
+                    />
                   </div>
                 ))}
               </div>
