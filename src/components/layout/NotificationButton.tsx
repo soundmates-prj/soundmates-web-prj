@@ -7,6 +7,10 @@ import {
   markAllAsRead,
   type NotificationItem,
 } from "../../services/notificationService";
+import notificationHubService, {
+  type RealtimeNotification,
+  type BroadcastNotification,
+} from "../../services/notificationHubService";
 
 // ──────────────────────────────────────────────────────────────
 // Helpers
@@ -24,11 +28,33 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("vi-VN");
 }
 
+function realtimeToItem(n: RealtimeNotification): NotificationItem {
+  return {
+    id: n.id,
+    type: n.type,
+    referenceId: n.referenceId ?? null,
+    message: n.message,
+    isRead: n.isRead,
+    createdAt: n.createdAt,
+  };
+}
+
+function broadcastToItem(n: BroadcastNotification): NotificationItem {
+  return {
+    id: n.id,
+    type: n.type,
+    referenceId: n.referenceId ?? null,
+    message: n.message,
+    isRead: false,
+    createdAt: n.createdAt,
+  };
+}
+
 // ──────────────────────────────────────────────────────────────
 // Component
 // ──────────────────────────────────────────────────────────────
 
-const POLL_INTERVAL_MS = 30_000; // poll every 30 s
+const POLL_INTERVAL_MS = 60_000; // reduced since SignalR handles real-time
 
 export default function NotificationButton() {
   const [show, setShow] = useState(false);
@@ -65,7 +91,65 @@ export default function NotificationButton() {
     }
   }, []);
 
-  // ── poll badge count every 30 s ──────────────────────────────
+  // ── SignalR: connect to NotificationHub for real-time push ───
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    let cleanupPersonal: (() => void) | null = null;
+    let cleanupBroadcast: (() => void) | null = null;
+    let cleanupRemove: (() => void) | null = null;
+
+    notificationHubService
+      .start(token)
+      .then(() => {
+        // Personal notification (host ← member request, member ← host review)
+        cleanupPersonal = notificationHubService.onReceiveNotification(
+          (n: RealtimeNotification) => {
+            const item = realtimeToItem(n);
+            setNotifications((prev) => {
+              // avoid duplicates
+              if (prev.some((x) => x.id === item.id)) return prev;
+              return [item, ...prev];
+            });
+            setUnreadCount((c) => c + 1);
+          }
+        );
+
+        // Broadcast notification (e.g. new live schedule → all users)
+        cleanupBroadcast = notificationHubService.onReceiveBroadcastNotification(
+          (n: BroadcastNotification) => {
+            const item = broadcastToItem(n);
+            setNotifications((prev) => {
+              if (prev.some((x) => x.id === item.id)) return prev;
+              return [item, ...prev];
+            });
+            setUnreadCount((c) => c + 1);
+          }
+        );
+
+        // Remove deleted notifications silently to stay in sync
+        cleanupRemove = notificationHubService.onRemoveNotification(
+          () => {
+            getNotifications(1, 20).then((page) => {
+              setNotifications(page.items);
+              setUnreadCount(page.items.filter((n) => !n.isRead).length);
+            }).catch(() => {});
+          }
+        );
+      })
+      .catch((err) => {
+        console.warn("[NotificationButton] SignalR connect failed:", err);
+      });
+
+    return () => {
+      cleanupPersonal?.();
+      cleanupBroadcast?.();
+      cleanupRemove?.();
+    };
+  }, []);
+
+  // ── poll badge count periodically (fallback) ─────────────────
   useEffect(() => {
     fetchUnreadCount();
     const id = setInterval(fetchUnreadCount, POLL_INTERVAL_MS);

@@ -1,6 +1,7 @@
 import { Bell, Calendar, Shield, Mic2, Menu } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import NotificationButton from "./NotificationButton";
 import "./SharedLayout.css";
 
 interface SharedHeaderProps {
@@ -71,10 +72,9 @@ export default function SharedHeader({ role, onToggleSidebar }: SharedHeaderProp
             </div>
 
             <div className="shared-header-actions">
-                <button className="shared-header-btn">
-                    <Bell size={20} />
-                    <span className="shared-notification-badge">3</span>
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', marginRight: '8px' }}>
+                    <NotificationButton />
+                </div>
 
                 <div className={`shared-role-badge ${role.toLowerCase()}`}>
                     {getRoleIcon()}

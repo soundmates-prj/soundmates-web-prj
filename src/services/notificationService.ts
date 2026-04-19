@@ -22,7 +22,7 @@ interface ApiResponse<T> {
   data: T;
 }
 
-const BASE = "/api/v1";
+
 
 /** Lấy tất cả notifications (có phân trang) */
 export async function getNotifications(
@@ -30,7 +30,7 @@ export async function getNotifications(
   pageSize = 20
 ): Promise<NotificationPage> {
   const res = await api.get<ApiResponse<NotificationPage>>(
-    `${BASE}/me/notifications`,
+    `me/notifications`,
     { params: { page, pageSize } }
   );
   return res.data.data;
@@ -42,7 +42,7 @@ export async function getUnreadNotifications(
   pageSize = 20
 ): Promise<NotificationPage> {
   const res = await api.get<ApiResponse<NotificationPage>>(
-    `${BASE}/me/notifications/not-read`,
+    `me/notifications/not-read`,
     { params: { page, pageSize } }
   );
   return res.data.data;
@@ -50,10 +50,10 @@ export async function getUnreadNotifications(
 
 /** Đánh dấu một notification là đã đọc */
 export async function markAsRead(notificationId: string): Promise<void> {
-  await api.put(`${BASE}/notifications/${notificationId}/read`);
+  await api.put(`notifications/${notificationId}/read`);
 }
 
 /** Đánh dấu tất cả notifications là đã đọc */
 export async function markAllAsRead(): Promise<void> {
-  await api.put(`${BASE}/notifications/read-all`);
+  await api.put(`notifications/read-all`);
 }
