@@ -7,8 +7,9 @@
 }
 
 [data-theme="dark"] .pf-bar {
-  background-color: var(--user-theme-bg, rgba(20, 20, 20, 0.75));
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.85);
+  border-top-color: rgba(255, 255, 255, 0.1);
+  border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="dark"] .pf-av {
@@ -16,32 +17,33 @@
 }
 
 [data-theme="dark"] .pf-name {
-  color: var(--text-primary);
+  color: var(--user-theme-text, #ffffff);
 }
 
 [data-theme="dark"] .pf-bio {
-  color: var(--text-secondary);
+  color: var(--user-theme-primary, #55c5f1);
 }
 
 [data-theme="dark"] .pf-dob {
-  color: var(--text-muted);
-}
-
-[data-theme="dark"] .pf-tabs-row {
-  background-color: var(--user-theme-bg, rgba(20, 20, 20, 0.75));
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  color: var(--user-theme-text-muted, rgba(255, 255, 255, 0.45));
 }
 
 [data-theme="dark"] .pf-tab {
-  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
 }
 
 [data-theme="dark"] .pf-tab:hover {
-  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 [data-theme="dark"] .pf-tab.active {
-  color: #55c5f1;
+  color: #fff;
+  background: var(--user-theme-primary, #55c5f1);
+  border-color: var(--user-theme-primary, #55c5f1);
+  box-shadow: 0 4px 15px rgba(85, 197, 241, 0.4);
 }
 
 [data-theme="dark"] .pf-card {
@@ -50,7 +52,7 @@
 }
 
 [data-theme="dark"] .pf-card-top h3 {
-  color: var(--text-primary);
+  color: var(--user-theme-text, #ffffff);
 }
 
 [data-theme="dark"] .pf-compose-bar {
@@ -78,7 +80,8 @@
 [data-theme="dark"] .track-artist,
 [data-theme="dark"] .track-dur,
 [data-theme="dark"] .track-likes {
-  color: var(--text-secondary);
+  color: var(--user-theme-text, #94a3b8);
+  opacity: 0.7;
 }
 
 [data-theme="dark"] .post-card {
@@ -92,24 +95,26 @@
 }
 
 [data-theme="dark"] .post-name {
-  color: var(--text-primary);
+  color: var(--user-theme-text, #ffffff);
 }
 
 [data-theme="dark"] .post-time {
-  color: var(--text-secondary);
+  color: var(--user-theme-text, #94a3b8);
+  opacity: 0.6;
 }
 
 [data-theme="dark"] .post-title {
-  color: var(--text-primary);
+  color: var(--user-theme-text, #ffffff);
 }
 
 [data-theme="dark"] .post-body {
-  color: var(--text-secondary);
+  color: var(--user-theme-text, #cbd5e1);
+  opacity: 0.9;
 }
 
 [data-theme="dark"] .post-btn {
-  border-color: #333333;
-  color: var(--text-secondary);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--user-theme-text, #cbd5e1);
 }
 
 [data-theme="dark"] .post-btn:hover {

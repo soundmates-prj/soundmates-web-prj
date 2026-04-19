@@ -714,9 +714,15 @@
 [data-theme="dark"] .lm-input,
 [data-theme="dark"] .lm-select,
 [data-theme="dark"] .lm-textarea {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #e2e8f0;
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .lm-select option {
+  background: #1e293b;
+  color: #f1f5f9;
 }
 
 [data-theme="dark"] .lm-input::placeholder,

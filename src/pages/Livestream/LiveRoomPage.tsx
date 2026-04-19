@@ -188,8 +188,6 @@ export function LiveRoomPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeDotMenu, setActiveDotMenu] = useState<string | null>(null);
   const [activeChatTab, setActiveChatTab] = useState<"chat" | "history" | "lyrics">("chat");
-  const [upNextHistory, setUpNextHistory] = useState<any[]>([]);
-  const [playedHistory, setPlayedHistory] = useState<any[]>([]);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [authPopupMode, setAuthPopupMode] = useState<AuthPopupMode>("guestLimit");
   const [manualSyncBaseMs, setManualSyncBaseMs] = useState<number | null>(null);
@@ -404,23 +402,16 @@ export function LiveRoomPage() {
     }
   }, [activeLyricIndex]);
 
-  // ── Track change: update up-next / played history ─────────────────────────
-  useEffect(() => {
-    const current = nowPlaying?.currentTrack;
-    const next = nowPlaying?.playingNext;
-    const currentId = current?.shId;
-    if (!current) return;
-    const prevId = prevTrackIdRef.current;
-    if (prevId !== currentId) {
-      if (prevId !== undefined && prevTrackDataRef.current) {
-        setPlayedHistory(prev => [prevTrackDataRef.current!, ...prev].slice(0, 10));
-      }
-      setUpNextHistory(next ? [next] : []);
-      prevTrackDataRef.current = current;
-      prevTrackIdRef.current = currentId;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nowPlaying?.currentTrack?.shId, nowPlaying?.playingNext?.shId]);
+  // ── Upcoming Queue Filter (exclude playingNext) ──────────────────────────
+  const filteredQueue = useMemo(() => {
+    if (!nowPlaying?.upcomingQueue) return [];
+    const nextText = nowPlaying?.playingNext?.title + nowPlaying?.playingNext?.artist;
+    
+    return nowPlaying.upcomingQueue.filter(q => {
+      const qText = q.title + q.artist;
+      return qText !== nextText;
+    });
+  }, [nowPlaying?.upcomingQueue, nowPlaying?.playingNext]);
 
   // ── Auto-scroll chat ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -688,7 +679,11 @@ export function LiveRoomPage() {
                     <div key={chat.id} className="lr-chat-system">{chat.message}</div>
                   ) : (
                     <div key={chat.id} className="lr-chat-msg" style={{ position: "relative" }}>
-                      <div className="lr-chat-avatar">
+                      <div 
+                        className="lr-chat-avatar" 
+                        onClick={() => chat.userId && handleNavigate(`/profile/${chat.userId}`)}
+                        style={{ cursor: chat.userId ? "pointer" : "default" }}
+                      >
                         {chat.avatarUrl ? (
                           <img src={chat.avatarUrl} alt="avt" style={{ width: "100%", height: "100%", borderRadius: "50%" }} />
                         ) : (
@@ -697,7 +692,12 @@ export function LiveRoomPage() {
                       </div>
                       <div className="lr-chat-bubble">
                         <div className="lr-chat-user" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span>{chat.userName}</span>
+                          <span 
+                            onClick={() => chat.userId && handleNavigate(`/profile/${chat.userId}`)}
+                            style={{ cursor: chat.userId ? "pointer" : "default" }}
+                          >
+                            {chat.userName}
+                          </span>
                           {(currentUserRoleRef.current === "Host" || currentUserRoleRef.current === "Staff" || currentUserRoleRef.current === "Admin" || chat.userId === currentUserIdRef.current) && !chat.isDeleted && (
                             <div style={{ position: "relative" }}>
                               <button
@@ -790,12 +790,35 @@ export function LiveRoomPage() {
 
           {activeChatTab === "history" && (
             <div className="lr-music-history">
-              {upNextHistory.length > 0 && (
+              {/* 1. Nhạc sắp tới (Playing Next) */}
+              {nowPlaying?.playingNext && (
                 <div className="lr-history-section">
-                  <div className="lr-history-section-title"><Clock size={12} /> Sắp tới</div>
-                  {upNextHistory.map((t, i) => (
-                    <div key={`next-${i}`} className="lr-history-item upcoming">
-                      {t.artUrl ? <img src={t.artUrl} alt={t.title} className="lr-history-art" /> : <Disc3 size={16} className="lr-history-icon" />}
+                  <div className="lr-history-section-title"><Clock size={12} /> Tiếp theo</div>
+                  <div className="lr-history-item upcoming">
+                    {nowPlaying.playingNext.artUrl ? (
+                      <img src={nowPlaying.playingNext.artUrl} alt={nowPlaying.playingNext.title} className="lr-history-art" />
+                    ) : (
+                      <Disc3 size={16} className="lr-history-icon" />
+                    )}
+                    <div className="lr-history-info">
+                      <div className="lr-history-title">{nowPlaying.playingNext.title}</div>
+                      <div className="lr-history-artist">{nowPlaying.playingNext.artist}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Nhạc Queue (Phần còn lại của upcomingQueue) */}
+              {filteredQueue.length > 0 && (
+                <div className="lr-history-section">
+                  <div className="lr-history-section-title"><Music size={12} /> Hàng đợi</div>
+                  {filteredQueue.map((t, i) => (
+                    <div key={`queue-${i}`} className="lr-history-item upcoming">
+                      {t.artUrl ? (
+                        <img src={t.artUrl} alt={t.title} className="lr-history-art" />
+                      ) : (
+                        <Disc3 size={16} className="lr-history-icon" />
+                      )}
                       <div className="lr-history-info">
                         <div className="lr-history-title">{t.title}</div>
                         <div className="lr-history-artist">{t.artist}</div>
@@ -804,12 +827,18 @@ export function LiveRoomPage() {
                   ))}
                 </div>
               )}
+
+              {/* 3. Lịch sử (Song History) */}
               {nowPlaying?.songHistory && nowPlaying.songHistory.length > 0 && (
                 <div className="lr-history-section">
                   <div className="lr-history-section-title"><History size={12} /> Đã chạy</div>
                   {nowPlaying.songHistory.map((t, i) => (
                     <div key={`played-${i}`} className="lr-history-item played">
-                      {t.artUrl ? <img src={t.artUrl} alt={t.title} className="lr-history-art" /> : <Disc3 size={16} className="lr-history-icon" />}
+                      {t.artUrl ? (
+                        <img src={t.artUrl} alt={t.title} className="lr-history-art" />
+                      ) : (
+                        <Disc3 size={16} className="lr-history-icon" />
+                      )}
                       <div className="lr-history-info">
                         <div className="lr-history-title">{t.title}</div>
                         <div className="lr-history-artist">{t.artist}</div>
@@ -818,7 +847,8 @@ export function LiveRoomPage() {
                   ))}
                 </div>
               )}
-              {upNextHistory.length === 0 && (!nowPlaying?.songHistory || nowPlaying.songHistory.length === 0) && (
+
+              {!nowPlaying?.playingNext && filteredQueue.length === 0 && (!nowPlaying?.songHistory || nowPlaying.songHistory.length === 0) && (
                 <div className="lr-chat-welcome">Chưa có lịch sử nhạc nào.</div>
               )}
             </div>

@@ -43,6 +43,7 @@ export interface TrackInfo {
 export interface LiveNowPlaying {
   currentTrack: TrackInfo | null;
   playingNext: TrackInfo | null;
+  upcomingQueue: TrackInfo[];
   songHistory: TrackInfo[];
   totalListeners: number;
   isLive: boolean;
@@ -322,11 +323,12 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
           const history = (data.nowPlaying.songHistory || []).map((h: any) => mapTrack(h)).filter(Boolean) as TrackInfo[];
           const np: LiveNowPlaying = {
             ...(nowPlayingRef.current ?? {
-              currentTrack: null, playingNext: null, songHistory: [],
+              currentTrack: null, playingNext: null, upcomingQueue: [], songHistory: [],
               totalListeners: 0, isLive: true, isOnline: true, listenUrl: "", stationName: "Live Station",
             }),
             currentTrack: track,
             playingNext: next,
+            upcomingQueue: (data.nowPlaying.upcomingQueue || []).map((q: any) => mapTrack(q)).filter(Boolean) as TrackInfo[],
             songHistory: history,
             listenUrl: proxyUrl(data.nowPlaying.listenUrl ?? nowPlayingRef.current?.listenUrl ?? ""),
             totalListeners: toSafeListenerCount(data.listenersCount ?? data.totalListeners, nowPlayingRef.current?.totalListeners ?? 0),
@@ -455,11 +457,12 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         };
         const np: LiveNowPlaying = {
           ...(nowPlayingRef.current ?? {
-            currentTrack: null, playingNext: null, songHistory: [],
+            currentTrack: null, playingNext: null, upcomingQueue: [], songHistory: [],
             totalListeners: 0, isLive: true, isOnline: true, listenUrl: "", stationName: "Live Station",
           }),
           currentTrack: current,
           playingNext: nowPlayingRef.current?.currentTrack ?? null,
+          upcomingQueue: (data.upcomingQueue || []).map((q: any) => mapTrack(q)).filter(Boolean) as TrackInfo[],
           songHistory: nowPlayingRef.current?.currentTrack
             ? [nowPlayingRef.current.currentTrack, ...(nowPlayingRef.current?.songHistory ?? [])].slice(0, 20)
             : nowPlayingRef.current?.songHistory ?? [],
@@ -470,10 +473,10 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         nowPlayingRef.current = np;
         prevTrackIdRef.current = newShId;
       } else {
-        // Same song — resync elapsed time only
-        // Dừng ghi đè listener từ Icecast (data.totalListeners) xuống state `listeners`, 
-        // để hệ thống web dùng số người nghe từ websocket (SignalR ListenersUpdated event) chính xác hơn.
-        
+        // Same song — resync elapsed time only.
+        // We ignore data.totalListeners here because it comes from Icecast/AzuraCast
+        // and is less accurate than our internal SignalR session listener count.
+        // (Dừng ghi đè listener từ Icecast để dùng số người nghe từ WebSocket chính xác hơn)
         // Always resync track elapsed to maintain tight lyric sync
         const current: TrackInfo = {
           shId: track.shId, title: track.title ?? "—", artist: track.artist ?? "—",
@@ -498,6 +501,14 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
     });
 
     const offListeners = liveHubService.onListenersUpdated((sid, count) => {
+      if (sid === activeSessionIdRef.current) setListeners(count);
+    });
+
+    const offUserJoined = liveHubService.onUserJoined((sid, uid, count) => {
+      if (sid === activeSessionIdRef.current) setListeners(count);
+    });
+
+    const offUserLeft = liveHubService.onUserLeft((sid, uid, count) => {
       if (sid === activeSessionIdRef.current) setListeners(count);
     });
 
@@ -598,10 +609,11 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
       if (npRaw) {
         const current = mapTrack(npRaw.currentTrack);
         const next = mapTrack(npRaw.playingNext ?? (npRaw as any).nextSong);
+        const queue = (npRaw.upcomingQueue || []).map((q: any) => mapTrack(q)).filter(Boolean) as TrackInfo[];
         const history = (npRaw.songHistory || []).map((h: any) => mapTrack(h)).filter(Boolean) as TrackInfo[];
         listenUrl = proxyUrl(npRaw.listenUrl ?? sessionData.streamUrl ?? "");
         const np: LiveNowPlaying = {
-          currentTrack: current, playingNext: next, songHistory: history,
+          currentTrack: current, playingNext: next, upcomingQueue: queue, songHistory: history,
           totalListeners: toSafeListenerCount(sessionData.listenersCount ?? sessionData.totalListeners ?? npRaw.totalListeners, 0),
           isLive: npRaw.isLive ?? true, isOnline: npRaw.isOnline ?? true,
           listenUrl, stationName: npRaw.stationName || sessionData.stationName || "Live Station",
@@ -612,7 +624,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
       } else {
         listenUrl = proxyUrl(sessionData.streamUrl ?? "");
         const np: LiveNowPlaying = {
-          currentTrack: null, playingNext: null, songHistory: [],
+          currentTrack: null, playingNext: null, upcomingQueue: [], songHistory: [],
           totalListeners: toSafeListenerCount(sessionData.listenersCount ?? sessionData.totalListeners, 0),
           isLive: sessionData.status?.toLowerCase() === "live", isOnline: true,
           listenUrl, stationName: sessionData.stationName || "Live Station",

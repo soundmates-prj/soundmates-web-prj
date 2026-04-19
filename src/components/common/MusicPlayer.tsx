@@ -448,9 +448,69 @@ export function MusicPlayer() {
 
             <div className="playlist-drawer-body">
               {drawerTab === "playlist" && (
-                <p className="playlist-drawer-placeholder">
-                  Tính năng đang phát triển — sẽ hiển thị queue nhạc của phiên.
-                </p>
+                <div className="playlist-drawer-list">
+                  {isInLiveSession ? (
+                    <>
+                      {liveCtx.nowPlaying?.playingNext && (
+                        <div className="playlist-drawer-section">
+                          <p className="playlist-section-label">Tiếp theo</p>
+                          <div className="podcast-drawer-item active">
+                            <div className="podcast-drawer-art">
+                              {liveCtx.nowPlaying.playingNext.artUrl ? (
+                                <img src={liveCtx.nowPlaying.playingNext.artUrl} alt="" />
+                              ) : (
+                                <Music size={16} />
+                              )}
+                            </div>
+                            <div className="podcast-drawer-info">
+                              <span className="podcast-drawer-title">
+                                {liveCtx.nowPlaying.playingNext.title}
+                              </span>
+                              <span className="podcast-drawer-subtitle">
+                                {liveCtx.nowPlaying.playingNext.artist}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {liveCtx.nowPlaying?.upcomingQueue && liveCtx.nowPlaying.upcomingQueue.length > 0 ? (
+                        <div className="playlist-drawer-section">
+                          <p className="playlist-section-label">Trong hàng đợi</p>
+                          {liveCtx.nowPlaying.upcomingQueue
+                            .filter(q => {
+                              const next = liveCtx.nowPlaying?.playingNext;
+                              if (!next) return true;
+                              return (q.title + q.artist) !== (next.title + next.artist);
+                            })
+                            .map((t, i) => (
+                              <div key={`live-q-${i}`} className="podcast-drawer-item">
+                                <div className="podcast-drawer-art">
+                                  {t.artUrl ? (
+                                    <img src={t.artUrl} alt="" />
+                                  ) : (
+                                    <Music size={16} />
+                                  )}
+                                </div>
+                                <div className="podcast-drawer-info">
+                                  <span className="podcast-drawer-title">{t.title}</span>
+                                  <span className="podcast-drawer-subtitle">{t.artist}</span>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        !liveCtx.nowPlaying?.playingNext && (
+                          <p className="playlist-drawer-placeholder">Hàng đợi trống</p>
+                        )
+                      )}
+                    </>
+                  ) : (
+                    <p className="playlist-drawer-placeholder">
+                      Tính năng phát nhạc theo danh sách đang phát triển.
+                    </p>
+                  )}
+                </div>
               )}
 
               {drawerTab === "podcast" && (

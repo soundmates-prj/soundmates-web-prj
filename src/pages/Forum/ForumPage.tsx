@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   MessageCircle,
   Share2,
@@ -43,6 +43,7 @@ function PostCard({
   post: PublishedPost;
   authorName?: string;
 }) {
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
   const shareData =
@@ -82,7 +83,11 @@ function PostCard({
     <>
       <article className="fp-card">
         <div className="fp-card-header">
-          <div className="fp-avatar">
+          <div 
+            className="fp-avatar" 
+            onClick={() => post.userId && navigate(`/profile/${post.userId}`)}
+            style={{ cursor: post.userId ? "pointer" : "default" }}
+          >
             {post.userAvatarUrl ? (
               <img src={post.userAvatarUrl} alt={displayName} />
             ) : (
@@ -90,7 +95,13 @@ function PostCard({
             )}
           </div>
           <div className="fp-card-meta">
-            <span className="fp-card-name">{displayName}</span>
+            <span 
+              className="fp-card-name" 
+              onClick={() => post.userId && navigate(`/profile/${post.userId}`)}
+              style={{ cursor: post.userId ? "pointer" : "default" }}
+            >
+              {displayName}
+            </span>
             <span className="fp-card-time">
               {formatDate(post.publishedAt ?? post.createdAt)}
             </span>

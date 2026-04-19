@@ -43,19 +43,39 @@ export interface ApiResponse<T> {
 export const themeApiService = {
   async getActiveThemes(): Promise<ThemeResult[]> {
     try {
-      const res = await api.get<ApiResponse<PaginatedThemeResult>>("/themes/active");
-      if (res.data.success && res.data.data) {
-        const items = res.data.data.items || [];
-        return items.map((theme) => {
+      const res = await api.get<any>("/themes/active");
+      
+      const resData = res.data;
+      const success = resData.success ?? resData.Success;
+      const data = resData.data ?? resData.Data;
+
+      if (success && data) {
+        // Handle pagination structure
+        const items = data.items ?? data.Items ?? [];
+        
+        return items.map((theme: any) => {
           const normalizedTheme = { ...theme };
 
+          // Normalize casing for theme properties if needed
+          normalizedTheme.id = theme.id ?? theme.Id;
+          normalizedTheme.name = theme.name ?? theme.Name;
+          normalizedTheme.mode = theme.mode ?? theme.Mode;
+          normalizedTheme.primaryColor = theme.primaryColor ?? theme.PrimaryColor;
+          normalizedTheme.backgroundColor = theme.backgroundColor ?? theme.BackgroundColor;
+          normalizedTheme.textColor = theme.textColor ?? theme.TextColor;
+          normalizedTheme.gradientBackground = theme.gradientBackground ?? theme.GradientBackground;
+          normalizedTheme.backgroundImage = theme.backgroundImage ?? theme.BackgroundImage;
+
           // Some environments may return configJson as a JSON string.
-          if (typeof normalizedTheme.configJson === "string") {
+          const configJson = theme.configJson ?? theme.ConfigJson;
+          if (typeof configJson === "string") {
             try {
-              normalizedTheme.configJson = JSON.parse(normalizedTheme.configJson) as ThemeTokens;
+              normalizedTheme.configJson = JSON.parse(configJson) as ThemeTokens;
             } catch {
               normalizedTheme.configJson = undefined;
             }
+          } else {
+            normalizedTheme.configJson = configJson;
           }
 
           return normalizedTheme;
