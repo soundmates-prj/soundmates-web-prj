@@ -86,9 +86,9 @@ export function LiveSessionsPage() {
 
               <div className="lsp-card-body">
                 <h3 className="lsp-card-name">{session.sessionName}</h3>
-                {session.description && (
+                {session.description ? (
                   <p className="lsp-card-desc">{session.description}</p>
-                )}
+                ) : <></>}
 
                 <div className="lsp-card-footer">
                   <div className="lsp-card-meta">
