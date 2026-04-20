@@ -94,11 +94,11 @@ export default function HostLiveSessionDetailPage() {
 
   // Song request review modal states
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(
-    null,
-  );
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [songRequestPage, setSongRequestPage] = useState(1);
+  const [viewRequestModalOpen, setViewRequestModalOpen] = useState(false);
+  const [viewingRequest, setViewingRequest] = useState<SongRequestResult | null>(null);
   const requestsPerPage = 4;
 
   // Chat states
@@ -428,6 +428,16 @@ export default function HostLiveSessionDetailPage() {
     }
   }, [rejectingRequestId, rejectReason, closeRejectModal, loadData]);
 
+  const openViewRequestModal = useCallback((req: SongRequestResult) => {
+    setViewingRequest(req);
+    setViewRequestModalOpen(true);
+  }, []);
+
+  const closeViewRequestModal = useCallback(() => {
+    setViewRequestModalOpen(false);
+    setViewingRequest(null);
+  }, []);
+
   const handleBack = useCallback(() => {
     navigate("/host/sessions");
   }, [navigate]);
@@ -741,6 +751,7 @@ export default function HostLiveSessionDetailPage() {
                       </span>
                       <input
                         type="range"
+                        className="host-live-volume-slider system-volume"
                         min={0}
                         max={1}
                         step={0.01}
@@ -748,8 +759,8 @@ export default function HostLiveSessionDetailPage() {
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
                           handleVolumeSync(val);
+                          e.target.style.background = `linear-gradient(to right, currentColor ${val * 100}%, rgba(255,255,255,0.2) ${val * 100}%)`;
                         }}
-                        style={{ width: "100%", accentColor: "#ef4444" }}
                         title="Điều chỉnh âm lượng nhạc nền cho TẤT CẢ khán giả đang nghe"
                       />
                     </div>
@@ -760,6 +771,7 @@ export default function HostLiveSessionDetailPage() {
                       </span>
                       <input
                         type="range"
+                        className="host-live-volume-slider local-volume"
                         min={0}
                         max={1}
                         step={0.01}
@@ -768,8 +780,8 @@ export default function HostLiveSessionDetailPage() {
                           const val = parseFloat(e.target.value);
                           const audio = document.getElementById("host-local-audio") as HTMLAudioElement;
                           if (audio) audio.volume = val;
+                          e.target.style.background = `linear-gradient(to right, currentColor ${val * 100}%, rgba(255,255,255,0.2) ${val * 100}%)`;
                         }}
-                        style={{ width: "100%", accentColor: "#3b82f6" }}
                         title="Chỉnh âm lượng nhạc mà BẠN nghe thấy (không ảnh hưởng tới khán giả)"
                       />
                       <audio
@@ -782,9 +794,8 @@ export default function HostLiveSessionDetailPage() {
 
                     {/* Nút Skip */}
                     <button
-                      className="host-live-btn outline danger"
+                      className="host-live-btn-skip"
                       title="Chuyển sang bài tiếp theo (Bỏ qua bài này)"
-                      style={{ padding: "10px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ef4444" }}
                       onClick={async () => {
                         const confirmSkip = window.confirm("Bạn có chắc chắn muốn bỏ qua (Skip) bài hát này không?");
                         if (!confirmSkip) return;
@@ -798,7 +809,7 @@ export default function HostLiveSessionDetailPage() {
                         }
                       }}
                     >
-                      <SkipForward size={20} color="#ef4444" />
+                      <SkipForward size={22} />
                     </button>
                   </div>
                 )}
@@ -875,27 +886,36 @@ export default function HostLiveSessionDetailPage() {
               <div className="host-live-empty">Chưa có yêu cầu</div>
             ) : (
               songRequests.slice((songRequestPage - 1) * requestsPerPage, songRequestPage * requestsPerPage).map((item) => (
-                <div key={item.id} className="host-live-track-item">
-                  <div>
-                    <div className="host-live-track-title">{item.songTitle}</div>
-                    <div className="host-live-track-subtitle" style={{ fontStyle: item.message ? "normal" : "italic", color: item.message ? "inherit" : "var(--neutral-400)" }}>
+                <div key={item.id} className="host-live-track-item host-live-request-item" onClick={() => openViewRequestModal(item)}>
+                  <div style={{ flex: 1, cursor: "pointer", minWidth: 0 }}>
+                    <div className="host-live-track-title" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>{item.songTitle}</div>
+                    <div className="host-live-track-subtitle" style={{ 
+                      fontStyle: item.message ? "normal" : "italic", 
+                      color: item.message ? "inherit" : "var(--neutral-400)",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      wordBreak: "break-word",
+                      overflowWrap: "anywhere"
+                    }}>
                       {item.message || "Không có tin nhắn"}
                     </div>
-                    <div className={`host-live-badge host-live-badge--${item.status?.toLowerCase()}`}>
+                    <div className={`host-live-badge host-live-badge--${item.status?.toLowerCase()}`} style={{ marginTop: 4 }}>
                       {item.status}
                     </div>
                   </div>
                   {item.status === "PENDING" || item.status === "Pending" ? (
-                    <div className="host-live-inline-row">
+                    <div className="host-live-inline-row" onClick={(e) => e.stopPropagation()}>
                       <button
                         className="host-live-btn host-live-btn--approve"
-                        onClick={() => void handleApprove(item.id)}
+                        onClick={(e) => { e.stopPropagation(); void handleApprove(item.id); }}
                       >
                         Duyệt
                       </button>
                       <button
                         className="host-live-btn host-live-btn--reject"
-                        onClick={() => openRejectModal(item.id)}
+                        onClick={(e) => { e.stopPropagation(); openRejectModal(item.id); }}
                       >
                         Từ chối
                       </button>
@@ -1033,6 +1053,61 @@ export default function HostLiveSessionDetailPage() {
                 disabled={!rejectReason.trim()}
               >
                 Xác nhận từ chối
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Request Modal */}
+      {viewRequestModalOpen && viewingRequest && (
+        <div
+          className="host-live-modal-overlay"
+          onClick={(e) => e.target === e.currentTarget && closeViewRequestModal()}
+        >
+          <div className="host-live-modal" style={{ maxWidth: 500 }}>
+            <div className="host-live-modal-header">
+              <h3 className="host-live-modal-title">
+                <Music size={18} style={{ marginRight: 8, color: "var(--neutral-500)" }} />
+                Chi tiết yêu cầu
+              </h3>
+              <button className="host-live-modal-close" onClick={closeViewRequestModal}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="host-live-modal-body" style={{ marginTop: 20, textAlign: "left" }}>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, color: "var(--neutral-500)", marginBottom: 4, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>Bài hát yêu cầu</div>
+                <div style={{ fontSize: 20, fontWeight: 800, wordBreak: "break-word", overflowWrap: "anywhere" }}>{viewingRequest.songTitle}</div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, color: "var(--neutral-500)", marginBottom: 4, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>Trạng thái</div>
+                <div className={`host-live-badge host-live-badge--${viewingRequest.status?.toLowerCase()}`}>
+                  {viewingRequest.status}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "var(--neutral-500)", marginBottom: 6, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>Thư từ người gửi</div>
+                <div style={{ 
+                  background: "var(--layer-2)", 
+                  padding: "16px 20px", 
+                  borderRadius: 12, 
+                  fontSize: 15, 
+                  lineHeight: 1.6,
+                  fontStyle: viewingRequest.message ? "normal" : "italic",
+                  color: viewingRequest.message ? "var(--text-1)" : "var(--neutral-400)",
+                  border: "1px solid var(--border-color)",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  overflowWrap: "anywhere"
+                }}>
+                  {viewingRequest.message || "Không có lời nhắn nào được gửi kèm."}
+                </div>
+              </div>
+            </div>
+            <div className="host-live-modal-actions" style={{ marginTop: 28, justifyContent: "flex-end" }}>
+              <button className="host-live-modal-btn-cancel" onClick={closeViewRequestModal} style={{ padding: "8px 24px" }}>
+                Đóng
               </button>
             </div>
           </div>

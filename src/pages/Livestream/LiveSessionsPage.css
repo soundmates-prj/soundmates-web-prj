@@ -150,13 +150,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    /* gap: 12px; */
+    gap: 12px;
 }
 
 .lsp-card-meta {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 1;
+    min-width: 0;
 }
 
 .lsp-meta {
@@ -165,6 +167,18 @@
     gap: 5px;
     font-size: 12px;
     color: var(--lsp-meta, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.lsp-meta-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lsp-meta:first-child {
+    flex: 1;
+    min-width: 0;
 }
 
 .lsp-join-btn {
@@ -179,6 +193,8 @@
     color: #fff;
     cursor: pointer;
     background: linear-gradient(135deg, #1a9fd4, #55c5f1);
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .lsp-empty,
@@ -229,11 +245,37 @@
     }
 }
 
+.lsp-refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--lsp-card-border);
+    background: var(--lsp-card-bg);
+    color: var(--lsp-text);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.lsp-refresh-btn:hover:not(:disabled) {
+    background: rgba(85, 197, 241, 0.1);
+    color: #55c5f1;
+    border-color: rgba(85, 197, 241, 0.3);
+}
+
+.lsp-refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* Light defaults */
 :root {
     --lsp-bg: transparent;
     --lsp-text: #0f172a;
-    --lsp-title: #0f172a;
+    --lsp-title: #55c5f1;
     --lsp-subtitle: #64748b;
     --lsp-card-bg: #ffffff;
     --lsp-card-border: #e2e8f0;
@@ -251,7 +293,7 @@
 [data-theme="dark"] {
     --lsp-bg: transparent;
     --lsp-text: #e2e8f0;
-    --lsp-title: #e2e8f0;
+    --lsp-title: #55c5f1;
     --lsp-subtitle: #94a3b8;
     --lsp-card-bg: rgba(255, 255, 255, 0.04);
     --lsp-card-border: rgba(255, 255, 255, 0.08);

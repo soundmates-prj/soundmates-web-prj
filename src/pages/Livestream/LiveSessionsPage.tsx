@@ -12,6 +12,7 @@ export function LiveSessionsPage() {
   const [loading, setLoading] = useState(true);
 
   const loadActiveSessions = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await liveSessionApiService.getActiveSessions();
       setSessions(data);
@@ -36,23 +37,29 @@ export function LiveSessionsPage() {
     navigate(`/live/${sessionId}`);
   };
 
-  if (loading) {
-    return (
-      <div className="lsp-loading">
-        <RefreshCw size={28} className="lsp-spin" />
-        <p>Đang tải...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="lsp-page">
-      <div className="lsp-header">
-        <h1>Phát sóng trực tiếp</h1>
-        <p>Tham gia các phiên phát sóng đang diễn ra</p>
+      <div className="lsp-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1>Phát sóng trực tiếp</h1>
+          <p>Tham gia các phiên phát sóng đang diễn ra</p>
+        </div>
+        <button 
+          onClick={loadActiveSessions} 
+          className="lsp-refresh-btn"
+          disabled={loading}
+        >
+          <RefreshCw size={16} className={loading ? "lsp-spin" : ""} />
+          Làm mới
+        </button>
       </div>
 
-      {sessions.length === 0 ? (
+      {loading ? (
+        <div className="lsp-loading">
+          <RefreshCw size={28} className="lsp-spin" />
+          <p>Đang tải...</p>
+        </div>
+      ) : sessions.length === 0 ? (
         <div className="lsp-empty">
           <div className="lsp-empty-icon">
             <Radio size={36} />
@@ -92,14 +99,14 @@ export function LiveSessionsPage() {
 
                 <div className="lsp-card-footer">
                   <div className="lsp-card-meta">
-                    <span className="lsp-meta">
+                    <span className="lsp-meta" title={session.stationName || "Station"}>
                       <Radio size={12} />
-                      {session.stationName || "Station"}
+                      <span className="lsp-meta-text">{session.stationName || "Station"}</span>
                     </span>
                     {session.startedAt && (
-                      <span className="lsp-meta">
+                      <span className="lsp-meta" title={formatTime(session.startedAt)}>
                         <Clock size={12} />
-                        {formatTime(session.startedAt)}
+                        <span className="lsp-meta-text">{formatTime(session.startedAt)}</span>
                       </span>
                     )}
                   </div>
