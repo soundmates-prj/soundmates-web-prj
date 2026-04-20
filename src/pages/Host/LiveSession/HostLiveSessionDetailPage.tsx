@@ -13,6 +13,7 @@ import {
 } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import { LOCALE_VIETNAMESE } from "../../Admin/LiveOps/liveSessionConstants";
+import { getLiveListenersCount } from "../../../utils/listenerUtils";
 import { liveHubService } from "../../../services/liveHubService";
 import NotificationButton from "../../../components/layout/NotificationButton";
 import "./HostLiveSession.css";
@@ -153,6 +154,7 @@ export default function HostLiveSessionDetailPage() {
         scheduleData,
         requestsData,
         nowPlayingData,
+        queueData,
       ] = await Promise.all([
         liveSessionApiService.getLiveSession(sessionId),
         liveSessionApiService.getListenerStats(sessionId),
@@ -191,12 +193,12 @@ export default function HostLiveSessionDetailPage() {
           .then((data) => {
             if (isMountedRef.current) setNowPlaying(data);
           })
-          .catch(() => {});
+          .catch(() => { });
         liveSessionApiService.getQueue(sessionId)
           .then((data) => {
             if (isMountedRef.current) setQueue(data ? data.queue : []);
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     }, 10000);
 
@@ -677,7 +679,7 @@ export default function HostLiveSessionDetailPage() {
             <>
               <span className="host-live-overview-title">Người nghe</span>
               <div className="host-live-stat-item">
-                <div className="host-live-stat-value">{listener?.currentListeners ?? 0}</div>
+                <div className="host-live-stat-value">{getLiveListenersCount(session, nowPlaying)}</div>
                 <div className="host-live-stat-label">Hiện tại</div>
               </div>
               <div className="host-live-stat-item">
@@ -846,11 +848,11 @@ export default function HostLiveSessionDetailPage() {
                 <div key={item.shId || index} className="host-live-track-item">
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     {item.artUrl ? (
-                       <img src={item.artUrl.replace("host.docker.internal", "localhost")} alt="cover" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
+                      <img src={item.artUrl.replace("host.docker.internal", "localhost")} alt="cover" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
                     ) : (
-                       <div style={{ width: 36, height: 36, borderRadius: 6, background: 'var(--neutral-200)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                         <Music size={16} color="var(--neutral-400)" />
-                       </div>
+                      <div style={{ width: 36, height: 36, borderRadius: 6, background: 'var(--neutral-200)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Music size={16} color="var(--neutral-400)" />
+                      </div>
                     )}
                     <div>
                       <div className="host-live-track-title" style={{ fontSize: 13, marginBottom: 1 }}>{item.title || "Không rõ"}</div>

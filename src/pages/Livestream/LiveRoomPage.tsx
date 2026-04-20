@@ -244,7 +244,7 @@ export function LiveRoomPage() {
         }
         const [stream] = evt.streams;
         audioEl.srcObject = stream;
-        void audioEl.play().catch(() => {});
+        void audioEl.play().catch(() => { });
       };
 
       pc.onicecandidate = (evt) => {
@@ -288,7 +288,7 @@ export function LiveRoomPage() {
         const candidate = JSON.parse(candidateStr) as RTCIceCandidateInit;
         // Check if we're host or listener
         if (listenerPeerConnRef.current?.remoteDescription) {
-          await listenerPeerConnRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+          await listenerPeerConnRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => { });
         }
       } catch { /* ignore parse errors */ }
     });
@@ -401,7 +401,7 @@ export function LiveRoomPage() {
   const filteredQueue = useMemo(() => {
     if (!nowPlaying?.upcomingQueue) return [];
     const nextText = (nowPlaying?.playingNext?.title || "") + (nowPlaying?.playingNext?.artist || "");
-    
+
     return nowPlaying.upcomingQueue.filter(q => {
       const qText = (q.title || "") + (q.artist || "");
       return qText !== nextText;
@@ -553,7 +553,7 @@ export function LiveRoomPage() {
           </span>
           <span className="lr-listeners-count">
             <Users size={13} />
-            {listeners} đang nghe
+            {nowPlaying?.totalListeners} đang nghe
           </span>
         </div>
       </div>
@@ -674,8 +674,8 @@ export function LiveRoomPage() {
                     <div key={chat.id} className="lr-chat-system">{chat.message}</div>
                   ) : (
                     <div key={chat.id} className="lr-chat-msg" style={{ position: "relative" }}>
-                      <div 
-                        className="lr-chat-avatar" 
+                      <div
+                        className="lr-chat-avatar"
                         onClick={() => chat.userId && handleNavigate(`/profile/${chat.userId}`)}
                         style={{ cursor: chat.userId ? "pointer" : "default" }}
                       >
@@ -687,7 +687,7 @@ export function LiveRoomPage() {
                       </div>
                       <div className="lr-chat-bubble">
                         <div className="lr-chat-user" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span 
+                          <span
                             onClick={() => chat.userId && handleNavigate(`/profile/${chat.userId}`)}
                             style={{ cursor: chat.userId ? "pointer" : "default" }}
                           >
@@ -951,12 +951,12 @@ export function LiveRoomPage() {
         </div>
       )}
 
-      <AuthPromptModal 
-        isOpen={showAuthPopup} 
+      <AuthPromptModal
+        isOpen={showAuthPopup}
         onClose={() => setShowAuthPopup(false)}
         title={authPopupMode === "guestLimit" ? "Hết thời gian nghe thử" : "Yêu cầu đăng nhập"}
-        message={authPopupMode === "guestLimit" 
-          ? "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!" 
+        message={authPopupMode === "guestLimit"
+          ? "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!"
           : "Vui lòng đăng nhập hoặc đăng ký để tiếp tục sử dụng tính năng này nhé!"}
       />
     </div>

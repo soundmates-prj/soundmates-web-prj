@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Radio, Users, Clock, Disc3, RefreshCw, Headphones } from "lucide-react";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
 import type { LiveSessionResult } from "../../services/liveSessionApiService";
+import { getLiveListenersCount } from "../../utils/listenerUtils";
 import "./LiveSessionsPage.css";
 
 export function LiveSessionsPage() {
@@ -76,7 +77,7 @@ export function LiveSessionsPage() {
                 <span className="lsp-live-badge">LIVE</span>
                 <span className="lsp-listeners-badge">
                   <Users size={12} />
-                  {session.listenersCount}
+                  {getLiveListenersCount(session, session.nowPlaying)}
                 </span>
                 {session.genre && (
                   <span className="lsp-genre">{session.genre}</span>
