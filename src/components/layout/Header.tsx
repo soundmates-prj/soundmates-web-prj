@@ -175,6 +175,7 @@ const Header: React.FC = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userInfo");
+    localStorage.removeItem("liveGuestIdentifier");
     setIsLoggedIn(false);
     setUserInfo(null);
     setShowDropdown(false);
