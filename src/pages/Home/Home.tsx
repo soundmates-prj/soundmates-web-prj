@@ -451,7 +451,7 @@ export default function Home() {
                   <div key={i} className="playlist-card skeleton" />
                 ))
               ) : userPlaylists.length > 0 ? (
-                userPlaylists.slice(0, 6).map((playlist, i) => (
+                userPlaylists.map((playlist, i) => (
                   <motion.div
                     key={playlist.id}
                     className="playlist-card"
