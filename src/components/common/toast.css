@@ -10,9 +10,9 @@
 
 /* Base Toast */
 .custom-toast {
-  background: white !important;
+  background: var(--bg-card, white) !important;
   border-radius: 14px !important;
-  box-shadow: 0px 10px 25px -5px rgba(0, 0, 0, 0.15), 0px 5px 10px -5px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--shadow-lg, 0px 10px 25px -5px rgba(0, 0, 0, 0.15)) !important;
   padding: 14px 16px !important;
   min-height: 56px !important;
   font-family: 'Segoe UI', system-ui, sans-serif !important;
@@ -29,14 +29,14 @@
 .custom-toast .Toastify__toast-body > div > div:first-child {
   font-weight: 700 !important;
   font-size: 0.95rem !important;
-  color: #1e293b !important;
+  color: var(--text-primary, #1e293b) !important;
   line-height: 1.4 !important;
 }
 
 /* Description inside ToastMessage */
 .custom-toast .Toastify__toast-body > div > div:last-child:not(:first-child) {
   font-size: 0.85rem !important;
-  color: #64748b !important;
+  color: var(--text-secondary, #64748b) !important;
   margin-top: 2px !important;
   line-height: 1.5 !important;
 }

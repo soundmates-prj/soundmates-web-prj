@@ -43,7 +43,13 @@ class AudioService {
     try {
       const response = await api.post<ApiResponse<{ audio: ScriptAudio }>>(
         `/scripts/${scriptId}/audio:generate`,
-        params
+        {
+          voiceCode: params.voiceCode || params.voiceId,
+          voiceId: params.voiceId || params.voiceCode,
+          speed: params.speed,
+          pitch: params.pitch,
+          bgmUrl: params.bgmUrl
+        }
       );
 
       if (!response.data.success || !response.data.data?.audio) {
