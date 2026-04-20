@@ -144,3 +144,37 @@
 [data-theme="dark"] .pod-ep {
   color: var(--text-secondary);
 }
+
+/* Podcast Card Dark Mode Override */
+[data-theme="dark"] .pf-podcast-card {
+  background: var(--neutral-900, #171717);
+  border-color: #333333;
+}
+[data-theme="dark"] .pf-podcast-card:hover {
+  background: var(--neutral-800, #262626);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .pf-podcast-card-banner {
+  background: var(--neutral-800, #262626);
+  border-bottom-color: #333333;
+}
+[data-theme="dark"] .pf-podcast-card-fallback {
+  color: var(--neutral-500, #737373);
+}
+[data-theme="dark"] .pf-podcast-card-title {
+  color: var(--user-theme-text, #ffffff);
+}
+[data-theme="dark"] .pf-podcast-card-author {
+  color: var(--neutral-400, #a3a3a3);
+}
+[data-theme="dark"] .pf-podcast-card-eps {
+  color: var(--neutral-500, #737373);
+}
+[data-theme="dark"] .pf-podcast-card-unsave {
+  background: rgba(0, 0, 0, 0.5);
+  color: #a78bfa;
+}
+[data-theme="dark"] .pf-podcast-card-unsave:hover {
+  background: rgba(0, 0, 0, 0.7);
+  color: #f87171;
+}
