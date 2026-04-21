@@ -38,6 +38,7 @@ import { useLiveSession } from "../../context/LiveSessionContext";
 import { usePlayer } from "../../context/PlayerContext";
 import { liveHubService } from "../../services/liveHubService";
 import AuthPromptModal from "../../components/common/AuthPromptModal";
+import UpgradeModal from "../../components/common/UpgradeModal";
 import "./LiveRoomPage.css";
 
 // ─── Types (local UI only) ────────────────────────────────────────────────────
@@ -191,11 +192,13 @@ export function LiveRoomPage() {
   const [manualSyncClockMs, setManualSyncClockMs] = useState<number | null>(null);
   const [adjustedElapsedMs, setAdjustedElapsedMs] = useState(0);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [requestSearch, setRequestSearch] = useState("");
   const [requestMessage, setRequestMessage] = useState("");
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestableSongs, setRequestableSongs] = useState<RequestSongItem[]>([]);
   const [requestedSongIds, setRequestedSongIds] = useState<Set<string>>(new Set());
+  const [requestLimits, setRequestLimits] = useState<{ limit: number; usedToday: number; remaining: number } | null>(null);
   const [listeningTime, setListeningTime] = useState(0); // kept for type safety (unused — timer moved to context)
   const guestLimitReachedRef = useRef(false);
 
@@ -432,6 +435,14 @@ export function LiveRoomPage() {
     setRequestLoading(true);
     try {
       const stationSongs = await liveSessionApiService.getStationMusic(String(session.stationId));
+      
+      try {
+        const limits = await liveSessionApiService.getMySongRequestLimits();
+        setRequestLimits(limits);
+      } catch (err) {
+        setRequestLimits(null);
+      }
+
       setRequestableSongs(stationSongs.map((song: SystemMusicItem) => ({
         id: song.id, title: song.title, artist: song.artist,
         album: song.album, artUrl: song.artworkUrl || song.artUrl || null,
@@ -457,12 +468,26 @@ export function LiveRoomPage() {
       });
       setRequestedSongIds(prev => new Set([...prev, song.id]));
       setRequestMessage("");
+
+      // Update remaining count visually immediately upon success 
+      setRequestLimits(prev => prev ? ({ ...prev, remaining: Math.max(0, prev.remaining - 1), usedToday: prev.usedToday + 1 }) : prev);
+
       showToast.success(`Đã gửi yêu cầu "${song.title}" - đang chờ host duyệt`);
     } catch (err: any) {
       if (err?.response?.status === 401 || err?.status === 401) {
         setAuthPopupMode("requestSong"); setShowAuthPopup(true);
       } else {
-        showToast.error("Không thể gửi yêu cầu. Vui lòng thử lại.");
+        const errorMsg = err?.response?.data?.message || "Không thể gửi yêu cầu. Vui lòng thử lại.";
+        if (errorMsg.includes("không hỗ trợ") || errorMsg.includes("Bạn đã đạt giới hạn")) {
+          setShowRequestModal(false);
+          if (requestLimits && requestLimits.limit >= 15) {
+            showToast.error("Bạn đã dùng hết lượt yêu cầu nhạc hôm nay!");
+          } else {
+            setShowUpgradeModal(true);
+          }
+        } else {
+          showToast.error(errorMsg);
+        }
       }
     }
   };
@@ -884,6 +909,11 @@ export function LiveRoomPage() {
           <div className="lr-request-modal" onClick={e => e.stopPropagation()}>
             <div className="lr-request-modal-header">
               <h3>Gửi Request Nhạc</h3>
+              {requestLimits && (
+                <span className="lr-request-limits-badge">
+                  Còn lại: {requestLimits.remaining}/{requestLimits.limit}
+                </span>
+              )}
               <button onClick={() => setShowRequestModal(false)} className="lr-request-close">
                 <X size={16} />
               </button>
@@ -958,6 +988,12 @@ export function LiveRoomPage() {
         message={authPopupMode === "guestLimit"
           ? "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!"
           : "Vui lòng đăng nhập hoặc đăng ký để tiếp tục sử dụng tính năng này nhé!"}
+      />
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Yêu cầu nhạc"
       />
     </div>
   );

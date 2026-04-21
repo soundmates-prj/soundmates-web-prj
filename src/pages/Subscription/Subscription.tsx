@@ -271,22 +271,21 @@ function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): Featu
   if (tier === "elite") {
     return [
       ...base,
-      { text: `${plan.requestLimit} lượt yêu cầu nhạc + Ưu tiên hàng đợi`, bold: "" },
-      { text: `${plan.podcastRequestLimit} lượt tạo Podcast`, bold: " mỗi ngày" },
-      { text: "Tự do sáng tạo giọng AI", bold: ` tới ${plan.voiceModelLimit} giọng` },
-      { text: "AI đọc văn bản", bold: `${plan.ttsMinuteLimit} phút/tháng` },
-      { text: "Cập nhật mọi Theme mới nhất & 'đặc biệt' nhất" },
+      { text: `${plan.requestLimit} lượt yêu cầu nhạc` },
+      { text: "mỗi ngày", bold: `${plan.podcastRequestLimit} lượt tạo Podcast` },
+      { text: "Theme giao diện cơ bản" },
     ];
   }
   // premium
   return [
     ...base,
     { text: "Mọi đặc quyền từ gói Miễn Phí" },
-    { text: `${plan.requestLimit} lượt yêu cầu bài hát`, bold: " mỗi ngày" },
+    { text: `${plan.requestLimit} lượt yêu cầu nhạc`, bold: " mỗi ngày - ưu tiên hàng đợi" },
     { text: `${plan.podcastRequestLimit} lượt tạo Podcast`, bold: " mỗi ngày" },
     { text: "Tự tạo giọng nói AI", bold: `${plan.voiceModelLimit} giọng` },
     { text: "AI đọc văn bản", bold: `${plan.ttsMinuteLimit} phút/tháng` },
-    { text: "Theme giao diện cơ bản" },
+    { text: "Mở khóa tính năng", bold: "đăng bán Podcast" },
+    { text: "Cập nhật mọi Theme mới nhất & 'đặc biệt' nhất" },
   ];
 }
 
@@ -341,17 +340,17 @@ export default function Subscription() {
     }
 
     // Current sub
-    if (subR.status === "fulfilled" && subR.value.data?.isSuccess) {
+    if (subR.status === "fulfilled" && subR.value.data?.success) {
       setCurrentSub(subR.value.data.data);
     }
 
     // History
-    if (histR.status === "fulfilled" && histR.value.data?.isSuccess) {
+    if (histR.status === "fulfilled" && histR.value.data?.success) {
       setSubHistory(histR.value.data.data?.items || []);
     }
 
     // Transactions
-    if (txR.status === "fulfilled" && txR.value.data?.isSuccess) {
+    if (txR.status === "fulfilled" && txR.value.data?.success) {
       const items = txR.value.data.data?.items || [];
       setTransactions([...items].sort((a, b) => {
         const ta = new Date(a.paymentAt || a.createdAt).getTime();
@@ -485,7 +484,7 @@ export default function Subscription() {
       </motion.div>
 
       {/* ── Current Plan Banner ──────────────────────────────────────── */}
-      {currentSub && (
+      {/* {currentSub && (
         <motion.div
           className="current-plan-banner"
           initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
@@ -515,27 +514,27 @@ export default function Subscription() {
             </svg>
           </button>
         </motion.div>
-      )}
+      )} */}
 
       {/* ── Plan Cards ───────────────────────────────────────────────── */}
       <div className="subscription-plans">
         {plans.map((plan, index) => {
           const tier = detectPlanTier(plan);
-          const cardClass = tier === "elite" ? "elite" : tier === "premium" ? "premium" : "free";
+          const cardClass = tier === "premium" ? "elite" : tier === "elite" ? "premium" : "free";
           const isCurrent = plan.id === currentPlanId;
           const isProcessing = processingMethod !== null && selectedPlan?.id === plan.id;
 
           return (
             <motion.div
               key={plan.id ?? `${plan.planName}-${index}`}
-              className={`subscription-card ${cardClass}${isCurrent ? " current" : ""}${tier === "elite" ? " order-elite" : ""}`}
+              className={`subscription-card ${cardClass}${isCurrent ? " current" : ""}${tier === "premium" ? " order-elite" : ""}`}
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               whileHover={{ y: -6, transition: { duration: 0.2 } }}
             >
               {/* Badges */}
-              {tier === "elite" && (
+              {tier === "premium" && (
                 <div className="popular-badge">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="#ffffff" stroke="none">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -572,15 +571,17 @@ export default function Subscription() {
               </div>
 
               {/* Button */}
-              <motion.button
-                className="plan-button"
-                onClick={() => openModal(plan)}
-                disabled={isCurrent || isProcessing}
-                whileHover={!isCurrent && !isProcessing ? { scale: 1.05 } : {}}
-                whileTap={!isCurrent && !isProcessing ? { scale: 0.95 } : {}}
-              >
-                {isCurrent ? "Đang sử dụng" : plan.price === 0 ? "Đăng ký" : isProcessing ? "Đang xử lý..." : "Chọn Gói Này"}
-              </motion.button>
+              {!isCurrent && plan.price > 0 && plan.price > (plans.find(p => p.id === currentPlanId)?.price || 0) && (
+                <motion.button
+                  className="plan-button"
+                  onClick={() => openModal(plan)}
+                  disabled={isProcessing}
+                  whileHover={!isProcessing ? { scale: 1.05 } : {}}
+                  whileTap={!isProcessing ? { scale: 0.95 } : {}}
+                >
+                  {isProcessing ? "Đang xử lý..." : ((plans.find(p => p.id === currentPlanId)?.price || 0) > 0 ? "Nâng cấp" : "Chọn Gói Này")}
+                </motion.button>
+              )}
 
               {/* Features */}
               <div className="plan-features">
@@ -588,7 +589,7 @@ export default function Subscription() {
                 <ul className="features-list">
                   {getFeatures(plan, tier).map((f, i) => (
                     <li key={i}>
-                      {f.bold && <strong>{f.bold}</strong>}{f.text}
+                      <span>{f.text} {f.bold && <strong>{f.bold}</strong>}</span>
                     </li>
                   ))}
                 </ul>
