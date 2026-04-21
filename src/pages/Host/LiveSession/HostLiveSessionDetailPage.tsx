@@ -8,9 +8,12 @@ import {
   type SessionScheduleResult,
   type SongRequestResult,
   type StationNowPlayingResult,
+  type LiveSessionQueueResult,
+  type NowPlayingTrackResult,
 } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import { LOCALE_VIETNAMESE } from "../../Admin/LiveOps/liveSessionConstants";
+import { getLiveListenersCount } from "../../../utils/listenerUtils";
 import { liveHubService } from "../../../services/liveHubService";
 import NotificationButton from "../../../components/layout/NotificationButton";
 import "./HostLiveSession.css";
@@ -85,18 +88,17 @@ export default function HostLiveSessionDetailPage() {
   const [listener, setListener] = useState<ListenerStatsResult | null>(null);
   const [schedules, setSchedules] = useState<SessionScheduleResult[]>([]);
   const [songRequests, setSongRequests] = useState<SongRequestResult[]>([]);
-  const [nowPlaying, setNowPlaying] = useState<StationNowPlayingResult | null>(
-    null,
-  );
+  const [nowPlaying, setNowPlaying] = useState<StationNowPlayingResult | null>(null);
+  const [queue, setQueue] = useState<NowPlayingTrackResult[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Song request review modal states
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(
-    null,
-  );
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [songRequestPage, setSongRequestPage] = useState(1);
+  const [viewRequestModalOpen, setViewRequestModalOpen] = useState(false);
+  const [viewingRequest, setViewingRequest] = useState<SongRequestResult | null>(null);
   const requestsPerPage = 4;
 
   // Chat states
@@ -152,12 +154,14 @@ export default function HostLiveSessionDetailPage() {
         scheduleData,
         requestsData,
         nowPlayingData,
+        queueData,
       ] = await Promise.all([
         liveSessionApiService.getLiveSession(sessionId),
         liveSessionApiService.getListenerStats(sessionId),
         liveSessionApiService.getSchedules(sessionId),
         liveSessionApiService.getSongRequests(sessionId),
         liveSessionApiService.getNowPlaying(sessionId).catch(() => null),
+        liveSessionApiService.getQueue(sessionId).catch(() => null),
       ]);
 
       if (!isMountedRef.current) {
@@ -169,6 +173,7 @@ export default function HostLiveSessionDetailPage() {
       setSchedules(scheduleData);
       setSongRequests(requestsData);
       setNowPlaying(nowPlayingData);
+      setQueue(queueData ? queueData.queue : []);
     } catch {
       showError("Lỗi", "Không thể tải chi tiết live session");
     } finally {
@@ -181,6 +186,21 @@ export default function HostLiveSessionDetailPage() {
   useEffect(() => {
     isMountedRef.current = true;
     void loadData();
+
+    const interval = setInterval(() => {
+      if (sessionId) {
+        liveSessionApiService.getNowPlaying(sessionId)
+          .then((data) => {
+            if (isMountedRef.current) setNowPlaying(data);
+          })
+          .catch(() => { });
+        liveSessionApiService.getQueue(sessionId)
+          .then((data) => {
+            if (isMountedRef.current) setQueue(data ? data.queue : []);
+          })
+          .catch(() => { });
+      }
+    }, 10000);
 
     // Lấy danh sách mic ngay khi mount
     navigator.mediaDevices?.enumerateDevices()
@@ -196,6 +216,7 @@ export default function HostLiveSessionDetailPage() {
 
     return () => {
       isMountedRef.current = false;
+      clearInterval(interval);
     };
   }, [sessionId, loadData]);
 
@@ -406,6 +427,16 @@ export default function HostLiveSessionDetailPage() {
       showError("Từ chối thất bại");
     }
   }, [rejectingRequestId, rejectReason, closeRejectModal, loadData]);
+
+  const openViewRequestModal = useCallback((req: SongRequestResult) => {
+    setViewingRequest(req);
+    setViewRequestModalOpen(true);
+  }, []);
+
+  const closeViewRequestModal = useCallback(() => {
+    setViewRequestModalOpen(false);
+    setViewingRequest(null);
+  }, []);
 
   const handleBack = useCallback(() => {
     navigate("/host/sessions");
@@ -658,7 +689,7 @@ export default function HostLiveSessionDetailPage() {
             <>
               <span className="host-live-overview-title">Người nghe</span>
               <div className="host-live-stat-item">
-                <div className="host-live-stat-value">{listener?.currentListeners ?? 0}</div>
+                <div className="host-live-stat-value">{getLiveListenersCount(session, nowPlaying)}</div>
                 <div className="host-live-stat-label">Hiện tại</div>
               </div>
               <div className="host-live-stat-item">
@@ -697,6 +728,17 @@ export default function HostLiveSessionDetailPage() {
                   <div className="host-live-now-playing-artist">
                     {nowPlaying.currentTrack.artist || "—"}
                   </div>
+                  {nowPlaying.currentTrack.duration && nowPlaying.currentTrack.duration > 0 && (
+                    <div style={{ marginTop: "4px" }}>
+                      <div style={{ width: "100%", height: "4px", background: "var(--neutral-200)", borderRadius: "2px", overflow: "hidden" }}>
+                        <div style={{ width: `${Math.min((nowPlaying.currentTrack.elapsed / nowPlaying.currentTrack.duration) * 100, 100)}%`, height: "100%", background: "#55c5f1" }}></div>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "2px", fontSize: "10px", color: "var(--neutral-500)" }}>
+                        <span>{Math.floor(nowPlaying.currentTrack.elapsed / 60)}:{Math.floor(nowPlaying.currentTrack.elapsed % 60).toString().padStart(2, '0')}</span>
+                        <span>{Math.floor(nowPlaying.currentTrack.duration / 60)}:{Math.floor(nowPlaying.currentTrack.duration % 60).toString().padStart(2, '0')}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Local Volume Control & Actions cho Host */}
@@ -709,6 +751,7 @@ export default function HostLiveSessionDetailPage() {
                       </span>
                       <input
                         type="range"
+                        className="host-live-volume-slider system-volume"
                         min={0}
                         max={1}
                         step={0.01}
@@ -716,8 +759,8 @@ export default function HostLiveSessionDetailPage() {
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
                           handleVolumeSync(val);
+                          e.target.style.background = `linear-gradient(to right, currentColor ${val * 100}%, rgba(255,255,255,0.2) ${val * 100}%)`;
                         }}
-                        style={{ width: "100%", accentColor: "#ef4444" }}
                         title="Điều chỉnh âm lượng nhạc nền cho TẤT CẢ khán giả đang nghe"
                       />
                     </div>
@@ -728,6 +771,7 @@ export default function HostLiveSessionDetailPage() {
                       </span>
                       <input
                         type="range"
+                        className="host-live-volume-slider local-volume"
                         min={0}
                         max={1}
                         step={0.01}
@@ -736,8 +780,8 @@ export default function HostLiveSessionDetailPage() {
                           const val = parseFloat(e.target.value);
                           const audio = document.getElementById("host-local-audio") as HTMLAudioElement;
                           if (audio) audio.volume = val;
+                          e.target.style.background = `linear-gradient(to right, currentColor ${val * 100}%, rgba(255,255,255,0.2) ${val * 100}%)`;
                         }}
-                        style={{ width: "100%", accentColor: "#3b82f6" }}
                         title="Chỉnh âm lượng nhạc mà BẠN nghe thấy (không ảnh hưởng tới khán giả)"
                       />
                       <audio
@@ -750,9 +794,8 @@ export default function HostLiveSessionDetailPage() {
 
                     {/* Nút Skip */}
                     <button
-                      className="host-live-btn outline danger"
+                      className="host-live-btn-skip"
                       title="Chuyển sang bài tiếp theo (Bỏ qua bài này)"
-                      style={{ padding: "10px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ef4444" }}
                       onClick={async () => {
                         const confirmSkip = window.confirm("Bạn có chắc chắn muốn bỏ qua (Skip) bài hát này không?");
                         if (!confirmSkip) return;
@@ -766,7 +809,7 @@ export default function HostLiveSessionDetailPage() {
                         }
                       }}
                     >
-                      <SkipForward size={20} color="#ef4444" />
+                      <SkipForward size={22} />
                     </button>
                   </div>
                 )}
@@ -807,33 +850,72 @@ export default function HostLiveSessionDetailPage() {
         </div>
 
         <div className="host-live-card">
+          <h3 className="host-live-card-title">Bài hát tiếp theo</h3>
+          <div className="host-live-stack">
+            {queue.length === 0 ? (
+              <div className="host-live-empty">Hàng đợi trống</div>
+            ) : (
+              queue.slice(0, 15).map((item, index) => (
+                <div key={item.shId || index} className="host-live-track-item">
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    {item.artUrl ? (
+                      <img src={item.artUrl.replace("host.docker.internal", "localhost")} alt="cover" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: 36, height: 36, borderRadius: 6, background: 'var(--neutral-200)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Music size={16} color="var(--neutral-400)" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="host-live-track-title" style={{ fontSize: 13, marginBottom: 1 }}>{item.title || "Không rõ"}</div>
+                      <div className="host-live-track-subtitle" style={{ fontSize: 11 }}>{item.artist || "Không rõ nghệ sĩ"}</div>
+                      {item.isRequest && (
+                        <div className="host-live-badge host-live-badge--pending" style={{ padding: "2px 6px", fontSize: 9, marginTop: 4 }}>Yêu cầu</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="host-live-card">
           <h3 className="host-live-card-title">Yêu cầu bài hát</h3>
           <div className="host-live-stack">
             {songRequests.length === 0 ? (
               <div className="host-live-empty">Chưa có yêu cầu</div>
             ) : (
               songRequests.slice((songRequestPage - 1) * requestsPerPage, songRequestPage * requestsPerPage).map((item) => (
-                <div key={item.id} className="host-live-track-item">
-                  <div>
-                    <div className="host-live-track-title">{item.songTitle}</div>
-                    <div className="host-live-track-subtitle" style={{ fontStyle: item.message ? "normal" : "italic", color: item.message ? "inherit" : "var(--neutral-400)" }}>
+                <div key={item.id} className="host-live-track-item host-live-request-item" onClick={() => openViewRequestModal(item)}>
+                  <div style={{ flex: 1, cursor: "pointer", minWidth: 0 }}>
+                    <div className="host-live-track-title" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>{item.songTitle}</div>
+                    <div className="host-live-track-subtitle" style={{ 
+                      fontStyle: item.message ? "normal" : "italic", 
+                      color: item.message ? "inherit" : "var(--neutral-400)",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      wordBreak: "break-word",
+                      overflowWrap: "anywhere"
+                    }}>
                       {item.message || "Không có tin nhắn"}
                     </div>
-                    <div className={`host-live-badge host-live-badge--${item.status?.toLowerCase()}`}>
+                    <div className={`host-live-badge host-live-badge--${item.status?.toLowerCase()}`} style={{ marginTop: 4 }}>
                       {item.status}
                     </div>
                   </div>
                   {item.status === "PENDING" || item.status === "Pending" ? (
-                    <div className="host-live-inline-row">
+                    <div className="host-live-inline-row" onClick={(e) => e.stopPropagation()}>
                       <button
                         className="host-live-btn host-live-btn--approve"
-                        onClick={() => void handleApprove(item.id)}
+                        onClick={(e) => { e.stopPropagation(); void handleApprove(item.id); }}
                       >
                         Duyệt
                       </button>
                       <button
                         className="host-live-btn host-live-btn--reject"
-                        onClick={() => openRejectModal(item.id)}
+                        onClick={(e) => { e.stopPropagation(); openRejectModal(item.id); }}
                       >
                         Từ chối
                       </button>
@@ -971,6 +1053,61 @@ export default function HostLiveSessionDetailPage() {
                 disabled={!rejectReason.trim()}
               >
                 Xác nhận từ chối
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Request Modal */}
+      {viewRequestModalOpen && viewingRequest && (
+        <div
+          className="host-live-modal-overlay"
+          onClick={(e) => e.target === e.currentTarget && closeViewRequestModal()}
+        >
+          <div className="host-live-modal" style={{ maxWidth: 500 }}>
+            <div className="host-live-modal-header">
+              <h3 className="host-live-modal-title">
+                <Music size={18} style={{ marginRight: 8, color: "var(--neutral-500)" }} />
+                Chi tiết yêu cầu
+              </h3>
+              <button className="host-live-modal-close" onClick={closeViewRequestModal}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="host-live-modal-body" style={{ marginTop: 20, textAlign: "left" }}>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, color: "var(--neutral-500)", marginBottom: 4, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>Bài hát yêu cầu</div>
+                <div style={{ fontSize: 20, fontWeight: 800, wordBreak: "break-word", overflowWrap: "anywhere" }}>{viewingRequest.songTitle}</div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, color: "var(--neutral-500)", marginBottom: 4, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>Trạng thái</div>
+                <div className={`host-live-badge host-live-badge--${viewingRequest.status?.toLowerCase()}`}>
+                  {viewingRequest.status}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "var(--neutral-500)", marginBottom: 6, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>Thư từ người gửi</div>
+                <div style={{ 
+                  background: "var(--layer-2)", 
+                  padding: "16px 20px", 
+                  borderRadius: 12, 
+                  fontSize: 15, 
+                  lineHeight: 1.6,
+                  fontStyle: viewingRequest.message ? "normal" : "italic",
+                  color: viewingRequest.message ? "var(--text-1)" : "var(--neutral-400)",
+                  border: "1px solid var(--border-color)",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  overflowWrap: "anywhere"
+                }}>
+                  {viewingRequest.message || "Không có lời nhắn nào được gửi kèm."}
+                </div>
+              </div>
+            </div>
+            <div className="host-live-modal-actions" style={{ marginTop: 28, justifyContent: "flex-end" }}>
+              <button className="host-live-modal-btn-cancel" onClick={closeViewRequestModal} style={{ padding: "8px 24px" }}>
+                Đóng
               </button>
             </div>
           </div>

@@ -1370,22 +1370,33 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid var(--border-medium, #cbd5e1);
+  background: var(--neutral-100, #f5f5f5);
+  color: var(--text-secondary, #64748b);
   cursor: pointer;
   transition: all 0.25s ease;
   backdrop-filter: blur(4px);
 }
 .pds-save-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--neutral-200, #e2e8f0);
+  color: var(--text-primary, #1e293b);
+  border-color: var(--text-primary, #1e293b);
 }
 .pds-save-btn.saved {
   color: #a78bfa;
   border-color: #a78bfa;
   background: rgba(167, 139, 250, 0.15);
+}
+
+[data-theme="dark"] .pds-save-btn {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+}
+[data-theme="dark"] .pds-save-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .pds-card-save {

@@ -6,10 +6,11 @@ import {
   type LiveSessionResult,
   type SessionScheduleResult,
 } from "../../../services/liveSessionApiService";
-import { showError } from "../../../components/common/toastUtils";
 import { LIVE_SESSION_LIST_PAGE_SIZE } from "../../Admin/LiveOps/liveSessionConstants";
 import NotificationButton from "../../../components/layout/NotificationButton";
+import { getLiveListenersCount } from "../../../utils/listenerUtils";
 import "./HostLiveSession.css";
+import { showError } from "../../../components/common/toastUtils";
 
 const LOCALE_VIETNAMESE = "vi-VN";
 
@@ -68,11 +69,11 @@ export default function HostLiveSessionPage() {
 
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    
+
     try {
       const isoStr = dateStr.endsWith("Z") ? dateStr.slice(0, -1) : dateStr;
       const date = new Date(isoStr);
-      
+
       if (isNaN(date.getTime())) {
         return "—";
       }
@@ -171,11 +172,11 @@ export default function HostLiveSessionPage() {
                               if (sch.startDate && sch.startTime && sch.endTime) {
                                 const startDateTime = new Date(`${sch.startDate}T${sch.startTime}`);
                                 const endDateTime = new Date(`${sch.startDate}T${sch.endTime}`);
-                                
+
                                 if (endDateTime < startDateTime) {
                                   endDateTime.setDate(endDateTime.getDate() + 1);
                                 }
-                                
+
                                 if (!isNaN(startDateTime.getTime())) startStr = startDateTime.toLocaleString(LOCALE_VIETNAMESE);
                                 if (!isNaN(endDateTime.getTime())) endStr = endDateTime.toLocaleString(LOCALE_VIETNAMESE);
                               }
@@ -198,7 +199,7 @@ export default function HostLiveSessionPage() {
                           )}
                         </div>
                       </td>
-                      <td>{session.listenersCount}</td>
+                      <td>{getLiveListenersCount(session, session.nowPlaying)}</td>
                       <td>
                         <button
                           className="host-live-link-btn"

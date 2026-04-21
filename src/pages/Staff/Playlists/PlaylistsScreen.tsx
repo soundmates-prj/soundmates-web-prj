@@ -21,6 +21,15 @@ import { showSuccess, showError } from "../../../components/common/toastUtils";
 import "../StaffShared.css";
 import "./PlaylistsScreen.css";
 
+const sortPlaylists = (playlists: PlaylistResult[]) => {
+  return [...playlists].sort((a, b) =>
+    (a.playlistName ?? "").localeCompare(b.playlistName ?? "", undefined, {
+      numeric: true,
+      sensitivity: "base",
+    })
+  );
+};
+
 export function PlaylistsScreen() {
   const [stations, setStations] = useState<StationResult[]>([]);
   const [selectedStation, setSelectedStation] = useState<StationResult | null>(
@@ -76,7 +85,7 @@ export function PlaylistsScreen() {
     setTracks([]);
     try {
       const data = await liveSessionApiService.getStationPlaylists(station.id);
-      setPlaylists(data);
+      setPlaylists(sortPlaylists(data));
     } catch {
       setPlaylists([]);
     }
@@ -109,7 +118,7 @@ export function PlaylistsScreen() {
       const data = await liveSessionApiService.getStationPlaylists(
         selectedStation.id,
       );
-      setPlaylists(data);
+      setPlaylists(sortPlaylists(data));
     } catch {
       showError("Đồng bộ thất bại", "Không thể đồng bộ playlists");
     } finally {
@@ -136,7 +145,7 @@ export function PlaylistsScreen() {
       const data = await liveSessionApiService.getStationPlaylists(
         selectedStation.id,
       );
-      setPlaylists(data);
+      setPlaylists(sortPlaylists(data));
     } catch {
       showError("Lỗi", "Không thể tạo playlist");
     }
@@ -170,7 +179,7 @@ export function PlaylistsScreen() {
       const updatedPlaylists = await liveSessionApiService.getStationPlaylists(
         selectedStation.id,
       );
-      setPlaylists(updatedPlaylists);
+      setPlaylists(sortPlaylists(updatedPlaylists));
 
       const updatedSelected =
         updatedPlaylists.find((pl) => pl.id === selectedPlaylist.id) ?? null;
@@ -203,7 +212,7 @@ export function PlaylistsScreen() {
       const updatedPlaylists = await liveSessionApiService.getStationPlaylists(
         selectedStation.id,
       );
-      setPlaylists(updatedPlaylists);
+      setPlaylists(sortPlaylists(updatedPlaylists));
       setSelectedPlaylist(null);
       setTracks([]);
 

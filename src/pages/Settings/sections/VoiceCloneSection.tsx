@@ -1086,6 +1086,24 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
         </>
       )}
 
+      {/* ── Script Modal ── */}
+      {viewScript && (
+        <ScriptModal
+          script={viewScript}
+          voices={voices}
+          pickedVoiceId={pickedVoiceId}
+          onVoiceChange={setPickedVoiceId}
+          onGenerateAudio={() => void handleGenerateAudio()}
+          generatingAudio={generatingAudio}
+          audioResultUrl={audioResultUrl}
+          onClose={() => { setViewScript(null); setAudioResultUrl(null); }}
+          onDelete={() => void handleDeleteScript(viewScript)}
+          onSave={handleSaveScript}
+          loadingDelete={deletingScript}
+          loadingSave={savingScript}
+        />
+      )}
+
       {/* ── Delete voice confirm ── */}
       {deleteTarget && (
         <DeleteConfirmModal

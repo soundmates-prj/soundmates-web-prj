@@ -12,11 +12,13 @@ import {
   Play,
   StopCircle,
   User,
+  Bookmark,
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
 import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
 import { usePlayer } from "../../context/PlayerContext";
 import { useLiveSession } from "../../context/LiveSessionContext";
+import AuthPromptModal from "../../components/common/AuthPromptModal";
 import "./PodcastDetailScreen.css";
 
 const fmtDate = (d?: string) => {
@@ -47,6 +49,9 @@ export default function PodcastDetailScreen() {
   const [episodes, setEpisodes] = useState<PodcastEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
+  const [resolvingSave, setResolvingSave] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [resolvedDurations, setResolvedDurations] = useState<
     Record<string, number>
   >({});
@@ -79,9 +84,13 @@ export default function PodcastDetailScreen() {
     const load = async () => {
       setLoading(true);
       try {
-        const p = await podcastService.getPodcastById(id);
+        const [p, saved] = await Promise.all([
+          podcastService.getPodcastById(id),
+          podcastService.getSavedPodcasts().catch(() => [] as PodcastItem[])
+        ]);
         setPodcast(p);
         setEpisodes(p.allEpisodes ?? []);
+        setIsSaved(saved.some(x => x.id === id));
       } catch {
         setError("Không thể tải thông tin podcast.");
       } finally {
@@ -91,6 +100,24 @@ export default function PodcastDetailScreen() {
 
     void load();
   }, [id]);
+
+  const onToggleSave = async () => {
+    if (!id || resolvingSave) return;
+    setResolvingSave(true);
+    const wasSaved = isSaved;
+    setIsSaved(!wasSaved);
+    try {
+      if (wasSaved) {
+        await podcastService.unsavePodcast(id);
+      } else {
+        await podcastService.savePodcast(id);
+      }
+    } catch {
+      setIsSaved(wasSaved);
+    } finally {
+      setResolvingSave(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -150,6 +177,12 @@ export default function PodcastDetailScreen() {
 
   const togglePlay = (ep: PodcastEpisode) => {
     if (!ep.audioUrl) return;
+
+    const isLoggedIn = !!localStorage.getItem("accessToken");
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
 
     if (playingId === ep.id) {
       // Same episode — toggle pause/resume
@@ -317,6 +350,16 @@ export default function PodcastDetailScreen() {
                   <Headphones size={14} />
                   {episodes.length} tập
                 </span>
+                
+                <button
+                  className={`pds-save-btn${isSaved ? " saved" : ""}`}
+                  style={{ width: '32px', height: '32px', marginLeft: '12px' }}
+                  type="button"
+                  title={isSaved ? "Bỏ lưu" : "Lưu podcast"}
+                  onClick={onToggleSave}
+                >
+                  <Bookmark size={15} fill={isSaved ? "currentColor" : "none"} />
+                </button>
               </div>
 
               {podcast.description && (
@@ -451,6 +494,12 @@ export default function PodcastDetailScreen() {
           </div>
         )}
       </section>
+      <AuthPromptModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        title="Yêu cầu đăng nhập"
+        message="Vui lòng đăng nhập hoặc đăng ký để phát Podcast nhé!"
+      />
     </div>
   );
 }

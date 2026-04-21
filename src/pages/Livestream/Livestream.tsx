@@ -38,6 +38,7 @@ import {
 } from "../../components/common/toastUtils";
 import { Loading } from "../../components/common";
 import brandLogo from "../../assets/logo_notext.png";
+import { getLiveListenersCount } from "../../utils/listenerUtils";
 import "./Livestream.css";
 
 // ===== TYPES =====
@@ -249,7 +250,7 @@ const LivestreamPage: React.FC = () => {
 
         const session = await livestreamService.getLiveSession(liveSession.id);
         setActiveSession(session);
-        const initialListeners = toSafeListenerCount(session.listenersCount ?? session.totalListeners, 0);
+        const initialListeners = getLiveListenersCount(session, null);
         setListenerCount(initialListeners);
 
         // Fetch real now-playing from AzuraCast via backend for album art / track info
@@ -335,7 +336,7 @@ const LivestreamPage: React.FC = () => {
 
         // Use AzuraCast data if available, otherwise fallback to session
         const data = trackData || livestreamService.toNowPlaying(session);
-        const normalizedListeners = toSafeListenerCount(session.listenersCount ?? session.totalListeners ?? data.totalListeners, 0);
+        const normalizedListeners = getLiveListenersCount(session, data);
         const normalizedData = { ...data, totalListeners: normalizedListeners };
         setNowPlaying(normalizedData);
         setElapsed(normalizedData.currentTrack?.elapsed || 0);

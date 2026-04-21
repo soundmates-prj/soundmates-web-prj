@@ -140,6 +140,22 @@ export interface StationNowPlayingResult {
   uniqueListeners: number;
 }
 
+export interface NowPlayingTrackResult {
+  shId: number;
+  text?: string;
+  title?: string;
+  artist?: string;
+  album?: string;
+  genre?: string;
+  artUrl?: string;
+  lyrics?: string;
+  playedAt: number;
+  duration?: number;
+  elapsed: number;
+  remaining: number;
+  isRequest: boolean;
+}
+
 export interface LiveSessionResult {
   id: string;
   userId: string;
@@ -162,6 +178,12 @@ export interface LiveSessionResult {
   genre: string | null;
   listenersCount?: number;
   nowPlaying?: any;
+}
+
+export interface LiveSessionQueueResult {
+  sessionId: string;
+  externalStationId: number;
+  queue: NowPlayingTrackResult[];
 }
 
 export interface ListenerStatsResult {
@@ -665,6 +687,13 @@ class LiveSessionApiService {
   ): Promise<StationNowPlayingResult | null> {
     const res = await api.get<ApiResponse<StationNowPlayingResult>>(
       `/livesession/${sessionId}/now-playing`,
+    );
+    return res.data.data;
+  }
+
+  async getQueue(sessionId: string): Promise<LiveSessionQueueResult | null> {
+    const res = await api.get<ApiResponse<LiveSessionQueueResult>>(
+      `/livesession/${sessionId}/queue`,
     );
     return res.data.data;
   }

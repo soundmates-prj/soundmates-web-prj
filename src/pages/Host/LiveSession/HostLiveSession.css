@@ -20,7 +20,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 30px;
   flex-wrap: wrap;
 }
 
@@ -188,15 +188,17 @@
 .host-live-card {
   background: #fff;
   border: 1px solid var(--neutral-200);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 20px;
+  padding: 24px;
   max-height: 58vh;
   min-height: 58vh;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 [data-theme="dark"] .host-live-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .host-live-card-title {
@@ -225,17 +227,19 @@
 .host-live-overview-card {
   background: #fff;
   border: 1px solid var(--neutral-200);
-  border-radius: 16px;
-  padding: 16px 20px;
+  border-radius: 20px;
+  padding: 20px 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   flex-wrap: wrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 [data-theme="dark"] .host-live-overview-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .host-live-overview-label,
@@ -362,7 +366,7 @@
 }
 
 .host-live-now-playing-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--neutral-900);
   white-space: nowrap;
@@ -442,7 +446,7 @@
 /* ─── Bottom row ─── */
 .host-live-bottom-row {
   display: grid;
-  grid-template-columns: 1fr 1.4fr 1.6fr;
+  grid-template-columns: 1fr 1fr 1.2fr 1.4fr;
   gap: 14px;
   align-items: start;
 }
@@ -1105,3 +1109,111 @@
   cursor: not-allowed;
   transform: none;
 }
+
+/* ─── Skip Button ─── */
+.host-live-btn-skip {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.host-live-btn-skip:hover {
+  background: #ef4444;
+  color: #fff;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .host-live-btn-skip {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+[data-theme="dark"] .host-live-btn-skip:hover {
+  background: #f87171;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.4);
+}
+
+/* ─── Custom Volume Slider ─── */
+.host-live-volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--neutral-300);
+  outline: none;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .host-live-volume-slider {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.host-live-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: currentColor;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.host-live-volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+  box-shadow: 0 2px 8px currentColor;
+}
+
+.host-live-volume-slider.system-volume {
+  color: #ef4444;
+}
+
+.host-live-volume-slider.system-volume::-webkit-slider-thumb {
+  background: #ef4444;
+}
+
+.host-live-volume-slider.local-volume {
+  color: #3b82f6;
+}
+
+.host-live-volume-slider.local-volume::-webkit-slider-thumb {
+  background: #3b82f6;
+}
+
+[data-theme="dark"] .host-live-volume-slider.system-volume { color: #f87171; }
+[data-theme="dark"] .host-live-volume-slider.system-volume::-webkit-slider-thumb { background: #f87171; }
+[data-theme="dark"] .host-live-volume-slider.local-volume { color: #60a5fa; }
+[data-theme="dark"] .host-live-volume-slider.local-volume::-webkit-slider-thumb { background: #60a5fa; }
+
+/* ─── Request Item Hover Fix ─── */
+.host-live-request-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.host-live-request-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 4px; height: 100%;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.host-live-request-item:hover::before {
+  background: linear-gradient(135deg, #1a9fd4, #55c5f1);
+}
