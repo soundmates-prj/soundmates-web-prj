@@ -1,6 +1,5 @@
 import {
   Radio,
-  Calendar,
   Music,
   Mic,
   Clock,
@@ -171,10 +170,6 @@ export function HostDashboard() {
       <div className="host-requests-card">
         <div className="host-list-header">
           <h3 className="host-list-title">Yêu cầu gần đây</h3>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="host-view-all-btn" onClick={() => navigate('/host/music-requests')}>Yêu cầu nhạc</button>
-            <button className="host-view-all-btn" onClick={() => navigate('/host/podcast-requests')}>Yêu cầu podcast</button>
-          </div>
         </div>
         <div className="host-requests-table">
           <table>
