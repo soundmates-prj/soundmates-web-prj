@@ -37,6 +37,7 @@ import type { SongRequestResult } from "../../services/liveSessionApiService";
 import { useLiveSession } from "../../context/LiveSessionContext";
 import { usePlayer } from "../../context/PlayerContext";
 import { liveHubService } from "../../services/liveHubService";
+import AuthPromptModal from "../../components/common/AuthPromptModal";
 import "./LiveRoomPage.css";
 
 // ─── Types (local UI only) ────────────────────────────────────────────────────
@@ -178,10 +179,6 @@ export function LiveRoomPage() {
     sendChat: ctxSendChat,
     deleteChat: ctxDeleteChat,
   } = useLiveSession();
-
-  // Stop PlayerContext audio (podcast etc.) so it doesn't play over the live stream
-  const { leaveSession: stopPlayerContextAudio } = usePlayer();
-
   // ── Local UI state only ───────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
   const [chatInput, setChatInput] = useState("");
@@ -247,7 +244,7 @@ export function LiveRoomPage() {
         }
         const [stream] = evt.streams;
         audioEl.srcObject = stream;
-        void audioEl.play().catch(() => {});
+        void audioEl.play().catch(() => { });
       };
 
       pc.onicecandidate = (evt) => {
@@ -291,7 +288,7 @@ export function LiveRoomPage() {
         const candidate = JSON.parse(candidateStr) as RTCIceCandidateInit;
         // Check if we're host or listener
         if (listenerPeerConnRef.current?.remoteDescription) {
-          await listenerPeerConnRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+          await listenerPeerConnRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => { });
         }
       } catch { /* ignore parse errors */ }
     });
@@ -332,8 +329,6 @@ export function LiveRoomPage() {
   // ── Join live room on mount (context handles dedup) ───────────────────────
   useEffect(() => {
     if (!sessionId) return;
-    // Stop any PlayerContext audio (podcast etc.) to avoid double playback
-    stopPlayerContextAudio();
     const userId = getCurrentUserId();
     void joinLiveRoom(sessionId, userId).finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -405,10 +400,10 @@ export function LiveRoomPage() {
   // ── Upcoming Queue Filter (exclude playingNext) ──────────────────────────
   const filteredQueue = useMemo(() => {
     if (!nowPlaying?.upcomingQueue) return [];
-    const nextText = nowPlaying?.playingNext?.title + nowPlaying?.playingNext?.artist;
-    
+    const nextText = (nowPlaying?.playingNext?.title || "") + (nowPlaying?.playingNext?.artist || "");
+
     return nowPlaying.upcomingQueue.filter(q => {
-      const qText = q.title + q.artist;
+      const qText = (q.title || "") + (q.artist || "");
       return qText !== nextText;
     });
   }, [nowPlaying?.upcomingQueue, nowPlaying?.playingNext]);
@@ -558,7 +553,7 @@ export function LiveRoomPage() {
           </span>
           <span className="lr-listeners-count">
             <Users size={13} />
-            {listeners} đang nghe
+            {nowPlaying?.totalListeners} đang nghe
           </span>
         </div>
       </div>
@@ -679,8 +674,8 @@ export function LiveRoomPage() {
                     <div key={chat.id} className="lr-chat-system">{chat.message}</div>
                   ) : (
                     <div key={chat.id} className="lr-chat-msg" style={{ position: "relative" }}>
-                      <div 
-                        className="lr-chat-avatar" 
+                      <div
+                        className="lr-chat-avatar"
                         onClick={() => chat.userId && handleNavigate(`/profile/${chat.userId}`)}
                         style={{ cursor: chat.userId ? "pointer" : "default" }}
                       >
@@ -692,7 +687,7 @@ export function LiveRoomPage() {
                       </div>
                       <div className="lr-chat-bubble">
                         <div className="lr-chat-user" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span 
+                          <span
                             onClick={() => chat.userId && handleNavigate(`/profile/${chat.userId}`)}
                             style={{ cursor: chat.userId ? "pointer" : "default" }}
                           >
@@ -956,30 +951,14 @@ export function LiveRoomPage() {
         </div>
       )}
 
-      {/* Auth Prompt Modal */}
-      {showAuthPopup && (
-        <div className="lr-request-modal-overlay">
-          <div className="lr-request-modal" style={{ textAlign: "center", padding: "30px 20px" }}>
-            <h3 style={{ marginBottom: 15, color: "var(--user-theme-text, var(--lr-title))" }}>
-              Hết thời gian nghe thử
-            </h3>
-            <p style={{ color: "var(--user-theme-text, var(--lr-muted))", marginBottom: 25, fontSize: "14px" }}>
-              Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!
-            </p>
-            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-              <button onClick={() => navigate("/login")} style={{ padding: "10px 20px", background: "var(--user-theme-primary, #5cc3f0)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>
-                Đăng nhập
-              </button>
-              <button onClick={() => navigate("/register")} style={{ padding: "10px 20px", background: "var(--lr-btn-soft-bg)", color: "var(--user-theme-text, var(--lr-text))", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>
-                Đăng ký
-              </button>
-              <button onClick={() => navigate("/")} style={{ padding: "10px 20px", background: "transparent", color: "var(--user-theme-text, var(--lr-muted))", border: "1px solid var(--lr-border)", borderRadius: "8px", cursor: "pointer" }}>
-                Về trang chủ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AuthPromptModal
+        isOpen={showAuthPopup}
+        onClose={() => setShowAuthPopup(false)}
+        title={authPopupMode === "guestLimit" ? "Hết thời gian nghe thử" : "Yêu cầu đăng nhập"}
+        message={authPopupMode === "guestLimit"
+          ? "Bạn đã trải nghiệm 2 phút. Vui lòng đăng nhập hoặc đăng ký để tiếp tục tham gia Live Session và trò chuyện cùng mọi người nhé!"
+          : "Vui lòng đăng nhập hoặc đăng ký để tiếp tục sử dụng tính năng này nhé!"}
+      />
     </div>
   );
 }

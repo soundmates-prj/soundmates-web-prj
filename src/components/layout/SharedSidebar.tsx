@@ -97,6 +97,7 @@ export default function SharedSidebar({ role, isOpen = false, onClose }: SharedS
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userInfo');
+        localStorage.removeItem('liveGuestIdentifier');
         window.dispatchEvent(new Event('authChange'));
         showSuccess('Đăng xuất thành công', 'Hẹn gặp lại bạn!');
         navigate('/login');

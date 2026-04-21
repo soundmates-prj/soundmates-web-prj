@@ -15,11 +15,18 @@ import {
   Music,
   Pencil,
   Check,
+  PenLine,
+  Headphones,
+  Download,
+  RefreshCw,
 } from "lucide-react";
+
 import { voiceCloneService, type ClonedVoice, type SubscriptionPlan } from "../../../services/voiceCloneService";
 import { showToast } from "../../../utils/toast";
 import podcastService from "../../../services/podcastService";
+import api from "../../../services/axios";
 import "./VoiceCloneSection.css";
+
 
 interface VoiceCloneSectionProps {
   onUpgradeClick?: () => void;
@@ -281,8 +288,10 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
   const [deleteTarget, setDeleteTarget] = useState<ClonedVoice | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Script tabs
-  const [scriptTab, setScriptTab] = useState<"create" | "mine">("create");
+  // Script tabs: create | mine | audios
+  const [scriptTab, setScriptTab] = useState<"create" | "mine" | "audios">("create");
+  // Create mode: ai | manual
+  const [createMode, setCreateMode] = useState<"ai" | "manual">("ai");
   const [scriptTopic, setScriptTopic] = useState("");
   const [scriptStyle, setScriptStyle] = useState("");
   const [generatingScript, setGeneratingScript] = useState(false);
@@ -290,12 +299,24 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
   const [generatedScriptId, setGeneratedScriptId] = useState<string | null>(null);
   const [generatedScriptTitle, setGeneratedScriptTitle] = useState<string | null>(null);
 
+  // Manual script form
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualContent, setManualContent] = useState("");
+  const [savingManual, setSavingManual] = useState(false);
+
   // My scripts
   const [myScripts, setMyScripts] = useState<any[]>([]);
   const [loadingScripts, setLoadingScripts] = useState(false);
   const [pickedVoiceId, setPickedVoiceId] = useState("");
   const [generatingAudio, setGeneratingAudio] = useState(false);
   const [audioResultUrl, setAudioResultUrl] = useState<string | null>(null);
+  const [audioResultId, setAudioResultId] = useState<string | null>(null);
+
+  // My audios library
+  const [myAudios, setMyAudios] = useState<any[]>([]);
+  const [loadingAudios, setLoadingAudios] = useState(false);
+  const [downloadingAudioId, setDownloadingAudioId] = useState<string | null>(null);
+  const [deletingAudioId, setDeletingAudioId] = useState<string | null>(null);
 
   // Script modal
   const [viewScript, setViewScript] = useState<any | null>(null);
@@ -472,6 +493,91 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
     }
   };
 
+
+  /* ─── Manual Script Create ────────────────────────────────────────────── */
+
+  const handleSaveManualScript = async () => {
+    if (!manualContent.trim() || manualContent.trim().length < 20) {
+      showToast.error("Nội dung script phải có ít nhất 20 ký tự");
+      return;
+    }
+    setSavingManual(true);
+    const tid = showToast.loading("Đang lưu script...");
+    try {
+      const result = await podcastService.createScript({
+        topic: manualTitle.trim() || "Script thủ công",
+        title: manualTitle.trim() || undefined,
+        contentText: manualContent.trim(),
+      });
+      showToast.dismiss(tid);
+      showToast.success("Đã lưu script!");
+      setGeneratedScriptId(result.scriptId);
+      setGeneratedScript(result.scriptText || manualContent.trim());
+      setGeneratedScriptTitle(result.title || manualTitle || "Script thủ công");
+      setManualTitle("");
+      setManualContent("");
+      // Switch to mine tab to see the saved script
+      setScriptTab("mine");
+      void handleLoadMyScripts();
+    } catch (err: any) {
+      showToast.dismiss(tid);
+      showToast.error(err?.message ?? "Lưu script thất bại");
+    } finally {
+      setSavingManual(false);
+    }
+  };
+
+  /* ─── Audio Library ──────────────────────────────────────────────────── */
+
+  const handleLoadMyAudios = async () => {
+    setLoadingAudios(true);
+    try {
+      setMyAudios(await podcastService.getMyAudios());
+    } catch (err: any) {
+      showToast.error(err?.message ?? "Không tải được audio");
+    } finally {
+      setLoadingAudios(false);
+    }
+  };
+
+  const handleDeleteAudio = async (audioId: string) => {
+    if (!window.confirm('Xóa audio này khỏi thư viện?')) return;
+    setDeletingAudioId(audioId);
+    try {
+      await podcastService.deleteAudio(audioId);
+      setMyAudios(prev => prev.filter(a => (a.id ?? a.audioId) !== audioId));
+      showToast.success('Đã xóa audio');
+    } catch (err: any) {
+      showToast.error(err?.message ?? 'Xóa audio thất bại');
+    } finally {
+      setDeletingAudioId(null);
+    }
+  };
+
+  const handleDownloadAudio = async (audioId: string, fileName?: string) => {
+    setDownloadingAudioId(audioId);
+    try {
+      const baseUrl = api.defaults.baseURL ?? '';
+      const url = `${baseUrl}audios/${audioId}/download`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName ?? `audio-${audioId}.wav`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast.success("Đang tải file audio...");
+    } catch (err: any) {
+      showToast.error(err?.message ?? "Tải audio thất bại");
+    } finally {
+      setDownloadingAudioId(null);
+    }
+  };
+
+  const getAudioFileUrl = (audioId: string): string => {
+    const baseUrl = api.defaults.baseURL ?? '';
+    return `${baseUrl}audios/${audioId}/file`;
+  };
+
   const handleGenerateAudio = async () => {
     if (!viewScript || !pickedVoiceId) return;
     const id = viewScript.scriptId ?? viewScript.id;
@@ -480,8 +586,9 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
     try {
       const result = await podcastService.generateAudioFromScript({ scriptId: id, voiceCode: pickedVoiceId });
       setAudioResultUrl(result.audioUrl);
+      setAudioResultId(result.audioId);
       showToast.dismiss(tid);
-      showToast.success("Audio đã tạo xong!");
+      showToast.success("Audio đã tạo xong! Đã lưu vào thư viện.");
     } catch (err: any) {
       showToast.dismiss(tid);
       showToast.error(err?.message ?? "Tạo audio thất bại");
@@ -577,56 +684,119 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
               <button className={`vc-tab ${scriptTab === "mine" ? "vc-tab--active" : ""}`} onClick={() => { setScriptTab("mine"); void handleLoadMyScripts(); }}>
                 <FileText size={14} /> Script của tôi
               </button>
+              <button className={`vc-tab ${scriptTab === "audios" ? "vc-tab--active" : ""}`} onClick={() => { setScriptTab("audios"); void handleLoadMyAudios(); }}>
+                <Headphones size={14} /> Audio của tôi
+              </button>
             </div>
 
             {/* ── Tab: Create ── */}
             {scriptTab === "create" && (
               <div className="vc-tab-pane">
-                <div className="vc-field">
-                  <label className="vc-label">Chủ đề</label>
-                  <input
-                    className="vc-input"
-                    value={scriptTopic}
-                    onChange={e => setScriptTopic(e.target.value)}
-                    placeholder="VD: Xu hướng công nghệ 2026, Câu chuyện khởi nghiệp..."
-                    disabled={generatingScript}
-                    maxLength={500}
-                  />
-                </div>
-                <div className="vc-field">
-                  <label className="vc-label">Phong cách <span className="vc-label-opt">(tùy chọn)</span></label>
-                  <input
-                    className="vc-input"
-                    value={scriptStyle}
-                    onChange={e => setScriptStyle(e.target.value)}
-                    placeholder="VD: Chuyên sâu, đối thoại, tin tức..."
-                    disabled={generatingScript}
-                    maxLength={200}
-                  />
-                </div>
-                <button
-                  className="vc-btn vc-btn--gradient"
-                  onClick={() => void handleGenerateScript()}
-                  disabled={generatingScript || !scriptTopic.trim()}
-                >
-                  {generatingScript ? <><Loader2 size={16} className="vc-spin" /> Đang tạo...</> : <><Wand2 size={16} /> Tạo Script</>}
-                </button>
 
-                {generatedScript && (
-                  <div className="vc-result-card">
-                    <div className="vc-result-card__header">
-                      <strong>{generatedScriptTitle ?? "Script mới"}</strong>
-                      <button className="vc-btn vc-btn--ghost vc-btn--sm" onClick={() => setScriptTab("mine")}>
-                        <FileText size={13} /> Xem trong Script của tôi
-                      </button>
+                {/* Mode toggle: AI vs Manual */}
+                <div className="vc-create-mode-toggle">
+                  <button
+                    className={`vc-mode-btn ${createMode === 'ai' ? 'vc-mode-btn--active' : ''}`}
+                    onClick={() => setCreateMode('ai')}
+                  >
+                    <Wand2 size={14} /> AI Tạo Script
+                  </button>
+                  <button
+                    className={`vc-mode-btn ${createMode === 'manual' ? 'vc-mode-btn--active' : ''}`}
+                    onClick={() => setCreateMode('manual')}
+                  >
+                    <PenLine size={14} /> Tự Viết Script
+                  </button>
+                </div>
+
+                {/* ── AI mode ── */}
+                {createMode === 'ai' && (
+                  <>
+                    <div className="vc-field">
+                      <label className="vc-label">Chủ đề</label>
+                      <input
+                        className="vc-input"
+                        value={scriptTopic}
+                        onChange={e => setScriptTopic(e.target.value)}
+                        placeholder="VD: Xu hướng công nghệ 2026, Câu chuyện khởi nghiệp..."
+                        disabled={generatingScript}
+                        maxLength={500}
+                      />
                     </div>
-                    <div className="vc-result-card__body">
-                      {generatedScript.split("\n").map((line, i) => (
-                        <p key={i}>{line || "\u00A0"}</p>
-                      ))}
+                    <div className="vc-field">
+                      <label className="vc-label">Phong cách <span className="vc-label-opt">(tùy chọn)</span></label>
+                      <input
+                        className="vc-input"
+                        value={scriptStyle}
+                        onChange={e => setScriptStyle(e.target.value)}
+                        placeholder="VD: Chuyên sâu, đối thoại, tin tức..."
+                        disabled={generatingScript}
+                        maxLength={200}
+                      />
                     </div>
-                  </div>
+                    <button
+                      className="vc-btn vc-btn--gradient"
+                      onClick={() => void handleGenerateScript()}
+                      disabled={generatingScript || !scriptTopic.trim()}
+                    >
+                      {generatingScript ? <><Loader2 size={16} className="vc-spin" /> Đang tạo...</> : <><Wand2 size={16} /> AI Tạo Script</>}
+                    </button>
+
+                    {generatedScript && (
+                      <div className="vc-result-card">
+                        <div className="vc-result-card__header">
+                          <strong>{generatedScriptTitle ?? "Script mới"}</strong>
+                          <button className="vc-btn vc-btn--ghost vc-btn--sm" onClick={() => { setScriptTab("mine"); void handleLoadMyScripts(); }}>
+                            <FileText size={13} /> Xem trong Script của tôi
+                          </button>
+                        </div>
+                        <div className="vc-result-card__body">
+                          {generatedScript.split("\n").map((line, i) => (
+                            <p key={i}>{line || "\u00A0"}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
+
+                {/* ── Manual mode ── */}
+                {createMode === 'manual' && (
+                  <>
+                    <div className="vc-field">
+                      <label className="vc-label">Tiêu đề <span className="vc-label-opt">(tùy chọn)</span></label>
+                      <input
+                        className="vc-input"
+                        value={manualTitle}
+                        onChange={e => setManualTitle(e.target.value)}
+                        placeholder="VD: Tập 1 - Giới thiệu về AI..."
+                        disabled={savingManual}
+                        maxLength={200}
+                      />
+                    </div>
+                    <div className="vc-field">
+                      <label className="vc-label">Nội dung Script</label>
+                      <textarea
+                        className="vc-textarea vc-textarea--tall"
+                        value={manualContent}
+                        onChange={e => setManualContent(e.target.value)}
+                        placeholder="Nhập nội dung script của bạn tại đây...\n\nVD:\nXin chào các bạn! Hôm nay chúng ta sẽ cùng khám phá...\n\nĐoạn 1: ..."
+                        rows={14}
+                        disabled={savingManual}
+                        maxLength={20000}
+                      />
+                      <div className="vc-char-count">{manualContent.length}/20000 ký tự</div>
+                    </div>
+                    <button
+                      className="vc-btn vc-btn--gradient"
+                      onClick={() => void handleSaveManualScript()}
+                      disabled={savingManual || manualContent.trim().length < 20}
+                    >
+                      {savingManual ? <><Loader2 size={16} className="vc-spin" /> Đang lưu...</> : <><Check size={16} /> Lưu Script</>}
+                    </button>
+                  </>
+                )}
+
               </div>
             )}
 
@@ -688,8 +858,87 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
                   <div className="vc-result-card">
                     <div className="vc-result-card__header">
                       <Music size={14} /> Audio đã tạo
+                      <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                        <button
+                          className="vc-btn vc-btn--ghost vc-btn--sm"
+                          onClick={() => { setScriptTab("audios"); void handleLoadMyAudios(); }}
+                        >
+                          <Headphones size={13} /> Xem thư viện Audio
+                        </button>
+                        {audioResultId && (
+                          <button
+                            className="vc-btn vc-btn--ghost vc-btn--sm"
+                            onClick={() => void handleDownloadAudio(audioResultId)}
+                          >
+                            <Download size={13} /> Tải xuống
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <audio controls src={audioResultUrl} className="vc-audio-player" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Tab: Audio của tôi ── */}
+            {scriptTab === "audios" && (
+              <div className="vc-tab-pane">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <p className="vc-label" style={{ margin: 0 }}>Tất cả audio đã tạo của bạn:</p>
+                  <button
+                    className="vc-btn vc-btn--ghost vc-btn--sm"
+                    onClick={() => void handleLoadMyAudios()}
+                    disabled={loadingAudios}
+                  >
+                    {loadingAudios ? <Loader2 size={13} className="vc-spin" /> : <RefreshCw size={13} />} Làm mới
+                  </button>
+                </div>
+
+                {loadingAudios ? (
+                  <div className="vc-center"><Loader2 size={20} className="vc-spin" /><p>Đang tải...</p></div>
+                ) : myAudios.length === 0 ? (
+                  <div className="vc-empty">
+                    <Headphones size={32} />
+                    <p>Chưa có audio nào. Tạo script và generate audio để lưu vào đây.</p>
+                  </div>
+                ) : (
+                  <div className="vc-card-list">
+                    {myAudios.map((audio: any) => {
+                      const aid = audio.id ?? audio.audioId;
+                      const title = audio.scriptTitle ?? audio.title ?? `Audio ${aid?.slice(0, 8)}...`;
+                      const createdAt = audio.createdAt ? new Date(audio.createdAt).toLocaleDateString('vi-VN') : '';
+                      return (
+                        <div key={aid} className="vc-card vc-card--audio">
+                          <div className="vc-card__body" style={{ flex: 1 }}>
+                            <div className="vc-card__name">{title}</div>
+                            <div style={{ fontSize: '0.78rem', opacity: 0.6, marginBottom: 6 }}>{createdAt}</div>
+                            <audio
+                              controls
+                              src={getAudioFileUrl(aid)}
+                              className="vc-mini-audio"
+                              preload="none"
+                            />
+                          </div>
+                          <button
+                            className="vc-icon-btn"
+                            title="Tải xuống"
+                            disabled={downloadingAudioId === aid}
+                            onClick={() => void handleDownloadAudio(aid, audio.fileName)}
+                          >
+                            {downloadingAudioId === aid ? <Loader2 size={15} className="vc-spin" /> : <Download size={15} />}
+                          </button>
+                          <button
+                            className="vc-icon-btn vc-icon-btn--danger"
+                            title="Xóa audio"
+                            disabled={deletingAudioId === aid}
+                            onClick={() => void handleDeleteAudio(aid)}
+                          >
+                            {deletingAudioId === aid ? <Loader2 size={15} className="vc-spin" /> : <Trash2 size={15} />}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -835,6 +1084,24 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
             </div>
           </div>
         </>
+      )}
+
+      {/* ── Script Modal ── */}
+      {viewScript && (
+        <ScriptModal
+          script={viewScript}
+          voices={voices}
+          pickedVoiceId={pickedVoiceId}
+          onVoiceChange={setPickedVoiceId}
+          onGenerateAudio={() => void handleGenerateAudio()}
+          generatingAudio={generatingAudio}
+          audioResultUrl={audioResultUrl}
+          onClose={() => { setViewScript(null); setAudioResultUrl(null); }}
+          onDelete={() => void handleDeleteScript(viewScript)}
+          onSave={handleSaveScript}
+          loadingDelete={deletingScript}
+          loadingSave={savingScript}
+        />
       )}
 
       {/* ── Delete voice confirm ── */}

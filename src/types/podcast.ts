@@ -75,9 +75,11 @@ export interface GenerateScriptRequest {
 }
 
 export interface GenerateAudioRequest {
-  voiceId: string;
+  voiceCode?: string; // Fallback mapping based on log
+  voiceId?: string;
   speed: number;
   pitch: number;
+  bgmUrl?: string;
 }
 
 export interface CreateVoiceRequest {

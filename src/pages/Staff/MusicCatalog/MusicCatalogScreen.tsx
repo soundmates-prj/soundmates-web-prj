@@ -142,6 +142,26 @@ export function MusicCatalogScreen() {
     }
   }, [selectedStationId]);
 
+  const restartStation = async () => {
+    if (!selectedStationId) return;
+    try {
+      await liveSessionApiService.restartStation(selectedStationId);
+      showSuccess("Đã yêu cầu Restart Broadcasting");
+    } catch {
+      showError("Restart thất bại");
+    }
+  };
+
+  const reloadStation = async () => {
+    if (!selectedStationId) return;
+    try {
+      await liveSessionApiService.reloadStation(selectedStationId);
+      showSuccess("Đã yêu cầu Reload Config");
+    } catch {
+      showError("Reload thất bại");
+    }
+  };
+
   /* ── Checkbox selection for system media ── */
   const toggleSystemSelection = useCallback((id: string) => {
     setSelectedSystemIds((prev) =>
@@ -431,6 +451,24 @@ export function MusicCatalogScreen() {
               className={syncing ? "staff-spin" : ""}
             />
             {syncing ? "Đang đồng bộ..." : "Đồng bộ Station"}
+          </button>
+
+          <button
+            className="staff-btn staff-btn--outline"
+            onClick={reloadStation}
+            disabled={!selectedStationId}
+            title="Reload AzuraCast config mà không rớt mạng"
+          >
+            Reload Config
+          </button>
+
+          <button
+            className="staff-btn staff-btn--outline"
+            onClick={restartStation}
+            disabled={!selectedStationId}
+            title="Khởi động lại toàn bộ trạm phát sóng"
+          >
+            Restart Broadcast
           </button>
 
           {/* Import button only shown in System Media tab */}

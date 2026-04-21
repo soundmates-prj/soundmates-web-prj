@@ -17,6 +17,7 @@ import type {
   LiveSessionResult,
 } from "../../../services/liveSessionApiService";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
+import { getLiveListenersCount } from "../../../utils/listenerUtils";
 import "./LiveSessionsScreen.css";
 
 type FilterStatus =
@@ -330,7 +331,7 @@ export function LiveSessionsScreen() {
                   </div>
                   <div className="lm-meta-item">
                     <Users size={13} />
-                    <span>{session.listenersCount} đang nghe</span>
+                    <span>{getLiveListenersCount(session, session.nowPlaying)} đang nghe</span>
                   </div>
                   {session.totalDuration > 0 && (
                     <div className="lm-meta-item">

@@ -32,6 +32,7 @@ import type { UserPlaylist } from "../../services/userPlaylistService";
 import BlogPostCard from "../../components/blog/BlogPostCard";
 import ShareMusicModal from "../../components/blog/ShareMusicModal";
 import UserPlaylistTab from "./UserPlaylistTab";
+import { showToast } from "../../utils/toast";
 
 type Tab = "overview" | "songs" | "playlists" | "podcasts" | "community";
 
@@ -114,6 +115,17 @@ export default function Profile() {
       console.error("Load playlists failed", err);
     }
   }, [isOwnProfile]);
+
+  const handleUnsavePodcast = async (podcastId: string) => {
+    try {
+      await podcastService.unsavePodcast(podcastId);
+      setSavedPodcasts(prev => prev.filter(p => p.id !== podcastId));
+      showToast.success("Đã bỏ lưu podcast");
+    } catch (err) {
+      console.error("Failed to unsave podcast", err);
+      showToast.error("Không thể bỏ lưu podcast");
+    }
+  };
 
   // Load Current User (Me) once
   useEffect(() => {

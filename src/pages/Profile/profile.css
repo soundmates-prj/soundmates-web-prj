@@ -953,7 +953,8 @@
 .pf-podcast-card {
   position: relative;
   border-radius: 12px;
-  background: var(--card-bg, #1a1a2e);
+  background: #fff;
+  border: 1px solid #e9ecef;
   overflow: hidden;
   cursor: pointer;
   transition:
@@ -962,14 +963,15 @@
 }
 .pf-podcast-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 16px rgba(85, 197, 241, 0.08);
 }
 
 .pf-podcast-card-banner {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  background: var(--neutral-800, #262626);
+  background: #f4f6f9;
+  border-bottom: 1px solid #e9ecef;
 }
 .pf-podcast-card-banner img {
   width: 100%;
@@ -982,7 +984,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--neutral-500, #737373);
+  color: #9ca3af;
 }
 .pf-podcast-card-overlay {
   position: absolute;
@@ -1002,7 +1004,7 @@
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: var(--primary, #a78bfa);
+  background: #55c5f1;
   color: #fff;
   display: flex;
   align-items: center;
@@ -1015,7 +1017,8 @@
 }
 .pf-podcast-card-title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #111827;
   margin: 0 0 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -1023,12 +1026,12 @@
 }
 .pf-podcast-card-author {
   font-size: 12px;
-  color: var(--neutral-400, #a3a3a3);
+  color: #6b7280;
   margin: 0;
 }
 .pf-podcast-card-eps {
   font-size: 11px;
-  color: var(--neutral-500, #737373);
+  color: #9ca3af;
   margin: 4px 0 0;
 }
 
@@ -1040,22 +1043,24 @@
   height: 28px;
   border-radius: 50%;
   border: none;
-  background: rgba(0, 0, 0, 0.5);
-  color: #a78bfa;
+  background: rgba(255, 255, 255, 0.9);
+  color: #6b7280;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
   z-index: 2;
 }
 .pf-podcast-card:hover .pf-podcast-card-unsave {
   opacity: 1;
 }
 .pf-podcast-card-unsave:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: #fff;
   color: #f87171;
+  transform: scale(1.05);
 }
 
 .pod-img--fallback {

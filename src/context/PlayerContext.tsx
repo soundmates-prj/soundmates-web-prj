@@ -105,12 +105,16 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsPlayingState(true);
       setIsMuted(false);
     } else {
-      // Stream đang chạy — toggle mute
-      const next = !isMuted;
-      setIsMuted(next);
-      audioRef.current.volume = next ? 0 : volume / 100;
+      // Toggle play/pause for podcasts
+      if (audioRef.current.paused) {
+        audioRef.current.play().catch(console.error);
+        setIsPlayingState(true);
+      } else {
+        audioRef.current.pause();
+        setIsPlayingState(false);
+      }
     }
-  }, [track, isMuted, volume]);
+  }, [track, volume]);
 
   const setVolume = useCallback((v: number) => {
     setVolumeState(v);

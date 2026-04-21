@@ -23,6 +23,7 @@ import {
   type LiveSessionEvent,
   type NowPlayingUpdatedEvent,
 } from "../services/liveHubService";
+import { getLiveListenersCount } from "../utils/listenerUtils";
 import { liveSessionApiService, type LiveSessionResult } from "../services/liveSessionApiService";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -331,7 +332,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
             upcomingQueue: (data.nowPlaying.upcomingQueue || []).map((q: any) => mapTrack(q)).filter(Boolean) as TrackInfo[],
             songHistory: history,
             listenUrl: proxyUrl(data.nowPlaying.listenUrl ?? nowPlayingRef.current?.listenUrl ?? ""),
-            totalListeners: toSafeListenerCount(data.listenersCount ?? data.totalListeners, nowPlayingRef.current?.totalListeners ?? 0),
+            totalListeners: getLiveListenersCount(data, data.nowPlaying),
           };
           setNowPlaying(np);
           nowPlayingRef.current = np;
@@ -342,8 +343,8 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
           }
         } else {
           // Same song: resync elapsed time
-          const latestCount = data.listenersCount ?? data.totalListeners;
-          // if (latestCount !== undefined) setListeners(toSafeListenerCount(latestCount));
+          const latestCount = getLiveListenersCount(data, data.nowPlaying);
+          // if (latestCount !== undefined) setListeners(latestCount);
 
           if (track && nowPlayingRef.current) {
             // Update elapsed sync point
@@ -601,7 +602,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
       setActiveSession(sessionData);
       setActiveSessionId(sessionId);
       activeSessionIdRef.current = sessionId;
-      setListeners(toSafeListenerCount(sessionData.listenersCount ?? sessionData.totalListeners, 0));
+      setListeners(getLiveListenersCount(sessionData, sessionData.nowPlaying));
 
       // Parse initial nowPlaying
       const npRaw = sessionData.nowPlaying;
@@ -614,7 +615,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         listenUrl = proxyUrl(npRaw.listenUrl ?? sessionData.streamUrl ?? "");
         const np: LiveNowPlaying = {
           currentTrack: current, playingNext: next, upcomingQueue: queue, songHistory: history,
-          totalListeners: toSafeListenerCount(sessionData.listenersCount ?? sessionData.totalListeners ?? npRaw.totalListeners, 0),
+          totalListeners: getLiveListenersCount(sessionData, npRaw),
           isLive: npRaw.isLive ?? true, isOnline: npRaw.isOnline ?? true,
           listenUrl, stationName: npRaw.stationName || sessionData.stationName || "Live Station",
         };
@@ -625,7 +626,7 @@ export function LiveSessionProvider({ children }: { children: ReactNode }) {
         listenUrl = proxyUrl(sessionData.streamUrl ?? "");
         const np: LiveNowPlaying = {
           currentTrack: null, playingNext: null, upcomingQueue: [], songHistory: [],
-          totalListeners: toSafeListenerCount(sessionData.listenersCount ?? sessionData.totalListeners, 0),
+          totalListeners: getLiveListenersCount(sessionData, null),
           isLive: sessionData.status?.toLowerCase() === "live", isOnline: true,
           listenUrl, stationName: sessionData.stationName || "Live Station",
         };

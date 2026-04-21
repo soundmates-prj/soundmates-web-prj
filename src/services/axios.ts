@@ -91,6 +91,7 @@ api.interceptors.response.use(
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("userInfo");
+        localStorage.removeItem("liveGuestIdentifier");
         window.dispatchEvent(new Event("authChange"));
         if (hadAccessToken) {
           window.location.href = "/login";
@@ -129,6 +130,7 @@ api.interceptors.response.use(
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("userInfo");
+        localStorage.removeItem("liveGuestIdentifier");
         window.dispatchEvent(new Event("authChange"));
         window.location.href = "/login";
         return Promise.reject(refreshError);

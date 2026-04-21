@@ -8,7 +8,10 @@ import HeroSection from "../../components/home/HeroSection";
 import useDragScroll from "../../hooks/useDragScroll";
 import api from "../../services/axios";
 import liveSessionApiService from "../../services/liveSessionApiService";
-import type { SessionScheduleResult } from "../../services/liveSessionApiService";
+import type { SessionScheduleResult, LiveSessionResult } from "../../services/liveSessionApiService";
+import { Radio, Users, Clock, Disc3, Headphones } from "lucide-react";
+import { getLiveListenersCount } from "../../utils/listenerUtils";
+import "../Livestream/LiveSessionsPage.css";
 import userPlaylistService, { type UserPlaylist } from "../../services/userPlaylistService";
 import podcastService from "../../services/podcastService";
 import type { PodcastItem } from "../../types/podcast";
@@ -80,6 +83,12 @@ const formatRelativeTime = (iso?: string | null): string => {
   const hours = Math.floor(min / 60);
   if (hours < 24) return `${hours} giờ`;
   return `${Math.floor(hours / 24)} ngày`;
+};
+
+const formatTime = (dateStr: string | null) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 };
 
 const isScheduleLiveNow = (s: SessionScheduleResult): boolean => {
@@ -225,7 +234,12 @@ const staggerContainer: Variants = {
 
 const cardReveal: Variants = {
   hidden: { y: 24, opacity: 0, scale: 0.97 },
-  visible: { y: 0, opacity: 1, scale: 1, transition: { type: "spring", stiffness: 140, damping: 22 } },
+  visible: (i = 0) => ({
+    y: 0,
+    opacity: 1,
+    scale: 1,
+    transition: { type: "spring", stiffness: 140, damping: 22, delay: i * 0.08 },
+  }),
 };
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -239,6 +253,8 @@ export default function Home() {
   const [forumPosts, setForumPosts] = useState<HomeForumItem[]>([]);
   const [userPlaylists, setUserPlaylists] = useState<UserPlaylist[]>([]);
   const [podcasts, setPodcasts] = useState<PodcastItem[]>([]);
+  const [activeSessions, setActiveSessions] = useState<LiveSessionResult[]>([]);
+  const [isActiveSessionsLoading, setIsActiveSessionsLoading] = useState(true);
   const [isScheduleLoading, setIsScheduleLoading] = useState(true);
   const [isForumLoading, setIsForumLoading] = useState(true);
   const [isPlaylistLoading, setIsPlaylistLoading] = useState(true);
@@ -251,6 +267,18 @@ export default function Home() {
   const { containerRef: podcastRef, handlers: podcastHandlers } = useDragScroll();
 
   // ── Fetch Functions ──────────────────────────────────────────────────────
+
+  const fetchActiveSessions = useCallback(async () => {
+    setIsActiveSessionsLoading(true);
+    try {
+      const data = await liveSessionApiService.getActiveSessions();
+      setActiveSessions(data.slice(0, 3));
+    } catch {
+      setActiveSessions([]);
+    } finally {
+      setIsActiveSessionsLoading(false);
+    }
+  }, []);
 
   const fetchUserPlaylists = useCallback(async () => {
     setIsPlaylistLoading(true);
@@ -354,11 +382,12 @@ export default function Home() {
   // ── Fetch on mount ───────────────────────────────────────────────────────
 
   useEffect(() => {
+    fetchActiveSessions();
     fetchSchedule();
     fetchForum();
     fetchUserPlaylists();
     fetchPodcasts();
-  }, [fetchSchedule, fetchForum, fetchUserPlaylists, fetchPodcasts]);
+  }, [fetchActiveSessions, fetchSchedule, fetchForum, fetchUserPlaylists, fetchPodcasts]);
 
   // ── Re-fetch khi quay về Home từ trang khác ────────────────────────────
   // Dùng useRef track prevPath để detect navigation
@@ -368,6 +397,7 @@ export default function Home() {
 
     // Nếu đang ở Home và trước đó đang ở trang khác → re-fetch
     if (current === "/" && prev !== "/") {
+      fetchActiveSessions();
       fetchSchedule();
       fetchForum();
       fetchUserPlaylists();
@@ -375,7 +405,7 @@ export default function Home() {
     }
 
     prevPathRef.current = current;
-  }, [location.pathname, fetchSchedule, fetchForum, fetchUserPlaylists, fetchPodcasts]);
+  }, [location.pathname, fetchActiveSessions, fetchSchedule, fetchForum, fetchUserPlaylists, fetchPodcasts]);
 
   const scrollSection = (ref: React.RefObject<HTMLDivElement | null>, direction: "prev" | "next") => {
     if (ref.current) {
@@ -397,18 +427,12 @@ export default function Home() {
         viewport={{ once: true, amount: 0.15 }}
       >
         <div className="sm-container">
-          <div className="section-header">
-            <h2 className="section-title">Playlist đề cử</h2>
-            <div className="section-tabs">
-              {PLAYLIST_TABS.map((tab) => (
-                <button
-                  key={tab}
-                  className={`section-tab ${activeTab === tab ? "active" : ""}`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
+          <div className="section-header" style={{ alignItems: 'flex-end' }}>
+            <div>
+              <h2 className="section-title">Thư viện playlist</h2>
+              <p style={{ fontSize: '0.95rem', color: 'var(--sm-text-muted)', marginTop: '4px' }}>
+                Các playlist do người dùng tạo và chia sẻ
+              </p>
             </div>
           </div>
 
@@ -421,21 +445,21 @@ export default function Home() {
               className="playlist-carousel-inner"
               ref={playlistRef}
               {...playlistHandlers}
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
             >
               {isPlaylistLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="playlist-card skeleton" />
                 ))
               ) : userPlaylists.length > 0 ? (
-                userPlaylists.slice(0, 6).map((playlist) => (
+                userPlaylists.map((playlist, i) => (
                   <motion.div
                     key={playlist.id}
                     className="playlist-card"
+                    custom={i}
                     variants={cardReveal}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
                     whileHover={{ y: -8, transition: { duration: 0.25 } }}
                     onClickCapture={playlistHandlers.onClickCapture}
                     style={{ cursor: 'default' }}
@@ -455,11 +479,15 @@ export default function Home() {
                   </motion.div>
                 ))
               ) : (
-                PLAYLISTS.map((playlist) => (
+                PLAYLISTS.map((playlist, i) => (
                   <motion.div
                     key={playlist.id}
                     className="playlist-card"
+                    custom={i}
                     variants={cardReveal}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
                     whileHover={{ y: -8, transition: { duration: 0.25 } }}
                     onClickCapture={playlistHandlers.onClickCapture}
                     style={{ cursor: 'default' }}
@@ -482,39 +510,53 @@ export default function Home() {
       </motion.section>
 
       {/* ── Live Room ── */}
-      <motion.section
-        className="sm-section"
-        variants={sectionReveal}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.15 }}
-      >
-        <div className="sm-container">
-          <div className="section-header">
-            <h2 className="section-title">Phòng Đang Phát</h2>
-            <Link to="/live" className="section-link">
-              Xem thêm <Icon name="chevron-right" size={16} />
-            </Link>
-          </div>
-
-          <div className="live-room-card">
-            <div className="live-room-badge">LIVE</div>
-            <div className="live-room-content">
-              <div className="live-room-info">
-                <h3 className="live-room-title">Đêm nhạc cổ điển êm dịu</h3>
-                <div className="live-room-meta">
-                  <span><Icon name="users" size={16} /> 33 Kết nối</span>
-                  <span><Icon name="heart" size={16} /> 156 lượt thích</span>
-                </div>
-                <Link to="/live" className="live-room-link">
-                  Xem danh sách phát <Icon name="chevron-right" size={14} />
-                </Link>
-              </div>
-              <Link to="/live" className="live-room-cta">Tham Gia</Link>
+      {(isActiveSessionsLoading || activeSessions.length > 0) && (
+        <motion.section
+          className="sm-section"
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+        >
+          <div className="sm-container">
+            <div className="section-header" style={{ marginBottom: "24px" }}>
+              <h2 className="section-title">Phát sóng trực tiếp</h2>
+              <Link to="/live" className="section-link">
+                Xem thêm <Icon name="chevron-right" size={16} />
+              </Link>
             </div>
+
+            {isActiveSessionsLoading ? (
+              <div className="live-room-card skeleton" style={{ height: 160 }} />
+            ) : activeSessions.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {activeSessions.map((session) => (
+                  <div className="live-room-card" key={session.id}>
+                    <div className="live-room-badge">LIVE</div>
+                    <div className="live-room-content">
+                      <div className="live-room-info">
+                        <h3 className="live-room-title">{session.sessionName}</h3>
+                        <div className="live-room-meta">
+                          <span>
+                            <Icon name="users" size={16} /> {getLiveListenersCount(session, session.nowPlaying)} Người nghe
+                          </span>
+                          <span>
+                            <Icon name="user" size={16} /> {session.stationName || "SoundMates Station"}
+                          </span>
+                        </div>
+                        <Link to={`/live/${session.id}`} className="live-room-link">
+                          Tham gia ngay <Icon name="chevron-right" size={14} />
+                        </Link>
+                      </div>
+                      <Link to={`/live/${session.id}`} className="live-room-cta">Tham Gia</Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
-        </div>
-      </motion.section>
+        </motion.section>
+      )}
 
       {/* ── Schedule ── */}
       <motion.section
@@ -534,10 +576,6 @@ export default function Home() {
 
           <motion.div
             className="schedule-list"
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
           >
             {isScheduleLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
@@ -549,11 +587,15 @@ export default function Home() {
                 <p>Chưa có lịch phát sóng nào</p>
               </div>
             ) : (
-              scheduleItems.map((item) => (
+              scheduleItems.map((item, i) => (
                 <motion.div
                   key={item.id}
                   className="schedule-item"
+                  custom={i}
                   variants={cardReveal}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
                   whileHover={{ x: 6, transition: { duration: 0.2 } }}
                 >
                   <div className="schedule-item-time">
@@ -595,10 +637,6 @@ export default function Home() {
 
           <motion.div
             className="forum-list"
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
           >
             {isForumLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
@@ -610,11 +648,15 @@ export default function Home() {
                 <p>Chưa có bài viết nào</p>
               </div>
             ) : (
-              forumPosts.map((post) => (
+              forumPosts.map((post, i) => (
                 <motion.div
                   key={post.id}
                   className="forum-item"
+                  custom={i}
                   variants={cardReveal}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
                   whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
                 >
                   <img src={post.avatar} alt={post.author} className="forum-item-avatar" />
@@ -665,67 +707,71 @@ export default function Home() {
               className="playlist-carousel-inner"
               ref={podcastRef}
               {...podcastHandlers}
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
             >
               {isPodcastLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="podcast-card skeleton" />
+                  <div key={i} className="home-podcast-card skeleton" />
                 ))
               ) : podcasts.length > 0 ? (
-                podcasts.slice(0, 8).map((podcast) => (
+                podcasts.slice(0, 8).map((podcast, i) => (
                   <motion.div
                     key={podcast.id}
-                    className="podcast-card"
+                    className="home-podcast-card"
+                    custom={i}
                     variants={cardReveal}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
                     whileHover={{ y: -8, transition: { duration: 0.25 } }}
                     onClickCapture={podcastHandlers.onClickCapture}
                     onClick={() => navigate(`/podcast/${podcast.id}`)}
                     style={{ cursor: "pointer" }}
                   >
-                    <div className="podcast-card-image-wrapper">
+                    <div className="home-podcast-card-image-wrapper">
                       <img
                         src={podcast.banner || playlistCover1}
                         alt={podcast.title}
-                        className="podcast-card-image"
+                        className="home-podcast-card-image"
                         draggable={false}
                       />
-                      <div className="podcast-card-overlay">
-                        <button className="podcast-play-btn">
+                      <div className="home-podcast-card-overlay">
+                        <button className="home-podcast-play-btn">
                           <Icon name="play" size={20} />
                         </button>
                       </div>
                     </div>
-                    <div className="podcast-card-content">
-                      <h4 className="podcast-card-title">{podcast.title}</h4>
-                      <p className="podcast-card-subtitle">{podcast.author || "SoundMates"}</p>
+                    <div className="home-podcast-card-content">
+                      <h4 className="home-podcast-card-title">{podcast.title}</h4>
+                      <p className="home-podcast-card-subtitle">{podcast.author || "SoundMates"}</p>
                     </div>
                   </motion.div>
                 ))
               ) : (
-                PODCASTS.map((podcast) => (
+                PODCASTS.map((podcast, i) => (
                   <motion.div
                     key={podcast.id}
-                    className="podcast-card"
+                    className="home-podcast-card"
+                    custom={i}
                     variants={cardReveal}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
                     whileHover={{ y: -8, transition: { duration: 0.25 } }}
                     onClickCapture={podcastHandlers.onClickCapture}
                     onClick={() => navigate("/podcast")}
                     style={{ cursor: "pointer" }}
                   >
-                    <div className="podcast-card-image-wrapper">
-                      <img src={podcast.image} alt={podcast.title} className="podcast-card-image" draggable={false} />
-                      <div className="podcast-card-overlay">
-                        <button className="podcast-play-btn">
+                    <div className="home-podcast-card-image-wrapper">
+                      <img src={podcast.image} alt={podcast.title} className="home-podcast-card-image" draggable={false} />
+                      <div className="home-podcast-card-overlay">
+                        <button className="home-podcast-play-btn">
                           <Icon name="play" size={20} />
                         </button>
                       </div>
                     </div>
-                    <div className="podcast-card-content">
-                      <h4 className="podcast-card-title">{podcast.title}</h4>
-                      <p className="podcast-card-subtitle">{podcast.subtitle}</p>
+                    <div className="home-podcast-card-content">
+                      <h4 className="home-podcast-card-title">{podcast.title}</h4>
+                      <p className="home-podcast-card-subtitle">{podcast.subtitle}</p>
                     </div>
                   </motion.div>
                 ))
