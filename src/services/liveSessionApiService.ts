@@ -804,6 +804,14 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async getMySongRequestLimits(): Promise<{ limit: number; usedToday: number; remaining: number }> {
+    const res = await api.get<ApiResponse<{ limit: number; usedToday: number; remaining: number }>>(
+      "/livesession/song-requests/my-limits"
+    );
+    return res.data.data;
+  }
+
+
   async reviewSongRequest(
     songRequestId: string,
     data: {

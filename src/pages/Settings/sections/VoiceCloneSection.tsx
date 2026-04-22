@@ -622,7 +622,7 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
         <div className="vc-upgrade">
           <div className="vc-upgrade-icon"><Volume2 size={40} /></div>
           <h3>Tính năng Voice Clone</h3>
-          <p>Nâng cấp lên <strong>Premium</strong> hoặc <strong>Elite</strong> để tạo giọng đọc AI từ chính giọng nói của bạn.</p>
+          <p>Nâng cấp lên <strong>Premium</strong> để tạo giọng đọc AI từ chính giọng nói của bạn.</p>
           {onUpgradeClick && <button className="vc-btn vc-btn--primary" onClick={onUpgradeClick}>Nâng cấp ngay</button>}
         </div>
       ) : (
