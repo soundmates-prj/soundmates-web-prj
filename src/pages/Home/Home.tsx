@@ -15,6 +15,7 @@ import "../Livestream/LiveSessionsPage.css";
 import userPlaylistService, { type UserPlaylist } from "../../services/userPlaylistService";
 import podcastService from "../../services/podcastService";
 import type { PodcastItem } from "../../types/podcast";
+import { resolveAuthor } from "../../types/podcast";
 import type {
   PublishedPostsResponse,
   PublishedPost,
@@ -742,7 +743,7 @@ export default function Home() {
                     </div>
                     <div className="home-podcast-card-content">
                       <h4 className="home-podcast-card-title">{podcast.title}</h4>
-                      <p className="home-podcast-card-subtitle">{podcast.author || "SoundMates"}</p>
+                      <p className="home-podcast-card-subtitle">{resolveAuthor(podcast.author) || "SoundMates"}</p>
                     </div>
                   </motion.div>
                 ))

@@ -52,6 +52,7 @@ import { HostScheduleView } from "./pages/Host/Schedule/HostScheduleView";
 import HostLiveSessionPage from "./pages/Host/LiveSession/HostLiveSessionPage";
 import HostLiveSessionDetailPage from "./pages/Host/LiveSession/HostLiveSessionDetailPage";
 import { HostAnalyticsScreen } from "./pages/Host/Analytics/HostAnalyticsScreen";
+import { HostSessionAnalyticsDetailScreen } from "./pages/Host/Analytics/HostSessionAnalyticsDetailScreen";
 import HostSettingsPage from "./pages/Host/Settings/HostSettingsPage";
 
 // ── Staff Page Imports ──
@@ -178,6 +179,7 @@ function App() {
             />
             <Route path="schedule" element={<HostScheduleView />} />
             <Route path="analytics" element={<HostAnalyticsScreen />} />
+            <Route path="analytics/:sessionId" element={<HostSessionAnalyticsDetailScreen />} />
             <Route path="settings" element={<HostSettingsPage />} />
           </Route>
 

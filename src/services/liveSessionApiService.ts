@@ -44,6 +44,67 @@ export interface StaffDashboardOverviewResult {
   dailyListeners: DailyListenerPointResult[];
 }
 
+export interface DailyHostStatResult {
+  date: string;
+  sessionsCount: number;
+  listenersCount: number;
+}
+
+export interface LiveSessionChatResult {
+  id: string;
+  liveSessionId: string;
+  userId?: string;
+  userName: string;
+  message: string;
+  avatarUrl?: string;
+  isSystem: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+}
+
+export interface EndedSessionAnalysisResult {
+  sessionId: string;
+  sessionName: string;
+  endedAt: string | null;
+  totalDurationMinutes: number;
+  totalListeners: number;
+  musicRequestsCount: number;
+}
+
+export interface HostDashboardOverviewResult {
+  totalSessions: number;
+  totalListeners: number;
+  pendingMusicRequests: number;
+  chartData: DailyHostStatResult[];
+  upcomingSchedules: SessionScheduleResult[];
+  endedSessionsAnalysis: EndedSessionAnalysisResult[];
+  recentMusicRequests: SongRequestResult[];
+}
+
+export interface DailyHostAnalyticsResult {
+  date: string;
+  listenersCount: number;
+  requestsCount: number;
+  chatCount: number;
+}
+
+export interface TopSongRequestResult {
+  rank: number;
+  title: string;
+  artist?: string;
+  count: number;
+}
+
+export interface HostAnalyticsOverviewResult {
+  totalListeners: number;
+  totalSessions: number;
+  peakListeners: number;
+  totalMusicRequests: number;
+  chartData: DailyHostAnalyticsResult[];
+  topRequestedSongs: TopSongRequestResult[];
+  endedSessionsAnalysis: EndedSessionAnalysisResult[];
+}
+
 export interface SyncStationsResult {
   createdStations: number;
   updatedStations: number;
@@ -702,6 +763,11 @@ class LiveSessionApiService {
     await api.post(`/livesession/${id}/skip`);
   }
 
+  async getSessionChats(sessionId: string): Promise<LiveSessionChatResult[]> {
+    const res = await api.get<ApiResponse<LiveSessionChatResult[]>>(`/livesession/${sessionId}/chats`);
+    return res.data.data;
+  }
+
   async createSchedule(
     id: string,
     data: {
@@ -775,6 +841,30 @@ class LiveSessionApiService {
       },
     );
     return res.data.data;
+  }
+
+  async getHostDashboardOverview(
+    days = 7,
+  ): Promise<HostDashboardOverviewResult> {
+    try {
+      const response = await api.get<{ data: HostDashboardOverviewResult }>(`/livesession/dashboard/host?days=${days}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching host dashboard overview:', error);
+      throw error;
+    }
+  }
+
+  async getHostAnalyticsOverview(
+    days = 7,
+  ): Promise<HostAnalyticsOverviewResult> {
+    try {
+      const response = await api.get<{ data: HostAnalyticsOverviewResult }>(`/livesession/analytics/host?days=${days}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching host analytics overview:', error);
+      throw error;
+    }
   }
 
   /* ── Song Requests ── */

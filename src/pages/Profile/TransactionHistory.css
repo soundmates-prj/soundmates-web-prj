@@ -226,11 +226,11 @@
 }
 
 .col-id { flex: 1.5; display: flex; flex-direction: column; gap: 4px; }
+.col-type { flex: 1.4; }
 .col-date { flex: 1.2; }
 .col-provider { flex: 1.2; }
 .col-amount { flex: 1; font-weight: 700; }
 .col-status { flex: 1; }
-.col-action { flex: 0.3; text-align: right; }
 
 .id-text { font-weight: 600; color: var(--user-theme-text, var(--text-primary, #1e293b)); }
 .method-tag { 
@@ -267,6 +267,21 @@
 .status-badge.success { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
 .status-badge.failed { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
 .status-badge.pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+/* Type badge */
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid;
+}
+.type-badge.type-podcast { background: rgba(99, 102, 241, 0.1); color: #6366f1; border-color: rgba(99, 102, 241, 0.25); }
+.type-badge.type-subscription { background: rgba(245, 158, 11, 0.1); color: #d97706; border-color: rgba(245, 158, 11, 0.25); }
+.type-badge.type-other { background: rgba(107, 114, 128, 0.1); color: #6b7280; border-color: rgba(107, 114, 128, 0.2); }
 
 .row-action-btn {
   background: transparent;
