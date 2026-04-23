@@ -16,6 +16,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { liveSessionApiService } from "../../../services/liveSessionApiService";
 import { uploadImage } from "../../../utils/cloudinaryUpload";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
+import { resolveAuthor } from "../../../types/podcast";
 import "./LiveOps.css";
 
 const PODCAST_TYPES = [
@@ -63,7 +64,7 @@ export default function PodcastEditor() {
         const data = await liveSessionApiService.getPodcast(podcastId);
         setTitle(data.title || "");
         setDescription(data.description || "");
-        setAuthor(data.author || "");
+        setAuthor(resolveAuthor(data.author as any) || "");
         setType(data.type || "Podcast");
         setBanner(data.banner || "");
         setStatus(data.status || "Draft");

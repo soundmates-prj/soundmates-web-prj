@@ -22,6 +22,7 @@ import {
 } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import { uploadAudio, uploadImage } from "../../../utils/cloudinaryUpload";
+import { resolveAuthor } from "../../../types/podcast";
 import "./LiveOps.css";
 
 /* ── helpers ── */
@@ -321,7 +322,7 @@ function PodcastRow({
 
         <div className="pe-podcast-info">
           <span className="pe-podcast-name">{podcast.title}</span>
-          <span className="pe-podcast-author">{podcast.author || "—"}</span>
+          <span className="pe-podcast-author">{resolveAuthor(podcast.author as any) || "—"}</span>
         </div>
 
         <div className="pe-podcast-meta">

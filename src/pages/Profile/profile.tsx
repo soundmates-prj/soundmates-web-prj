@@ -33,6 +33,7 @@ import BlogPostCard from "../../components/blog/BlogPostCard";
 import ShareMusicModal from "../../components/blog/ShareMusicModal";
 import UserPlaylistTab from "./UserPlaylistTab";
 import { showToast } from "../../utils/toast";
+import { resolveAuthor } from "../../types/podcast";
 
 type Tab = "overview" | "songs" | "playlists" | "podcasts" | "community";
 
@@ -455,7 +456,7 @@ export default function Profile() {
                       )}
                       <div className="pod-info">
                         <p className="pod-title">{p.title}</p>
-                        <p className="pod-ep">{p.author}</p>
+                        <p className="pod-ep">{resolveAuthor(p.author)}</p>
                       </div>
                       <button
                         className="pod-play"
@@ -703,7 +704,7 @@ export default function Profile() {
                     </div>
                     <div className="pf-podcast-card-body">
                       <h4 className="pf-podcast-card-title">{p.title}</h4>
-                      <p className="pf-podcast-card-author">{p.author}</p>
+                      <p className="pf-podcast-card-author">{resolveAuthor(p.author)}</p>
                       {p.episodeCount != null && (
                         <p className="pf-podcast-card-eps">
                           {p.episodeCount} tập

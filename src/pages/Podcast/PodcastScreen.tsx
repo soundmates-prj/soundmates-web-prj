@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
 import type { PodcastItem } from "../../types/podcast";
+import { resolveAuthor } from "../../types/podcast";
 import "./PodcastScreen.css";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -103,7 +104,7 @@ export default function PodcastScreen() {
       list = list.filter(
         (p) =>
           p.title?.toLowerCase().includes(q) ||
-          p.author?.toLowerCase().includes(q) ||
+          resolveAuthor(p.author).toLowerCase().includes(q) ||
           p.description?.toLowerCase().includes(q),
       );
     }
@@ -355,7 +356,7 @@ function FeaturedCard({
           <span className="pds-featured-type">{typeLabel}</span>
         </div>
         <h2 className="pds-featured-title">{podcast.title}</h2>
-        <p className="pds-featured-author">{podcast.author}</p>
+        <p className="pds-featured-author">{resolveAuthor(podcast.author)}</p>
         {podcast.description && (
           <p className="pds-featured-desc">{podcast.description}</p>
         )}
@@ -443,7 +444,7 @@ function PodcastCard({
 
       <div className="pds-card-body">
         <h3 className="pds-card-title">{podcast.title}</h3>
-        <p className="pds-card-author">{podcast.author}</p>
+        <p className="pds-card-author">{resolveAuthor(podcast.author)}</p>
         {podcast.description && (
           <p className="pds-card-desc">{podcast.description}</p>
         )}

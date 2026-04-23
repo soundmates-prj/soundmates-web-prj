@@ -570,3 +570,34 @@
     padding: 5px 10px;
   }
 }
+
+/* ── Bank Account Section ── */
+.bank-account-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--bg-secondary, #fafafa);
+  border: 1px solid var(--border-light, #e5e5e5);
+  border-radius: 12px;
+}
+
+.bank-account-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary, #171717);
+  margin-bottom: 8px;
+}
+
+.bank-account-header h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.bank-account-desc {
+  font-size: 12px;
+  color: var(--text-secondary, #737373);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}

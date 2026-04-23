@@ -119,16 +119,36 @@ export const isValidURL = (url: string): boolean => {
 
 // ─── Podcast Management Types (CRUD API) ───
 
+// Author có thể là string hoặc object {Name, Avatar, Email, Plan, UserId} từ BE mới
+export type PodcastAuthor = string | { Name?: string; name?: string; [key: string]: unknown } | null | undefined;
+
+/**
+ * Lấy tên tác giả an toàn — xử lý cả string lẫn object từ BE mới.
+ * BE lưu author dưới dạng JSON: {"Name":"...","Avatar":"...","Email":"...","Plan":"...","UserId":"..."}
+ */
+export function resolveAuthor(author: PodcastAuthor): string {
+  if (!author) return '';
+  if (typeof author === 'string') return author;
+  if (typeof author === 'object') {
+    // Ưu tiên Name (PascalCase từ BE), rồi name (camelCase)
+    const name = (author as any).Name ?? (author as any).name ?? '';
+    return typeof name === 'string' ? name : '';
+  }
+  return '';
+}
+
 export interface PodcastItem {
   id: string;
   title: string;
   description: string;
-  author: string;
+  author: PodcastAuthor;
   type: string;
   banner: string;
   status: string;
   createdBy: string;
   createdAt: string;
+  price?: number;
+  isPaid?: boolean;
   episodeCount?: number;
   allEpisodes?: PodcastEpisode[];
 }

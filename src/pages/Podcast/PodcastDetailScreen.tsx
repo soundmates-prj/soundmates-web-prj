@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
 import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
+import { resolveAuthor } from "../../types/podcast";
 import { usePlayer } from "../../context/PlayerContext";
 import { useLiveSession } from "../../context/LiveSessionContext";
 import AuthPromptModal from "../../components/common/AuthPromptModal";
@@ -343,7 +344,7 @@ export default function PodcastDetailScreen() {
                 {podcast.author && (
                   <span className="pdd-meta-item">
                     <User size={14} />
-                    {podcast.author}
+                    {resolveAuthor(podcast.author)}
                   </span>
                 )}
                 <span className="pdd-meta-item">

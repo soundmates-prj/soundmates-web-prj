@@ -13,6 +13,9 @@ import {
   X as XIcon,
   ImagePlus,
   ShieldCheck,
+  Landmark,
+  CreditCard,
+  User as UserIcon
 } from "lucide-react";
 
 import api from "../../../services/axios";
@@ -351,6 +354,20 @@ const ProfileSection: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
 
+  // Bank account
+  const [isPremium, setIsPremium] = useState(false);
+  const [originalBankForm, setOriginalBankForm] = useState({
+    bankId: "",
+    accountNumber: "",
+    accountName: ""
+  });
+  const [bankForm, setBankForm] = useState({
+    bankId: "",
+    accountNumber: "",
+    accountName: ""
+  });
+  const [bankError, setBankError] = useState("");
+
   // ── Field-level error messages ──
   const [firstNameError, setFirstNameError] = useState<string>("");
   const [lastNameError, setLastNameError] = useState<string>("");
@@ -390,6 +407,35 @@ const ProfileSection: React.FC = () => {
         if (cleanProfile) setAvatarPreview(cleanProfile);
         const cleanBg = validateImageUrl(data.backgroundImageUrl);
         if (cleanBg) setBackgroundPreview(cleanBg);
+
+        // Fetch subscription to check Premium
+        try {
+          const subRes = await api.get("/me/subscriptions/full");
+          if (subRes.data?.data) {
+             const planName = subRes.data.data.planName?.toLowerCase() || "";
+             if (planName.includes("premium") || planName.includes("elite")) {
+                setIsPremium(true);
+                // Fetch bank account
+                try {
+                   const bankRes = await api.get("/users/bank-account");
+                   if (bankRes.data?.data) {
+                      const b = {
+                         bankId: bankRes.data.data.bankId || "",
+                         accountNumber: bankRes.data.data.accountNumber || "",
+                         accountName: bankRes.data.data.accountName || ""
+                      };
+                      setBankForm(b);
+                      setOriginalBankForm(b);
+                   }
+                } catch (e) {
+                   console.error("No bank account found or error fetching", e);
+                }
+             }
+          }
+        } catch(e) {
+           console.error("Load subscription failed", e);
+        }
+
       } catch (error) {
         console.error("Load profile failed", error);
       }
@@ -400,6 +446,11 @@ const ProfileSection: React.FC = () => {
   /* ── Check if form has unsaved changes ── */
   const hasChanges = (): boolean => {
     if (!user) return false;
+    const hasBankChanges = 
+      bankForm.bankId !== originalBankForm.bankId ||
+      bankForm.accountNumber !== originalBankForm.accountNumber ||
+      bankForm.accountName !== originalBankForm.accountName;
+
     return (
       form.firstName !== user.firstName ||
       form.lastName !== user.lastName ||
@@ -409,8 +460,14 @@ const ProfileSection: React.FC = () => {
       form.dateOfBirth !==
       (user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "") ||
       avatarFile !== null ||
-      backgroundFile !== null
+      backgroundFile !== null ||
+      hasBankChanges
     );
+  };
+
+  const handleBankChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+     setBankForm({ ...bankForm, [e.target.name]: e.target.value });
+     setBankError("");
   };
 
   /* ── Handle input ── */
@@ -569,6 +626,20 @@ const ProfileSection: React.FC = () => {
       valid = false;
     }
 
+    if (isPremium) {
+       const hasBankChanges = 
+         bankForm.bankId !== originalBankForm.bankId ||
+         bankForm.accountNumber !== originalBankForm.accountNumber ||
+         bankForm.accountName !== originalBankForm.accountName;
+       
+       if (hasBankChanges) {
+           if (!bankForm.bankId || !bankForm.accountNumber || !bankForm.accountName) {
+               setBankError("Vui lòng nhập đầy đủ thông tin ngân hàng.");
+               valid = false;
+           }
+       }
+    }
+
     return valid;
   };
 
@@ -609,6 +680,23 @@ const ProfileSection: React.FC = () => {
         backgroundImageUrl: cleanBackgroundImageUrl || null,
       };
       await api.put("/auth/profile", payload);
+
+      if (isPremium) {
+         const hasBankChanges = 
+           bankForm.bankId !== originalBankForm.bankId ||
+           bankForm.accountNumber !== originalBankForm.accountNumber ||
+           bankForm.accountName !== originalBankForm.accountName;
+
+         if (hasBankChanges && bankForm.bankId && bankForm.accountNumber && bankForm.accountName) {
+            await api.put("/users/bank-account", {
+               bankId: bankForm.bankId,
+               accountNumber: bankForm.accountNumber,
+               accountName: bankForm.accountName
+            });
+            setOriginalBankForm({ ...bankForm });
+         }
+      }
+
       lastSaveRef.current = Date.now(); // Mark save timestamp after success
       showSuccess("Đã lưu", "Thông tin hồ sơ đã được cập nhật!");
       const res = await api.get("/users/me/profile/full");
@@ -656,6 +744,8 @@ const ProfileSection: React.FC = () => {
     setBackgroundFile(null);
     setAvatarPreview(validateImageUrl(user.profileImageUrl));
     setBackgroundPreview(validateImageUrl(user.backgroundImageUrl));
+    setBankForm({ ...originalBankForm });
+    setBankError("");
   };
 
   if (!user) return <div className="profile-loading">Đang tải...</div>;
@@ -848,6 +938,55 @@ const ProfileSection: React.FC = () => {
               </div>
               {dobError && <span className="error-text">{dobError}</span>}
             </div>
+
+            {isPremium && (
+              <div className="bank-account-section">
+                <div className="bank-account-header">
+                   <Landmark size={18} />
+                   <h3>Tài khoản ngân hàng</h3>
+                </div>
+                <p className="bank-account-desc">
+                  Thành viên Premium có thể nhận thanh toán từ việc bán nội dung hoặc nhận donate. Vui lòng cung cấp chính xác thông tin để chúng tôi có thể chuyển tiền cho bạn.
+                </p>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Ngân hàng</label>
+                    <div className="input-icon select">
+                      <Landmark size={15} />
+                      <select name="bankId" value={bankForm.bankId} onChange={handleBankChange}>
+                        <option value="">Chọn ngân hàng</option>
+                        <option value="970415">VietinBank</option>
+                        <option value="970436">Vietcombank</option>
+                        <option value="970418">BIDV</option>
+                        <option value="970405">Agribank</option>
+                        <option value="970403">Sacombank</option>
+                        <option value="970407">Techcombank</option>
+                        <option value="970422">MBBank</option>
+                        <option value="970423">TPBank</option>
+                        <option value="970432">VPBank</option>
+                        <option value="970416">ACB</option>
+                      </select>
+                      <ChevronDown size={15} className="chevron" />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Số tài khoản</label>
+                    <div className="input-icon">
+                      <CreditCard size={15} />
+                      <input name="accountNumber" value={bankForm.accountNumber} onChange={handleBankChange} placeholder="VD: 1012345678" />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-group" style={{marginTop: 16}}>
+                  <label>Tên chủ tài khoản</label>
+                  <div className="input-icon">
+                    <UserIcon size={15} />
+                    <input name="accountName" value={bankForm.accountName} onChange={handleBankChange} placeholder="NGUYEN VAN A" style={{textTransform: 'uppercase'}} />
+                  </div>
+                </div>
+                {bankError && <span className="error-text" style={{marginTop: 8, display: 'block'}}>{bankError}</span>}
+              </div>
+            )}
 
             <div className="form-actions">
               <button className="btn ghost" onClick={handleCancel}>
