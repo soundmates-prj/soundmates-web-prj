@@ -405,6 +405,56 @@ class PodcastService {
       );
     }
   }
+
+  // ─── Purchased Podcasts ───
+
+  /**
+   * Tạo payment link (PayOS) để mua podcast.
+   * POST /payments (account-content-service)
+   * Trả về paymentUrl để redirect.
+   */
+  async createPaymentForPodcast(
+    podcastId: string,
+    amount: number,
+    returnUrl?: string,
+  ): Promise<string> {
+    try {
+      const response = await api.post<{ paymentUrl?: string; data?: { paymentUrl?: string } }>(
+        "/payments",
+        {
+          targetId: podcastId,
+          targetType: "podcast",
+          totalAmount: amount,
+          method: "vnpay",
+          returnUrl: returnUrl ?? undefined,
+        },
+      );
+      const url =
+        (response.data as any).paymentUrl ??
+        (response.data as any).data?.paymentUrl;
+      if (!url) throw new Error("Không nhận được link thanh toán");
+      return url;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tạo link thanh toán",
+      );
+    }
+  }
+
+  /**
+   * Kiểm tra người dùng đã mua podcast chưa.
+   * isPurchased được trả về trực tiếp từ GET /podcast/:id khi có JWT.
+   */
+  async checkPurchased(podcastId: string): Promise<boolean> {
+    try {
+      const podcast = await this.getPodcastById(podcastId);
+      return !!podcast.isPurchased;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export default new PodcastService();

@@ -15,6 +15,7 @@ import {
   Upload,
   Trash2,
   Lightbulb,
+  Lock,
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
 import { resolveAuthor, type PodcastItem } from "../../types/podcast";
@@ -409,6 +410,9 @@ function FeaturedCard({ podcast, onClick, isSaved, onToggleSave }: CardProps) {
 
         {typeof podcast.price === "number" && podcast.price > 0 && (
           <span className="pds-featured-price">
+            {podcast.isPaid && !podcast.isPurchased && (
+              <Lock size={12} style={{ marginRight: 4 }} />
+            )}
             <span className="pds-featured-price-amount">
               {formatVnd(podcast.price)}
             </span>
@@ -501,7 +505,12 @@ function PodcastCard({
         <EqBars count={5} className="pds-card-eq" />
 
         {typeof podcast.price === "number" && podcast.price > 0 && (
-          <span className="pds-card-price">{formatVnd(podcast.price)}₫</span>
+          <span className="pds-card-price">
+            {podcast.isPaid && !podcast.isPurchased && (
+              <Lock size={10} style={{ marginRight: 3 }} />
+            )}
+            {formatVnd(podcast.price)}₫
+          </span>
         )}
       </div>
 

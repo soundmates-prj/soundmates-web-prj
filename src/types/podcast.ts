@@ -149,6 +149,7 @@ export interface PodcastItem {
   createdAt: string;
   price?: number;
   isPaid?: boolean;
+  isPurchased?: boolean;
   episodeCount?: number;
   allEpisodes?: PodcastEpisode[];
 }

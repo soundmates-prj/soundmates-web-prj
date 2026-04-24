@@ -14,7 +14,7 @@ import {
   ListMusic,
 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation, useSearchParams } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
 import "./profile.css";
@@ -68,7 +68,17 @@ export default function Profile() {
   const { userId: routeUserId } = useParams<{ userId?: string }>();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [tab, setTab] = useState<Tab>("overview");
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const initialTab = (searchParams.get("tab") as Tab) || (location.state?.tab as Tab) || "overview";
+  const [tab, setTab] = useState<Tab>(initialTab);
+
+  useEffect(() => {
+    const nextTab = (searchParams.get("tab") as Tab) || (location.state?.tab as Tab);
+    if (nextTab && TABS.some(t => t.key === nextTab)) {
+      setTab(nextTab);
+    }
+  }, [searchParams, location.state]);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showShareMusic, setShowShareMusic] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);

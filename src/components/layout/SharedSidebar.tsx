@@ -11,6 +11,7 @@ import {
     ListMusic,
     Podcast,
     Receipt,
+    Wallet,
     Calendar,
     Music,
     Mic,
@@ -48,6 +49,7 @@ const adminMenuItems: MenuItem[] = [
     { id: 'podcasts', icon: <Podcast size={20} />, label: 'Podcast', path: '/admin/podcasts' },
     { id: 'posts', icon: <FileTextIcon size={20} />, label: 'Bài viết người dùng', path: '/admin/posts' },
     { id: 'transactions', icon: <Receipt size={20} />, label: 'Giao dịch', path: '/admin/transactions' },
+    { id: 'payouts', icon: <Wallet size={20} />, label: 'Quản lý Payout', path: '/admin/payouts' },
     { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Báo cáo', path: '/admin/analytics' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Cài đặt', path: '/admin/settings' },
 ];

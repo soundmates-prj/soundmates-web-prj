@@ -45,6 +45,7 @@ import { PodcastCreatorPage } from "./pages/PodcastCreator/PodcastCreatorPage";
 import ForumPage from "./pages/Forum/ForumPage";
 import SchedulePublicPage from "./pages/SchedulePublic/SchedulePublicPage";
 import TransactionsPage from "./pages/Admin/LiveOps/TransactionsPage";
+import PayoutScreen from "./pages/Admin/LiveOps/PayoutScreen";
 
 // ── Host Page Imports ──
 import { HostDashboard } from "./pages/Host/Dashboard/HostDashboard";
@@ -127,6 +128,7 @@ function App() {
             <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
             <Route path="settings" element={<AdminSettingsPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="payouts" element={<PayoutScreen />} />
             <Route path="posts" element={<UserPostsManagementScreen />} />
           </Route>
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -13,6 +13,9 @@ import {
   StopCircle,
   User,
   Bookmark,
+  Lock,
+  ShoppingCart,
+  CheckCircle,
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
 import { type PodcastItem, type PodcastEpisode, resolveAuthor } from "../../types/podcast";
@@ -52,10 +55,12 @@ export default function PodcastDetailScreen() {
   const [isSaved, setIsSaved] = useState(false);
   const [resolvingSave, setResolvingSave] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [resolvedDurations, setResolvedDurations] = useState<
     Record<string, number>
   >({});
-  const resolvedDurationsRef = useRef<Record<string, number>>({});
+  const resolvedDurationsRef = useRef<Record<string, number>>({}); 
 
   const {
     track,
@@ -103,6 +108,31 @@ export default function PodcastDetailScreen() {
 
     void load();
   }, [id]);
+
+  // Xác định quyền truy cập: isPaid = false, hoặc isPaid = true & isPurchased = true
+  const hasAccess = !podcast?.isPaid || !!podcast?.isPurchased;
+
+  const onPurchase = async () => {
+    if (!id || !podcast) return;
+    const isLoggedIn = !!localStorage.getItem("accessToken");
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+    setIsPurchasing(true);
+    setPurchaseError(null);
+    try {
+      const paymentUrl = await podcastService.createPaymentForPodcast(
+        id,
+        podcast.price ?? 0,
+      );
+      window.open(paymentUrl, "_blank");
+    } catch (err: any) {
+      setPurchaseError(err.message ?? "Không thể tạo link thanh toán.");
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
 
   const onToggleSave = async () => {
     if (!id || resolvingSave) return;
@@ -184,6 +214,12 @@ export default function PodcastDetailScreen() {
     const isLoggedIn = !!localStorage.getItem("accessToken");
     if (!isLoggedIn) {
       setShowAuthModal(true);
+      return;
+    }
+
+    // Kiểm tra quyền truy cập cho podcast có phí
+    if (!hasAccess) {
+      setPurchaseError("Vui lòng mua podcast này để nghe đầy đủ nội dung.");
       return;
     }
 
@@ -369,6 +405,40 @@ export default function PodcastDetailScreen() {
                 </button>
               </div>
 
+              {podcast.isPaid && (
+                <div className="pdd-price-row">
+                  {hasAccess ? (
+                    <span className="pdd-owned-badge">
+                      <CheckCircle size={14} />
+                      Đã sở hữu
+                    </span>
+                  ) : (
+                    <>
+                      <span className="pdd-price-tag">
+                        <Lock size={13} />
+                        {(podcast.price ?? 0).toLocaleString("vi-VN")}₫
+                      </span>
+                      <button
+                        className="pdd-buy-btn"
+                        onClick={onPurchase}
+                        disabled={isPurchasing}
+                      >
+                        {isPurchasing ? (
+                          <Loader2 size={14} className="pdd-spin" />
+                        ) : (
+                          <ShoppingCart size={14} />
+                        )}
+                        {isPurchasing ? "Đang xử lý..." : "Mua ngay"}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {purchaseError && (
+                <p className="pdd-purchase-error">{purchaseError}</p>
+              )}
+
               {podcast.description && (
                 <p className="pdd-hero-desc">{podcast.description}</p>
               )}
@@ -400,28 +470,34 @@ export default function PodcastDetailScreen() {
                 active && displayDuration > 0
                   ? (ctxElapsed / displayDuration) * 100
                   : 0;
+              // Tập bị khóa nếu podcast có phí và chưa mua
+              const isLocked = !hasAccess;
 
               return (
                 <div
                   key={ep.id}
-                  className={`pdd-ep${active ? " playing" : ""}`}
+                  className={`pdd-ep${active ? " playing" : ""}${isLocked ? " locked" : ""}`}
                   style={{ animationDelay: `${Math.min(i * 0.05, 0.5)}s` }}
                 >
                   <button
                     className={`pdd-ep-play${active ? " active" : ""}`}
-                    onClick={() => togglePlay(ep)}
-                    disabled={!ep.audioUrl}
+                    onClick={() => isLocked ? onPurchase() : togglePlay(ep)}
+                    disabled={!ep.audioUrl && !isLocked}
                     title={
-                      ep.audioUrl
-                        ? actuallyPlaying
-                          ? "Tạm dừng"
-                          : active
-                            ? "Tiếp tục"
-                            : "Phát"
-                        : "Chưa có audio"
+                      isLocked
+                        ? "Mua podcast để nghe"
+                        : ep.audioUrl
+                          ? actuallyPlaying
+                            ? "Tạm dừng"
+                            : active
+                              ? "Tiếp tục"
+                              : "Phát"
+                          : "Chưa có audio"
                     }
                   >
-                    {actuallyPlaying ? (
+                    {isLocked ? (
+                      <Lock size={18} />
+                    ) : actuallyPlaying ? (
                       <Pause size={18} fill="currentColor" />
                     ) : (
                       <Play size={18} fill="currentColor" />
