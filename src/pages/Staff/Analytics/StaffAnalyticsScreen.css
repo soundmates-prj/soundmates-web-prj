@@ -1,5 +1,7 @@
 /* Staff Analytics Screen Styles */
-.staff-an-page { max-width: 1200px; }
+.staff-an-page {
+    max-width: 100%;
+}
 
 .staff-an-header {
     display: flex;
@@ -15,7 +17,9 @@
     color: var(--neutral-900);
 }
 
-[data-theme="dark"] .staff-an-header h1 { color: #fff; }
+[data-theme="dark"] .staff-an-header h1 {
+    color: #fff;
+}
 
 .staff-an-header p {
     font-size: 14px;
@@ -30,8 +34,17 @@
     margin-bottom: 20px;
 }
 
-@media (max-width: 900px) { .staff-an-stats-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 500px) { .staff-an-stats-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+    .staff-an-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .staff-an-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
 
 .staff-an-card {
     background: #fff;
@@ -43,14 +56,14 @@
 }
 
 [data-theme="dark"] .staff-an-card {
-    background: rgba(255,255,255,0.03);
-    border-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .staff-an-icon {
     width: 44px;
     height: 44px;
-    background: linear-gradient(135deg, rgba(26,159,212,0.1), rgba(85,197,241,0.15));
+    background: linear-gradient(135deg, rgba(26, 159, 212, 0.1), rgba(85, 197, 241, 0.15));
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -59,7 +72,10 @@
     flex-shrink: 0;
 }
 
-.staff-an-content { display: flex; flex-direction: column; }
+.staff-an-content {
+    display: flex;
+    flex-direction: column;
+}
 
 .staff-an-label {
     font-size: 12px;
@@ -73,7 +89,9 @@
     color: var(--neutral-900);
 }
 
-[data-theme="dark"] .staff-an-value { color: #fff; }
+[data-theme="dark"] .staff-an-value {
+    color: #fff;
+}
 
 .staff-an-change {
     display: inline-flex;
@@ -84,8 +102,13 @@
     margin-top: 4px;
 }
 
-.staff-an-change.positive { color: #16a34a; }
-.staff-an-change.negative { color: #dc2626; }
+.staff-an-change.positive {
+    color: #16a34a;
+}
+
+.staff-an-change.negative {
+    color: #dc2626;
+}
 
 .staff-an-charts-row {
     display: grid;
@@ -94,7 +117,11 @@
     margin-bottom: 20px;
 }
 
-@media (max-width: 900px) { .staff-an-charts-row { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+    .staff-an-charts-row {
+        grid-template-columns: 1fr;
+    }
+}
 
 .staff-an-chart-card {
     background: #fff;
@@ -104,8 +131,8 @@
 }
 
 [data-theme="dark"] .staff-an-chart-card {
-    background: rgba(255,255,255,0.03);
-    border-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .staff-an-chart-card h3 {
@@ -115,9 +142,11 @@
     margin: 0 0 16px 0;
 }
 
-[data-theme="dark"] .staff-an-chart-card h3 { color: #fff; }
+[data-theme="dark"] .staff-an-chart-card h3 {
+    color: #fff;
+}
 
-.staff-an-top-section { }
+.staff-an-top-section {}
 
 .staff-an-top-card {
     background: #fff;
@@ -127,8 +156,8 @@
 }
 
 [data-theme="dark"] .staff-an-top-card {
-    background: rgba(255,255,255,0.03);
-    border-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .staff-an-top-card h3 {
@@ -138,7 +167,9 @@
     margin: 0 0 16px 0;
 }
 
-[data-theme="dark"] .staff-an-top-card h3 { color: #fff; }
+[data-theme="dark"] .staff-an-top-card h3 {
+    color: #fff;
+}
 
 .staff-an-top-item {
     display: flex;
@@ -148,8 +179,13 @@
     border-bottom: 1px solid var(--neutral-100);
 }
 
-[data-theme="dark"] .staff-an-top-item { border-bottom-color: rgba(255,255,255,0.06); }
-.staff-an-top-item:last-child { border-bottom: none; }
+[data-theme="dark"] .staff-an-top-item {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.staff-an-top-item:last-child {
+    border-bottom: none;
+}
 
 .staff-an-top-rank {
     font-size: 13px;
@@ -170,12 +206,12 @@
 }
 
 .staff-an-top-type.music {
-    background: rgba(26,159,212,0.1);
+    background: rgba(26, 159, 212, 0.1);
     color: #1a9fd4;
 }
 
 .staff-an-top-type.podcast {
-    background: rgba(168,85,247,0.1);
+    background: rgba(168, 85, 247, 0.1);
     color: #7c3aed;
 }
 
@@ -186,7 +222,9 @@
     color: var(--neutral-800);
 }
 
-[data-theme="dark"] .staff-an-top-title { color: rgba(255,255,255,0.8); }
+[data-theme="dark"] .staff-an-top-title {
+    color: rgba(255, 255, 255, 0.8);
+}
 
 .staff-an-top-count {
     font-size: 13px;
