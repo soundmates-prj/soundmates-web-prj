@@ -1,63 +1,125 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Headphones,
+  Loader2,
   Mic2,
   Music,
   Pencil,
   Play,
   Plus,
   RefreshCw,
+  Search,
+  Tag,
   Trash2,
   Upload,
+  User,
   X,
+  XCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   liveSessionApiService,
-  type PodcastResult,
   type EpisodeResult,
+  type PodcastRequestResult,
+  type PodcastResult,
 } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
 import { uploadAudio, uploadImage } from "../../../utils/cloudinaryUpload";
 import "./LiveOps.css";
 
-/* ── helpers ── */
+/* ────────────────────────────────────────────
+   Helpers
+   ──────────────────────────────────────────── */
 
-/** Đọc duration (giây) từ File audio bằng HTML5 Audio API */
-const getAudioDuration = (file: File): Promise<number> => {
-  return new Promise((resolve, reject) => {
+const getAudioDuration = (file: File): Promise<number> =>
+  new Promise((resolve, reject) => {
     const audio = new Audio();
     audio.preload = "metadata";
     const url = URL.createObjectURL(file);
     audio.src = url;
+
     audio.onloadedmetadata = () => {
       URL.revokeObjectURL(url);
       resolve(Math.round(audio.duration));
     };
+
     audio.onerror = () => {
       URL.revokeObjectURL(url);
       reject(new Error("Không thể đọc metadata audio"));
     };
   });
-};
 
 const fmtDuration = (seconds: number) => {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
+  const minutes = Math.floor(seconds / 60);
+  const remainSeconds = seconds % 60;
+  return `${minutes}:${String(remainSeconds).padStart(2, "0")}`;
 };
 
-const fmtDate = (d: string | null) => {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("vi-VN", {
+const fmtDate = (value: string | null) => {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
 };
+
+const fmtDateTime = (value: string | null) => {
+  if (!value) return "—";
+  return new Date(value).toLocaleString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+const normalizeStatus = (status?: string | null) =>
+  (status || "").trim().toLowerCase();
+
+const getAuthorName = (request: PodcastRequestResult) =>
+  typeof request.authorInfo?.name === "string" && request.authorInfo.name.trim()
+    ? request.authorInfo.name
+    : "Không rõ";
+
+const getAuthorEmail = (request: PodcastRequestResult) =>
+  typeof request.authorInfo?.email === "string" ? request.authorInfo.email : "";
+
+const getAuthorPlan = (request: PodcastRequestResult) =>
+  typeof request.authorInfo?.plan === "string" && request.authorInfo.plan.trim()
+    ? request.authorInfo.plan
+    : "—";
+
+const getRequestType = (request: PodcastRequestResult) =>
+  typeof request.type === "string" && request.type.trim()
+    ? request.type
+    : "Podcast";
+
+const getRequestPrice = (request: PodcastRequestResult) =>
+  typeof request.price === "number"
+    ? request.price
+    : Number(request.price || 0);
+
+type PodcastTab = "podcasts" | "requests";
+
+type ConfirmDialogState = {
+  title: string;
+  message: string;
+  confirmText?: string;
+  confirmVariant?: "danger" | "primary";
+  onConfirm: () => void;
+} | null;
+
+type RejectDialogState = {
+  id: string;
+  title: string;
+  reason: string;
+} | null;
 
 /* ══════════════════════════════════════════════
    PodcastPage
@@ -65,37 +127,118 @@ const fmtDate = (d: string | null) => {
 
 export default function PodcastPage() {
   const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState<PodcastTab>("podcasts");
+
   const [podcasts, setPodcasts] = useState<PodcastResult[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingPodcasts, setLoadingPodcasts] = useState(true);
+
+  const [requests, setRequests] = useState<PodcastRequestResult[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showCreateEp, setShowCreateEp] = useState<string | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{
-    title: string;
-    message: string;
-    onConfirm: () => void;
-  } | null>(null);
+
+  const [requestSearch, setRequestSearch] = useState("");
+  const [requestKeyword, setRequestKeyword] = useState("");
+  const [requestStatus, setRequestStatus] = useState("all");
+
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
+  const [rejectDialog, setRejectDialog] = useState<RejectDialogState>(null);
+
+  const pendingCount = useMemo(
+    () =>
+      requests.filter((item) => normalizeStatus(item.status) === "pending")
+        .length,
+    [requests],
+  );
+
+  const requestSummary = useMemo(
+    () => ({
+      pending: requests.filter(
+        (item) => normalizeStatus(item.status) === "pending",
+      ).length,
+      approved: requests.filter(
+        (item) => normalizeStatus(item.status) === "approved",
+      ).length,
+      rejected: requests.filter(
+        (item) => normalizeStatus(item.status) === "rejected",
+      ).length,
+    }),
+    [requests],
+  );
 
   const loadPodcasts = async () => {
-    setLoading(true);
+    setLoadingPodcasts(true);
     try {
-      const data = await liveSessionApiService.getPodcasts();
+      const data = await liveSessionApiService.getMyPodcasts();
       setPodcasts(data);
     } catch {
       showError("Lỗi", "Không thể tải danh sách podcast");
     } finally {
-      setLoading(false);
+      setLoadingPodcasts(false);
     }
+  };
+
+  const loadRequests = async (options?: {
+    silent?: boolean;
+    status?: string;
+    search?: string;
+  }) => {
+    const status = options?.status ?? requestStatus;
+    const search = options?.search ?? requestKeyword;
+
+    if (!options?.silent) {
+      setLoadingRequests(true);
+    }
+
+    try {
+      const data = await liveSessionApiService.getPodcastRequests({
+        status: status === "all" ? undefined : status,
+        search: search.trim() || undefined,
+      });
+      setRequests(data);
+    } catch {
+      showError("Không thể tải podcast request");
+    } finally {
+      if (!options?.silent) {
+        setLoadingRequests(false);
+      }
+    }
+  };
+
+  const refreshActiveTab = () => {
+    if (activeTab === "podcasts") {
+      void loadPodcasts();
+      return;
+    }
+
+    void loadRequests();
   };
 
   useEffect(() => {
     void loadPodcasts();
+    void loadRequests({ silent: true, status: "all", search: "" });
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "requests") {
+      void loadRequests();
+    }
+  }, [activeTab, requestStatus]);
+
+  const toggleExpand = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
 
   const deletePodcast = async (id: string) => {
     try {
       await liveSessionApiService.deletePodcast(id);
       setPodcasts((prev) => prev.filter((item) => item.id !== id));
-      if (expandedId === id) setExpandedId(null);
+      if (expandedId === id) {
+        setExpandedId(null);
+      }
       showSuccess("Đã xóa podcast");
     } catch {
       showError("Xóa podcast thất bại");
@@ -106,6 +249,8 @@ export default function PodcastPage() {
     setConfirmDialog({
       title: "Xóa podcast",
       message: `Bạn có chắc muốn xóa "${title}"? Tất cả các tập trong podcast này cũng sẽ bị xóa.`,
+      confirmText: "Xóa",
+      confirmVariant: "danger",
       onConfirm: () => {
         setConfirmDialog(null);
         void deletePodcast(id);
@@ -113,63 +258,279 @@ export default function PodcastPage() {
     });
   };
 
-  const toggleExpand = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
+  const askApproveRequest = (request: PodcastRequestResult) => {
+    const authorName = getAuthorName(request);
+
+    setConfirmDialog({
+      title: "Duyệt podcast request",
+      message: `Bạn có chắc muốn duyệt podcast "${request.title}" của ${authorName} không?`,
+      confirmText: "Duyệt",
+      confirmVariant: "primary",
+      onConfirm: () => {
+        setConfirmDialog(null);
+        void reviewRequest(request.id, "approve");
+      },
+    });
+  };
+
+  const askRejectRequest = (request: PodcastRequestResult) => {
+    setRejectDialog({
+      id: request.id,
+      title: request.title,
+      reason: "",
+    });
+  };
+
+  const reviewRequest = async (
+    id: string,
+    action: "approve" | "reject",
+    rejectReason?: string,
+  ) => {
+    try {
+      setReviewingId(id);
+
+      await liveSessionApiService.reviewPodcastRequest(id, {
+        action,
+        rejectReason: action === "reject" ? rejectReason?.trim() : undefined,
+      });
+
+      showSuccess(
+        action === "approve"
+          ? "Duyệt podcast request thành công"
+          : "Đã từ chối podcast request",
+      );
+
+      await loadRequests({ status: requestStatus, search: requestKeyword });
+
+      if (activeTab === "podcasts") {
+        await loadPodcasts();
+      }
+    } catch {
+      showError(
+        action === "approve"
+          ? "Duyệt podcast request thất bại"
+          : "Từ chối podcast request thất bại",
+      );
+    } finally {
+      setReviewingId(null);
+    }
+  };
+
+  const submitRequestSearch = () => {
+    const keyword = requestSearch.trim();
+    setRequestKeyword(keyword);
+    void loadRequests({
+      status: requestStatus,
+      search: keyword,
+    });
+  };
+
+  const clearRequestFilters = () => {
+    setRequestSearch("");
+    setRequestKeyword("");
+    setRequestStatus("Pending");
+    void loadRequests({
+      status: "Pending",
+      search: "",
+    });
+  };
+
+  const renderRequestsToolbar = () => (
+    <>
+      <div className="ops-card pod-requests-toolbar-card">
+        <div className="pod-requests-toolbar">
+          <div className="pod-search-wrap">
+            <Search size={16} className="pod-search-icon" />
+            <input
+              className="ops-input pod-search-input"
+              placeholder="Tìm theo tên podcast hoặc người gửi..."
+              value={requestSearch}
+              onChange={(e) => setRequestSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  submitRequestSearch();
+                }
+              }}
+            />
+          </div>
+
+          <select
+            className="ops-select pod-filter-select"
+            value={requestStatus}
+            onChange={(e) => setRequestStatus(e.target.value)}
+          >
+            <option value="Pending">Chờ duyệt</option>
+            <option value="Approved">Đã duyệt</option>
+            <option value="Rejected">Đã từ chối</option>
+            <option value="all">Tất cả trạng thái</option>
+          </select>
+
+          <button
+            className="ops-btn ops-btn--ghost"
+            type="button"
+            onClick={submitRequestSearch}
+          >
+            <Search size={14} />
+            Tìm
+          </button>
+
+          <button
+            className="ops-btn ops-btn--ghost"
+            type="button"
+            onClick={clearRequestFilters}
+          >
+            <X size={14} />
+            Xóa lọc
+          </button>
+        </div>
+      </div>
+
+      <div className="pod-request-summary">
+        <div className="pod-summary-chip">
+          <span className="dot pending" />
+          Chờ duyệt: {requestSummary.pending}
+        </div>
+        <div className="pod-summary-chip">
+          <span className="dot approved" />
+          Đã duyệt: {requestSummary.approved}
+        </div>
+        <div className="pod-summary-chip">
+          <span className="dot rejected" />
+          Đã từ chối: {requestSummary.rejected}
+        </div>
+      </div>
+    </>
+  );
+
+  const renderRequestList = (
+    list: PodcastRequestResult[],
+    isLoading: boolean,
+    emptyText: string,
+  ) => (
+    <div className="pod-request-list">
+      {isLoading ? (
+        <div className="ops-card">
+          <div className="ops-stack">
+            <div className="ops-skeleton" />
+            <div className="ops-skeleton" />
+            <div className="ops-skeleton" />
+          </div>
+        </div>
+      ) : list.length === 0 ? (
+        <div className="ops-card">
+          <div className="ops-empty">{emptyText}</div>
+        </div>
+      ) : (
+        list.map((request) => (
+          <PodcastRequestCard
+            key={request.id}
+            request={request}
+            reviewing={reviewingId === request.id}
+            onApprove={() => askApproveRequest(request)}
+            onReject={() => askRejectRequest(request)}
+          />
+        ))
+      )}
+    </div>
+  );
+
+  const renderContent = () => {
+    if (activeTab === "podcasts") {
+      return (
+        <div className="ops-card">
+          {loadingPodcasts ? (
+            <div className="ops-stack">
+              <div className="ops-skeleton" />
+              <div className="ops-skeleton" />
+              <div className="ops-skeleton" />
+            </div>
+          ) : podcasts.length === 0 ? (
+            <div className="ops-empty">Chưa có podcast nào</div>
+          ) : (
+            <div className="ops-stack" style={{ gap: 0 }}>
+              {podcasts.map((podcast) => (
+                <PodcastRow
+                  key={podcast.id}
+                  podcast={podcast}
+                  expanded={expandedId === podcast.id}
+                  onToggle={() => toggleExpand(podcast.id)}
+                  onEdit={() => navigate(`/admin/podcasts/${podcast.id}`)}
+                  onDelete={() => askDeletePodcast(podcast.id, podcast.title)}
+                  onCreateEpisode={() => setShowCreateEp(podcast.id)}
+                  onEpisodeChange={loadPodcasts}
+                  onAskConfirm={setConfirmDialog}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {renderRequestsToolbar()}
+        {renderRequestList(
+          requests,
+          loadingRequests,
+          "Không có podcast request phù hợp",
+        )}
+      </>
+    );
   };
 
   return (
     <div className="ops-page">
       <div className="ops-header">
         <div>
-          <h1 className="ops-title">
-            Trang Podcast
-          </h1>
-          <p className="ops-subtitle">Quản lý podcast và các tập phát sóng</p>
+          <h1 className="ops-title">Trang Podcast</h1>
+          <p className="ops-subtitle">
+            Quản lý podcast hệ thống và podcast người dùng gửi lên
+          </p>
+
+          <div className="pod-tabs">
+            <button
+              className={`pod-tab${activeTab === "podcasts" ? " active" : ""}`}
+              onClick={() => setActiveTab("podcasts")}
+              type="button"
+            >
+              <Mic2 size={15} />
+              Podcast của admin
+              <span className="pod-tab-count">{podcasts.length}</span>
+            </button>
+
+            <button
+              className={`pod-tab${activeTab === "requests" ? " active" : ""}`}
+              onClick={() => setActiveTab("requests")}
+              type="button"
+            >
+              <User size={15} />
+              Podcast chờ duyệt
+              <span className="pod-tab-count">{pendingCount}</span>
+            </button>
+          </div>
         </div>
+
         <div className="ops-actions">
-          <button className="ops-btn ops-btn--ghost" onClick={loadPodcasts}>
+          <button className="ops-btn ops-btn--ghost" onClick={refreshActiveTab}>
             <RefreshCw size={15} />
             Làm mới
           </button>
-          <button
-            className="ops-btn ops-btn--primary"
-            onClick={() => navigate("/admin/podcasts/new")}
-          >
-            <Plus size={15} />
-            Tạo podcast
-          </button>
+
+          {activeTab === "podcasts" && (
+            <button
+              className="ops-btn ops-btn--primary"
+              onClick={() => navigate("/admin/podcasts/new")}
+            >
+              <Plus size={15} />
+              Tạo podcast
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="ops-card">
-        {loading ? (
-          <div className="ops-stack">
-            <div className="ops-skeleton" />
-            <div className="ops-skeleton" />
-            <div className="ops-skeleton" />
-          </div>
-        ) : podcasts.length === 0 ? (
-          <div className="ops-empty">Chưa có podcast nào</div>
-        ) : (
-          <div className="ops-stack" style={{ gap: 0 }}>
-            {podcasts.map((podcast) => (
-              <PodcastRow
-                key={podcast.id}
-                podcast={podcast}
-                expanded={expandedId === podcast.id}
-                onToggle={() => toggleExpand(podcast.id)}
-                onEdit={() => navigate(`/admin/podcasts/${podcast.id}`)}
-                onDelete={() => askDeletePodcast(podcast.id, podcast.title)}
-                onCreateEpisode={() => setShowCreateEp(podcast.id)}
-                onEpisodeChange={loadPodcasts}
-                onAskConfirm={setConfirmDialog}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {renderContent()}
 
-      {/* Create Episode Modal */}
       {showCreateEp && (
         <CreateEpisodeModal
           podcastId={showCreateEp}
@@ -177,7 +538,6 @@ export default function PodcastPage() {
           onCreated={() => {
             setShowCreateEp(null);
             void loadPodcasts();
-            // force re-expand to refresh episodes
             setExpandedId((prev) => {
               if (prev === showCreateEp) {
                 setTimeout(() => setExpandedId(showCreateEp), 50);
@@ -189,7 +549,6 @@ export default function PodcastPage() {
         />
       )}
 
-      {/* Confirm Dialog */}
       {confirmDialog && (
         <div
           className="ops-modal-overlay"
@@ -209,6 +568,7 @@ export default function PodcastPage() {
               </div>
               <h3 className="pe-confirm-title">{confirmDialog.title}</h3>
               <p className="pe-confirm-message">{confirmDialog.message}</p>
+
               <div className="pe-confirm-actions">
                 <button
                   className="ops-btn ops-btn--ghost"
@@ -216,14 +576,143 @@ export default function PodcastPage() {
                 >
                   Hủy
                 </button>
+
                 <button
-                  className="pe-confirm-delete"
+                  className={
+                    confirmDialog.confirmVariant === "primary"
+                      ? "pe-confirm-approve"
+                      : "pe-confirm-delete"
+                  }
                   onClick={confirmDialog.onConfirm}
                 >
-                  <Trash2 size={14} />
-                  Xóa
+                  {confirmDialog.confirmVariant === "primary" ? (
+                    <CheckCircle2 size={14} />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                  {confirmDialog.confirmText || "Xác nhận"}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rejectDialog && (
+        <div
+          className="ops-modal-overlay"
+          onClick={() => setRejectDialog(null)}
+        >
+          <div
+            className="ops-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 520 }}
+          >
+            <div
+              className="ops-modal-head"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+                <XCircle
+                  size={16}
+                  style={{
+                    marginRight: 8,
+                    verticalAlign: "middle",
+                    color: "#ef4444",
+                  }}
+                />
+                Từ chối podcast request
+              </h3>
+
+              <button
+                className="ops-btn ops-btn--ghost"
+                onClick={() => setRejectDialog(null)}
+                style={{ height: 30, padding: "0 6px" }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="ops-modal-body">
+              <div className="ops-stack" style={{ gap: 14 }}>
+                <div>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      marginBottom: 6,
+                      color: "var(--text-primary, #1e293b)",
+                    }}
+                  >
+                    {rejectDialog.title}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "var(--text-muted, #94a3b8)",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    Vui lòng nhập lý do từ chối để gửi phản hồi rõ ràng cho
+                    người dùng.
+                  </div>
+                </div>
+
+                <div className="pe-field">
+                  <label className="pe-label">
+                    Lý do từ chối <span className="pe-required">*</span>
+                  </label>
+                  <textarea
+                    className="ops-textarea"
+                    rows={5}
+                    value={rejectDialog.reason}
+                    onChange={(e) =>
+                      setRejectDialog((prev) =>
+                        prev ? { ...prev, reason: e.target.value } : prev,
+                      )
+                    }
+                    placeholder="Ví dụ: Nội dung chưa phù hợp, thiếu mô tả rõ ràng, banner chưa đạt yêu cầu..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="ops-modal-foot">
+              <button
+                className="ops-btn ops-btn--ghost"
+                onClick={() => setRejectDialog(null)}
+                disabled={reviewingId === rejectDialog.id}
+              >
+                Hủy
+              </button>
+
+              <button
+                className="pe-confirm-delete"
+                onClick={() => {
+                  const reason = rejectDialog.reason.trim();
+
+                  if (!reason) {
+                    showError("Vui lòng nhập lý do từ chối");
+                    return;
+                  }
+
+                  const id = rejectDialog.id;
+                  setRejectDialog(null);
+                  void reviewRequest(id, "reject", reason);
+                }}
+                disabled={reviewingId === rejectDialog.id}
+              >
+                {reviewingId === rejectDialog.id ? (
+                  <Loader2 size={14} className="pe-spin" />
+                ) : (
+                  <XCircle size={14} />
+                )}
+                Từ chối request
+              </button>
             </div>
           </div>
         </div>
@@ -232,8 +721,136 @@ export default function PodcastPage() {
   );
 }
 
+function PodcastRequestCard({
+  request,
+  reviewing,
+  onApprove,
+  onReject,
+}: {
+  request: PodcastRequestResult;
+  reviewing: boolean;
+  onApprove?: () => void;
+  onReject?: () => void;
+}) {
+  const status = normalizeStatus(request.status);
+  const authorName = getAuthorName(request);
+  const authorEmail = getAuthorEmail(request);
+  const authorPlan = getAuthorPlan(request);
+  const requestType = getRequestType(request);
+  const price = getRequestPrice(request);
+
+  const statusNode = (() => {
+    switch (status) {
+      case "approved":
+        return <span className="ops-badge ops-badge--good">Approved</span>;
+      case "rejected":
+        return <span className="ops-badge ops-badge--danger">Rejected</span>;
+      default:
+        return <span className="ops-badge ops-badge--warn">Pending</span>;
+    }
+  })();
+
+  const canReview = status === "pending" && onApprove && onReject;
+
+  return (
+    <div className="ops-card pod-request-card">
+      <div className="pod-request-cover">
+        {request.bannerUrl ? (
+          <img src={request.bannerUrl} alt={request.title} />
+        ) : (
+          <div className="pod-request-cover-placeholder">
+            <Mic2 size={28} />
+          </div>
+        )}
+      </div>
+
+      <div className="pod-request-content">
+        <div className="pod-request-top">
+          <div className="pod-request-headings">
+            <h3 className="pod-request-title">{request.title}</h3>
+            <p className="pod-request-desc">
+              {typeof request.description === "string" &&
+              request.description.trim()
+                ? request.description
+                : "Chưa có mô tả cho podcast này."}
+            </p>
+          </div>
+
+          <div className="pod-request-badges">
+            {statusNode}
+            {request.isPaid ? (
+              <span className="ops-badge ops-badge--warn">
+                Paid • {price.toLocaleString("vi-VN")}đ
+              </span>
+            ) : (
+              <span className="ops-badge">Miễn phí</span>
+            )}
+          </div>
+        </div>
+
+        <div className="pod-request-meta">
+          <div className="pod-request-meta-item">
+            <User size={14} />
+            <span>
+              <strong>{authorName}</strong>
+              {authorEmail ? ` • ${authorEmail}` : ""}
+            </span>
+          </div>
+
+          <div className="pod-request-meta-item">
+            <Tag size={14} />
+            <span>{requestType}</span>
+          </div>
+
+          <div className="pod-request-meta-item">
+            <Headphones size={14} />
+            <span>Gói: {authorPlan}</span>
+          </div>
+
+          <div className="pod-request-meta-item">
+            <RefreshCw size={14} />
+            <span>Gửi lúc: {fmtDateTime(request.requestedAt)}</span>
+          </div>
+        </div>
+
+        <div className="pod-request-actions">
+          {canReview ? (
+            <>
+              <button
+                className="ops-btn ops-btn--primary"
+                onClick={onApprove}
+                disabled={reviewing}
+              >
+                {reviewing ? (
+                  <Loader2 size={14} className="pe-spin" />
+                ) : (
+                  <CheckCircle2 size={14} />
+                )}
+                Duyệt
+              </button>
+
+              <button
+                className="ops-btn ops-btn--ghost"
+                onClick={onReject}
+                disabled={reviewing}
+              >
+                <XCircle size={14} />
+                Từ chối
+              </button>
+            </>
+          ) : (
+            <div className="pod-request-readonly-status">
+              Request này đã được xử lý.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ────────────────────────────────────────────
-   PodcastRow — expandable with episodes
+   PodcastRow
    ──────────────────────────────────────────── */
 
 function PodcastRow({
@@ -253,35 +870,34 @@ function PodcastRow({
   onDelete: () => void;
   onCreateEpisode: () => void;
   onEpisodeChange: () => void;
-  onAskConfirm: (
-    dialog: { title: string; message: string; onConfirm: () => void } | null,
-  ) => void;
+  onAskConfirm: (dialog: ConfirmDialogState) => void;
 }) {
   const [episodes, setEpisodes] = useState<EpisodeResult[]>([]);
-  const [loadingEps, setLoadingEps] = useState(false);
-  const [editingEp, setEditingEp] = useState<EpisodeResult | null>(null);
+  const [loadingEpisodes, setLoadingEpisodes] = useState(false);
+  const [editingEpisode, setEditingEpisode] = useState<EpisodeResult | null>(
+    null,
+  );
 
   const loadEpisodes = async () => {
-    setLoadingEps(true);
+    setLoadingEpisodes(true);
     try {
       const data = await liveSessionApiService.getEpisodes(podcast.id);
       setEpisodes(data);
-    } catch {
-      // silent
     } finally {
-      setLoadingEps(false);
+      setLoadingEpisodes(false);
     }
   };
 
   useEffect(() => {
-    if (!expanded) return;
-    void loadEpisodes();
+    if (expanded) {
+      void loadEpisodes();
+    }
   }, [expanded, podcast.id]);
 
-  const doDeleteEpisode = async (epId: string) => {
+  const deleteEpisode = async (episodeId: string) => {
     try {
-      await liveSessionApiService.deleteEpisode(podcast.id, epId);
-      setEpisodes((prev) => prev.filter((e) => e.id !== epId));
+      await liveSessionApiService.deleteEpisode(podcast.id, episodeId);
+      setEpisodes((prev) => prev.filter((item) => item.id !== episodeId));
       onEpisodeChange();
       showSuccess("Đã xóa tập");
     } catch {
@@ -289,16 +905,26 @@ function PodcastRow({
     }
   };
 
-  const askDeleteEpisode = (ep: EpisodeResult) => {
+  const askDeleteEpisode = (episode: EpisodeResult) => {
     onAskConfirm({
       title: "Xóa tập podcast",
-      message: `Bạn có chắc muốn xóa tập "${ep.title}"?`,
+      message: `Bạn có chắc muốn xóa tập "${episode.title}"?`,
+      confirmText: "Xóa",
+      confirmVariant: "danger",
       onConfirm: () => {
         onAskConfirm(null);
-        void doDeleteEpisode(ep.id);
+        void deleteEpisode(episode.id);
       },
     });
   };
+
+  const authorText =
+    typeof podcast.author === "string"
+      ? podcast.author
+      : (podcast.author?.Name ??
+        podcast.author?.name ??
+        podcast.author?.username ??
+        "—");
 
   const statusBadge = () => {
     switch (podcast.status?.toLowerCase()) {
@@ -313,7 +939,6 @@ function PodcastRow({
 
   return (
     <div className={`pe-podcast-row${expanded ? " expanded" : ""}`}>
-      {/* Main row */}
       <div className="pe-podcast-main" onClick={onToggle}>
         <div className="pe-podcast-expand">
           {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -321,7 +946,7 @@ function PodcastRow({
 
         <div className="pe-podcast-info">
           <span className="pe-podcast-name">{podcast.title}</span>
-          <span className="pe-podcast-author">{podcast.author || "—"}</span>
+          <span className="pe-podcast-author">{authorText}</span>
         </div>
 
         <div className="pe-podcast-meta">
@@ -344,6 +969,7 @@ function PodcastRow({
             <Plus size={14} />
             Tạo tập
           </button>
+
           <button
             className="ops-btn ops-btn--ghost"
             onClick={onEdit}
@@ -351,6 +977,7 @@ function PodcastRow({
           >
             <Pencil size={14} />
           </button>
+
           <button
             className="ops-btn ops-btn--ghost"
             onClick={onDelete}
@@ -361,10 +988,9 @@ function PodcastRow({
         </div>
       </div>
 
-      {/* Expanded — Episodes */}
       {expanded && (
         <div className="pe-episodes">
-          {loadingEps ? (
+          {loadingEpisodes ? (
             <div className="ops-stack" style={{ padding: 16 }}>
               <div className="ops-skeleton" />
               <div className="ops-skeleton" />
@@ -391,25 +1017,32 @@ function PodcastRow({
                 <span>Ngày phát</span>
                 <span />
               </div>
-              {episodes.map((ep) => (
-                <div key={ep.id} className="pe-episode-item">
+
+              {episodes.map((episode) => (
+                <div key={episode.id} className="pe-episode-item">
                   <span className="pe-ep-number">
-                    {ep.episodeNumber || "—"}
+                    {episode.episodeNumber || "—"}
                   </span>
+
                   <div className="pe-ep-info">
-                    <span className="pe-ep-title">{ep.title}</span>
-                    {ep.description && (
-                      <span className="pe-ep-desc">{ep.description}</span>
+                    <span className="pe-ep-title">{episode.title}</span>
+                    {episode.description && (
+                      <span className="pe-ep-desc">{episode.description}</span>
                     )}
                   </div>
+
                   <span className="pe-ep-duration">
-                    {ep.duration > 0 ? fmtDuration(ep.duration) : "—"}
+                    {episode.duration > 0 ? fmtDuration(episode.duration) : "—"}
                   </span>
-                  <span className="pe-ep-date">{fmtDate(ep.publishDate)}</span>
+
+                  <span className="pe-ep-date">
+                    {fmtDate(episode.publishDate)}
+                  </span>
+
                   <div className="pe-ep-actions">
-                    {ep.audioUrl && (
+                    {episode.audioUrl && (
                       <a
-                        href={ep.audioUrl}
+                        href={episode.audioUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="ops-btn ops-btn--ghost"
@@ -419,18 +1052,20 @@ function PodcastRow({
                         <Play size={13} />
                       </a>
                     )}
+
                     <button
                       className="ops-btn ops-btn--ghost"
                       style={{ height: 30, fontSize: 11 }}
-                      onClick={() => setEditingEp(ep)}
+                      onClick={() => setEditingEpisode(episode)}
                       title="Sửa tập"
                     >
                       <Pencil size={13} />
                     </button>
+
                     <button
                       className="ops-btn ops-btn--ghost"
                       style={{ height: 30, fontSize: 11 }}
-                      onClick={() => askDeleteEpisode(ep)}
+                      onClick={() => askDeleteEpisode(episode)}
                       title="Xóa tập"
                     >
                       <Trash2 size={13} />
@@ -443,14 +1078,13 @@ function PodcastRow({
         </div>
       )}
 
-      {/* Edit Episode Modal */}
-      {editingEp && (
+      {editingEpisode && (
         <EditEpisodeModal
           podcastId={podcast.id}
-          episode={editingEp}
-          onClose={() => setEditingEp(null)}
+          episode={editingEpisode}
+          onClose={() => setEditingEpisode(null)}
           onUpdated={() => {
-            setEditingEp(null);
+            setEditingEpisode(null);
             void loadEpisodes();
             onEpisodeChange();
           }}
@@ -480,10 +1114,9 @@ function EditEpisodeModal({
   const [episodeNumber, setEpisodeNumber] = useState<number | "">(
     episode.episodeNumber || "",
   );
-  const [publishDate, setPublishDate] = useState(() => {
-    if (!episode.publishDate) return "";
-    return episode.publishDate.slice(0, 16); // yyyy-MM-ddTHH:mm
-  });
+  const [publishDate, setPublishDate] = useState(() =>
+    episode.publishDate ? episode.publishDate.slice(0, 16) : "",
+  );
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -495,14 +1128,16 @@ function EditEpisodeModal({
 
   const handleAudioChange = async (file: File | null) => {
     setAudioFile(file);
-    if (file) {
-      try {
-        const dur = await getAudioDuration(file);
-        setDuration(dur);
-      } catch {
-        setDuration(null);
-      }
-    } else {
+
+    if (!file) {
+      setDuration(null);
+      return;
+    }
+
+    try {
+      const audioDuration = await getAudioDuration(file);
+      setDuration(audioDuration);
+    } catch {
       setDuration(null);
     }
   };
@@ -514,6 +1149,7 @@ function EditEpisodeModal({
     }
 
     setSaving(true);
+
     try {
       let audioUrl = "";
       let thumbnailUrl = "";
@@ -523,11 +1159,8 @@ function EditEpisodeModal({
         try {
           const result = await uploadAudio(audioFile);
           audioUrl = result.url;
-        } catch (e) {
-          console.warn(
-            "Cloudinary audio upload failed, sẽ gửi file trực tiếp:",
-            e,
-          );
+        } catch (error) {
+          console.warn("Cloudinary audio upload failed:", error);
         }
       }
 
@@ -535,45 +1168,42 @@ function EditEpisodeModal({
         setUploadStatus("Đang upload ảnh...");
         try {
           thumbnailUrl = await uploadImage(thumbnailFile);
-        } catch (e) {
-          console.warn(
-            "Cloudinary image upload failed, sẽ gửi file trực tiếp:",
-            e,
-          );
+        } catch (error) {
+          console.warn("Cloudinary image upload failed:", error);
         }
       }
 
       setUploadStatus("Đang cập nhật...");
+
       const formData = new FormData();
       formData.append("Title", title);
       formData.append("Description", description);
+
       if (episodeNumber)
         formData.append("EpisodeNumber", String(episodeNumber));
-      if (publishDate)
+      if (publishDate) {
         formData.append("PublishDate", new Date(publishDate).toISOString());
-      if (duration !== null) formData.append("Duration", String(duration));
-
-      if (audioUrl) {
-        formData.append("AudioUrl", audioUrl);
-      } else if (audioFile) {
-        formData.append("AudioFile", audioFile);
+      }
+      if (duration !== null) {
+        formData.append("Duration", String(duration));
       }
 
-      if (thumbnailUrl) {
-        formData.append("ThumbnailUrl", thumbnailUrl);
-      } else if (thumbnailFile) {
-        formData.append("ThumbnailFile", thumbnailFile);
-      }
+      if (audioUrl) formData.append("AudioUrl", audioUrl);
+      else if (audioFile) formData.append("AudioFile", audioFile);
+
+      if (thumbnailUrl) formData.append("ThumbnailUrl", thumbnailUrl);
+      else if (thumbnailFile) formData.append("ThumbnailFile", thumbnailFile);
 
       await liveSessionApiService.updateEpisode(
         podcastId,
         episode.id,
         formData,
       );
+
       showSuccess("Cập nhật tập thành công");
       onUpdated();
-    } catch (err: any) {
-      showError("Cập nhật thất bại", err?.message || "");
+    } catch (error: any) {
+      showError("Cập nhật thất bại", error?.message || "");
     } finally {
       setSaving(false);
       setUploadStatus("");
@@ -606,6 +1236,7 @@ function EditEpisodeModal({
             />
             Chỉnh sửa tập
           </h3>
+
           <button
             className="ops-btn ops-btn--ghost"
             onClick={onClose}
@@ -644,6 +1275,7 @@ function EditEpisodeModal({
                   }
                 />
               </div>
+
               <div className="pe-field pe-field--half">
                 <label className="pe-label">Ngày phát sóng</label>
                 <input
@@ -669,6 +1301,7 @@ function EditEpisodeModal({
               <label className="pe-label">
                 <Music size={13} /> Đổi file âm thanh
               </label>
+
               {episode.audioUrl && !audioFile && (
                 <div className="pe-current-file">
                   Audio hiện tại:{" "}
@@ -680,6 +1313,7 @@ function EditEpisodeModal({
                   )}
                 </div>
               )}
+
               <div
                 className="pe-file-pick"
                 onClick={() => audioRef.current?.click()}
@@ -695,6 +1329,7 @@ function EditEpisodeModal({
                   <span>Chọn file mới (bỏ trống = giữ nguyên)</span>
                 )}
               </div>
+
               <input
                 ref={audioRef}
                 type="file"
@@ -706,6 +1341,7 @@ function EditEpisodeModal({
 
             <div className="pe-field">
               <label className="pe-label">Đổi thumbnail</label>
+
               <div
                 className="pe-file-pick"
                 onClick={() => thumbRef.current?.click()}
@@ -717,6 +1353,7 @@ function EditEpisodeModal({
                   <span>Chọn ảnh mới (bỏ trống = giữ nguyên)</span>
                 )}
               </div>
+
               <input
                 ref={thumbRef}
                 type="file"
@@ -743,6 +1380,7 @@ function EditEpisodeModal({
           >
             Hủy
           </button>
+
           <button
             className="ops-btn ops-btn--primary"
             onClick={handleSubmit}
@@ -784,14 +1422,16 @@ function CreateEpisodeModal({
 
   const handleAudioChange = async (file: File | null) => {
     setAudioFile(file);
-    if (file) {
-      try {
-        const dur = await getAudioDuration(file);
-        setDuration(dur);
-      } catch {
-        setDuration(null);
-      }
-    } else {
+
+    if (!file) {
+      setDuration(null);
+      return;
+    }
+
+    try {
+      const audioDuration = await getAudioDuration(file);
+      setDuration(audioDuration);
+    } catch {
       setDuration(null);
     }
   };
@@ -803,21 +1443,18 @@ function CreateEpisodeModal({
     }
 
     setSaving(true);
+
     try {
       let audioUrl = "";
       let thumbnailUrl = "";
 
-      // 1. Thử upload Cloudinary, nếu fail → gửi file trực tiếp
       if (audioFile) {
         setUploadStatus("Đang upload audio...");
         try {
           const result = await uploadAudio(audioFile);
           audioUrl = result.url;
-        } catch (e) {
-          console.warn(
-            "Cloudinary audio upload failed, sẽ gửi file trực tiếp:",
-            e,
-          );
+        } catch (error) {
+          console.warn("Cloudinary audio upload failed:", error);
         }
       }
 
@@ -825,44 +1462,38 @@ function CreateEpisodeModal({
         setUploadStatus("Đang upload ảnh...");
         try {
           thumbnailUrl = await uploadImage(thumbnailFile);
-        } catch (e) {
-          console.warn(
-            "Cloudinary image upload failed, sẽ gửi file trực tiếp:",
-            e,
-          );
+        } catch (error) {
+          console.warn("Cloudinary image upload failed:", error);
         }
       }
 
-      // 2. Tạo FormData
       setUploadStatus("Đang tạo tập...");
+
       const formData = new FormData();
       formData.append("Title", title);
+
       if (description) formData.append("Description", description);
       if (episodeNumber)
         formData.append("EpisodeNumber", String(episodeNumber));
-      if (publishDate)
+      if (publishDate) {
         formData.append("PublishDate", new Date(publishDate).toISOString());
-      if (duration !== null) formData.append("Duration", String(duration));
-
-      // Audio: ưu tiên URL từ Cloudinary, fallback gửi file trực tiếp
-      if (audioUrl) {
-        formData.append("AudioUrl", audioUrl);
-      } else if (audioFile) {
-        formData.append("AudioFile", audioFile);
+      }
+      if (duration !== null) {
+        formData.append("Duration", String(duration));
       }
 
-      // Thumbnail: tương tự
-      if (thumbnailUrl) {
-        formData.append("ThumbnailUrl", thumbnailUrl);
-      } else if (thumbnailFile) {
-        formData.append("ThumbnailFile", thumbnailFile);
-      }
+      if (audioUrl) formData.append("AudioUrl", audioUrl);
+      else if (audioFile) formData.append("AudioFile", audioFile);
+
+      if (thumbnailUrl) formData.append("ThumbnailUrl", thumbnailUrl);
+      else if (thumbnailFile) formData.append("ThumbnailFile", thumbnailFile);
 
       await liveSessionApiService.createEpisode(podcastId, formData);
+
       showSuccess("Tạo tập thành công");
       onCreated();
-    } catch (err: any) {
-      showError("Tạo tập thất bại", err?.message || "");
+    } catch (error: any) {
+      showError("Tạo tập thất bại", error?.message || "");
     } finally {
       setSaving(false);
       setUploadStatus("");
@@ -895,6 +1526,7 @@ function CreateEpisodeModal({
             />
             Tạo tập mới
           </h3>
+
           <button
             className="ops-btn ops-btn--ghost"
             onClick={onClose}
@@ -906,7 +1538,6 @@ function CreateEpisodeModal({
 
         <div className="ops-modal-body">
           <div className="ops-stack" style={{ gap: 14 }}>
-            {/* Title */}
             <div className="pe-field">
               <label className="pe-label">
                 Tiêu đề <span className="pe-required">*</span>
@@ -919,7 +1550,6 @@ function CreateEpisodeModal({
               />
             </div>
 
-            {/* Episode number + Publish date */}
             <div className="pe-row">
               <div className="pe-field pe-field--half">
                 <label className="pe-label">Số tập</label>
@@ -936,6 +1566,7 @@ function CreateEpisodeModal({
                   placeholder="1"
                 />
               </div>
+
               <div className="pe-field pe-field--half">
                 <label className="pe-label">Ngày phát sóng</label>
                 <input
@@ -947,7 +1578,6 @@ function CreateEpisodeModal({
               </div>
             </div>
 
-            {/* Description */}
             <div className="pe-field">
               <label className="pe-label">Mô tả</label>
               <textarea
@@ -959,12 +1589,12 @@ function CreateEpisodeModal({
               />
             </div>
 
-            {/* Audio file */}
             <div className="pe-field">
               <label className="pe-label">
                 <Music size={13} />
                 File âm thanh
               </label>
+
               <div
                 className="pe-file-pick"
                 onClick={() => audioRef.current?.click()}
@@ -980,6 +1610,7 @@ function CreateEpisodeModal({
                   <span>Chọn file MP3, WAV, OGG...</span>
                 )}
               </div>
+
               <input
                 ref={audioRef}
                 type="file"
@@ -989,9 +1620,9 @@ function CreateEpisodeModal({
               />
             </div>
 
-            {/* Thumbnail */}
             <div className="pe-field">
               <label className="pe-label">Ảnh thumbnail</label>
+
               <div
                 className="pe-file-pick"
                 onClick={() => thumbRef.current?.click()}
@@ -1000,9 +1631,10 @@ function CreateEpisodeModal({
                 {thumbnailFile ? (
                   <span>{thumbnailFile.name}</span>
                 ) : (
-                  <span>Chọn ảnh PNG, JPG...</span>
+                  <span>Chọn ảnh thumbnail (không bắt buộc)</span>
                 )}
               </div>
+
               <input
                 ref={thumbRef}
                 type="file"
@@ -1012,7 +1644,6 @@ function CreateEpisodeModal({
               />
             </div>
 
-            {/* Upload status */}
             {uploadStatus && (
               <div className="pe-upload-status">
                 <RefreshCw size={14} className="pe-spin" />
@@ -1030,6 +1661,7 @@ function CreateEpisodeModal({
           >
             Hủy
           </button>
+
           <button
             className="ops-btn ops-btn--primary"
             onClick={handleSubmit}

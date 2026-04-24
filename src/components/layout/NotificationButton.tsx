@@ -33,7 +33,7 @@ function realtimeToItem(n: RealtimeNotification): NotificationItem {
     id: n.id,
     type: n.type,
     referenceId: n.referenceId ?? null,
-    message: n.message,
+    message: formatMessage(n.message),
     isRead: n.isRead,
     createdAt: n.createdAt,
   };
@@ -44,10 +44,28 @@ function broadcastToItem(n: BroadcastNotification): NotificationItem {
     id: n.id,
     type: n.type,
     referenceId: n.referenceId ?? null,
-    message: n.message,
+    message: formatMessage(n.message),
     isRead: false,
     createdAt: n.createdAt,
   };
+}
+
+// Ensure message is a string. If it's an object, try common properties then JSON.stringify.
+function formatMessage(msg: any): string {
+  if (msg == null) return "";
+  if (typeof msg === "string") return msg;
+  if (typeof msg === "object") {
+    if (typeof msg.message === "string") return msg.message;
+    if (typeof msg.Message === "string") return msg.Message;
+    if (typeof msg.title === "string") return msg.title;
+    if (typeof msg.Name === "string") return msg.Name;
+    try {
+      return JSON.stringify(msg);
+    } catch {
+      return String(msg);
+    }
+  }
+  return String(msg);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -82,8 +100,13 @@ export default function NotificationButton() {
     setLoading(true);
     try {
       const page = await getNotifications(1, 20);
-      setNotifications(page.items);
-      setUnreadCount(page.items.filter((n) => !n.isRead).length);
+      // Ensure messages are strings to avoid rendering objects
+      const sanitized = page.items.map((it) => ({
+        ...it,
+        message: formatMessage((it as any).message),
+      }));
+      setNotifications(sanitized);
+      setUnreadCount(sanitized.filter((n) => !n.isRead).length);
     } catch {
       // keep previous state on error
     } finally {
@@ -113,30 +136,31 @@ export default function NotificationButton() {
               return [item, ...prev];
             });
             setUnreadCount((c) => c + 1);
-          }
+          },
         );
 
         // Broadcast notification (e.g. new live schedule → all users)
-        cleanupBroadcast = notificationHubService.onReceiveBroadcastNotification(
-          (n: BroadcastNotification) => {
-            const item = broadcastToItem(n);
-            setNotifications((prev) => {
-              if (prev.some((x) => x.id === item.id)) return prev;
-              return [item, ...prev];
-            });
-            setUnreadCount((c) => c + 1);
-          }
-        );
+        cleanupBroadcast =
+          notificationHubService.onReceiveBroadcastNotification(
+            (n: BroadcastNotification) => {
+              const item = broadcastToItem(n);
+              setNotifications((prev) => {
+                if (prev.some((x) => x.id === item.id)) return prev;
+                return [item, ...prev];
+              });
+              setUnreadCount((c) => c + 1);
+            },
+          );
 
         // Remove deleted notifications silently to stay in sync
-        cleanupRemove = notificationHubService.onRemoveNotification(
-          () => {
-            getNotifications(1, 20).then((page) => {
+        cleanupRemove = notificationHubService.onRemoveNotification(() => {
+          getNotifications(1, 20)
+            .then((page) => {
               setNotifications(page.items);
               setUnreadCount(page.items.filter((n) => !n.isRead).length);
-            }).catch(() => {});
-          }
-        );
+            })
+            .catch(() => {});
+        });
       })
       .catch((err) => {
         console.warn("[NotificationButton] SignalR connect failed:", err);
@@ -175,7 +199,7 @@ export default function NotificationButton() {
   // ── mark single as read ──────────────────────────────────────
   const handleMarkRead = async (id: string) => {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
     );
     setUnreadCount((c) => Math.max(0, c - 1));
     try {
@@ -265,7 +289,9 @@ export default function NotificationButton() {
                   {!notif.isRead && <div className="notif-dot" />}
                   <div className="notif-content">
                     <p className="notif-text">{notif.message}</p>
-                    <span className="notif-time">{timeAgo(notif.createdAt)}</span>
+                    <span className="notif-time">
+                      {timeAgo(notif.createdAt)}
+                    </span>
                   </div>
                 </div>
               ))

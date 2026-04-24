@@ -129,6 +129,7 @@ export interface PodcastItem {
   status: string;
   createdBy: string;
   createdAt: string;
+  price?: number;
   episodeCount?: number;
   allEpisodes?: PodcastEpisode[];
 }
