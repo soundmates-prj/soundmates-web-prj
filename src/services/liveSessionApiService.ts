@@ -4,6 +4,14 @@ import api from "./axios";
    Types — mirroring live-session-service models
    ============================================ */
 
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+}
+
 export interface MountResult {
   externalMountId: number;
   mountName: string;
@@ -33,6 +41,30 @@ export interface StationResult {
 export interface DailyListenerPointResult {
   date: string;
   listenerCount: number;
+}
+
+export interface DailySessionMetric {
+  date: string;
+  count: number;
+}
+
+export interface DailyListenerMetric {
+  date: string;
+  listenerCount: number;
+}
+
+export interface DailyInteractionMetric {
+  date: string;
+  count: number;
+}
+
+export interface AdminAnalyticsOverviewResult {
+  totalSessions: number;
+  totalViews: number;
+  totalInteractions: number;
+  sessionGrowthChart: DailySessionMetric[];
+  listenerGrowthChart: DailyListenerMetric[];
+  interactionGrowthChart: DailyInteractionMetric[];
 }
 
 export interface StaffDashboardOverviewResult {
@@ -103,6 +135,34 @@ export interface HostAnalyticsOverviewResult {
   chartData: DailyHostAnalyticsResult[];
   topRequestedSongs: TopSongRequestResult[];
   endedSessionsAnalysis: EndedSessionAnalysisResult[];
+}
+
+export interface DailyContentGrowthResult {
+  date: string;
+  newMusicCount: number;
+}
+
+export interface DailyModerationResult {
+  date: string;
+  pendingCount: number;
+  resolvedCount: number;
+}
+
+export interface PendingRequestResult {
+  requestId: string;
+  title: string;
+  type: string;
+  requestedBy: string;
+  requestedAt: string;
+}
+
+export interface StaffAnalyticsOverview {
+  totalSystemMusic: number;
+  totalStorageBytes: number;
+  totalStations: number;
+  pendingSongRequests: number;
+  contentGrowthChart: { date: string; dateFormatted: string; count: number }[];
+  moderationChart: { date: string; dateFormatted: string; pendingCount: number; resolvedCount: number }[];
 }
 
 export interface SyncStationsResult {
@@ -668,6 +728,32 @@ class LiveSessionApiService {
 
   /* ── Live Sessions ── */
 
+  async getStaffAnalyticsOverview(days: number = 7): Promise<ApiResponse<StaffAnalyticsOverview>> {
+    const res = await api.get<ApiResponse<StaffAnalyticsOverview>>('/livesession/analytics/staff', {
+      params: { days }
+    });
+    return res.data;
+  }
+
+  // GET /api/v1/livesession/dashboard/overview
+  async getStaffDashboardOverview(days: number = 7): Promise<StaffDashboardOverviewResult> {
+    const res = await api.get<ApiResponse<StaffDashboardOverviewResult>>('/livesession/dashboard/overview', {
+      params: { days }
+    });
+    return res.data.data as StaffDashboardOverviewResult;
+  }
+
+  // GET /api/v1/livesession/analytics/staff
+
+  // GET /api/v1/livesession/song-requests/all
+  async getAllSongRequests(status?: string, page: number = 1, pageSize: number = 10): Promise<ApiResponse<PageResponse<SongRequestResult>>> {
+    const res = await api.get<ApiResponse<PageResponse<SongRequestResult>>>('/livesession/song-requests/all', {
+      params: { status, page, pageSize }
+    });
+    return res.data;
+  }
+
+
   async getLiveSessions(params?: {
     userId?: string;
     status?: string;
@@ -788,6 +874,11 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
+  async getAllSessionSchedules(): Promise<SessionScheduleResult[]> {
+    const res = await api.get<ApiResponse<SessionScheduleResult[]>>("/schedule");
+    return res.data.data;
+  }
+
   async getSchedules(liveSessionId?: string): Promise<SessionScheduleResult[]> {
     // GET /api/v1/schedule — Get all session schedules
     const res = await api.get<ApiResponse<SessionScheduleResult[]>>(
@@ -831,16 +922,10 @@ class LiveSessionApiService {
     await api.delete(`/schedule/${scheduleId}`);
   }
 
-  async getStaffDashboardOverview(
-    days = 7,
-  ): Promise<StaffDashboardOverviewResult> {
-    const res = await api.get<ApiResponse<StaffDashboardOverviewResult>>(
-      `/livesession/dashboard/overview`,
-      {
-        params: { days },
-      },
-    );
-    return res.data.data;
+  // GET /api/v1/livesession/admin/overview
+  async getAdminAnalyticsOverview(days: number = 7): Promise<AdminAnalyticsOverviewResult | null> {
+    const res = await api.get<ApiResponse<AdminAnalyticsOverviewResult>>(`/livesession/admin/overview?days=${days}`);
+    return res.data.data as any;
   }
 
   async getHostDashboardOverview(

@@ -126,10 +126,10 @@ class UserService {
     }
   }
 
-  // GET /users/{id}/profile/full
+  // GET /users/{id}/public-profile
   async getPublicProfile(id: string): Promise<ApiResponse<UserDto>> {
     try {
-      const res = await api.get<ApiResponse<UserDto>>(`/users/${id}/profile/full`);
+      const res = await api.get<ApiResponse<UserDto>>(`/users/${id}/public-profile`);
       return res.data;
     } catch (err: any) {
       console.error('[UserService] getPublicProfile error:', err);
