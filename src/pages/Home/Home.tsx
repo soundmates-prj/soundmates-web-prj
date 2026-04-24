@@ -8,11 +8,16 @@ import HeroSection from "../../components/home/HeroSection";
 import useDragScroll from "../../hooks/useDragScroll";
 import api from "../../services/axios";
 import liveSessionApiService from "../../services/liveSessionApiService";
-import type { SessionScheduleResult, LiveSessionResult } from "../../services/liveSessionApiService";
+import type {
+  SessionScheduleResult,
+  LiveSessionResult,
+} from "../../services/liveSessionApiService";
 import { Radio, Users, Clock, Disc3, Headphones } from "lucide-react";
 import { getLiveListenersCount } from "../../utils/listenerUtils";
 import "../Livestream/LiveSessionsPage.css";
-import userPlaylistService, { type UserPlaylist } from "../../services/userPlaylistService";
+import userPlaylistService, {
+  type UserPlaylist,
+} from "../../services/userPlaylistService";
 import podcastService from "../../services/podcastService";
 import type { PodcastItem } from "../../types/podcast";
 import { resolveAuthor } from "../../types/podcast";
@@ -31,25 +36,73 @@ import playlistCover4 from "../../assets/images/playlist_cover_4.png";
 import playlistCover5 from "../../assets/images/playlist_cover_5.png";
 
 const PLAYLISTS = [
-  { id: 1, title: "Aethereal Flow", subtitle: "Celestial Waves", image: playlistCover1 },
-  { id: 2, title: "Skyward Serenade", subtitle: "Celeste", image: playlistCover2 },
-  { id: 3, title: "Purr-fect Beats", subtitle: "Luna Paws", image: playlistCover3 },
-  { id: 4, title: "Radio Waves", subtitle: "The Vintage Sound", image: playlistCover4 },
-  { id: 5, title: "Rainy Day Coffee", subtitle: "Warmth & Wood", image: playlistCover5 },
-  { id: 6, title: "Lofi Chill", subtitle: "Relaxing Vibes", image: playlistCover2 },
-  { id: 7, title: "Jazz Night", subtitle: "Smooth Sessions", image: playlistCover1 },
+  {
+    id: 1,
+    title: "Aethereal Flow",
+    subtitle: "Celestial Waves",
+    image: playlistCover1,
+  },
+  {
+    id: 2,
+    title: "Skyward Serenade",
+    subtitle: "Celeste",
+    image: playlistCover2,
+  },
+  {
+    id: 3,
+    title: "Purr-fect Beats",
+    subtitle: "Luna Paws",
+    image: playlistCover3,
+  },
+  {
+    id: 4,
+    title: "Radio Waves",
+    subtitle: "The Vintage Sound",
+    image: playlistCover4,
+  },
+  {
+    id: 5,
+    title: "Rainy Day Coffee",
+    subtitle: "Warmth & Wood",
+    image: playlistCover5,
+  },
+  {
+    id: 6,
+    title: "Lofi Chill",
+    subtitle: "Relaxing Vibes",
+    image: playlistCover2,
+  },
+  {
+    id: 7,
+    title: "Jazz Night",
+    subtitle: "Smooth Sessions",
+    image: playlistCover1,
+  },
 ];
 
 const PODCASTS = [
   { id: 1, title: "Podcast 1", subtitle: "mật thư", image: playlistCover1 },
-  { id: 2, title: "Podcast 2", subtitle: "câu chuyện chúng ta", image: playlistCover2 },
+  {
+    id: 2,
+    title: "Podcast 2",
+    subtitle: "câu chuyện chúng ta",
+    image: playlistCover2,
+  },
   { id: 3, title: "Podcast 3", subtitle: "tâm trạng", image: playlistCover3 },
   { id: 4, title: "Podcast 4", subtitle: "tự sự", image: playlistCover4 },
   { id: 5, title: "Podcast 5", subtitle: "yêu lành", image: playlistCover5 },
   { id: 6, title: "Podcast 6", subtitle: "kể chuyện", image: playlistCover1 },
 ];
 
-const PLAYLIST_TABS = ["Mới", "Thịnh Hành", "EDM", "Acoustic", "Nhạc", "Bolê", "Phim"];
+const PLAYLIST_TABS = [
+  "Mới",
+  "Thịnh Hành",
+  "EDM",
+  "Acoustic",
+  "Nhạc",
+  "Bolê",
+  "Phim",
+];
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -127,7 +180,9 @@ const mapScheduleToHomeItem = (s: SessionScheduleResult): HomeScheduleItem => {
   };
 };
 
-const pickTopScheduleItems = (items: SessionScheduleResult[]): HomeScheduleItem[] => {
+const pickTopScheduleItems = (
+  items: SessionScheduleResult[],
+): HomeScheduleItem[] => {
   const sorted = [...items].sort((a, b) => {
     const aKey = `${a.startDate}${a.startTime}`;
     const bKey = `${b.startDate}${b.startTime}`;
@@ -168,9 +223,11 @@ const mapPostToHomeItem = (
   authorNamesByUserId: Record<string, string>,
 ): HomeForumItem => ({
   id: p.id,
-  author: authorNamesByUserId[p.userId] || p.userFullName || "Thành viên SoundMates",
+  author:
+    authorNamesByUserId[p.userId] || p.userFullName || "Thành viên SoundMates",
   badge: p.moodTag ? p.moodTag : p.isGenerated ? "AI" : "Community",
-  avatar: p.userAvatarUrl || `https://i.pravatar.cc/100?img=${(index % 10) + 1}`,
+  avatar:
+    p.userAvatarUrl || `https://i.pravatar.cc/100?img=${(index % 10) + 1}`,
   title: p.title || p.contentText || "Bài viết mới từ cộng đồng",
   likes: p.reactionCount ?? 0,
   comments: 0,
@@ -188,7 +245,8 @@ const mapTrendingToHomeItem = (
     p.userFullName?.trim() ||
     "Thành viên SoundMates",
   badge: p.moodTag ? p.moodTag : p.isGenerated ? "AI" : "Community",
-  avatar: p.userAvatarUrl || `https://i.pravatar.cc/100?img=${(index % 10) + 1}`,
+  avatar:
+    p.userAvatarUrl || `https://i.pravatar.cc/100?img=${(index % 10) + 1}`,
   title: p.title || p.contentText || "Bài viết từ cộng đồng",
   likes: p.reactionCount ?? 0,
   comments: p.commentCount ?? 0,
@@ -225,12 +283,19 @@ const pickTopForumFromTrending = (
 
 const sectionReveal: Variants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  },
 };
 
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
 };
 
 const cardReveal: Variants = {
@@ -239,7 +304,12 @@ const cardReveal: Variants = {
     y: 0,
     opacity: 1,
     scale: 1,
-    transition: { type: "spring", stiffness: 140, damping: 22, delay: i * 0.08 },
+    transition: {
+      type: "spring",
+      stiffness: 140,
+      damping: 22,
+      delay: i * 0.08,
+    },
   }),
 };
 
@@ -264,8 +334,10 @@ export default function Home() {
   // Track previous path để detect khi nào quay về Home
   const prevPathRef = useRef<string>("/");
 
-  const { containerRef: playlistRef, handlers: playlistHandlers } = useDragScroll();
-  const { containerRef: podcastRef, handlers: podcastHandlers } = useDragScroll();
+  const { containerRef: playlistRef, handlers: playlistHandlers } =
+    useDragScroll();
+  const { containerRef: podcastRef, handlers: podcastHandlers } =
+    useDragScroll();
 
   // ── Fetch Functions ──────────────────────────────────────────────────────
 
@@ -388,7 +460,13 @@ export default function Home() {
     fetchForum();
     fetchUserPlaylists();
     fetchPodcasts();
-  }, [fetchActiveSessions, fetchSchedule, fetchForum, fetchUserPlaylists, fetchPodcasts]);
+  }, [
+    fetchActiveSessions,
+    fetchSchedule,
+    fetchForum,
+    fetchUserPlaylists,
+    fetchPodcasts,
+  ]);
 
   // ── Re-fetch khi quay về Home từ trang khác ────────────────────────────
   // Dùng useRef track prevPath để detect navigation
@@ -406,11 +484,24 @@ export default function Home() {
     }
 
     prevPathRef.current = current;
-  }, [location.pathname, fetchActiveSessions, fetchSchedule, fetchForum, fetchUserPlaylists, fetchPodcasts]);
+  }, [
+    location.pathname,
+    fetchActiveSessions,
+    fetchSchedule,
+    fetchForum,
+    fetchUserPlaylists,
+    fetchPodcasts,
+  ]);
 
-  const scrollSection = (ref: React.RefObject<HTMLDivElement | null>, direction: "prev" | "next") => {
+  const scrollSection = (
+    ref: React.RefObject<HTMLDivElement | null>,
+    direction: "prev" | "next",
+  ) => {
     if (ref.current) {
-      ref.current.scrollBy({ left: direction === "next" ? 400 : -400, behavior: "smooth" });
+      ref.current.scrollBy({
+        left: direction === "next" ? 400 : -400,
+        behavior: "smooth",
+      });
     }
   };
 
@@ -428,17 +519,26 @@ export default function Home() {
         viewport={{ once: true, amount: 0.15 }}
       >
         <div className="sm-container">
-          <div className="section-header" style={{ alignItems: 'flex-end' }}>
+          <div className="section-header" style={{ alignItems: "flex-end" }}>
             <div>
               <h2 className="section-title">Thư viện playlist</h2>
-              <p style={{ fontSize: '0.95rem', color: 'var(--sm-text-muted)', marginTop: '4px' }}>
+              <p
+                style={{
+                  fontSize: "0.95rem",
+                  color: "var(--sm-text-muted)",
+                  marginTop: "4px",
+                }}
+              >
                 Các playlist do người dùng tạo và chia sẻ
               </p>
             </div>
           </div>
 
           <div className="playlist-carousel">
-            <button className="carousel-nav prev" onClick={() => scrollSection(playlistRef, "prev")}>
+            <button
+              className="carousel-nav prev"
+              onClick={() => scrollSection(playlistRef, "prev")}
+            >
               <Icon name="chevron-left" size={24} />
             </button>
 
@@ -447,63 +547,76 @@ export default function Home() {
               ref={playlistRef}
               {...playlistHandlers}
             >
-              {isPlaylistLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
+              {isPlaylistLoading
+                ? Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="playlist-card skeleton" />
                 ))
-              ) : userPlaylists.length > 0 ? (
-                userPlaylists.map((playlist, i) => (
-                  <motion.div
-                    key={playlist.id}
-                    className="playlist-card"
-                    custom={i}
-                    variants={cardReveal}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    whileHover={{ y: -8, transition: { duration: 0.25 } }}
-                    onClickCapture={playlistHandlers.onClickCapture}
-                    style={{ cursor: 'default' }}
-                  >
-                    <img
-                      src={playlist.thumbnailUrl || playlistCover1}
-                      alt={playlist.playlistName}
-                      className="playlist-card-image"
-                      draggable={false}
-                    />
-                    <div className="playlist-card-content">
-                      <h4 className="playlist-card-title">{playlist.playlistName}</h4>
-                      <p className="playlist-card-subtitle">
-                        {playlist.description || `${playlist.totalTracks || 0} tracks`}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))
-              ) : (
-                PLAYLISTS.map((playlist, i) => (
-                  <motion.div
-                    key={playlist.id}
-                    className="playlist-card"
-                    custom={i}
-                    variants={cardReveal}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    whileHover={{ y: -8, transition: { duration: 0.25 } }}
-                    onClickCapture={playlistHandlers.onClickCapture}
-                    style={{ cursor: 'default' }}
-                  >
-                    <img src={playlist.image} alt={playlist.title} className="playlist-card-image" draggable={false} />
-                    <div className="playlist-card-content">
-                      <h4 className="playlist-card-title">{playlist.title}</h4>
-                      <p className="playlist-card-subtitle">{playlist.subtitle}</p>
-                    </div>
-                  </motion.div>
-                ))
-              )}
+                : userPlaylists.length > 0
+                  ? userPlaylists.map((playlist, i) => (
+                    <motion.div
+                      key={playlist.id}
+                      className="playlist-card"
+                      custom={i}
+                      variants={cardReveal}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true }}
+                      whileHover={{ y: -8, transition: { duration: 0.25 } }}
+                      onClickCapture={playlistHandlers.onClickCapture}
+                      style={{ cursor: "default" }}
+                    >
+                      <img
+                        src={playlist.thumbnailUrl || playlistCover1}
+                        alt={playlist.playlistName}
+                        className="playlist-card-image"
+                        draggable={false}
+                      />
+                      <div className="playlist-card-content">
+                        <h4 className="playlist-card-title">
+                          {playlist.playlistName}
+                        </h4>
+                        <p className="playlist-card-subtitle">
+                          {playlist.description ||
+                            `${playlist.totalTracks || 0} tracks`}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))
+                  : PLAYLISTS.map((playlist, i) => (
+                    <motion.div
+                      key={playlist.id}
+                      className="playlist-card"
+                      custom={i}
+                      variants={cardReveal}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true }}
+                      whileHover={{ y: -8, transition: { duration: 0.25 } }}
+                      onClickCapture={playlistHandlers.onClickCapture}
+                      style={{ cursor: "default" }}
+                    >
+                      <img
+                        src={playlist.image}
+                        alt={playlist.title}
+                        className="playlist-card-image"
+                        draggable={false}
+                      />
+                      <div className="playlist-card-content">
+                        <h4 className="playlist-card-title">
+                          {playlist.title}
+                        </h4>
+                        <p className="playlist-card-subtitle">
+                          {playlist.subtitle}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
             </motion.div>
 
-            <button className="carousel-nav next" onClick={() => scrollSection(playlistRef, "next")}>
+            <button
+              className="carousel-nav next"
+              onClick={() => scrollSection(playlistRef, "next")}
+            >
               <Icon name="chevron-right" size={24} />
             </button>
           </div>
@@ -528,28 +641,50 @@ export default function Home() {
             </div>
 
             {isActiveSessionsLoading ? (
-              <div className="live-room-card skeleton" style={{ height: 160 }} />
+              <div
+                className="live-room-card skeleton"
+                style={{ height: 160 }}
+              />
             ) : activeSessions.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                }}
+              >
                 {activeSessions.map((session) => (
                   <div className="live-room-card" key={session.id}>
                     <div className="live-room-badge">LIVE</div>
                     <div className="live-room-content">
                       <div className="live-room-info">
-                        <h3 className="live-room-title">{session.sessionName}</h3>
+                        <h3 className="live-room-title">
+                          {session.sessionName}
+                        </h3>
                         <div className="live-room-meta">
                           <span>
-                            <Icon name="users" size={16} /> {getLiveListenersCount(session, session.nowPlaying)} Người nghe
+                            <Icon name="users" size={16} />{" "}
+                            {getLiveListenersCount(session, session.nowPlaying)}{" "}
+                            Người nghe
                           </span>
                           <span>
-                            <Icon name="user" size={16} /> {session.stationName || "SoundMates Station"}
+                            <Icon name="user" size={16} />{" "}
+                            {session.stationName || "SoundMates Station"}
                           </span>
                         </div>
-                        <Link to={`/live/${session.id}`} className="live-room-link">
+                        <Link
+                          to={`/live/${session.id}`}
+                          className="live-room-link"
+                        >
                           Tham gia ngay <Icon name="chevron-right" size={14} />
                         </Link>
                       </div>
-                      <Link to={`/live/${session.id}`} className="live-room-cta">Tham Gia</Link>
+                      <Link
+                        to={`/live/${session.id}`}
+                        className="live-room-cta"
+                      >
+                        Tham Gia
+                      </Link>
                     </div>
                   </div>
                 ))}
@@ -575,9 +710,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <motion.div
-            className="schedule-list"
-          >
+          <motion.div className="schedule-list">
             {isScheduleLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="schedule-item skeleton" />
@@ -600,17 +733,27 @@ export default function Home() {
                   whileHover={{ x: 6, transition: { duration: 0.2 } }}
                 >
                   <div className="schedule-item-time">
-                    <span className="schedule-item-time-value">{item.time}</span>
-                    <span className="schedule-item-time-period">{item.period}</span>
+                    <span className="schedule-item-time-value">
+                      {item.time}
+                    </span>
+                    <span className="schedule-item-time-period">
+                      {item.period}
+                    </span>
                   </div>
                   <div className="music-wave">
-                    <span></span><span></span><span></span><span></span><span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
                   </div>
                   <div className="schedule-item-content">
                     <h4 className="schedule-item-title">{item.title}</h4>
                     <p className="schedule-item-subtitle">{item.host}</p>
                   </div>
-                  <button className={`schedule-item-action ${item.isLive ? "live" : "upcoming"}`}>
+                  <button
+                    className={`schedule-item-action ${item.isLive ? "live" : "upcoming"}`}
+                  >
                     {item.isLive ? "Đang Phát" : "Thông báo"}
                   </button>
                 </motion.div>
@@ -636,9 +779,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <motion.div
-            className="forum-list"
-          >
+          <motion.div className="forum-list">
             {isForumLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="forum-item skeleton" />
@@ -660,7 +801,11 @@ export default function Home() {
                   viewport={{ once: true }}
                   whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
                 >
-                  <img src={post.avatar} alt={post.author} className="forum-item-avatar" />
+                  <img
+                    src={post.avatar}
+                    alt={post.author}
+                    className="forum-item-avatar"
+                  />
                   <div className="forum-item-content">
                     <div className="forum-item-header">
                       <span className="forum-item-author">{post.author}</span>
@@ -668,9 +813,16 @@ export default function Home() {
                     </div>
                     <p className="forum-item-title">{post.title}</p>
                     <div className="forum-item-meta">
-                      <span><Icon name="heart" size={14} /> {post.likes} Lượt thích</span>
-                      <span><Icon name="message" size={14} /> {post.comments} Bình luận</span>
-                      <span><Icon name="clock" size={14} /> {post.time}</span>
+                      <span>
+                        <Icon name="heart" size={14} /> {post.likes} Lượt thích
+                      </span>
+                      <span>
+                        <Icon name="message" size={14} /> {post.comments} Bình
+                        luận
+                      </span>
+                      <span>
+                        <Icon name="clock" size={14} /> {post.time}
+                      </span>
                     </div>
                   </div>
                   <Link to="/forum" className="forum-item-action">
@@ -700,7 +852,10 @@ export default function Home() {
           </div>
 
           <div className="playlist-carousel">
-            <button className="carousel-nav prev" onClick={() => scrollSection(podcastRef, "prev")}>
+            <button
+              className="carousel-nav prev"
+              onClick={() => scrollSection(podcastRef, "prev")}
+            >
               <Icon name="chevron-left" size={24} />
             </button>
 
@@ -709,77 +864,91 @@ export default function Home() {
               ref={podcastRef}
               {...podcastHandlers}
             >
-              {isPodcastLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
+              {isPodcastLoading
+                ? Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="home-podcast-card skeleton" />
                 ))
-              ) : podcasts.length > 0 ? (
-                podcasts.slice(0, 8).map((podcast, i) => (
-                  <motion.div
-                    key={podcast.id}
-                    className="home-podcast-card"
-                    custom={i}
-                    variants={cardReveal}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    whileHover={{ y: -8, transition: { duration: 0.25 } }}
-                    onClickCapture={podcastHandlers.onClickCapture}
-                    onClick={() => navigate(`/podcast/${podcast.id}`)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className="home-podcast-card-image-wrapper">
-                      <img
-                        src={podcast.banner || playlistCover1}
-                        alt={podcast.title}
-                        className="home-podcast-card-image"
-                        draggable={false}
-                      />
-                      <div className="home-podcast-card-overlay">
-                        <button className="home-podcast-play-btn">
-                          <Icon name="play" size={20} />
-                        </button>
+                : podcasts.length > 0
+                  ? podcasts.slice(0, 8).map((podcast, i) => (
+                    <motion.div
+                      key={podcast.id}
+                      className="home-podcast-card"
+                      custom={i}
+                      variants={cardReveal}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true }}
+                      whileHover={{ y: -8, transition: { duration: 0.25 } }}
+                      onClickCapture={podcastHandlers.onClickCapture}
+                      onClick={() => navigate(`/podcast/${podcast.id}`)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className="home-podcast-card-image-wrapper">
+                        <img
+                          src={podcast.banner || playlistCover1}
+                          alt={podcast.title}
+                          className="home-podcast-card-image"
+                          draggable={false}
+                        />
+                        <div className="home-podcast-card-overlay">
+                          <button className="home-podcast-play-btn">
+                            <Icon name="play" size={20} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="home-podcast-card-content">
-                      <h4 className="home-podcast-card-title">{podcast.title}</h4>
-                      <p className="home-podcast-card-subtitle">{resolveAuthor(podcast.author) || "SoundMates"}</p>
-                    </div>
-                  </motion.div>
-                ))
-              ) : (
-                PODCASTS.map((podcast, i) => (
-                  <motion.div
-                    key={podcast.id}
-                    className="home-podcast-card"
-                    custom={i}
-                    variants={cardReveal}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    whileHover={{ y: -8, transition: { duration: 0.25 } }}
-                    onClickCapture={podcastHandlers.onClickCapture}
-                    onClick={() => navigate("/podcast")}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className="home-podcast-card-image-wrapper">
-                      <img src={podcast.image} alt={podcast.title} className="home-podcast-card-image" draggable={false} />
-                      <div className="home-podcast-card-overlay">
-                        <button className="home-podcast-play-btn">
-                          <Icon name="play" size={20} />
-                        </button>
+                      <div className="home-podcast-card-content">
+                        <h4 className="home-podcast-card-title">
+                          {podcast.title}
+                        </h4>
+                        <p className="home-podcast-card-subtitle">
+                          {resolveAuthor(podcast.author) || "SoundMates"}
+                        </p>
                       </div>
-                    </div>
-                    <div className="home-podcast-card-content">
-                      <h4 className="home-podcast-card-title">{podcast.title}</h4>
-                      <p className="home-podcast-card-subtitle">{podcast.subtitle}</p>
-                    </div>
-                  </motion.div>
-                ))
-              )}
+                    </motion.div>
+                  ))
+                  : PODCASTS.map((podcast, i) => (
+                    <motion.div
+                      key={podcast.id}
+                      className="home-podcast-card"
+                      custom={i}
+                      variants={cardReveal}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true }}
+                      whileHover={{ y: -8, transition: { duration: 0.25 } }}
+                      onClickCapture={podcastHandlers.onClickCapture}
+                      onClick={() => navigate("/podcast")}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className="home-podcast-card-image-wrapper">
+                        <img
+                          src={podcast.image}
+                          alt={podcast.title}
+                          className="home-podcast-card-image"
+                          draggable={false}
+                        />
+                        <div className="home-podcast-card-overlay">
+                          <button className="home-podcast-play-btn">
+                            <Icon name="play" size={20} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="home-podcast-card-content">
+                        <h4 className="home-podcast-card-title">
+                          {podcast.title}
+                        </h4>
+                        <p className="home-podcast-card-subtitle">
+                          {podcast.subtitle}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
             </motion.div>
 
-            <button className="carousel-nav next" onClick={() => scrollSection(podcastRef, "next")}>
+            <button
+              className="carousel-nav next"
+              onClick={() => scrollSection(podcastRef, "next")}
+            >
               <Icon name="chevron-right" size={24} />
             </button>
           </div>
@@ -804,12 +973,19 @@ export default function Home() {
           >
             <div className="subscription-content">
               <span className="subscription-tag">Premium</span>
-              <h2 className="subscription-title">Trở thành Hội Viên SoundMates</h2>
+              <h2 className="subscription-title">
+                Trở thành Hội Viên SoundMates
+              </h2>
               <p className="subscription-description">
-                Chỉ với <span className="price">159.000đ / tháng</span>, bạn mở khóa toàn bộ đặc quyền
-                dành riêng cho những người yêu âm nhạc và muốn trải nghiệm trọn vẹn nhất.
+                Chỉ với <span className="price">159.000đ / tháng</span>, bạn mở
+                khóa toàn bộ đặc quyền dành riêng cho những người yêu âm nhạc và
+                muốn trải nghiệm trọn vẹn nhất.
               </p>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ display: "inline-block" }}>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{ display: "inline-block" }}
+              >
                 <Link to="/subscription" className="subscription-cta">
                   Khám Phá Các Gói <Icon name="arrow-right" size={18} />
                 </Link>
@@ -835,9 +1011,10 @@ export default function Home() {
                 Giới thiệu về <span className="gradient-text">SoundMates</span>
               </h2>
               <p className="about-description">
-                SoundMates là nơi những tâm hồn yêu nhạc hội tụ. Chúng tôi mang đến trải nghiệm nghe nhạc
-                không chỉ giới hạn ở âm thanh, mà còn là sự kết nối, sẻ chia cảm xúc qua từng podcast và
-                playlist. Hãy để SoundMates đồng hành cùng bạn lan tỏa yêu thương mỗi ngày!
+                SoundMates là nơi những tâm hồn yêu nhạc hội tụ. Chúng tôi mang
+                đến trải nghiệm nghe nhạc không chỉ giới hạn ở âm thanh, mà còn
+                là sự kết nối, sẻ chia cảm xúc qua từng podcast và playlist. Hãy
+                để SoundMates đồng hành cùng bạn lan tỏa yêu thương mỗi ngày!
               </p>
             </div>
           </div>

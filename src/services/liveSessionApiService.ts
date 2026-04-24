@@ -1,4 +1,5 @@
 import api from "./axios";
+import type { CreatePodcastRequestPayload } from "./podcastService";
 
 /* ============================================
    Types — mirroring live-session-service models
@@ -173,6 +174,7 @@ export interface SyncStationsResult {
 }
 
 export interface PlaylistResult {
+  songPlaybackOrder: "Shuffled" | "Random" | "Sequential";
   id: string;
   stationId: string;
   playlistName: string;
@@ -414,26 +416,30 @@ export interface EpisodeResult {
   duration: number;
 }
 
+export interface PodcastRequestAuthorInfo {
+  name: string | null;
+  avatar: string | null;
+  email: string | null;
+  plan: string | null;
+  userId: string | null;
+}
 export interface PodcastRequestResult {
   id: string;
-  liveSessionId: string;
   requestedByUserId: string;
+  authorInfo: PodcastRequestAuthorInfo | null;
   title: string;
+  type: string | null;
   description: string | null;
-  scriptText: string;
-  audioUrl: string;
-  durationSeconds: number;
-  voiceCode: string;
-  voiceDisplayName: string | null;
-  azuraCastMediaId: string | null;
+  bannerUrl: string | null;
+  price: number;
+  isPaid: boolean;
   status: string;
   reviewedByUserId: string | null;
   reviewedAt: string | null;
   rejectReason: string | null;
   requestedAt: string;
-  sessionName: string | null;
-  requestedByUsername?: string;
-  reviewedByUsername?: string;
+  requestedByUsername?: string | null;
+  reviewedByUsername?: string | null;
 }
 
 export interface PagedResult<T> {
@@ -522,6 +528,7 @@ class LiveSessionApiService {
     playlistName: string;
     description?: string;
     isAutoPlay?: boolean;
+    songPlaybackOrder?: string;
   }): Promise<PlaylistResult> {
     const res = await api.post<ApiResponse<PlaylistResult>>("/playlist", data);
     return res.data.data;
@@ -979,13 +986,16 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
-  async getMySongRequestLimits(): Promise<{ limit: number; usedToday: number; remaining: number }> {
-    const res = await api.get<ApiResponse<{ limit: number; usedToday: number; remaining: number }>>(
-      "/livesession/song-requests/my-limits"
-    );
+  async getMySongRequestLimits(): Promise<{
+    limit: number;
+    usedToday: number;
+    remaining: number;
+  }> {
+    const res = await api.get<
+      ApiResponse<{ limit: number; usedToday: number; remaining: number }>
+    >("/livesession/song-requests/my-limits");
     return res.data.data;
   }
-
 
   async reviewSongRequest(
     songRequestId: string,
@@ -1014,12 +1024,16 @@ class LiveSessionApiService {
   }
 
   async restartLiveSession(id: string): Promise<boolean> {
-    const res = await api.post<ApiResponse<boolean>>(`/livesession/${id}/restart`);
+    const res = await api.post<ApiResponse<boolean>>(
+      `/livesession/${id}/restart`,
+    );
     return res.data.data;
   }
 
   async reloadLiveSession(id: string): Promise<boolean> {
-    const res = await api.post<ApiResponse<boolean>>(`/livesession/${id}/reload`);
+    const res = await api.post<ApiResponse<boolean>>(
+      `/livesession/${id}/reload`,
+    );
     return res.data.data;
   }
 
@@ -1030,6 +1044,16 @@ class LiveSessionApiService {
     status?: string;
   }): Promise<PodcastResult[]> {
     const res = await api.get<ApiResponse<PodcastResult[]>>("/podcast", {
+      params,
+    });
+    return res.data.data;
+  }
+
+  /**
+   * Get podcasts created by the current authenticated user — GET /podcast/my
+   */
+  async getMyPodcasts(params?: { status?: string }): Promise<PodcastResult[]> {
+    const res = await api.get<ApiResponse<PodcastResult[]>>("/podcast/my", {
       params,
     });
     return res.data.data;
@@ -1162,16 +1186,9 @@ class LiveSessionApiService {
     return res.data.data;
   }
 
-  async createPodcastRequest(data: {
-    liveSessionId: string;
-    title: string;
-    description?: string;
-    scriptText: string;
-    audioUrl: string;
-    durationSeconds: number;
-    voiceCode: string;
-    voiceDisplayName?: string;
-  }): Promise<PodcastRequestResult> {
+  async createPodcastRequest(
+    data: CreatePodcastRequestPayload & { liveSessionId?: string },
+  ): Promise<PodcastRequestResult> {
     const res = await api.post<ApiResponse<PodcastRequestResult>>(
       "/podcast-requests",
       data,

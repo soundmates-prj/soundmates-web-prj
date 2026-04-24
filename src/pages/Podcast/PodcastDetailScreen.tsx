@@ -15,8 +15,7 @@ import {
   Bookmark,
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
-import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
-import { resolveAuthor } from "../../types/podcast";
+import { type PodcastItem, type PodcastEpisode, resolveAuthor } from "../../types/podcast";
 import { usePlayer } from "../../context/PlayerContext";
 import { useLiveSession } from "../../context/LiveSessionContext";
 import AuthPromptModal from "../../components/common/AuthPromptModal";
@@ -67,13 +66,16 @@ export default function PodcastDetailScreen() {
     volume: ctxVolume,
   } = usePlayer();
   const liveCtx = useLiveSession();
-  
+
   // We no longer need local playingId, isPaused, currentTime, etc.
   // We'll map them from PlayerContext.
-  const playingId = track?.listenUrl ? episodes.find(e => e.audioUrl === track.listenUrl)?.id : null;
+  const playingId = track?.listenUrl
+    ? episodes.find((e) => e.audioUrl === track.listenUrl)?.id
+    : null;
   const isActive = (ep: PodcastEpisode) => playingId === ep.id && !!track;
-  const isActuallyPlaying = (ep: PodcastEpisode) => isActive(ep) && ctxIsPlaying;
-  
+  const isActuallyPlaying = (ep: PodcastEpisode) =>
+    isActive(ep) && ctxIsPlaying;
+
   // We shouldn't duplicate tracking RAF, the MusicPlayer component polls the elapsed time.
   // Wait, PodcastDetailScreen needs `currentTime` to render the progress bar!
   // We can just use a generic interval or rely on PlayerContext.elapsed.
@@ -87,11 +89,11 @@ export default function PodcastDetailScreen() {
       try {
         const [p, saved] = await Promise.all([
           podcastService.getPodcastById(id),
-          podcastService.getSavedPodcasts().catch(() => [] as PodcastItem[])
+          podcastService.getSavedPodcasts().catch(() => [] as PodcastItem[]),
         ]);
         setPodcast(p);
         setEpisodes(p.allEpisodes ?? []);
-        setIsSaved(saved.some(x => x.id === id));
+        setIsSaved(saved.some((x) => x.id === id));
       } catch {
         setError("Không thể tải thông tin podcast.");
       } finally {
@@ -192,7 +194,8 @@ export default function PodcastDetailScreen() {
           if (liveCtx.activeSessionId && !liveCtx.isMuted) {
             liveCtx.toggleMute();
           }
-          ctxAudioRef.current.play()
+          ctxAudioRef.current
+            .play()
             .then(() => setIsPlaying(true))
             .catch((e) => console.error("Resume failed:", e));
         } else {
@@ -217,9 +220,9 @@ export default function PodcastDetailScreen() {
     const audio = new Audio(ep.audioUrl);
     ctxAudioRef.current = audio;
     audio.volume = ctxVolume / 100;
-    
+
     const baseDuration = resolvedDurations[ep.id] ?? ep.duration ?? 0;
-    
+
     setTrack({
       title: ep.title,
       artist: "Podcast",
@@ -344,22 +347,25 @@ export default function PodcastDetailScreen() {
                 {podcast.author && (
                   <span className="pdd-meta-item">
                     <User size={14} />
-                    {resolveAuthor(podcast.author)}
+                    {resolveAuthor(podcast.author) || "SoundMates"}
                   </span>
                 )}
                 <span className="pdd-meta-item">
                   <Headphones size={14} />
                   {episodes.length} tập
                 </span>
-                
+
                 <button
                   className={`pds-save-btn${isSaved ? " saved" : ""}`}
-                  style={{ width: '32px', height: '32px', marginLeft: '12px' }}
+                  style={{ width: "32px", height: "32px", marginLeft: "12px" }}
                   type="button"
                   title={isSaved ? "Bỏ lưu" : "Lưu podcast"}
                   onClick={onToggleSave}
                 >
-                  <Bookmark size={15} fill={isSaved ? "currentColor" : "none"} />
+                  <Bookmark
+                    size={15}
+                    fill={isSaved ? "currentColor" : "none"}
+                  />
                 </button>
               </div>
 
@@ -388,7 +394,8 @@ export default function PodcastDetailScreen() {
               const active = isActive(ep);
               const actuallyPlaying = isActuallyPlaying(ep);
               const epDuration = resolvedDurations[ep.id] ?? ep.duration ?? 0;
-              const displayDuration = (active && track?.duration) ? track.duration : epDuration;
+              const displayDuration =
+                active && track?.duration ? track.duration : epDuration;
               const progress =
                 active && displayDuration > 0
                   ? (ctxElapsed / displayDuration) * 100
@@ -495,7 +502,7 @@ export default function PodcastDetailScreen() {
           </div>
         )}
       </section>
-      <AuthPromptModal 
+      <AuthPromptModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         title="Yêu cầu đăng nhập"
