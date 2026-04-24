@@ -153,7 +153,7 @@ export default function PodcastScreen() {
       list = list.filter(
         (p) =>
           p.title?.toLowerCase().includes(q) ||
-          p.author?.toLowerCase().includes(q) ||
+          resolveAuthor(p.author).toLowerCase().includes(q) ||
           p.description?.toLowerCase().includes(q),
       );
     }
