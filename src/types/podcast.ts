@@ -120,7 +120,7 @@ export const isValidURL = (url: string): boolean => {
 // ─── Podcast Management Types (CRUD API) ───
 
 // Author có thể là string hoặc object {Name, Avatar, Email, Plan, UserId} từ BE mới
-export type PodcastAuthor = string | { Name?: string; name?: string; [key: string]: unknown } | null | undefined;
+export type PodcastAuthor = string | { Name?: string; name?: string;[key: string]: unknown } | null | undefined;
 
 /**
  * Lấy tên tác giả an toàn — xử lý cả string lẫn object từ BE mới.
@@ -149,6 +149,7 @@ export interface PodcastItem {
   createdAt: string;
   price?: number;
   isPaid?: boolean;
+  isPurchased?: boolean;
   episodeCount?: number;
   allEpisodes?: PodcastEpisode[];
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -13,10 +13,12 @@ import {
   StopCircle,
   User,
   Bookmark,
+  Lock,
+  ShoppingCart,
+  CheckCircle,
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
-import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
-import { resolveAuthor } from "../../types/podcast";
+import { type PodcastItem, type PodcastEpisode, resolveAuthor } from "../../types/podcast";
 import { usePlayer } from "../../context/PlayerContext";
 import { useLiveSession } from "../../context/LiveSessionContext";
 import AuthPromptModal from "../../components/common/AuthPromptModal";
@@ -53,10 +55,12 @@ export default function PodcastDetailScreen() {
   const [isSaved, setIsSaved] = useState(false);
   const [resolvingSave, setResolvingSave] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [resolvedDurations, setResolvedDurations] = useState<
     Record<string, number>
   >({});
-  const resolvedDurationsRef = useRef<Record<string, number>>({});
+  const resolvedDurationsRef = useRef<Record<string, number>>({}); 
 
   const {
     track,
@@ -67,13 +71,16 @@ export default function PodcastDetailScreen() {
     volume: ctxVolume,
   } = usePlayer();
   const liveCtx = useLiveSession();
-  
+
   // We no longer need local playingId, isPaused, currentTime, etc.
   // We'll map them from PlayerContext.
-  const playingId = track?.listenUrl ? episodes.find(e => e.audioUrl === track.listenUrl)?.id : null;
+  const playingId = track?.listenUrl
+    ? episodes.find((e) => e.audioUrl === track.listenUrl)?.id
+    : null;
   const isActive = (ep: PodcastEpisode) => playingId === ep.id && !!track;
-  const isActuallyPlaying = (ep: PodcastEpisode) => isActive(ep) && ctxIsPlaying;
-  
+  const isActuallyPlaying = (ep: PodcastEpisode) =>
+    isActive(ep) && ctxIsPlaying;
+
   // We shouldn't duplicate tracking RAF, the MusicPlayer component polls the elapsed time.
   // Wait, PodcastDetailScreen needs `currentTime` to render the progress bar!
   // We can just use a generic interval or rely on PlayerContext.elapsed.
@@ -87,11 +94,11 @@ export default function PodcastDetailScreen() {
       try {
         const [p, saved] = await Promise.all([
           podcastService.getPodcastById(id),
-          podcastService.getSavedPodcasts().catch(() => [] as PodcastItem[])
+          podcastService.getSavedPodcasts().catch(() => [] as PodcastItem[]),
         ]);
         setPodcast(p);
         setEpisodes(p.allEpisodes ?? []);
-        setIsSaved(saved.some(x => x.id === id));
+        setIsSaved(saved.some((x) => x.id === id));
       } catch {
         setError("Không thể tải thông tin podcast.");
       } finally {
@@ -101,6 +108,31 @@ export default function PodcastDetailScreen() {
 
     void load();
   }, [id]);
+
+  // Xác định quyền truy cập: isPaid = false, hoặc isPaid = true & isPurchased = true
+  const hasAccess = !podcast?.isPaid || !!podcast?.isPurchased;
+
+  const onPurchase = async () => {
+    if (!id || !podcast) return;
+    const isLoggedIn = !!localStorage.getItem("accessToken");
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+    setIsPurchasing(true);
+    setPurchaseError(null);
+    try {
+      const paymentUrl = await podcastService.createPaymentForPodcast(
+        id,
+        podcast.price ?? 0,
+      );
+      window.open(paymentUrl, "_blank");
+    } catch (err: any) {
+      setPurchaseError(err.message ?? "Không thể tạo link thanh toán.");
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
 
   const onToggleSave = async () => {
     if (!id || resolvingSave) return;
@@ -185,6 +217,12 @@ export default function PodcastDetailScreen() {
       return;
     }
 
+    // Kiểm tra quyền truy cập cho podcast có phí
+    if (!hasAccess) {
+      setPurchaseError("Vui lòng mua podcast này để nghe đầy đủ nội dung.");
+      return;
+    }
+
     if (playingId === ep.id) {
       // Same episode — toggle pause/resume
       if (ctxAudioRef.current) {
@@ -192,7 +230,8 @@ export default function PodcastDetailScreen() {
           if (liveCtx.activeSessionId && !liveCtx.isMuted) {
             liveCtx.toggleMute();
           }
-          ctxAudioRef.current.play()
+          ctxAudioRef.current
+            .play()
             .then(() => setIsPlaying(true))
             .catch((e) => console.error("Resume failed:", e));
         } else {
@@ -217,9 +256,9 @@ export default function PodcastDetailScreen() {
     const audio = new Audio(ep.audioUrl);
     ctxAudioRef.current = audio;
     audio.volume = ctxVolume / 100;
-    
+
     const baseDuration = resolvedDurations[ep.id] ?? ep.duration ?? 0;
-    
+
     setTrack({
       title: ep.title,
       artist: "Podcast",
@@ -344,24 +383,61 @@ export default function PodcastDetailScreen() {
                 {podcast.author && (
                   <span className="pdd-meta-item">
                     <User size={14} />
-                    {resolveAuthor(podcast.author)}
+                    {resolveAuthor(podcast.author) || "SoundMates"}
                   </span>
                 )}
                 <span className="pdd-meta-item">
                   <Headphones size={14} />
                   {episodes.length} tập
                 </span>
-                
+
                 <button
                   className={`pds-save-btn${isSaved ? " saved" : ""}`}
-                  style={{ width: '32px', height: '32px', marginLeft: '12px' }}
+                  style={{ width: "32px", height: "32px", marginLeft: "12px" }}
                   type="button"
                   title={isSaved ? "Bỏ lưu" : "Lưu podcast"}
                   onClick={onToggleSave}
                 >
-                  <Bookmark size={15} fill={isSaved ? "currentColor" : "none"} />
+                  <Bookmark
+                    size={15}
+                    fill={isSaved ? "currentColor" : "none"}
+                  />
                 </button>
               </div>
+
+              {podcast.isPaid && (
+                <div className="pdd-price-row">
+                  {hasAccess ? (
+                    <span className="pdd-owned-badge">
+                      <CheckCircle size={14} />
+                      Đã sở hữu
+                    </span>
+                  ) : (
+                    <>
+                      <span className="pdd-price-tag">
+                        <Lock size={13} />
+                        {(podcast.price ?? 0).toLocaleString("vi-VN")}₫
+                      </span>
+                      <button
+                        className="pdd-buy-btn"
+                        onClick={onPurchase}
+                        disabled={isPurchasing}
+                      >
+                        {isPurchasing ? (
+                          <Loader2 size={14} className="pdd-spin" />
+                        ) : (
+                          <ShoppingCart size={14} />
+                        )}
+                        {isPurchasing ? "Đang xử lý..." : "Mua ngay"}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {purchaseError && (
+                <p className="pdd-purchase-error">{purchaseError}</p>
+              )}
 
               {podcast.description && (
                 <p className="pdd-hero-desc">{podcast.description}</p>
@@ -388,33 +464,40 @@ export default function PodcastDetailScreen() {
               const active = isActive(ep);
               const actuallyPlaying = isActuallyPlaying(ep);
               const epDuration = resolvedDurations[ep.id] ?? ep.duration ?? 0;
-              const displayDuration = (active && track?.duration) ? track.duration : epDuration;
+              const displayDuration =
+                active && track?.duration ? track.duration : epDuration;
               const progress =
                 active && displayDuration > 0
                   ? (ctxElapsed / displayDuration) * 100
                   : 0;
+              // Tập bị khóa nếu podcast có phí và chưa mua
+              const isLocked = !hasAccess;
 
               return (
                 <div
                   key={ep.id}
-                  className={`pdd-ep${active ? " playing" : ""}`}
+                  className={`pdd-ep${active ? " playing" : ""}${isLocked ? " locked" : ""}`}
                   style={{ animationDelay: `${Math.min(i * 0.05, 0.5)}s` }}
                 >
                   <button
                     className={`pdd-ep-play${active ? " active" : ""}`}
-                    onClick={() => togglePlay(ep)}
-                    disabled={!ep.audioUrl}
+                    onClick={() => isLocked ? onPurchase() : togglePlay(ep)}
+                    disabled={!ep.audioUrl && !isLocked}
                     title={
-                      ep.audioUrl
-                        ? actuallyPlaying
-                          ? "Tạm dừng"
-                          : active
-                            ? "Tiếp tục"
-                            : "Phát"
-                        : "Chưa có audio"
+                      isLocked
+                        ? "Mua podcast để nghe"
+                        : ep.audioUrl
+                          ? actuallyPlaying
+                            ? "Tạm dừng"
+                            : active
+                              ? "Tiếp tục"
+                              : "Phát"
+                          : "Chưa có audio"
                     }
                   >
-                    {actuallyPlaying ? (
+                    {isLocked ? (
+                      <Lock size={18} />
+                    ) : actuallyPlaying ? (
                       <Pause size={18} fill="currentColor" />
                     ) : (
                       <Play size={18} fill="currentColor" />
@@ -495,7 +578,7 @@ export default function PodcastDetailScreen() {
           </div>
         )}
       </section>
-      <AuthPromptModal 
+      <AuthPromptModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         title="Yêu cầu đăng nhập"

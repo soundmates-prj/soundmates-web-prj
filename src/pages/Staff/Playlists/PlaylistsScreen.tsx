@@ -26,7 +26,7 @@ const sortPlaylists = (playlists: PlaylistResult[]) => {
     (a.playlistName ?? "").localeCompare(b.playlistName ?? "", undefined, {
       numeric: true,
       sensitivity: "base",
-    })
+    }),
   );
 };
 
@@ -54,11 +54,16 @@ export function PlaylistsScreen() {
   const [showAddTracksModal, setShowAddTracksModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [newPlaylistDesc, setNewPlaylistDesc] = useState("");
+  const [newPlaylistSongPlaybackOrder, setNewPlaylistSongPlaybackOrder] =
+    useState<"Shuffled" | "Random" | "Sequential">("Sequential");
   const [editPlaylistName, setEditPlaylistName] = useState("");
   const [editIsAutoPlay, setEditIsAutoPlay] = useState(false);
   const [editIncludeInRequests, setEditIncludeInRequests] = useState(false);
   const [editIncludeInOnDemand, setEditIncludeInOnDemand] = useState(false);
   const [editIsEnabled, setEditIsEnabled] = useState(true);
+  const [editSongPlaybackOrder, setEditSongPlaybackOrder] = useState<
+    "Shuffled" | "Random" | "Sequential"
+  >("Sequential");
 
   useEffect(() => {
     loadStations();
@@ -120,7 +125,7 @@ export function PlaylistsScreen() {
       );
       setPlaylists(sortPlaylists(data));
     } catch {
-      showError("Đồng bộ thất bại", "Không thể đồng bộ playlists");
+      showError("Đồng bộ thất bại", "Không thể đồng bộ danh sách phát");
     } finally {
       setSyncing(false);
     }
@@ -134,20 +139,22 @@ export function PlaylistsScreen() {
         playlistName: newPlaylistName.trim(),
         description: newPlaylistDesc.trim() || undefined,
         isAutoPlay: false,
+        songPlaybackOrder: newPlaylistSongPlaybackOrder,
       });
       showSuccess(
         "Tạo thành công!",
-        `Playlist "${newPlaylistName}" đã được tạo`,
+        `Danh sách phát "${newPlaylistName}" đã được tạo`,
       );
       setShowCreateModal(false);
       setNewPlaylistName("");
       setNewPlaylistDesc("");
+      setNewPlaylistSongPlaybackOrder("Sequential");
       const data = await liveSessionApiService.getStationPlaylists(
         selectedStation.id,
       );
       setPlaylists(sortPlaylists(data));
     } catch {
-      showError("Lỗi", "Không thể tạo playlist");
+      showError("Lỗi", "Không thể tạo danh sách phát");
     }
   };
 
@@ -159,6 +166,12 @@ export function PlaylistsScreen() {
     setEditIncludeInRequests(Boolean(selectedPlaylist.includeInRequests));
     setEditIncludeInOnDemand(Boolean(selectedPlaylist.includeInOnDemand));
     setEditIsEnabled(selectedPlaylist.isEnabled ?? true);
+    setEditSongPlaybackOrder(
+      (selectedPlaylist.songPlaybackOrder as
+        | "Shuffled"
+        | "Random"
+        | "Sequential") ?? "Sequential",
+    );
     setShowEditModal(true);
   };
 
@@ -168,13 +181,17 @@ export function PlaylistsScreen() {
     }
 
     try {
-      await liveSessionApiService.updatePlaylist(selectedPlaylist.id, {
-        playlistName: editPlaylistName.trim(),
-        isAutoPlay: editIsAutoPlay,
-        includeInRequests: editIncludeInRequests,
-        includeInOnDemand: editIncludeInOnDemand,
-        isEnabled: editIsEnabled,
-      });
+      await liveSessionApiService.updatePlaylist(
+        selectedPlaylist.id,
+        {
+          playlistName: editPlaylistName.trim(),
+          isAutoPlay: editIsAutoPlay,
+          includeInRequests: editIncludeInRequests,
+          includeInOnDemand: editIncludeInOnDemand,
+          isEnabled: editIsEnabled,
+          songPlaybackOrder: editSongPlaybackOrder,
+        } as any,
+      );
 
       const updatedPlaylists = await liveSessionApiService.getStationPlaylists(
         selectedStation.id,
@@ -188,10 +205,10 @@ export function PlaylistsScreen() {
       setShowEditModal(false);
       showSuccess(
         "Cập nhật thành công",
-        `Playlist "${editPlaylistName.trim()}" đã được cập nhật`,
+        `Danh sách phát "${editPlaylistName.trim()}" đã được cập nhật`,
       );
     } catch {
-      showError("Lỗi", "Không thể cập nhật playlist");
+      showError("Lỗi", "Không thể cập nhật danh sách phát");
     }
   };
 
@@ -200,7 +217,7 @@ export function PlaylistsScreen() {
 
     if (
       !window.confirm(
-        `Bạn có chắc chắn muốn xoá playlist \"${selectedPlaylist.playlistName}\"?`,
+        `Bạn có chắc chắn muốn xoá danh sách phát "${selectedPlaylist.playlistName}"?`,
       )
     ) {
       return;
@@ -216,9 +233,9 @@ export function PlaylistsScreen() {
       setSelectedPlaylist(null);
       setTracks([]);
 
-      showSuccess("Đã xoá", "Playlist đã được xoá thành công");
+      showSuccess("Đã xoá", "Danh sách phát đã được xoá thành công");
     } catch {
-      showError("Lỗi", "Không thể xoá playlist");
+      showError("Lỗi", "Không thể xoá danh sách phát");
     }
   };
 
@@ -246,7 +263,7 @@ export function PlaylistsScreen() {
       await liveSessionApiService.addTracksToPlaylist(selectedPlaylist.id, [
         musicId,
       ]);
-      showSuccess("Đã thêm", "Track đã được thêm vào playlist");
+      showSuccess("Đã thêm", "Bài đã được thêm vào danh sách phát");
       const data = await liveSessionApiService.getPlaylistTracks(
         selectedPlaylist.id,
       );
@@ -264,7 +281,7 @@ export function PlaylistsScreen() {
         [musicId],
       );
       setTracks((prev) => prev.filter((t) => t.mediaFileId !== musicId));
-      showSuccess("Đã xóa", "Track đã được xóa khỏi playlist");
+      showSuccess("Đã xóa", "Bài đã được xóa khỏi danh sách phát");
     } catch {
       showError("Lỗi", "Không thể xóa track");
     }
@@ -322,7 +339,10 @@ export function PlaylistsScreen() {
     );
 
     if (idsToAdd.length === 0) {
-      showError("Đã tồn tại", "Các bài đã được thêm vào playlist trước đó");
+      showError(
+        "Đã tồn tại",
+        "Các bài đã được thêm vào danh sách phát trước đó",
+      );
       return;
     }
 
@@ -372,7 +392,7 @@ export function PlaylistsScreen() {
         );
         showSuccess(
           "Đã thêm",
-          `Đã thêm ${readyToAddIds.length} bài vào playlist`,
+          `Đã thêm ${readyToAddIds.length} bài vào danh sách phát`,
         );
       }
 
@@ -380,7 +400,7 @@ export function PlaylistsScreen() {
       if (unresolvedCount > 0) {
         showError(
           "Một số bài chưa sẵn sàng",
-          `${unresolvedCount} bài chưa import được vào station nên chưa thêm playlist.`,
+          `${unresolvedCount} bài chưa import được vào station nên chưa thêm vào danh sách phát.`,
         );
       }
 
@@ -395,7 +415,7 @@ export function PlaylistsScreen() {
       showError(
         "Lỗi",
         err?.response?.data?.message ||
-          "Không thể thêm system media vào playlist",
+          "Không thể thêm system media vào danh sách phát",
       );
     } finally {
       setMusicActionLoading(false);
@@ -432,10 +452,10 @@ export function PlaylistsScreen() {
               backgroundClip: "text",
             }}
           >
-            Playlists
+            Danh sách phát
           </h1>
           <p className="staff-page-subtitle">
-            Quản lý playlist cho từng station
+            Quản lý danh sách phát cho từng trạm
           </p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -448,7 +468,7 @@ export function PlaylistsScreen() {
               size={16}
               className={syncing ? "staff-spin" : ""}
             />
-            {syncing ? "Syncing..." : "Sync Playlists"}
+            {syncing ? "Đang đồng bộ..." : "Đồng bộ danh sách phát"}
           </button>
           <button
             className="staff-btn staff-btn--primary"
@@ -456,7 +476,7 @@ export function PlaylistsScreen() {
             disabled={!selectedStation}
           >
             <Plus size={16} />
-            Tạo Playlist
+            Tạo danh sách phát
           </button>
         </div>
       </div>
@@ -479,11 +499,11 @@ export function PlaylistsScreen() {
         {/* Left: playlists */}
         <div className="pl-sidebar">
           <div className="pl-sidebar-header">
-            <h3>Playlists ({playlists.length})</h3>
+            <h3>Danh sách phát ({playlists.length})</h3>
           </div>
           {playlists.length === 0 ? (
             <p className="staff-empty" style={{ padding: "20px 12px" }}>
-              Chưa có playlist
+              Chưa có danh sách phát
             </p>
           ) : (
             <div className="pl-list">
@@ -497,8 +517,7 @@ export function PlaylistsScreen() {
                   <div className="pl-item-info">
                     <span className="pl-item-name">{pl.playlistName}</span>
                     <span className="pl-item-meta">
-                      {pl.totalTracks} tracks ·{" "}
-                      {formatDuration(pl.totalDuration)}
+                      {pl.totalTracks} bài · {formatDuration(pl.totalDuration)}
                     </span>
                   </div>
                   <ChevronRight size={14} className="pl-item-arrow" />
@@ -513,7 +532,7 @@ export function PlaylistsScreen() {
           {!selectedPlaylist ? (
             <div className="pl-detail-empty">
               <ListMusic size={40} style={{ color: "#c4b5fd" }} />
-              <p>Chọn một playlist để xem chi tiết</p>
+              <p>Chọn một danh sách phát để xem chi tiết</p>
             </div>
           ) : (
             <>
@@ -532,14 +551,14 @@ export function PlaylistsScreen() {
                     onClick={openEditPlaylistModal}
                   >
                     <Pencil size={15} />
-                    Sửa playlist
+                    Sửa danh sách phát
                   </button>
                   <button
                     className="staff-btn staff-btn--outline"
                     onClick={handleDeletePlaylist}
                   >
                     <Trash2 size={15} />
-                    Xoá playlist
+                    Xoá danh sách phát
                   </button>
                   <button
                     className="staff-btn staff-btn--primary"
@@ -582,7 +601,7 @@ export function PlaylistsScreen() {
                       <button
                         className="pl-track-remove"
                         onClick={() => handleRemoveTrack(t.mediaFileId)}
-                        title="Xóa khỏi playlist"
+                        title="Xóa khỏi danh sách phát"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -603,7 +622,7 @@ export function PlaylistsScreen() {
         >
           <div className="staff-modal" onClick={(e) => e.stopPropagation()}>
             <div className="staff-modal-header">
-              <h3>Tạo Playlist mới</h3>
+              <h3>Tạo danh sách phát mới</h3>
               <button
                 className="staff-modal-close"
                 onClick={() => setShowCreateModal(false)}
@@ -630,6 +649,21 @@ export function PlaylistsScreen() {
                 placeholder="Mô tả ngắn..."
                 rows={3}
               />
+
+              <label className="staff-label" style={{ marginTop: 12 }}>
+                Thứ tự phát
+              </label>
+              <select
+                className="staff-select"
+                value={newPlaylistSongPlaybackOrder}
+                onChange={(e) =>
+                  setNewPlaylistSongPlaybackOrder(e.target.value as any)
+                }
+              >
+                <option value="Shuffled">Trộn (Shuffled)</option>
+                <option value="Random">Ngẫu nhiên (Random)</option>
+                <option value="Sequential">Tuần tự (Sequential)</option>
+              </select>
             </div>
             <div className="staff-modal-footer">
               <button
@@ -658,7 +692,7 @@ export function PlaylistsScreen() {
         >
           <div className="staff-modal" onClick={(e) => e.stopPropagation()}>
             <div className="staff-modal-header">
-              <h3>Chỉnh sửa Playlist</h3>
+              <h3>Chỉnh sửa danh sách phát</h3>
               <button
                 className="staff-modal-close"
                 onClick={() => setShowEditModal(false)}
@@ -676,6 +710,21 @@ export function PlaylistsScreen() {
                 placeholder="Nhập tên playlist..."
                 autoFocus
               />
+
+              <label className="staff-label" style={{ marginTop: 12 }}>
+                Thứ tự phát
+              </label>
+              <select
+                className="staff-select"
+                value={editSongPlaybackOrder}
+                onChange={(e) =>
+                  setEditSongPlaybackOrder(e.target.value as any)
+                }
+              >
+                <option value="Shuffled">Trộn (Shuffled)</option>
+                <option value="Random">Ngẫu nhiên (Random)</option>
+                <option value="Sequential">Tuần tự (Sequential)</option>
+              </select>
 
               <div className="pl-edit-options">
                 <label className="pl-edit-option">
@@ -760,13 +809,13 @@ export function PlaylistsScreen() {
                 className={`pl-media-tab ${musicTab === "station" ? "active" : ""}`}
                 onClick={() => setMusicTab("station")}
               >
-                Station Media ({stationMusic.length})
+                Nhạc trạm ({stationMusic.length})
               </button>
               <button
                 className={`pl-media-tab ${musicTab === "system" ? "active" : ""}`}
                 onClick={() => setMusicTab("system")}
               >
-                System Media ({systemMusic.length})
+                Nhạc Hệ thống ({systemMusic.length})
               </button>
             </div>
             <div
@@ -775,13 +824,13 @@ export function PlaylistsScreen() {
             >
               {musicTab === "station" && stationMusic.length === 0 ? (
                 <p className="staff-empty">
-                  Không có nhạc nào trong station. Hãy sync hoặc upload trước.
+                  Không có nhạc nào trong trạm. Hãy đồng bộ hoặc upload trước.
                 </p>
               ) : null}
 
               {musicTab === "system" && systemMusic.length === 0 ? (
                 <p className="staff-empty">
-                  Không có system media nào. Hãy upload media hệ thống trước.
+                  Không có media hệ thống nào. Hãy upload media hệ thống trước.
                 </p>
               ) : null}
 
@@ -815,15 +864,23 @@ export function PlaylistsScreen() {
                     );
                   })
                 : systemMusic.map((m) => {
-                    const isAddedToPlaylist = tracks.some((t) => t.mediaFileId === m.id);
-                    const alreadyInStation = stationMusic.some((sm) => sm.id === m.id);
+                    const isAddedToPlaylist = tracks.some(
+                      (t) => t.mediaFileId === m.id,
+                    );
+                    const alreadyInStation = stationMusic.some(
+                      (sm) => sm.id === m.id,
+                    );
                     const checked = selectedSystemMediaIds.includes(m.id);
 
                     return (
                       <div
                         className={`pl-track-row ${alreadyInStation ? "in-station" : ""}`}
                         key={m.id}
-                        style={alreadyInStation ? { background: "rgba(0,0,0,0.02)", opacity: 0.8 } : {}}
+                        style={
+                          alreadyInStation
+                            ? { background: "rgba(0,0,0,0.02)", opacity: 0.8 }
+                            : {}
+                        }
                       >
                         <input
                           type="checkbox"
@@ -844,14 +901,18 @@ export function PlaylistsScreen() {
                         </div>
                         <span
                           className={`pl-source-badge ${
-                            isAddedToPlaylist ? "added" : alreadyInStation ? "station" : "system"
+                            isAddedToPlaylist
+                              ? "added"
+                              : alreadyInStation
+                                ? "station"
+                                : "system"
                           }`}
                         >
                           {isAddedToPlaylist
-                            ? "Trong Playlist"
+                            ? "Trong danh sách phát"
                             : alreadyInStation
-                            ? "Đã có trong Station"
-                            : "Từ System"}
+                              ? "Đã có trong trạm"
+                              : "Từ hệ thống"}
                         </span>
                       </div>
                     );
@@ -867,9 +928,7 @@ export function PlaylistsScreen() {
                       selectedSystemMediaIds.length === 0 || musicActionLoading
                     }
                   >
-                    {musicActionLoading
-                      ? "Đang xử lý..."
-                      : "Import vào Station"}
+                    {musicActionLoading ? "Đang xử lý..." : "Nhập vào trạm"}
                   </button>
                   <button
                     className="staff-btn staff-btn--primary"
@@ -880,7 +939,7 @@ export function PlaylistsScreen() {
                   >
                     {musicActionLoading
                       ? "Đang xử lý..."
-                      : "Add to Station Playlist"}
+                      : "Thêm vào danh sách phát"}
                   </button>
                 </>
               )}

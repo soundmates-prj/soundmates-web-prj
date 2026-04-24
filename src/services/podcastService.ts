@@ -13,6 +13,17 @@ interface ApiResponse<T> {
   errorCode?: number;
 }
 
+// Body cho POST /api/v1/podcast-requests
+export interface CreatePodcastRequestPayload {
+  title: string;
+  episodeTitle?: string;
+  type?: string;
+  description: string;
+  bannerUrl: string;
+  price: number;
+  isPaid: boolean;
+}
+
 class PodcastService {
   async generateFullPodcast(
     params: PodcastGenerateRequest,
@@ -63,17 +74,18 @@ class PodcastService {
       };
     } catch (error: any) {
       const status = error.response?.status;
-      const serverMsg: string = error.response?.data?.message ?? error.message ?? '';
+      const serverMsg: string =
+        error.response?.data?.message ?? error.message ?? "";
       const isGeminiDown =
         status === 503 ||
-        serverMsg.toLowerCase().includes('503') ||
-        serverMsg.toLowerCase().includes('circuit') ||
-        serverMsg.toLowerCase().includes('unavailable') ||
-        serverMsg.toLowerCase().includes('high demand');
+        serverMsg.toLowerCase().includes("503") ||
+        serverMsg.toLowerCase().includes("circuit") ||
+        serverMsg.toLowerCase().includes("unavailable") ||
+        serverMsg.toLowerCase().includes("high demand");
       if (isGeminiDown) {
         throw new Error(
-          'AI đang tải cao, không thể tạo script lúc này. ' +
-          'Vui lòng thử lại sau hoặc chọn "Tự viết Script" để không cần AI.'
+          "AI đang tải cao, không thể tạo script lúc này. " +
+            'Vui lòng thử lại sau hoặc chọn "Tự viết Script" để không cần AI.',
         );
       }
       throw new Error(
@@ -114,13 +126,14 @@ class PodcastService {
    */
   async getMyScripts(): Promise<any[]> {
     try {
-      const response = await api.get<ApiResponse<{ scripts: any[] }>>(
-        "/scripts",
-      );
+      const response =
+        await api.get<ApiResponse<{ scripts: any[] }>>("/scripts");
       return response.data.data?.scripts ?? [];
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.message || error.message || "Lỗi khi tải danh sách script",
+        error.response?.data?.message ||
+          error.message ||
+          "Lỗi khi tải danh sách script",
       );
     }
   }
@@ -146,7 +159,10 @@ class PodcastService {
   /**
    * Update a script's title and/or content
    */
-  async updateScript(scriptId: string, params: { title?: string; contentText?: string }): Promise<void> {
+  async updateScript(
+    scriptId: string,
+    params: { title?: string; contentText?: string },
+  ): Promise<void> {
     try {
       const response = await api.put<ApiResponse<any>>(
         `/scripts/${scriptId}`,
@@ -157,7 +173,9 @@ class PodcastService {
       }
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.message || error.message || "Cập nhật script thất bại",
+        error.response?.data?.message ||
+          error.message ||
+          "Cập nhật script thất bại",
       );
     }
   }
@@ -171,23 +189,26 @@ class PodcastService {
     contentText: string;
   }): Promise<{ scriptId: string; scriptText: string; title: string }> {
     try {
-      const response = await api.post<ApiResponse<{ script: any }>>('/scripts', {
-        contentText: params.contentText,
-        title: params.title || params.topic || undefined,
-        topic: params.topic || undefined,
-      });
+      const response = await api.post<ApiResponse<{ script: any }>>(
+        "/scripts",
+        {
+          contentText: params.contentText,
+          title: params.title || params.topic || undefined,
+          topic: params.topic || undefined,
+        },
+      );
       if (!response.data.success || !response.data.data?.script) {
-        throw new Error(response.data.message || 'Không thể tạo script');
+        throw new Error(response.data.message || "Không thể tạo script");
       }
       const s = response.data.data.script;
       return {
         scriptId: s.scriptId ?? s.id,
         scriptText: s.contentText ?? s.content ?? params.contentText,
-        title: s.title ?? params.title ?? '',
+        title: s.title ?? params.title ?? "",
       };
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.message || error.message || 'Lỗi khi tạo script',
+        error.response?.data?.message || error.message || "Lỗi khi tạo script",
       );
     }
   }
@@ -197,16 +218,18 @@ class PodcastService {
    */
   async getMyAudios(): Promise<any[]> {
     try {
-      const response = await api.get<ApiResponse<{ audios: any[] }>>('/me/audios');
+      const response =
+        await api.get<ApiResponse<{ audios: any[] }>>("/me/audios");
       return response.data.data?.audios ?? [];
     } catch {
       // Fallback to /audios if /me/audios not available
       try {
-        const response = await api.get<ApiResponse<{ audios: any[] }>>('/audios');
+        const response =
+          await api.get<ApiResponse<{ audios: any[] }>>("/audios");
         return response.data.data?.audios ?? [];
       } catch (error: any) {
         throw new Error(
-          error.response?.data?.message || error.message || 'Lỗi khi tải audio',
+          error.response?.data?.message || error.message || "Lỗi khi tải audio",
         );
       }
     }
@@ -219,16 +242,44 @@ class PodcastService {
     try {
       const response = await api.delete<ApiResponse<any>>(`/audios/${audioId}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || 'Xóa audio thất bại');
+        throw new Error(response.data.message || "Xóa audio thất bại");
       }
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.message || error.message || 'Xóa audio thất bại',
+        error.response?.data?.message || error.message || "Xóa audio thất bại",
       );
     }
   }
 
   // ─── Podcast Management (CRUD) ───
+
+  /**
+   * User gửi podcast request mới.
+   * POST /api/v1/podcast-requests
+   *
+   * Request sẽ ở trạng thái chờ admin/staff duyệt.
+   * Admin duyệt xong sẽ chuyển sang trạng thái xuất bản.
+   * Nếu bị từ chối, backend gửi kèm lý do về user.
+   */
+  async createPodcastRequest(
+    payload: CreatePodcastRequestPayload,
+  ): Promise<unknown> {
+    try {
+      const response = await api.post<ApiResponse<unknown>>(
+        "/podcast-requests",
+        payload,
+      );
+      if (response.data.success === false) {
+        throw new Error(response.data.message || "Không thể tạo podcast");
+      }
+      return response.data.data ?? null;
+    } catch (error: any) {
+      console.error("Error creating podcast request:", error);
+      throw new Error(
+        error.response?.data?.message || error.message || "Lỗi khi tạo podcast",
+      );
+    }
+  }
 
   /**
    * Lấy tất cả podcast đã xuất bản
@@ -243,8 +294,74 @@ class PodcastService {
       console.error("Error fetching podcasts:", error);
       throw new Error(
         error.response?.data?.message ||
-        error.message ||
-        "Không thể tải danh sách podcast",
+          error.message ||
+          "Không thể tải danh sách podcast",
+      );
+    }
+  }
+
+  /**
+   * Lấy các podcast do user tạo (My Podcasts)
+   */
+  async getMyPodcasts(status?: string): Promise<PodcastItem[]> {
+    try {
+      const url = status ? `/podcast/my?status=${status}` : "/podcast/my";
+      const response = await api.get<ApiResponse<PodcastItem[]>>(url);
+      return response.data.data ?? [];
+    } catch (error: any) {
+      console.error("Error fetching my podcasts:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tải danh sách podcast của bạn",
+      );
+    }
+  }
+
+  /**
+   * Tạo request thêm tập mới (Episode Request)
+   */
+  async createPodcastEpisodeRequest(payload: {
+    podcastId: string;
+    title: string;
+    description: string;
+    thumbnailUrl: string;
+    audioUrl: string;
+    duration: number;
+  }): Promise<unknown> {
+    try {
+      const response = await api.post<ApiResponse<unknown>>(
+        "/podcast-episode-requests",
+        payload,
+      );
+      if (response.data.success === false) {
+        throw new Error(response.data.message || "Không thể tạo yêu cầu tập mới");
+      }
+      return response.data.data ?? null;
+    } catch (error: any) {
+      console.error("Error creating episode request:", error);
+      throw new Error(
+        error.response?.data?.message || error.message || "Lỗi khi tạo yêu cầu tập mới",
+      );
+    }
+  }
+
+  /**
+   * Lấy danh sách các yêu cầu thêm tập (Episode Requests) của user
+   */
+  async getMyEpisodeRequests(status?: string): Promise<any[]> {
+    try {
+      const url = status
+        ? `/podcast-episode-requests/my?status=${status}`
+        : "/podcast-episode-requests/my";
+      const response = await api.get<ApiResponse<any[]>>(url);
+      return response.data.data ?? [];
+    } catch (error: any) {
+      console.error("Error fetching my episode requests:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tải danh sách yêu cầu tập",
       );
     }
   }
@@ -262,8 +379,8 @@ class PodcastService {
       console.error("Error fetching podcast:", error);
       throw new Error(
         error.response?.data?.message ||
-        error.message ||
-        "Không thể tải podcast",
+          error.message ||
+          "Không thể tải podcast",
       );
     }
   }
@@ -289,8 +406,8 @@ class PodcastService {
         console.error("Error fetching episodes:", error);
         throw new Error(
           error.response?.data?.message ||
-          error.message ||
-          "Không thể tải danh sách tập",
+            error.message ||
+            "Không thể tải danh sách tập",
         );
       }
     }
@@ -307,23 +424,24 @@ class PodcastService {
       console.error("Error fetching saved podcasts:", error);
       throw new Error(
         error.response?.data?.message ||
-        error.message ||
-        "Không thể tải podcast đã lưu",
+          error.message ||
+          "Không thể tải podcast đã lưu",
       );
     }
   }
 
   async getSavedPodcastsByUserId(userId: string): Promise<PodcastItem[]> {
     try {
-      const response =
-        await api.get<ApiResponse<PodcastItem[]>>(`/users/${userId}/saved-podcasts`);
+      const response = await api.get<ApiResponse<PodcastItem[]>>(
+        `/users/${userId}/saved-podcasts`,
+      );
       return response.data.data ?? [];
     } catch (error: any) {
       console.error("Error fetching user saved podcasts:", error);
       throw new Error(
         error.response?.data?.message ||
-        error.message ||
-        "Không thể tải podcast đã lưu của người dùng",
+          error.message ||
+          "Không thể tải podcast đã lưu của người dùng",
       );
     }
   }
@@ -335,8 +453,8 @@ class PodcastService {
       console.error("Error saving podcast:", error);
       throw new Error(
         error.response?.data?.message ||
-        error.message ||
-        "Không thể lưu podcast",
+          error.message ||
+          "Không thể lưu podcast",
       );
     }
   }
@@ -348,9 +466,59 @@ class PodcastService {
       console.error("Error unsaving podcast:", error);
       throw new Error(
         error.response?.data?.message ||
-        error.message ||
-        "Không thể bỏ lưu podcast",
+          error.message ||
+          "Không thể bỏ lưu podcast",
       );
+    }
+  }
+
+  // ─── Purchased Podcasts ───
+
+  /**
+   * Tạo payment link (PayOS) để mua podcast.
+   * POST /payments (account-content-service)
+   * Trả về paymentUrl để redirect.
+   */
+  async createPaymentForPodcast(
+    podcastId: string,
+    amount: number,
+    returnUrl?: string,
+  ): Promise<string> {
+    try {
+      const response = await api.post<{ paymentUrl?: string; data?: { paymentUrl?: string } }>(
+        "/payments",
+        {
+          targetId: podcastId,
+          targetType: "podcast",
+          totalAmount: amount,
+          method: "vnpay",
+          returnUrl: returnUrl ?? undefined,
+        },
+      );
+      const url =
+        (response.data as any).paymentUrl ??
+        (response.data as any).data?.paymentUrl;
+      if (!url) throw new Error("Không nhận được link thanh toán");
+      return url;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tạo link thanh toán",
+      );
+    }
+  }
+
+  /**
+   * Kiểm tra người dùng đã mua podcast chưa.
+   * isPurchased được trả về trực tiếp từ GET /podcast/:id khi có JWT.
+   */
+  async checkPurchased(podcastId: string): Promise<boolean> {
+    try {
+      const podcast = await this.getPodcastById(podcastId);
+      return !!podcast.isPurchased;
+    } catch {
+      return false;
     }
   }
 }

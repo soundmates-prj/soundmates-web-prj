@@ -11,6 +11,8 @@ interface ResultState {
   provider?: string;
   transactionNo?: string;
   message?: string;
+  targetType?: string;
+  targetId?: string;
 }
 
 const VNP_RESPONSE_MESSAGES: Record<string, string> = {
@@ -69,12 +71,15 @@ export default function PaymentResult() {
         setState({
           status: "success",
           // vnp_TxnRef = our internal payment ID (GUID)
-          transactionId: params.get("vnp_TxnRef") ?? undefined,
+          transactionId: params.get("vnp_TxnRef") ?? params.get("transactionId") ?? undefined,
+          paymentId: params.get("paymentId") ?? undefined,
           // vnp_Amount is already in VND (same as subscription.Price in DB)
-          amount: params.get("vnp_Amount") ?? undefined,
+          amount: params.get("vnp_Amount") ?? params.get("amount") ?? undefined,
           provider: "VNPay",
           transactionNo: params.get("vnp_TransactionNo") ?? undefined,
           message: VNP_RESPONSE_MESSAGES[responseCode] ?? "Giao dịch thành công",
+          targetType: params.get("targetType") ?? undefined,
+          targetId: params.get("targetId") ?? undefined,
         });
       } else {
         setState({
@@ -83,6 +88,10 @@ export default function PaymentResult() {
             VNP_RESPONSE_MESSAGES[responseCode] ??
             "Giao dịch thất bại hoặc bị hủy.",
           transactionNo: params.get("vnp_TransactionNo") ?? undefined,
+          transactionId: params.get("vnp_TxnRef") ?? params.get("transactionId") ?? undefined,
+          paymentId: params.get("paymentId") ?? undefined,
+          targetType: params.get("targetType") ?? undefined,
+          targetId: params.get("targetId") ?? undefined,
         });
       }
       return;
@@ -101,6 +110,8 @@ export default function PaymentResult() {
           provider: "VNPay",
           transactionNo: params.get("vnp_TransactionNo") ?? undefined,
           message: "Giao dịch thành công",
+          targetType: params.get("targetType") ?? undefined,
+          targetId: params.get("targetId") ?? undefined,
         });
       } else {
         // Fallback: vnp_TxnRef can serve as transactionId reference
@@ -113,6 +124,8 @@ export default function PaymentResult() {
             "Giao dịch thất bại hoặc bị hủy.",
           transactionId: txId,
           transactionNo: params.get("vnp_TransactionNo") ?? undefined,
+          targetType: params.get("targetType") ?? undefined,
+          targetId: params.get("targetId") ?? undefined,
         });
       }
       return;
@@ -157,6 +170,8 @@ export default function PaymentResult() {
         provider: provider ?? "unknown",
         transactionNo: params.get("vnp_TransactionNo") ?? params.get("payos_TransactionNo") ?? undefined,
         message: params.get("message") ?? "Kết quả thanh toán",
+        targetType: params.get("targetType") ?? undefined,
+        targetId: params.get("targetId") ?? undefined,
       });
       return;
     }
@@ -235,35 +250,69 @@ export default function PaymentResult() {
         {!isLoading && (
           <div className="result-actions">
             {isSuccess ? (
-              <>
-                <button
-                  className="btn-result-primary"
-                  onClick={() => navigate("/")}
-                >
-                  Về trang chủ
-                </button>
-                <button
-                  className="btn-result-ghost"
-                  onClick={() => navigate("/settings")}
-                >
-                  Xem gói của tôi
-                </button>
-              </>
+              state.targetType?.toLowerCase() === "podcast" ? (
+                <>
+                  <button
+                    className="btn-result-primary"
+                    onClick={() => navigate(`/podcast/${state.targetId}`)}
+                  >
+                    Nghe podcast ngay
+                  </button>
+                  <button
+                    className="btn-result-ghost"
+                    onClick={() => navigate("/profile?tab=podcasts")}
+                  >
+                    Xem podcast đã mua
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="btn-result-primary"
+                    onClick={() => navigate("/")}
+                  >
+                    Về trang chủ
+                  </button>
+                  <button
+                    className="btn-result-ghost"
+                    onClick={() => navigate("/settings")}
+                  >
+                    Xem gói của tôi
+                  </button>
+                </>
+              )
             ) : (
-              <>
-                <button
-                  className="btn-result-primary"
-                  onClick={() => navigate("/subscription")}
-                >
-                  Thử lại
-                </button>
-                <button
-                  className="btn-result-ghost"
-                  onClick={() => navigate("/")}
-                >
-                  Về trang chủ
-                </button>
-              </>
+              state.targetType?.toLowerCase() === "podcast" ? (
+                <>
+                  <button
+                    className="btn-result-primary"
+                    onClick={() => navigate(`/podcast/${state.targetId}`)}
+                  >
+                    Thử lại
+                  </button>
+                  <button
+                    className="btn-result-ghost"
+                    onClick={() => navigate("/")}
+                  >
+                    Về trang chủ
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="btn-result-primary"
+                    onClick={() => navigate("/subscription")}
+                  >
+                    Thử lại
+                  </button>
+                  <button
+                    className="btn-result-ghost"
+                    onClick={() => navigate("/")}
+                  >
+                    Về trang chủ
+                  </button>
+                </>
+              )
             )}
           </div>
         )}

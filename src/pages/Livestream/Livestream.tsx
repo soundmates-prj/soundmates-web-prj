@@ -204,7 +204,9 @@ const LivestreamPage: React.FC = () => {
   const [requestSearch, setRequestSearch] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const { mode, setMode } = useTheme();
-  const [activeSession, setActiveSession] = useState<LiveSessionResult | null>(null);
+  const [activeSession, setActiveSession] = useState<LiveSessionResult | null>(
+    null,
+  );
   const [listenerCount, setListenerCount] = useState<number | null>(null);
   // SignalR real-time
   const [hubConnected, setHubConnected] = useState(false);
@@ -256,71 +258,109 @@ const LivestreamPage: React.FC = () => {
         // Fetch real now-playing from AzuraCast via backend for album art / track info
         let trackData: NowPlayingData | null = null;
         try {
-          const azuraData: any = await liveSessionApiService.getStationNowPlaying(session.stationId || "");
+          const azuraData: any =
+            await liveSessionApiService.getStationNowPlaying(
+              session.stationId || "",
+            );
           if (azuraData) {
             trackData = {
-              externalStationId: azuraData.externalStationId ?? azuraData.station?.id ?? 0,
-              stationName: azuraData.stationName ?? session.stationName ?? azuraData.station?.name ?? '',
-              stationShortcode: azuraData.stationShortcode ?? '',
-              listenUrl: azuraData.listenUrl ?? '',
-              publicPlayerUrl: azuraData.publicPlayerUrl ?? '',
+              externalStationId:
+                azuraData.externalStationId ?? azuraData.station?.id ?? 0,
+              stationName:
+                azuraData.stationName ??
+                session.stationName ??
+                azuraData.station?.name ??
+                "",
+              stationShortcode: azuraData.stationShortcode ?? "",
+              listenUrl: azuraData.listenUrl ?? "",
+              publicPlayerUrl: azuraData.publicPlayerUrl ?? "",
               isOnline: azuraData.isOnline ?? true,
               isLive: azuraData.isLive ?? true,
               streamerName: azuraData.streamerName ?? null,
               totalListeners: initialListeners,
               uniqueListeners: azuraData.uniqueListeners ?? 0,
-              currentTrack: azuraData.currentTrack ? {
-                shId: azuraData.currentTrack.shId ?? azuraData.currentTrack.id ?? 0,
-                text: azuraData.currentTrack.text ?? azuraData.currentTrack.title ?? '',
-                title: azuraData.currentTrack.title ?? 'Unknown',
-                artist: azuraData.currentTrack.artist ?? 'Unknown',
-                album: azuraData.currentTrack.album ?? '',
-                genre: azuraData.currentTrack.genre ?? '',
-                artUrl: proxyArtUrl(azuraData.currentTrack.artUrl ?? ''),
-                lyrics: azuraData.currentTrack.lyrics ?? null,
-                playedAt: azuraData.currentTrack.playedAt ?? 0,
-                duration: azuraData.currentTrack.duration ?? 0,
-                elapsed: azuraData.currentTrack.elapsed ?? 0,
-                remaining: azuraData.currentTrack.remaining ?? 0,
-                isRequest: azuraData.currentTrack.isRequest ?? false,
-              } : {
-                shId: 0, text: '', title: 'Unknown', artist: 'Unknown',
-                album: '', genre: '', artUrl: '',
-                lyrics: null, playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
-              },
-              playingNext: azuraData.playingNext ? {
-                shId: azuraData.playingNext.shId ?? 0,
-                text: azuraData.playingNext.text ?? '',
-                title: azuraData.playingNext.title ?? 'Unknown',
-                artist: azuraData.playingNext.artist ?? 'Unknown',
-                album: azuraData.playingNext.album ?? '',
-                genre: azuraData.playingNext.genre ?? '',
-                artUrl: proxyArtUrl(azuraData.playingNext.artUrl ?? ''),
-                lyrics: azuraData.playingNext.lyrics ?? null,
-                playedAt: azuraData.playingNext.playedAt ?? 0,
-                duration: azuraData.playingNext.duration ?? 0,
-                elapsed: 0,
-                remaining: azuraData.playingNext.remaining ?? 0,
-                isRequest: azuraData.playingNext.isRequest ?? false,
-              } : azuraData.nextSong ? {
-                shId: azuraData.nextSong.shId ?? azuraData.nextSong.id ?? 0,
-                text: azuraData.nextSong.text ?? azuraData.nextSong.title ?? '',
-                title: azuraData.nextSong.title ?? 'Unknown',
-                artist: azuraData.nextSong.artist ?? 'Unknown',
-                album: azuraData.nextSong.album ?? '',
-                genre: azuraData.nextSong.genre ?? '',
-                artUrl: proxyArtUrl(azuraData.nextSong.artUrl ?? ''),
-                lyrics: azuraData.nextSong.lyrics ?? null,
-                playedAt: 0, duration: 0, elapsed: 0, remaining: 0, isRequest: false,
-              } : null,
+              currentTrack: azuraData.currentTrack
+                ? {
+                    shId:
+                      azuraData.currentTrack.shId ??
+                      azuraData.currentTrack.id ??
+                      0,
+                    text:
+                      azuraData.currentTrack.text ??
+                      azuraData.currentTrack.title ??
+                      "",
+                    title: azuraData.currentTrack.title ?? "Unknown",
+                    artist: azuraData.currentTrack.artist ?? "Unknown",
+                    album: azuraData.currentTrack.album ?? "",
+                    genre: azuraData.currentTrack.genre ?? "",
+                    artUrl: proxyArtUrl(azuraData.currentTrack.artUrl ?? ""),
+                    lyrics: azuraData.currentTrack.lyrics ?? null,
+                    playedAt: azuraData.currentTrack.playedAt ?? 0,
+                    duration: azuraData.currentTrack.duration ?? 0,
+                    elapsed: azuraData.currentTrack.elapsed ?? 0,
+                    remaining: azuraData.currentTrack.remaining ?? 0,
+                    isRequest: azuraData.currentTrack.isRequest ?? false,
+                  }
+                : {
+                    shId: 0,
+                    text: "",
+                    title: "Unknown",
+                    artist: "Unknown",
+                    album: "",
+                    genre: "",
+                    artUrl: "",
+                    lyrics: null,
+                    playedAt: 0,
+                    duration: 0,
+                    elapsed: 0,
+                    remaining: 0,
+                    isRequest: false,
+                  },
+              playingNext: azuraData.playingNext
+                ? {
+                    shId: azuraData.playingNext.shId ?? 0,
+                    text: azuraData.playingNext.text ?? "",
+                    title: azuraData.playingNext.title ?? "Unknown",
+                    artist: azuraData.playingNext.artist ?? "Unknown",
+                    album: azuraData.playingNext.album ?? "",
+                    genre: azuraData.playingNext.genre ?? "",
+                    artUrl: proxyArtUrl(azuraData.playingNext.artUrl ?? ""),
+                    lyrics: azuraData.playingNext.lyrics ?? null,
+                    playedAt: azuraData.playingNext.playedAt ?? 0,
+                    duration: azuraData.playingNext.duration ?? 0,
+                    elapsed: 0,
+                    remaining: azuraData.playingNext.remaining ?? 0,
+                    isRequest: azuraData.playingNext.isRequest ?? false,
+                  }
+                : azuraData.nextSong
+                  ? {
+                      shId:
+                        azuraData.nextSong.shId ?? azuraData.nextSong.id ?? 0,
+                      text:
+                        azuraData.nextSong.text ??
+                        azuraData.nextSong.title ??
+                        "",
+                      title: azuraData.nextSong.title ?? "Unknown",
+                      artist: azuraData.nextSong.artist ?? "Unknown",
+                      album: azuraData.nextSong.album ?? "",
+                      genre: azuraData.nextSong.genre ?? "",
+                      artUrl: proxyArtUrl(azuraData.nextSong.artUrl ?? ""),
+                      lyrics: azuraData.nextSong.lyrics ?? null,
+                      playedAt: 0,
+                      duration: 0,
+                      elapsed: 0,
+                      remaining: 0,
+                      isRequest: false,
+                    }
+                  : null,
               songHistory: (azuraData.songHistory || []).map((t: any) => ({
                 shId: t.shId ?? t.id ?? 0,
-                text: t.text ?? t.title ?? '',
-                title: t.title ?? 'Unknown',
-                artist: t.artist ?? 'Unknown',
-                album: t.album ?? '',
-                genre: t.genre ?? '',
-                artUrl: proxyArtUrl(t.artUrl ?? ''),
+                text: t.text ?? t.title ?? "",
+                title: t.title ?? "Unknown",
+                artist: t.artist ?? "Unknown",
+                album: t.album ?? "",
+                genre: t.genre ?? "",
+                artUrl: proxyArtUrl(t.artUrl ?? ""),
                 lyrics: t.lyrics ?? null,
                 playedAt: t.playedAt ?? 0,
                 duration: t.duration ?? 0,
@@ -353,7 +393,9 @@ const LivestreamPage: React.FC = () => {
             ),
             duration: normalizedData.currentTrack.duration,
             elapsed: normalizedData.currentTrack.elapsed,
-            listenUrl: livestreamService.getListenUrl(session.streamUrl || normalizedData.listenUrl),
+            listenUrl: livestreamService.getListenUrl(
+              session.streamUrl || normalizedData.listenUrl,
+            ),
             lyrics: normalizedData.currentTrack.lyrics ?? null,
           });
         }
@@ -363,11 +405,16 @@ const LivestreamPage: React.FC = () => {
           activeSessionIdRef.current = session.id;
           try {
             await liveHubService.start();
-            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-            await liveHubService.joinSession(session.id, userInfo.id || userInfo.userId);
+            const userInfo = JSON.parse(
+              localStorage.getItem("userInfo") || "{}",
+            );
+            await liveHubService.joinSession(
+              session.id,
+              userInfo.id || userInfo.userId,
+            );
             setHubConnected(true);
           } catch (err) {
-            console.warn('[Livestream] SignalR connection failed:', err);
+            console.warn("[Livestream] SignalR connection failed:", err);
           }
         }
       } catch (err) {
@@ -378,7 +425,7 @@ const LivestreamPage: React.FC = () => {
     };
 
     void loadLiveSession();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // No deps: runs once on mount. player.setTrack is stable; hasLoadedLiveSessionRef guards re-entry.
 
   // Elapsed timer — use a ref for duration to avoid restarting interval every time nowPlaying updates
@@ -396,8 +443,8 @@ const LivestreamPage: React.FC = () => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  // Only restart when track actually changes (shId), not when whole nowPlaying object updates
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only restart when track actually changes (shId), not when whole nowPlaying object updates
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nowPlaying?.currentTrack?.shId]);
 
   // Auto-scroll chat
@@ -407,25 +454,39 @@ const LivestreamPage: React.FC = () => {
 
   // SignalR real-time: listener count + chat
   useEffect(() => {
-    const offListeners = liveHubService.onListenersUpdated((sessionId, count) => {
-      if (activeSessionIdRef.current === sessionId) {
-        setListenerCount(count);
-        setNowPlaying(prev => prev ? { ...prev, totalListeners: count } : prev);
-      }
-    });
+    const offListeners = liveHubService.onListenersUpdated(
+      (sessionId, count) => {
+        if (activeSessionIdRef.current === sessionId) {
+          setListenerCount(count);
+          setNowPlaying((prev) =>
+            prev ? { ...prev, totalListeners: count } : prev,
+          );
+        }
+      },
+    );
 
     const offChat = liveHubService.onReceiveChat((msg) => {
       if (activeSessionIdRef.current === msg.liveSessionId) {
-        setChatMessages(prev => [...prev, {
-          id: msg.id || Date.now().toString(),
-          type: 'user' as const,
-          name: msg.userName || `User-${(msg.userId || '?').slice(0, 6)}`,
-          text: msg.message,
-          time: msg.createdAt
-            ? new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-            : 'Vừa xong',
-          avatarColor: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'),
-        }]);
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: msg.id || Date.now().toString(),
+            type: "user" as const,
+            name: msg.userName || `User-${(msg.userId || "?").slice(0, 6)}`,
+            text: msg.message,
+            time: msg.createdAt
+              ? new Date(msg.createdAt).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "Vừa xong",
+            avatarColor:
+              "#" +
+              Math.floor(Math.random() * 16777215)
+                .toString(16)
+                .padStart(6, "0"),
+          },
+        ]);
       }
     });
 
@@ -461,7 +522,16 @@ const LivestreamPage: React.FC = () => {
 
   const handleChatKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Block all keys that might scroll the page (arrow keys, space, enter, etc.)
-    const scrollKeys = ["Enter", " ", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"];
+    const scrollKeys = [
+      "Enter",
+      " ",
+      "ArrowUp",
+      "ArrowDown",
+      "PageUp",
+      "PageDown",
+      "Home",
+      "End",
+    ];
     if (scrollKeys.includes(e.key)) {
       e.stopPropagation();
       e.nativeEvent.stopImmediatePropagation();
@@ -666,9 +736,7 @@ const LivestreamPage: React.FC = () => {
               <button
                 className="action-bar-icon-btn"
                 title={mode === "dark" ? "Giao diện sáng" : "Giao diện tối"}
-                onClick={() =>
-                  setMode(mode === "dark" ? "light" : "dark")
-                }
+                onClick={() => setMode(mode === "dark" ? "light" : "dark")}
               >
                 {mode === "dark" ? <Sun size={17} /> : <Moon size={17} />}
               </button>
@@ -779,13 +847,19 @@ const LivestreamPage: React.FC = () => {
               >
                 <div className="podcast-card-inner-pad">
                   <div className="podcast-card-header">
-                    <span className={`podcast-category-icon ${pc.categoryColor}`}>
-                      {pc.categoryColor === "purple" && <Headphones size={11} />}
+                    <span
+                      className={`podcast-category-icon ${pc.categoryColor}`}
+                    >
+                      {pc.categoryColor === "purple" && (
+                        <Headphones size={11} />
+                      )}
                       {pc.categoryColor === "blue" && <Heart size={11} />}
                       {pc.categoryColor === "green" && <Mic2 size={11} />}
                       {pc.categoryColor === "red" && <Radio size={11} />}
                     </span>
-                    <span className={`podcast-category-name ${pc.categoryColor}`}>
+                    <span
+                      className={`podcast-category-name ${pc.categoryColor}`}
+                    >
                       {pc.category}
                     </span>
                   </div>
@@ -795,7 +869,9 @@ const LivestreamPage: React.FC = () => {
                       <div className="podcast-author-avatar">
                         {pc.author.charAt(0)}
                       </div>
-                      <span className="podcast-author-name">{pc.author}</span>
+                      <span className="podcast-author-name">
+                        {pc.author}
+                      </span>
                     </div>
                     <span className={`podcast-voice-badge ${pc.voiceType}`}>
                       {pc.voiceType === "ai" ? "AI" : "Thật"}
@@ -861,7 +937,9 @@ const LivestreamPage: React.FC = () => {
                             <div className="chat-msg-header">
                               <div
                                 className="chat-msg-avatar"
-                                style={{ background: msg.avatarColor || "#555" }}
+                                style={{
+                                  background: msg.avatarColor || "#555",
+                                }}
                               />
                               <span
                                 className={`chat-msg-name ${msg.isHost ? "host" : ""}`}
@@ -1041,7 +1119,9 @@ const LivestreamPage: React.FC = () => {
                           />
                         </div>
                         <div className="playlist-item-info">
-                          <div className="playlist-item-title">{track.title}</div>
+                          <div className="playlist-item-title">
+                            {track.title}
+                          </div>
                           <div className="playlist-item-artist">
                             {track.artist} · {formatPlayedAt(track.playedAt)}
                           </div>
@@ -1089,7 +1169,9 @@ const LivestreamPage: React.FC = () => {
                     </div>
                     <div className="podcast-tab-item-text">{pc.title}</div>
                     <div className="podcast-tab-item-footer">
-                      <span>Bởi {pc.author}</span>
+                      <span>
+                        Bởi {pc.author}
+                      </span>
                       <span className={`podcast-voice-badge ${pc.voiceType}`}>
                         {pc.voiceType === "ai" ? "Giọng AI" : "Giọng thật"}
                       </span>
@@ -1146,7 +1228,16 @@ const LivestreamPage: React.FC = () => {
       </AnimatePresence>
 
       {/* Floating Reactions */}
-      <div className="floating-reactions" style={{ pointerEvents: 'none', position: 'absolute', bottom: '80px', left: '50%', zIndex: 1000 }}>
+      <div
+        className="floating-reactions"
+        style={{
+          pointerEvents: "none",
+          position: "absolute",
+          bottom: "80px",
+          left: "50%",
+          zIndex: 1000,
+        }}
+      >
         <AnimatePresence>
           {floatingReactions.map((r) => (
             <motion.span
@@ -1157,11 +1248,15 @@ const LivestreamPage: React.FC = () => {
                 opacity: [0, 1, 1, 0],
                 y: -300 - Math.random() * 100,
                 x: r.x + (Math.random() * 100 - 50),
-                scale: [0.5, 1.5, 1.2, 1]
+                scale: [0.5, 1.5, 1.2, 1],
               }}
               exit={{ opacity: 0 }}
               transition={{ duration: 2.2, ease: "easeOut" }}
-              style={{ position: 'absolute', fontSize: '2rem', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))' }}
+              style={{
+                position: "absolute",
+                fontSize: "2rem",
+                filter: "drop-shadow(0 0 10px rgba(255,255,255,0.5))",
+              }}
             >
               {r.emoji}
             </motion.span>
@@ -1201,7 +1296,9 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
   stationId,
   onRequest,
 }) => {
-  const [requestableLibrary, setRequestableLibrary] = useState<RequestableSong[]>([]);
+  const [requestableLibrary, setRequestableLibrary] = useState<
+    RequestableSong[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
 
@@ -1218,7 +1315,8 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
 
       setLoading(true);
       try {
-        const stationSongs = await liveSessionApiService.getStationMusic(stationId);
+        const stationSongs =
+          await liveSessionApiService.getStationMusic(stationId);
         const mapped = stationSongs.map((song) => ({
           id: song.id,
           mediaFileId: song.id,
@@ -1266,12 +1364,18 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
 
   const handleRequest = async (song: RequestableSong) => {
     if (!liveSessionId) {
-      showError("Không tìm thấy phiên live", "Vui lòng tải lại trang và thử lại");
+      showError(
+        "Không tìm thấy phiên live",
+        "Vui lòng tải lại trang và thử lại",
+      );
       return;
     }
 
     if (!song.mediaFileId) {
-      showInfo("Bài hát chưa sẵn sàng", "Chưa đồng bộ được mediaFileId để gửi request");
+      showInfo(
+        "Bài hát chưa sẵn sàng",
+        "Chưa đồng bộ được mediaFileId để gửi request",
+      );
       return;
     }
 
@@ -1354,7 +1458,11 @@ const RequestMusicModal: React.FC<RequestMusicModalProps> = ({
                 </div>
                 <button
                   className="request-song-btn"
-                  disabled={loading || !song.mediaFileId || requestedIds.has(song.mediaFileId)}
+                  disabled={
+                    loading ||
+                    !song.mediaFileId ||
+                    requestedIds.has(song.mediaFileId)
+                  }
                   onClick={() => handleRequest(song)}
                 >
                   {requestedIds.has(song.mediaFileId)

@@ -14,7 +14,7 @@ import {
   ListMusic,
 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation, useSearchParams } from "react-router-dom";
 import api from "../../services/axios";
 import { Avatar } from "../../components/common";
 import "./profile.css";
@@ -55,10 +55,10 @@ const formatDuration = (ms: number) => {
 const formatDate = (d?: string | null) =>
   d
     ? new Date(d).toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
     : null;
 
 /* ──────────────────────────────────────────
@@ -68,7 +68,17 @@ export default function Profile() {
   const { userId: routeUserId } = useParams<{ userId?: string }>();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [tab, setTab] = useState<Tab>("overview");
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const initialTab = (searchParams.get("tab") as Tab) || (location.state?.tab as Tab) || "overview";
+  const [tab, setTab] = useState<Tab>(initialTab);
+
+  useEffect(() => {
+    const nextTab = (searchParams.get("tab") as Tab) || (location.state?.tab as Tab);
+    if (nextTab && TABS.some(t => t.key === nextTab)) {
+      setTab(nextTab);
+    }
+  }, [searchParams, location.state]);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showShareMusic, setShowShareMusic] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
@@ -81,46 +91,55 @@ export default function Profile() {
   const isOwnProfile = !routeUserId || routeUserId === currentUser?.id;
   const targetUserId = routeUserId || currentUser?.id;
 
-  const loadFavorites = useCallback(async (uid: string) => {
-    try {
-      const res = isOwnProfile 
-        ? await favoriteService.getFavorites("track")
-        : await favoriteService.getFavoritesByUserId(uid, "track");
-        
-      if (res.success && res.data) {
-        setFavTracks(res.data);
+  const loadFavorites = useCallback(
+    async (uid: string) => {
+      try {
+        const res = isOwnProfile
+          ? await favoriteService.getFavorites("track")
+          : await favoriteService.getFavoritesByUserId(uid, "track");
+
+        if (res.success && res.data) {
+          setFavTracks(res.data);
+        }
+      } catch (err) {
+        console.error("Load favorites failed", err);
       }
-    } catch (err) {
-      console.error("Load favorites failed", err);
-    }
-  }, [isOwnProfile]);
+    },
+    [isOwnProfile],
+  );
 
-  const loadSavedPodcasts = useCallback(async (uid: string) => {
-    try {
-      const data = isOwnProfile 
-        ? await podcastService.getSavedPodcasts()
-        : await podcastService.getSavedPodcastsByUserId(uid);
-      setSavedPodcasts(data);
-    } catch (err) {
-      console.error("Load saved podcasts failed", err);
-    }
-  }, [isOwnProfile]);
+  const loadSavedPodcasts = useCallback(
+    async (uid: string) => {
+      try {
+        const data = isOwnProfile
+          ? await podcastService.getSavedPodcasts()
+          : await podcastService.getSavedPodcastsByUserId(uid);
+        setSavedPodcasts(data);
+      } catch (err) {
+        console.error("Load saved podcasts failed", err);
+      }
+    },
+    [isOwnProfile],
+  );
 
-  const loadPlaylists = useCallback(async (uid: string) => {
-    try {
-      const data = isOwnProfile 
-        ? await userPlaylistService.getAll()
-        : await userPlaylistService.getByUser(uid);
-      setUserPlaylists(data);
-    } catch (err) {
-      console.error("Load playlists failed", err);
-    }
-  }, [isOwnProfile]);
+  const loadPlaylists = useCallback(
+    async (uid: string) => {
+      try {
+        const data = isOwnProfile
+          ? await userPlaylistService.getAll()
+          : await userPlaylistService.getByUser(uid);
+        setUserPlaylists(data);
+      } catch (err) {
+        console.error("Load playlists failed", err);
+      }
+    },
+    [isOwnProfile],
+  );
 
   const handleUnsavePodcast = async (podcastId: string) => {
     try {
       await podcastService.unsavePodcast(podcastId);
-      setSavedPodcasts(prev => prev.filter(p => p.id !== podcastId));
+      setSavedPodcasts((prev) => prev.filter((p) => p.id !== podcastId));
       showToast.success("Đã bỏ lưu podcast");
     } catch (err) {
       console.error("Failed to unsave podcast", err);
@@ -132,9 +151,10 @@ export default function Profile() {
   useEffect(() => {
     // Only try to load "me" if we have a token or aren't explicitly avoiding it
     // axios interceptor will handle token if exists.
-    api.get("users/me/profile/full")
-      .then(r => setCurrentUser(r.data.data))
-      .catch(e => {
+    api
+      .get("users/me/profile/full")
+      .then((r) => setCurrentUser(r.data.data))
+      .catch((e) => {
         if (e.response?.status !== 401) {
           console.error("Load me failed", e);
         }
@@ -146,21 +166,31 @@ export default function Profile() {
     if (!targetUserId) return;
 
     // Load Profile
-    const profileUrl = isOwnProfile ? "users/me/profile/full" : `users/${targetUserId}/public-profile`;
-    api.get(profileUrl)
+    const profileUrl = isOwnProfile
+      ? "users/me/profile/full"
+      : `users/${targetUserId}/public-profile`;
+    api
+      .get(profileUrl)
       .then((r) => setUser(r.data.data))
       .catch((e) => console.error("Load profile failed", e));
 
     // Load Posts
     const postsUrl = isOwnProfile ? "me/posts" : `users/${targetUserId}/posts`;
-    api.get(postsUrl)
+    api
+      .get(postsUrl)
       .then((r) => setPosts(r.data?.data?.items ?? []))
       .catch((e) => console.error("Load posts failed", e));
 
     loadFavorites(targetUserId);
     loadSavedPodcasts(targetUserId);
     loadPlaylists(targetUserId);
-  }, [targetUserId, isOwnProfile, loadFavorites, loadSavedPodcasts, loadPlaylists]);
+  }, [
+    targetUserId,
+    isOwnProfile,
+    loadFavorites,
+    loadSavedPodcasts,
+    loadPlaylists,
+  ]);
 
   if (!user) return <div className="pf-loading">Đang tải...</div>;
 
@@ -367,7 +397,10 @@ export default function Profile() {
                           <polyline points="21 15 16 10 5 21" />
                         </svg>
                       </span>
-                      <span className="pf-compose-action-btn" title="Thêm audio">
+                      <span
+                        className="pf-compose-action-btn"
+                        title="Thêm audio"
+                      >
                         <svg
                           width="15"
                           height="15"
@@ -456,7 +489,9 @@ export default function Profile() {
                       )}
                       <div className="pod-info">
                         <p className="pod-title">{p.title}</p>
-                        <p className="pod-ep">{resolveAuthor(p.author)}</p>
+                        <p className="pod-ep">
+                          {resolveAuthor(p.author) || "SoundMates"}
+                        </p>
                       </div>
                       <button
                         className="pod-play"
@@ -479,8 +514,10 @@ export default function Profile() {
                       fontSize: 13,
                     }}
                   >
-                  {isOwnProfile ? "Chưa lưu podcast nào" : "Người dùng chưa lưu podcast nào"}
-                </p>
+                    {isOwnProfile
+                      ? "Chưa lưu podcast nào"
+                      : "Người dùng chưa lưu podcast nào"}
+                  </p>
                 )}
               </div>
 
@@ -533,8 +570,10 @@ export default function Profile() {
                       fontSize: 13,
                     }}
                   >
-                  {isOwnProfile ? "Chưa có playlist nào" : "Người dùng chưa có playlist nào"}
-                </p>
+                    {isOwnProfile
+                      ? "Chưa có playlist nào"
+                      : "Người dùng chưa có playlist nào"}
+                  </p>
                 )}
               </div>
             </div>
@@ -545,7 +584,9 @@ export default function Profile() {
         {tab === "community" && (
           <div className="pf-community-full">
             <div className="pf-community-header">
-              <h2 className="pf-community-title">{isOwnProfile ? "Bài đăng của tôi" : "Bài đăng"}</h2>
+              <h2 className="pf-community-title">
+                {isOwnProfile ? "Bài đăng của tôi" : "Bài đăng"}
+              </h2>
               <div style={{ display: "flex", gap: 8 }}>
                 {isOwnProfile && (
                   <>
@@ -666,7 +707,9 @@ export default function Profile() {
           </div>
         )}
 
-        {tab === "playlists" && <UserPlaylistTab userId={targetUserId} isOwnProfile={isOwnProfile} />}
+        {tab === "playlists" && (
+          <UserPlaylistTab userId={targetUserId} isOwnProfile={isOwnProfile} />
+        )}
 
         {tab === "podcasts" && (
           <div className="pf-card">
@@ -704,7 +747,9 @@ export default function Profile() {
                     </div>
                     <div className="pf-podcast-card-body">
                       <h4 className="pf-podcast-card-title">{p.title}</h4>
-                      <p className="pf-podcast-card-author">{resolveAuthor(p.author)}</p>
+                      <p className="pf-podcast-card-author">
+                        {resolveAuthor(p.author) || "SoundMates"}
+                      </p>
                       {p.episodeCount != null && (
                         <p className="pf-podcast-card-eps">
                           {p.episodeCount} tập

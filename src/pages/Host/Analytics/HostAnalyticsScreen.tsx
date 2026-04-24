@@ -1,12 +1,11 @@
+import { useEffect, useMemo, useState } from "react";
 import {
   TrendingUp,
+  TrendingDown,
   Users,
   Radio,
   Eye,
   RefreshCw,
-  BarChart3,
-  Heart,
-  MessageSquare,
   Music,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
@@ -14,8 +13,6 @@ import './HostAnalyticsScreen.css';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-
-import { useState, useEffect } from 'react';
 import liveSessionApiService, { type HostAnalyticsOverviewResult } from '../../../services/liveSessionApiService';
 
 interface MetricCardProps {
@@ -24,9 +21,17 @@ interface MetricCardProps {
   change?: string;
   isPositive?: boolean;
   icon: React.ReactNode;
+  tone?: "purple" | "blue" | "green" | "orange";
 }
 
-function MetricCard({ title, value, change, isPositive, icon }: MetricCardProps) {
+function MetricCard({
+  title,
+  value,
+  change,
+  isPositive,
+  icon,
+  tone = "purple",
+}: MetricCardProps) {
   return (
     <div className="host-an-card">
       <div className="host-an-icon">{icon}</div>
@@ -201,8 +206,8 @@ export function HostAnalyticsScreen() {
                     <td>{session.totalListeners}</td>
                     <td>{session.musicRequestsCount}</td>
                     <td style={{ textAlign: 'right' }}>
-                      <button 
-                        className="host-an-btn host-an-btn--outline" 
+                      <button
+                        className="host-an-btn host-an-btn--outline"
                         style={{ padding: '4px 12px', fontSize: '0.85rem' }}
                         onClick={() => navigate(`/host/analytics/${session.sessionId}`)}
                       >
