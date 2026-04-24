@@ -43,6 +43,30 @@ export interface DailyListenerPointResult {
   listenerCount: number;
 }
 
+export interface DailySessionMetric {
+  date: string;
+  count: number;
+}
+
+export interface DailyListenerMetric {
+  date: string;
+  listenerCount: number;
+}
+
+export interface DailyInteractionMetric {
+  date: string;
+  count: number;
+}
+
+export interface AdminAnalyticsOverviewResult {
+  totalSessions: number;
+  totalViews: number;
+  totalInteractions: number;
+  sessionGrowthChart: DailySessionMetric[];
+  listenerGrowthChart: DailyListenerMetric[];
+  interactionGrowthChart: DailyInteractionMetric[];
+}
+
 export interface StaffDashboardOverviewResult {
   totalStations: number;
   stationsCreatedToday: number;
@@ -896,6 +920,12 @@ class LiveSessionApiService {
   async deleteSchedule(scheduleId: string): Promise<void> {
     // DELETE /api/v1/schedule/{scheduleId}
     await api.delete(`/schedule/${scheduleId}`);
+  }
+
+  // GET /api/v1/livesession/admin/overview
+  async getAdminAnalyticsOverview(days: number = 7): Promise<AdminAnalyticsOverviewResult | null> {
+    const res = await api.get<ApiResponse<AdminAnalyticsOverviewResult>>(`/livesession/admin/overview?days=${days}`);
+    return res.data.data as any;
   }
 
   async getHostDashboardOverview(

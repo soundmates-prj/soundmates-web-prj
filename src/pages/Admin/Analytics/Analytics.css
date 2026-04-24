@@ -3,3 +3,7 @@
    ============================================ */
 
 @import '../SharedDashboard.css';
+
+.lm-page {
+   padding: 0px 0px 0px 0px !important;
+}
