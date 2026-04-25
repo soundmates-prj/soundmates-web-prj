@@ -47,6 +47,7 @@ const adminMenuItems: MenuItem[] = [
     { id: 'stations', icon: <Music2 size={20} />, label: 'Đài phát', path: '/admin/stations' },
     { id: 'playlists', icon: <ListMusic size={20} />, label: 'Playlist', path: '/admin/playlists' },
     { id: 'podcasts', icon: <Podcast size={20} />, label: 'Podcast', path: '/admin/podcasts' },
+    { id: 'episode-requests', icon: <Headphones size={20} />, label: 'Yêu cầu tập', path: '/admin/episode-requests' },
     { id: 'posts', icon: <FileTextIcon size={20} />, label: 'Bài viết người dùng', path: '/admin/posts' },
     { id: 'transactions', icon: <Receipt size={20} />, label: 'Giao dịch', path: '/admin/transactions' },
     { id: 'payouts', icon: <Wallet size={20} />, label: 'Quản lý Payout', path: '/admin/payouts' },
