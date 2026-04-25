@@ -771,7 +771,7 @@ function PodcastRequestCard({
             <h3 className="pod-request-title">{request.title}</h3>
             <p className="pod-request-desc">
               {typeof request.description === "string" &&
-                request.description.trim()
+              request.description.trim()
                 ? request.description
                 : "Chưa có mô tả cho podcast này."}
             </p>
@@ -922,9 +922,9 @@ function PodcastRow({
   const authorText =
     typeof podcast.author === "string"
       ? podcast.author
-      : ((podcast.author as any)?.Name ??
-        (podcast.author as any)?.name ??
-        (podcast.author as any)?.username ??
+      : (podcast.author?.Name ??
+        podcast.author?.name ??
+        podcast.author?.username ??
         "—");
 
   const statusBadge = () => {
