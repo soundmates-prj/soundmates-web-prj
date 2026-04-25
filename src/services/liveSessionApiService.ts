@@ -163,7 +163,12 @@ export interface StaffAnalyticsOverview {
   totalStations: number;
   pendingSongRequests: number;
   contentGrowthChart: { date: string; dateFormatted: string; count: number }[];
-  moderationChart: { date: string; dateFormatted: string; pendingCount: number; resolvedCount: number }[];
+  moderationChart: {
+    date: string;
+    dateFormatted: string;
+    pendingCount: number;
+    resolvedCount: number;
+  }[];
 }
 
 export interface SyncStationsResult {
@@ -430,7 +435,7 @@ export interface PodcastRequestResult {
   title: string;
   type: string | null;
   description: string | null;
-  bannerUrl: string | null;
+  banner: string | null;
   price: number;
   isPaid: boolean;
   status: string;
@@ -440,6 +445,23 @@ export interface PodcastRequestResult {
   requestedAt: string;
   requestedByUsername?: string | null;
   reviewedByUsername?: string | null;
+}
+
+export interface PodcastEpisodeRequestResult {
+  id: string;
+  podcastId: string | null;
+  requestedByUserId: string | null;
+  authorInfo?: { Name?: string | null; Avatar?: string | null } | null;
+  title: string;
+  description?: string | null;
+  thumbnailUrl?: string | null;
+  audioUrl?: string | null;
+  duration?: number | null;
+  status: string;
+  reviewedByUserId?: string | null;
+  reviewedAt?: string | null;
+  rejectReason?: string | null;
+  requestedAt: string;
 }
 
 export interface PagedResult<T> {
@@ -735,31 +757,47 @@ class LiveSessionApiService {
 
   /* ── Live Sessions ── */
 
-  async getStaffAnalyticsOverview(days: number = 7): Promise<ApiResponse<StaffAnalyticsOverview>> {
-    const res = await api.get<ApiResponse<StaffAnalyticsOverview>>('/livesession/analytics/staff', {
-      params: { days }
-    });
+  async getStaffAnalyticsOverview(
+    days: number = 7,
+  ): Promise<ApiResponse<StaffAnalyticsOverview>> {
+    const res = await api.get<ApiResponse<StaffAnalyticsOverview>>(
+      "/livesession/analytics/staff",
+      {
+        params: { days },
+      },
+    );
     return res.data;
   }
 
   // GET /api/v1/livesession/dashboard/overview
-  async getStaffDashboardOverview(days: number = 7): Promise<StaffDashboardOverviewResult> {
-    const res = await api.get<ApiResponse<StaffDashboardOverviewResult>>('/livesession/dashboard/overview', {
-      params: { days }
-    });
+  async getStaffDashboardOverview(
+    days: number = 7,
+  ): Promise<StaffDashboardOverviewResult> {
+    const res = await api.get<ApiResponse<StaffDashboardOverviewResult>>(
+      "/livesession/dashboard/overview",
+      {
+        params: { days },
+      },
+    );
     return res.data.data as StaffDashboardOverviewResult;
   }
 
   // GET /api/v1/livesession/analytics/staff
 
   // GET /api/v1/livesession/song-requests/all
-  async getAllSongRequests(status?: string, page: number = 1, pageSize: number = 10): Promise<ApiResponse<PageResponse<SongRequestResult>>> {
-    const res = await api.get<ApiResponse<PageResponse<SongRequestResult>>>('/livesession/song-requests/all', {
-      params: { status, page, pageSize }
-    });
+  async getAllSongRequests(
+    status?: string,
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<ApiResponse<PageResponse<SongRequestResult>>> {
+    const res = await api.get<ApiResponse<PageResponse<SongRequestResult>>>(
+      "/livesession/song-requests/all",
+      {
+        params: { status, page, pageSize },
+      },
+    );
     return res.data;
   }
-
 
   async getLiveSessions(params?: {
     userId?: string;
@@ -786,6 +824,17 @@ class LiveSessionApiService {
       `/livesession/${id}`,
     );
     return res.data.data;
+  }
+
+  // GET /api/v1/podcast-episode-requests
+  async getPodcastEpisodeRequests(
+    podcastId?: string,
+  ): Promise<PodcastEpisodeRequestResult[]> {
+    const res = await api.get<ApiResponse<PodcastEpisodeRequestResult[]>>(
+      "/podcast-episode-requests",
+      { params: { podcastId } },
+    );
+    return res.data.data ?? [];
   }
 
   async createLiveSession(data: {
@@ -857,7 +906,9 @@ class LiveSessionApiService {
   }
 
   async getSessionChats(sessionId: string): Promise<LiveSessionChatResult[]> {
-    const res = await api.get<ApiResponse<LiveSessionChatResult[]>>(`/livesession/${sessionId}/chats`);
+    const res = await api.get<ApiResponse<LiveSessionChatResult[]>>(
+      `/livesession/${sessionId}/chats`,
+    );
     return res.data.data;
   }
 
@@ -882,7 +933,8 @@ class LiveSessionApiService {
   }
 
   async getAllSessionSchedules(): Promise<SessionScheduleResult[]> {
-    const res = await api.get<ApiResponse<SessionScheduleResult[]>>("/schedule");
+    const res =
+      await api.get<ApiResponse<SessionScheduleResult[]>>("/schedule");
     return res.data.data;
   }
 
@@ -930,8 +982,12 @@ class LiveSessionApiService {
   }
 
   // GET /api/v1/livesession/admin/overview
-  async getAdminAnalyticsOverview(days: number = 7): Promise<AdminAnalyticsOverviewResult | null> {
-    const res = await api.get<ApiResponse<AdminAnalyticsOverviewResult>>(`/livesession/admin/overview?days=${days}`);
+  async getAdminAnalyticsOverview(
+    days: number = 7,
+  ): Promise<AdminAnalyticsOverviewResult | null> {
+    const res = await api.get<ApiResponse<AdminAnalyticsOverviewResult>>(
+      `/livesession/admin/overview?days=${days}`,
+    );
     return res.data.data as any;
   }
 
@@ -939,10 +995,12 @@ class LiveSessionApiService {
     days = 7,
   ): Promise<HostDashboardOverviewResult> {
     try {
-      const response = await api.get<{ data: HostDashboardOverviewResult }>(`/livesession/dashboard/host?days=${days}`);
+      const response = await api.get<{ data: HostDashboardOverviewResult }>(
+        `/livesession/dashboard/host?days=${days}`,
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching host dashboard overview:', error);
+      console.error("Error fetching host dashboard overview:", error);
       throw error;
     }
   }
@@ -951,10 +1009,12 @@ class LiveSessionApiService {
     days = 7,
   ): Promise<HostAnalyticsOverviewResult> {
     try {
-      const response = await api.get<{ data: HostAnalyticsOverviewResult }>(`/livesession/analytics/host?days=${days}`);
+      const response = await api.get<{ data: HostAnalyticsOverviewResult }>(
+        `/livesession/analytics/host?days=${days}`,
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching host analytics overview:', error);
+      console.error("Error fetching host analytics overview:", error);
       throw error;
     }
   }

@@ -24,6 +24,16 @@ export interface CreatePodcastRequestPayload {
   isPaid: boolean;
 }
 
+// Body cho POST /api/v1/podcast-episode-requests
+export interface CreatePodcastEpisodeRequestPayload {
+  podcastId: string;
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  audioUrl: string;
+  duration: number;
+}
+
 class PodcastService {
   async generateFullPodcast(
     params: PodcastGenerateRequest,
@@ -277,6 +287,33 @@ class PodcastService {
       console.error("Error creating podcast request:", error);
       throw new Error(
         error.response?.data?.message || error.message || "Lỗi khi tạo podcast",
+      );
+    }
+  }
+
+  /**
+   * User gửi request tạo tập mới cho podcast đã publish.
+   * POST /api/v1/podcast-episode-requests
+   *
+   * Request ở trạng thái chờ admin duyệt. Khi duyệt xong, tập sẽ xuất hiện ở
+   * trang podcast tổng. Nếu bị từ chối sẽ kèm lý do.
+   */
+  async createPodcastEpisodeRequest(
+    payload: CreatePodcastEpisodeRequestPayload,
+  ): Promise<unknown> {
+    try {
+      const response = await api.post<ApiResponse<unknown>>(
+        "/podcast-episode-requests",
+        payload,
+      );
+      if (response.data.success === false) {
+        throw new Error(response.data.message || "Không thể tạo tập");
+      }
+      return response.data.data ?? null;
+    } catch (error: any) {
+      console.error("Error creating podcast episode request:", error);
+      throw new Error(
+        error.response?.data?.message || error.message || "Lỗi khi tạo tập",
       );
     }
   }

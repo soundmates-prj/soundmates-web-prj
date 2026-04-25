@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Headphones,
@@ -11,15 +11,9 @@ import {
   ChevronRight,
   X,
   Bookmark,
-  Plus,
-  Upload,
-  Trash2,
-  Lightbulb,
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
 import { resolveAuthor, type PodcastItem } from "../../types/podcast";
-import { showToast } from "../../utils/toast";
-import { uploadImage } from "../../utils/cloudinaryUpload";
 import "./PodcastScreen.css";
 
 // ══════════════════════════════════════════════════════════════
@@ -41,20 +35,6 @@ const TYPE_LABELS: Record<string, string> = {
   love: "Tình yêu",
 };
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB upload banner
-const MAX_PRICE = 10_000_000; // Cap 10 triệu VND tránh user gõ nhầm
-const MIN_PRICE = 1000;
-const TITLE_MIN = 3;
-const TITLE_MAX = 120;
-const DESC_MIN = 10;
-const DESC_MAX = 1000;
-
-const PRICE_SUGGESTIONS = [
-  { label: "Podcast ngắn (1–3 tập):", range: "10k – 30k" },
-  { label: "Podcast trung bình (5–10 tập):", range: "30k – 80k" },
-  { label: "Podcast dài (10+ tập):", range: "80k – 150k" },
-];
-
 // ══════════════════════════════════════════════════════════════
 // Helpers
 // ══════════════════════════════════════════════════════════════
@@ -64,17 +44,6 @@ const formatVnd = (value: number): string =>
 
 const getTypeLabel = (type?: string): string =>
   TYPE_LABELS[type?.toLowerCase() ?? ""] ?? type ?? "Podcast";
-
-// Close modal on Esc — skip khi busy để không làm mất dữ liệu user đang nhập/upload
-function useEscapeClose(onClose: () => void, disabled: boolean) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !disabled) onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, disabled]);
-}
 
 // ══════════════════════════════════════════════════════════════
 // EqBars — equalizer animation dùng cho hero & card hover
@@ -112,7 +81,6 @@ export default function PodcastScreen() {
   const [activeType, setActiveType] = useState("all");
   const [searchFocused, setSearchFocused] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [createOpen, setCreateOpen] = useState(false);
   const navigate = useNavigate();
 
   // getSavedPodcasts có thể fail với guest → fallback empty để không block UI
@@ -161,22 +129,6 @@ export default function PodcastScreen() {
 
   const featured = filtered.length > 0 ? filtered[0] : null;
   const rest = filtered.slice(1);
-
-  const handleOpenCreate = () => {
-    if (!localStorage.getItem("accessToken")) {
-      showToast.warning("Vui lòng đăng nhập để tạo podcast");
-      navigate("/login");
-      return;
-    }
-    setCreateOpen(true);
-  };
-
-  const handleCreated = () => {
-    setCreateOpen(false);
-    showToast.success(
-      "Podcast đã được gửi! Đang chờ admin kiểm duyệt trước khi xuất bản.",
-    );
-  };
 
   // Optimistic update: đổi UI trước, revert nếu API fail
   const toggleSave = async (podcastId: string, e: React.MouseEvent) => {
@@ -246,15 +198,6 @@ export default function PodcastScreen() {
                 </button>
               )}
             </div>
-
-            <button
-              type="button"
-              className="pds-create-btn"
-              onClick={handleOpenCreate}
-            >
-              <Plus size={18} />
-              <span>Tạo Podcast</span>
-            </button>
           </div>
 
           <div className="pds-hero-visual">
@@ -363,13 +306,6 @@ export default function PodcastScreen() {
           </>
         )}
       </section>
-
-      {createOpen && (
-        <CreatePodcastRequestModal
-          onClose={() => setCreateOpen(false)}
-          onCreated={handleCreated}
-        />
-      )}
     </div>
   );
 }
@@ -515,371 +451,5 @@ function PodcastCard({
         )}
       </div>
     </article>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// CreatePodcastRequestModal
-// POST /api/v1/podcast-requests — submit ở trạng thái Draft.
-// Admin duyệt → Published | reject → kèm lý do gửi về user.
-// ══════════════════════════════════════════════════════════════
-
-function CreatePodcastRequestModal({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [podcastType, setPodcastType] = useState("");
-  const [isPaid, setIsPaid] = useState(false);
-  const [price, setPrice] = useState(0);
-
-  const [bannerUrl, setBannerUrl] = useState("");
-  const [bannerFileName, setBannerFileName] = useState("");
-  const [uploadingBanner, setUploadingBanner] = useState(false);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
-
-  const [submitting, setSubmitting] = useState(false);
-
-  const isBusy = submitting || uploadingBanner;
-  useEscapeClose(onClose, isBusy);
-
-  const handleBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // Reset input value để user có thể chọn lại cùng 1 file nếu upload fail
-    if (bannerInputRef.current) bannerInputRef.current.value = "";
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      showToast.error("Vui lòng chọn file ảnh (JPG, PNG, WEBP...)");
-      return;
-    }
-    if (file.size > MAX_IMAGE_SIZE) {
-      const mb = (file.size / 1024 / 1024).toFixed(1);
-      showToast.error(`Ảnh vượt quá 5MB (file của bạn ${mb}MB)`);
-      return;
-    }
-
-    setUploadingBanner(true);
-    try {
-      const url = await uploadImage(file);
-      setBannerUrl(url);
-      setBannerFileName(file.name);
-    } catch (err: any) {
-      showToast.error(err?.message || "Upload ảnh thất bại, vui lòng thử lại");
-    } finally {
-      setUploadingBanner(false);
-    }
-  };
-
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, "");
-    const num = raw ? parseInt(raw, 10) : 0;
-    setPrice(Math.min(num, MAX_PRICE));
-  };
-
-  const handleTogglePaid = () => {
-    setIsPaid((prev) => {
-      const next = !prev;
-      if (!next) setPrice(0); // tắt trả phí → reset giá
-      return next;
-    });
-  };
-
-  const canSubmit =
-    title.trim().length >= TITLE_MIN &&
-    description.trim().length >= DESC_MIN &&
-    bannerUrl.length > 0 &&
-    (!isPaid || price >= MIN_PRICE) &&
-    !isBusy;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSubmit) return;
-
-    setSubmitting(true);
-    try {
-      // BE yêu cầu cả `title` + `episodeTitle` — reuse title làm episodeTitle default.
-      // `type` chỉ gửi khi user chọn, tránh ghi đè default phía BE.
-      const payload: any = {
-        title: title.trim(),
-        episodeTitle: title.trim(),
-        description: description.trim(),
-        bannerUrl,
-        price: isPaid ? price : 0,
-        isPaid,
-      };
-      if (podcastType) payload.type = podcastType;
-
-      await podcastService.createPodcastRequest(payload);
-      onCreated();
-    } catch (err: any) {
-      showToast.error(err.message || "Không thể tạo podcast, vui lòng thử lại");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div
-      className="pds-modal-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isBusy) onClose();
-      }}
-    >
-      <div className="pds-modal" role="dialog" aria-modal="true">
-        <div className="pds-modal-header">
-          <div>
-            <h2 className="pds-modal-title">Tạo Podcast mới</h2>
-            <p className="pds-modal-subtitle">
-              Podcast sẽ được gửi đến admin kiểm duyệt trước khi xuất bản.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="pds-modal-close"
-            onClick={onClose}
-            disabled={isBusy}
-            aria-label="Đóng"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <form className="pds-modal-form" onSubmit={handleSubmit}>
-          {/* Banner upload (Cloudinary) */}
-          <div className="pds-form-row">
-            <span className="pds-form-label-text">
-              Ảnh bìa podcast <span className="pds-form-req">*</span>
-            </span>
-
-            {bannerUrl ? (
-              <div className="pds-form-banner-preview">
-                <img
-                  src={bannerUrl}
-                  alt="Banner preview"
-                  className="pds-form-banner"
-                />
-                <div className="pds-form-banner-info">
-                  <span className="pds-form-banner-name" title={bannerFileName}>
-                    {bannerFileName || "Banner đã tải lên"}
-                  </span>
-                  <button
-                    type="button"
-                    className="pds-form-banner-remove"
-                    onClick={() => {
-                      setBannerUrl("");
-                      setBannerFileName("");
-                    }}
-                    disabled={submitting}
-                  >
-                    <Trash2 size={14} />
-                    <span>Xóa</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <label
-                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${uploadingBanner ? " uploading" : ""
-                  }`}
-              >
-                <input
-                  ref={bannerInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleBannerChange}
-                  disabled={isBusy}
-                  style={{ display: "none" }}
-                />
-                {uploadingBanner ? (
-                  <>
-                    <Loader2 size={28} className="pds-spin" />
-                    <span>Đang tải lên...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload size={28} />
-                    <span>Nhấn để chọn ảnh banner</span>
-                    <span className="pds-form-banner-hint">
-                      JPG, PNG, WEBP · tối đa 5MB
-                    </span>
-                  </>
-                )}
-              </label>
-            )}
-          </div>
-
-          {/* Type (optional) — div wrap là bắt buộc để CSS ::after chevron hoạt động */}
-          <div className="pds-form-row">
-            <label className="pds-form-label">
-              <span>Chủ đề</span>
-              <div className="pds-form-select-wrap">
-                <select
-                  className="pds-form-input"
-                  value={podcastType}
-                  onChange={(e) => setPodcastType(e.target.value)}
-                  disabled={submitting}
-                >
-                  <option value="">Chọn chủ đề (tùy chọn)</option>
-                  {Object.keys(TYPE_LABELS)
-                    .filter((k) => k !== "all")
-                    .map((k) => (
-                      <option key={k} value={k}>
-                        {TYPE_LABELS[k]}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            </label>
-          </div>
-
-          <div className="pds-form-row">
-            <label className="pds-form-label">
-              <span>
-                Tiêu đề Podcast <span className="pds-form-req">*</span>
-              </span>
-              <input
-                type="text"
-                className="pds-form-input"
-                placeholder="VD: Chuyện công nghệ tuần này"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={TITLE_MAX}
-                disabled={submitting}
-                required
-              />
-              <span className="pds-form-hint">
-                {title.length}/{TITLE_MAX} ký tự (tối thiểu {TITLE_MIN})
-              </span>
-            </label>
-          </div>
-
-          <div className="pds-form-row">
-            <label className="pds-form-label">
-              <span>
-                Mô tả <span className="pds-form-req">*</span>
-              </span>
-              <textarea
-                className="pds-form-input pds-form-textarea"
-                placeholder="Podcast này nói về điều gì? Đối tượng người nghe là ai?"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={DESC_MAX}
-                rows={4}
-                disabled={submitting}
-                required
-              />
-              <span className="pds-form-hint">
-                {description.length}/{DESC_MAX} ký tự (tối thiểu {DESC_MIN})
-              </span>
-            </label>
-          </div>
-
-          {/* Paid toggle */}
-          <div className="pds-form-row">
-            <div className="pds-paid-toggle">
-              <div>
-                <p className="pds-paid-toggle-title">Podcast trả phí</p>
-                <p className="pds-paid-toggle-desc">
-                  Bật để đặt giá cho podcast của bạn. Tắt = miễn phí cho mọi
-                  người.
-                </p>
-              </div>
-              <button
-                type="button"
-                className={`pds-switch${isPaid ? " on" : ""}`}
-                onClick={handleTogglePaid}
-                disabled={submitting}
-                role="switch"
-                aria-checked={isPaid}
-              >
-                <span className="pds-switch-thumb" />
-              </button>
-            </div>
-          </div>
-
-          {/* Price input + gợi ý — chỉ hiển thị khi isPaid bật */}
-          {isPaid && (
-            <>
-              <div className="pds-form-row">
-                <label className="pds-form-label">
-                  <span>
-                    Giá bán (VND) <span className="pds-form-req">*</span>
-                  </span>
-                  <div className="pds-price-input-wrap">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      className="pds-form-input pds-price-input"
-                      placeholder="VD: 50000"
-                      value={formatVnd(price)}
-                      onChange={handlePriceChange}
-                      disabled={submitting}
-                      required
-                    />
-                    <span className="pds-price-suffix">₫</span>
-                  </div>
-                  <span className="pds-form-hint">Giá tối thiểu 1,000₫</span>
-                </label>
-              </div>
-
-              <div className="pds-price-suggest">
-                <div className="pds-price-suggest-head">
-                  <Lightbulb size={14} />
-                  <span>Gợi ý:</span>
-                </div>
-                <ul className="pds-price-suggest-list">
-                  {PRICE_SUGGESTIONS.map((s) => (
-                    <li key={s.label}>
-                      <span>{s.label}</span>
-                      <strong>{s.range}</strong>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          )}
-
-          <div className="pds-form-notice">
-            <Radio size={14} />
-            <span>
-              Sau khi gửi, bạn sẽ nhận thông báo khi admin duyệt hoặc từ chối
-              (kèm lý do).
-            </span>
-          </div>
-
-          <div className="pds-modal-actions">
-            <button
-              type="button"
-              className="pds-btn pds-btn--ghost"
-              onClick={onClose}
-              disabled={isBusy}
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="pds-btn pds-btn--primary"
-              disabled={!canSubmit}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 size={16} className="pds-spin" />
-                  Đang gửi...
-                </>
-              ) : (
-                <>
-                  <Plus size={16} />
-                  Gửi kiểm duyệt
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
   );
 }

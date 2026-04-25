@@ -11,7 +11,6 @@ import {
   Radio,
   Mic2,
   Calendar,
-  Zap,
   Menu,
   X,
   Home,
@@ -43,6 +42,7 @@ const Header: React.FC = () => {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLiveDropdown, setShowLiveDropdown] = useState(false);
+  const [showPodcastDropdown, setShowPodcastDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -52,8 +52,13 @@ const Header: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(location.pathname);
   const isLiveRoute =
     location.pathname === "/live" || location.pathname === "/livestream";
+  const isPodcastRoute =
+    location.pathname === "/podcast" ||
+    location.pathname === "/podcast/my" ||
+    location.pathname.startsWith("/podcast/");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const liveDropdownRef = useRef<HTMLDivElement>(null);
+  const podcastDropdownRef = useRef<HTMLDivElement>(null);
   const player = usePlayer();
 
   const syncAuthState = () => {
@@ -164,6 +169,12 @@ const Header: React.FC = () => {
       ) {
         setShowLiveDropdown(false);
       }
+      if (
+        podcastDropdownRef.current &&
+        !podcastDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowPodcastDropdown(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -192,7 +203,7 @@ const Header: React.FC = () => {
     <div className="header">
       {/* Spacer: position:fixed lấy header ra khỏi flow,
           div này giữ chỗ 64px để content không nhảy lên */}
-      <div style={{ height: '64px', flexShrink: 0 }} />
+      <div style={{ height: "64px", flexShrink: 0 }} />
       <header
         className={`home-header ${isScrolled ? "scrolled" : ""} ${!isVisible ? "hidden" : ""}`}
       >
@@ -271,13 +282,62 @@ const Header: React.FC = () => {
               )}
             </div>
 
-            <Link
-              className={`nav-item${activeTab === "/podcast" ? " active" : ""}`}
-              to="/podcast"
-              onClick={() => setActiveTab("/podcast")}
-            >
-              Podcast
-            </Link>
+            <div className="nav-item-dropdown-wrap" ref={podcastDropdownRef}>
+              <button
+                className={`nav-item nav-item-btn${isPodcastRoute ? " active" : ""}`}
+                onClick={() => setShowPodcastDropdown((prev) => !prev)}
+              >
+                Podcast
+                <ChevronDown
+                  size={14}
+                  className={`nav-chevron ${showPodcastDropdown ? "open" : ""}`}
+                />
+              </button>
+
+              {showPodcastDropdown && (
+                <div className="nav-live-dropdown">
+                  <div className="nav-live-dropdown-header">
+                    Khám phá Podcast
+                  </div>
+                  <a
+                    className="nav-live-item"
+                    href="/podcast"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowPodcastDropdown(false);
+                      setActiveTab("/podcast");
+                      navigate("/podcast");
+                    }}
+                  >
+                    <span className="nav-live-icon">
+                      <Podcast size={16} />
+                    </span>
+                    <div>
+                      <p>Tất cả Podcast</p>
+                      <span>Duyệt toàn bộ kho podcast</span>
+                    </div>
+                  </a>
+                  <a
+                    className="nav-live-item"
+                    href="/podcast/my"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowPodcastDropdown(false);
+                      setActiveTab("/podcast/my");
+                      navigate("/podcast/my");
+                    }}
+                  >
+                    <span className="nav-live-icon">
+                      <Mic2 size={16} />
+                    </span>
+                    <div>
+                      <p>Podcast của tôi</p>
+                      <span>Các podcast bạn đã gửi lên</span>
+                    </div>
+                  </a>
+                </div>
+              )}
+            </div>
             <Link
               className={`nav-item${activeTab === "/forum" ? " active" : ""}`}
               to="/forum"
@@ -450,6 +510,14 @@ const Header: React.FC = () => {
             >
               <Podcast size={18} />
               Podcast
+            </Link>
+            <Link
+              to="/podcast/my"
+              onClick={() => setShowMobileMenu(false)}
+              className={activeTab === "/podcast/my" ? "active" : ""}
+            >
+              <Mic2 size={18} />
+              Podcast của tôi
             </Link>
             <Link
               to="/forum"
