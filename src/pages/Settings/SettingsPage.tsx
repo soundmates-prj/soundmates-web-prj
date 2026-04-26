@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { User, Palette, Shield, Crown, FileText, Music, LogOut, Mic } from "lucide-react";
+import { User, Palette, Shield, Crown, FileText, Music, LogOut, Mic, Podcast } from "lucide-react";
 import ProfileSettings from "./sections/ProfileSettings";
 import VoiceCloneSection from "./sections/VoiceCloneSection";
 import AppearanceSettings from "./sections/AppearanceSettings";
 import SecuritySettings from "./sections/SecuritySettings";
 import SubscriptionSettings from "./sections/SubscriptionSettings";
 import MyPostsSettings from "./sections/MyPostsSettings";
+import MyPodcastsSettings from "./sections/MyPodcastsSettings";
 import MusicSection from "./sections/MusicSection";
 import "./SettingsPage.css";
 
-type SettingsTab = "profile" | "appearance" | "security" | "subscription" | "posts" | "music" | "voice";
+type SettingsTab = "profile" | "appearance" | "security" | "subscription" | "posts" | "music" | "voice" | "my-podcasts";
 
 const TABS = [
   { key: "profile" as const, label: "Hồ sơ", icon: User },
@@ -17,6 +18,7 @@ const TABS = [
   { key: "security" as const, label: "Bảo mật", icon: Shield },
   { key: "subscription" as const, label: "Gói dịch vụ", icon: Crown },
   { key: "posts" as const, label: "Bài viết", icon: FileText },
+  { key: "my-podcasts" as const, label: "Podcast của tôi", icon: Podcast },
   { key: "music" as const, label: "Nhạc yêu thích", icon: Music },
   { key: "voice" as const, label: "Voice Clone", icon: Mic },
 ];
@@ -43,6 +45,8 @@ export default function SettingsPage() {
         return <SubscriptionSettings />;
       case "posts":
         return <MyPostsSettings />;
+      case "my-podcasts":
+        return <MyPodcastsSettings />;
       case "music":
         return <MusicSection />;
       case "voice":

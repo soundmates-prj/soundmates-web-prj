@@ -337,6 +337,72 @@ class PodcastService {
     }
   }
 
+  /**
+   * Lấy các podcast do user tạo (My Podcasts)
+   */
+  async getMyPodcasts(status?: string): Promise<PodcastItem[]> {
+    try {
+      const url = status ? `/podcast/my?status=${status}` : "/podcast/my";
+      const response = await api.get<ApiResponse<PodcastItem[]>>(url);
+      return response.data.data ?? [];
+    } catch (error: any) {
+      console.error("Error fetching my podcasts:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tải danh sách podcast của bạn",
+      );
+    }
+  }
+
+  /**
+   * Tạo request thêm tập mới (Episode Request)
+   */
+  async createPodcastEpisodeRequest(payload: {
+    podcastId: string;
+    title: string;
+    description: string;
+    thumbnailUrl: string;
+    audioUrl: string;
+    duration: number;
+  }): Promise<unknown> {
+    try {
+      const response = await api.post<ApiResponse<unknown>>(
+        "/podcast-episode-requests",
+        payload,
+      );
+      if (response.data.success === false) {
+        throw new Error(response.data.message || "Không thể tạo yêu cầu tập mới");
+      }
+      return response.data.data ?? null;
+    } catch (error: any) {
+      console.error("Error creating episode request:", error);
+      throw new Error(
+        error.response?.data?.message || error.message || "Lỗi khi tạo yêu cầu tập mới",
+      );
+    }
+  }
+
+  /**
+   * Lấy danh sách các yêu cầu thêm tập (Episode Requests) của user
+   */
+  async getMyEpisodeRequests(status?: string): Promise<any[]> {
+    try {
+      const url = status
+        ? `/podcast-episode-requests/my?status=${status}`
+        : "/podcast-episode-requests/my";
+      const response = await api.get<ApiResponse<any[]>>(url);
+      return response.data.data ?? [];
+    } catch (error: any) {
+      console.error("Error fetching my episode requests:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tải danh sách yêu cầu tập",
+      );
+    }
+  }
+
   async getPodcastById(id: string): Promise<PodcastItem> {
     try {
       const response = await api.get<ApiResponse<PodcastItem>>(
@@ -440,6 +506,56 @@ class PodcastService {
           error.message ||
           "Không thể bỏ lưu podcast",
       );
+    }
+  }
+
+  // ─── Purchased Podcasts ───
+
+  /**
+   * Tạo payment link (PayOS) để mua podcast.
+   * POST /payments (account-content-service)
+   * Trả về paymentUrl để redirect.
+   */
+  async createPaymentForPodcast(
+    podcastId: string,
+    amount: number,
+    returnUrl?: string,
+  ): Promise<string> {
+    try {
+      const response = await api.post<{ paymentUrl?: string; data?: { paymentUrl?: string } }>(
+        "/payments",
+        {
+          targetId: podcastId,
+          targetType: "podcast",
+          totalAmount: amount,
+          method: "vnpay",
+          returnUrl: returnUrl ?? undefined,
+        },
+      );
+      const url =
+        (response.data as any).paymentUrl ??
+        (response.data as any).data?.paymentUrl;
+      if (!url) throw new Error("Không nhận được link thanh toán");
+      return url;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tạo link thanh toán",
+      );
+    }
+  }
+
+  /**
+   * Kiểm tra người dùng đã mua podcast chưa.
+   * isPurchased được trả về trực tiếp từ GET /podcast/:id khi có JWT.
+   */
+  async checkPurchased(podcastId: string): Promise<boolean> {
+    try {
+      const podcast = await this.getPodcastById(podcastId);
+      return !!podcast.isPurchased;
+    } catch {
+      return false;
     }
   }
 }

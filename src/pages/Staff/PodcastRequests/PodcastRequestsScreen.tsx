@@ -191,17 +191,21 @@ export function PodcastRequestsScreen() {
               <div className="podcast-meta">
                 <div className="meta-item">
                   <User size={14} />
-                  <span>{request.requestedByUsername || request.requestedByUserId}</span>
-                </div>
-                <div className="meta-item">
-                  <Clock size={14} />
-                  <span>{formatDuration(request.durationSeconds)}</span>
+                  <span>{request.authorInfo?.name || request.requestedByUsername || request.requestedByUserId}</span>
                 </div>
               </div>
 
-              {request.voiceDisplayName && (
+              {request.type && (
                 <div className="podcast-category">
-                  <span className="category-badge">🎙️ {request.voiceDisplayName}</span>
+                  <span className="category-badge">🏷️ {request.type}</span>
+                </div>
+              )}
+
+              {request.isPaid && (
+                <div className="podcast-category" style={{marginTop: '4px'}}>
+                  <span className="category-badge" style={{color: '#10b981', borderColor: '#10b981', background: 'rgba(16, 185, 129, 0.1)'}}>
+                    💰 {request.price?.toLocaleString()}đ
+                  </span>
                 </div>
               )}
 
@@ -215,7 +219,7 @@ export function PodcastRequestsScreen() {
               <div className="podcast-footer">
                 <button className="preview-btn" onClick={() => setSelectedRequest(request)}>
                   <Play size={16} />
-                  Xem trước
+                  Xem chi tiết
                 </button>
                 {request.status === 'Pending' && (
                   <div className="action-buttons">
@@ -257,22 +261,25 @@ export function PodcastRequestsScreen() {
               </button>
             </div>
             <div className="preview-modal-body">
+              {selectedRequest.bannerUrl && (
+                <div style={{ marginBottom: 16, borderRadius: 8, overflow: 'hidden' }}>
+                  <img src={selectedRequest.bannerUrl} alt="Banner" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
+                </div>
+              )}
               <div className="preview-info">
                 <div className="info-row">
                   <span className="info-label">Người tạo:</span>
-                  <span className="info-value">{selectedRequest.requestedByUsername || selectedRequest.requestedByUserId}</span>
+                  <span className="info-value">{selectedRequest.authorInfo?.name || selectedRequest.requestedByUsername || selectedRequest.requestedByUserId}</span>
                 </div>
+                {selectedRequest.type && (
+                  <div className="info-row">
+                    <span className="info-label">Chủ đề:</span>
+                    <span className="info-value">{selectedRequest.type}</span>
+                  </div>
+                )}
                 <div className="info-row">
-                  <span className="info-label">Giọng đọc:</span>
-                  <span className="info-value">{selectedRequest.voiceDisplayName || selectedRequest.voiceCode}</span>
-                </div>
-                <div className="info-row">
-                  <span className="info-label">Thời lượng:</span>
-                  <span className="info-value">{formatDuration(selectedRequest.durationSeconds)}</span>
-                </div>
-                <div className="info-row">
-                  <span className="info-label">Session:</span>
-                  <span className="info-value">{selectedRequest.sessionName || selectedRequest.liveSessionId}</span>
+                  <span className="info-label">Phí:</span>
+                  <span className="info-value">{selectedRequest.isPaid ? `${selectedRequest.price?.toLocaleString()}đ` : 'Miễn phí'}</span>
                 </div>
                 {selectedRequest.description && (
                   <div className="info-row">
@@ -287,19 +294,6 @@ export function PodcastRequestsScreen() {
                   </div>
                 )}
               </div>
-
-              {selectedRequest.audioUrl && (
-                <div className="audio-player">
-                  <audio controls src={selectedRequest.audioUrl} style={{ width: '100%' }} />
-                </div>
-              )}
-
-              {selectedRequest.scriptText && (
-                <div className="script-preview">
-                  <p className="script-label">📝 Script:</p>
-                  <pre className="script-text">{selectedRequest.scriptText}</pre>
-                </div>
-              )}
             </div>
             <div className="preview-modal-footer">
               <button className="modal-btn reject" onClick={() => { handleReject(selectedRequest.id); setSelectedRequest(null); }}>

@@ -46,6 +46,7 @@ import ForumPage from "./pages/Forum/ForumPage";
 import SchedulePublicPage from "./pages/SchedulePublic/SchedulePublicPage";
 import TransactionsPage from "./pages/Admin/LiveOps/TransactionsPage";
 import MyPodcastsPage from "./pages/podcast/MyPodcastsPage";
+import PayoutScreen from "./pages/Admin/LiveOps/PayoutScreen";
 
 // ── Host Page Imports ──
 import { HostDashboard } from "./pages/Host/Dashboard/HostDashboard";
@@ -128,6 +129,48 @@ function App() {
               <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="transactions" element={<TransactionsPage />} />
+              <Route path="posts" element={<UserPostsManagementScreen />} />
+            </Route>
+            {/* ── Admin Routes ── */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requiredRole="ADMIN">
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="analytics" element={<AnalyticsScreen />} />
+              <Route path="music" element={<MusicCatalogPage />} />
+              <Route
+                path="users"
+                element={
+                  <ErrorBoundary>
+                    <UserManagementScreen />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path="roles"
+                element={
+                  <ErrorBoundary>
+                    <RoleManagementScreen />
+                  </ErrorBoundary>
+                }
+              />
+              <Route path="stations" element={<StationPage />} />
+              <Route path="playlists" element={<PlaylistPage />} />
+              <Route
+                path="playlists/:playlistId"
+                element={<PlaylistDetailPage />}
+              />
+              <Route path="podcasts" element={<PodcastPage />} />
+              <Route path="podcasts/new" element={<PodcastEditor />} />
+              <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
+              <Route path="transactions" element={<TransactionsPage />} />
+              <Route path="payouts" element={<PayoutScreen />} />
               <Route path="posts" element={<UserPostsManagementScreen />} />
             </Route>
 

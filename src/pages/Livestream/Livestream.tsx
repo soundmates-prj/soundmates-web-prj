@@ -867,19 +867,10 @@ const LivestreamPage: React.FC = () => {
                   <div className="podcast-card-footer">
                     <div className="podcast-card-author">
                       <div className="podcast-author-avatar">
-                        {typeof pc.author === "string"
-                          ? pc.author.charAt(0)
-                          : (pc.author?.Name?.charAt(0) ??
-                            pc.author?.name?.charAt(0) ??
-                            "?")}
+                        {pc.author.charAt(0)}
                       </div>
                       <span className="podcast-author-name">
-                        {typeof pc.author === "string"
-                          ? pc.author
-                          : (pc.author?.Name ??
-                            pc.author?.name ??
-                            pc.author?.username ??
-                            "SoundMates")}
+                        {pc.author}
                       </span>
                     </div>
                     <span className={`podcast-voice-badge ${pc.voiceType}`}>
@@ -1179,13 +1170,7 @@ const LivestreamPage: React.FC = () => {
                     <div className="podcast-tab-item-text">{pc.title}</div>
                     <div className="podcast-tab-item-footer">
                       <span>
-                        Bởi{" "}
-                        {typeof pc.author === "string"
-                          ? pc.author
-                          : (pc.author?.Name ??
-                            pc.author?.name ??
-                            pc.author?.username ??
-                            "SoundMates")}
+                        Bởi {pc.author}
                       </span>
                       <span className={`podcast-voice-badge ${pc.voiceType}`}>
                         {pc.voiceType === "ai" ? "Giọng AI" : "Giọng thật"}
