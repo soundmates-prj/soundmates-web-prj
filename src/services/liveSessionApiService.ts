@@ -435,7 +435,7 @@ export interface PodcastRequestResult {
   title: string;
   type: string | null;
   description: string | null;
-  banner: string | null;
+  bannerUrl: string | null;
   price: number;
   isPaid: boolean;
   status: string;

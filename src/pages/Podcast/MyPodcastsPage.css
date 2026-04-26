@@ -200,40 +200,6 @@
   transition: all 0.2s ease;
 }
 
-/* Controls wrapper for search + filters */
-.mypod-controls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-}
-
-.mypod-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.18));
-  background: var(--card-bg, #fff);
-  min-width: 260px;
-  max-width: 640px;
-}
-
-.mypod-search svg {
-  color: var(--text-muted, #94a3b8);
-}
-
-.mypod-search input {
-  border: none;
-  outline: none;
-  background: transparent;
-  width: 100%;
-  font-size: 14px;
-  color: var(--text-primary, #1e293b);
-}
-
 .mypod-search:focus {
   outline: none;
   border-color: #3b82f6;
@@ -244,55 +210,6 @@
   background: rgba(30, 41, 59, 0.6);
   color: #e2e8f0;
   border-color: rgba(148, 163, 184, 0.15);
-}
-
-.mypod-filters {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.mypod-filter-btn {
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-muted, #64748b);
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.14s ease;
-}
-
-.mypod-filter-btn:hover {
-  color: #3b82f6;
-  border-color: rgba(59, 130, 246, 0.12);
-  background: rgba(59, 130, 246, 0.04);
-}
-
-.mypod-filter-btn.active {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.18);
-}
-
-[data-theme="dark"] .mypod-filter-btn {
-  color: #cbd5e1;
-}
-
-[data-theme="dark"] .mypod-filter-btn:hover {
-  background: rgba(59, 130, 246, 0.08);
-}
-
-@media (max-width: 640px) {
-  .mypod-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .mypod-filters {
-    justify-content: flex-start;
-  }
 }
 
 /* ── List ──────────────────────────────────────────────── */
@@ -934,6 +851,229 @@
   gap: 10px;
 }
 
+/* ── Episode toggle button ──────────────────────────────── */
+.mypod-episodes-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.25));
+  background: var(--card-bg, #f8fafc);
+  color: var(--text-primary, #1e293b);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.mypod-episodes-toggle:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.mypod-episodes-toggle.open {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.07);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.mypod-episodes-toggle-chevron {
+  margin-left: auto;
+  transition: transform 0.25s ease;
+}
+
+.mypod-episodes-toggle.open .mypod-episodes-toggle-chevron {
+  transform: rotate(180deg);
+}
+
+[data-theme="dark"] .mypod-episodes-toggle {
+  background: rgba(30, 41, 59, 0.5);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+[data-theme="dark"] .mypod-episodes-toggle:hover,
+[data-theme="dark"] .mypod-episodes-toggle.open {
+  border-color: #3b82f6;
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* ── Episode list panel ─────────────────────────────────── */
+.mypod-modal-episode-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #3b82f6;
+  border-top: none;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .mypod-modal-episode-list {
+  border-color: #3b82f6;
+}
+
+.mypod-modal-episode-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.15));
+  background: var(--card-bg, #fff);
+  transition: background 0.15s ease;
+}
+
+.mypod-modal-episode-item:last-child {
+  border-bottom: none;
+}
+
+.mypod-modal-episode-item:hover {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.mypod-modal-episode-item.playing {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+[data-theme="dark"] .mypod-modal-episode-item {
+  background: rgba(15, 23, 42, 0.4);
+  border-color: rgba(148, 163, 184, 0.1);
+}
+
+[data-theme="dark"] .mypod-modal-episode-item.playing {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.mypod-modal-episode-num {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mypod-modal-episode-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mypod-modal-episode-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .mypod-modal-episode-title {
+  color: #f1f5f9;
+}
+
+.mypod-modal-episode-desc {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mypod-modal-episode-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.mypod-modal-episode-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.mypod-modal-episode-date {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+}
+
+/* ── Play button ────────────────────────────────────────── */
+.mypod-episode-play-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mypod-episode-play-btn:hover {
+  background: #3b82f6;
+  color: #fff;
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+
+.mypod-episode-play-btn.playing {
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+  animation: mypod-pulse 1.8s ease infinite;
+}
+
+@keyframes mypod-pulse {
+  0%,
+  100% {
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+  }
+  50% {
+    box-shadow: 0 6px 24px rgba(59, 130, 246, 0.6);
+  }
+}
+
+/* ── No episodes empty state ────────────────────────────── */
+.mypod-modal-no-episodes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 20px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 13px;
+  text-align: center;
+  background: var(--card-bg, #fff);
+}
+
+[data-theme="dark"] .mypod-modal-no-episodes {
+  background: rgba(15, 23, 42, 0.4);
+}
+
 /* ══════════════════════════════════════════════════════════
    Responsive
    ══════════════════════════════════════════════════════════ */
@@ -1252,6 +1392,69 @@
   color: var(--text-muted, #94a3b8);
   font-size: 11px;
   margin-left: 4px;
+}
+
+/* ── Duration warning (Chrome MP3 bug) ────────────────── */
+.mypod-duration-warning {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  font-size: 12px;
+  color: #d97706;
+  line-height: 1.5;
+}
+
+.mypod-duration-warning svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+[data-theme="dark"] .mypod-duration-warning {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+}
+
+/* ── Validation errors (why button is disabled) ──────── */
+.mypod-validation-errors {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  font-size: 12px;
+  color: #dc2626;
+  line-height: 1.5;
+}
+
+.mypod-validation-errors svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.mypod-validation-errors strong {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.mypod-validation-errors ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.mypod-validation-errors li {
+  margin-bottom: 2px;
+}
+
+[data-theme="dark"] .mypod-validation-errors {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
 }
 
 .pds-form-input {

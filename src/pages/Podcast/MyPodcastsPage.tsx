@@ -3,14 +3,18 @@ import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
   Clock,
   Eye,
   FileAudio,
   Lightbulb,
+  ListMusic,
   Loader2,
   Mic2,
   Music,
   Music2,
+  Pause,
+  Play,
   Plus,
   PlusCircle,
   Radio,
@@ -22,12 +26,8 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import {
-  liveSessionApiService,
-  type PodcastRequestResult,
-} from "../../services/liveSessionApiService";
 import podcastService from "../../services/podcastService";
-import type { PodcastItem } from "../../types/podcast";
+import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
 import { showError } from "../../components/common/toastUtils";
 import { showToast } from "../../utils/toast";
 import { uploadAudio, uploadImage } from "../../utils/cloudinaryUpload";
@@ -109,29 +109,6 @@ const fmtDateTime = (value?: string | null) => {
 const normalizeStatus = (status?: string | null) =>
   (status || "").trim().toLowerCase();
 
-const getRequestPrice = (request: PodcastRequestResult) =>
-  typeof request.price === "number"
-    ? request.price
-    : Number(request.price || 0);
-
-const getRequestType = (request: PodcastRequestResult) =>
-  typeof request.type === "string" && request.type.trim()
-    ? request.type
-    : "Podcast";
-
-type StatusFilter = "all" | "pending" | "approved" | "rejected";
-
-const STATUS_TABS: {
-  key: StatusFilter;
-  label: string;
-  icon: React.ComponentType<{ size?: number }>;
-}[] = [
-  { key: "all", label: "Tất cả", icon: Music },
-  { key: "pending", label: "Chờ duyệt", icon: Clock },
-  { key: "approved", label: "Đã duyệt", icon: CheckCircle2 },
-  { key: "rejected", label: "Đã từ chối", icon: XCircle },
-];
-
 /* ══════════════════════════════════════════════
    MyPodcastsPage
    ══════════════════════════════════════════════ */
@@ -139,31 +116,21 @@ const STATUS_TABS: {
 export default function MyPodcastsPage() {
   const navigate = useNavigate();
 
-  const [requests, setRequests] = useState<PodcastRequestResult[]>([]);
+  const [podcasts, setPodcasts] = useState<PodcastItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
-  const [detailRequest, setDetailRequest] =
-    useState<PodcastRequestResult | null>(null);
+  const [detailPodcast, setDetailPodcast] = useState<PodcastItem | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-
-  // Danh sách podcast đã publish của user — dùng để match podcastId cho request approved
-  const [publishedPodcasts, setPublishedPodcasts] = useState<PodcastItem[]>([]);
   const [createEpisodeFor, setCreateEpisodeFor] = useState<PodcastItem | null>(
     null,
   );
 
-  const loadRequests = async () => {
+  const loadPodcasts = async () => {
     setLoading(true);
     try {
-      // Load song song: requests (theo dõi status) + published podcasts (để lấy podcastId)
-      const [data, published] = await Promise.all([
-        liveSessionApiService.getMyPodcastRequests(),
-        podcastService.getPublishedPodcasts().catch(() => [] as PodcastItem[]),
-      ]);
-      setRequests(data);
-      setPublishedPodcasts(published);
+      const data = await podcastService.getMyPodcasts();
+      setPodcasts(data);
     } catch {
       showError("Không thể tải danh sách podcast của bạn");
     } finally {
@@ -185,50 +152,30 @@ export default function MyPodcastsPage() {
     showToast.success(
       "Podcast đã được gửi! Đang chờ admin kiểm duyệt trước khi xuất bản.",
     );
-    void loadRequests();
+    void loadPodcasts();
   };
 
   useEffect(() => {
-    void loadRequests();
+    void loadPodcasts();
   }, []);
-
-  const counts = useMemo(
-    () => ({
-      all: requests.length,
-      pending: requests.filter((r) => normalizeStatus(r.status) === "pending")
-        .length,
-      approved: requests.filter((r) => normalizeStatus(r.status) === "approved")
-        .length,
-      rejected: requests.filter((r) => normalizeStatus(r.status) === "rejected")
-        .length,
-    }),
-    [requests],
-  );
 
   const filtered = useMemo(() => {
     const kw = search.trim().toLowerCase();
-    return requests.filter((r) => {
-      if (
-        statusFilter !== "all" &&
-        normalizeStatus(r.status) !== statusFilter
-      ) {
-        return false;
-      }
-      if (!kw) return true;
-      return (
-        r.title?.toLowerCase().includes(kw) ||
-        r.description?.toLowerCase().includes(kw) ||
-        r.type?.toLowerCase().includes(kw)
-      );
-    });
-  }, [requests, statusFilter, search]);
+    if (!kw) return podcasts;
+    return podcasts.filter(
+      (p) =>
+        p.title?.toLowerCase().includes(kw) ||
+        p.description?.toLowerCase().includes(kw) ||
+        p.type?.toLowerCase().includes(kw),
+    );
+  }, [podcasts, search]);
 
-  const openDetail = async (request: PodcastRequestResult) => {
-    setDetailRequest(request);
+  const openDetail = async (podcast: PodcastItem) => {
+    setDetailPodcast(podcast);
     setDetailLoading(true);
     try {
-      const fresh = await liveSessionApiService.getPodcastRequest(request.id);
-      setDetailRequest(fresh);
+      const fresh = await podcastService.getPodcastById(podcast.id);
+      setDetailPodcast(fresh);
     } catch {
       showError("Không thể tải chi tiết");
     } finally {
@@ -237,29 +184,8 @@ export default function MyPodcastsPage() {
   };
 
   const closeDetail = () => {
-    setDetailRequest(null);
+    setDetailPodcast(null);
     setDetailLoading(false);
-  };
-
-  /**
-   * Tìm podcast đã publish tương ứng với request đã approved.
-   * Match theo (createdBy === requestedByUserId) + title (case-insensitive).
-   * Chỉ trả về khi request đã approved — pending/rejected thì không có podcast tổng.
-   */
-  const findMatchedPodcast = (
-    request: PodcastRequestResult,
-  ): PodcastItem | null => {
-    if (normalizeStatus(request.status) !== "approved") return null;
-    const reqTitle = request.title?.trim().toLowerCase() ?? "";
-    const reqUserId = request.requestedByUserId;
-
-    return (
-      publishedPodcasts.find((p) => {
-        const createdBy = (p as any).createdBy as string | undefined;
-        const pTitle = p.title?.trim().toLowerCase() ?? "";
-        return createdBy === reqUserId && pTitle === reqTitle;
-      }) ?? null
-    );
   };
 
   return (
@@ -273,13 +199,13 @@ export default function MyPodcastsPage() {
               Podcast của tôi
             </h1>
             <p className="mypod-subtitle">
-              Quản lý các podcast bạn đã gửi lên — theo dõi trạng thái duyệt
+              Quản lý các podcast bạn đã xuất bản — xem và thêm tập mới
             </p>
           </div>
           <div className="mypod-header-actions">
             <button
               className="mypod-btn mypod-btn--ghost"
-              onClick={() => void loadRequests()}
+              onClick={() => void loadPodcasts()}
               disabled={loading}
             >
               {loading ? (
@@ -297,27 +223,6 @@ export default function MyPodcastsPage() {
               Tạo Podcast
             </button>
           </div>
-        </div>
-
-        {/* Status tabs */}
-        <div className="mypod-tabs">
-          {STATUS_TABS.map((tab) => {
-            const Icon = tab.icon;
-            const count = counts[tab.key];
-            return (
-              <button
-                key={tab.key}
-                className={`mypod-tab${
-                  statusFilter === tab.key ? " mypod-tab--active" : ""
-                }`}
-                onClick={() => setStatusFilter(tab.key)}
-              >
-                <Icon size={14} />
-                {tab.label}
-                <span className="mypod-tab-count">{count}</span>
-              </button>
-            );
-          })}
         </div>
 
         {/* Search */}
@@ -350,11 +255,11 @@ export default function MyPodcastsPage() {
             <Mic2 size={48} />
             <h3>Chưa có podcast nào</h3>
             <p>
-              {requests.length === 0
-                ? "Bạn chưa gửi yêu cầu đăng podcast nào. Hãy tạo podcast đầu tiên của bạn!"
-                : "Không có podcast nào khớp với bộ lọc."}
+              {podcasts.length === 0
+                ? "Bạn chưa có podcast nào được xuất bản. Hãy tạo podcast đầu tiên của bạn!"
+                : "Không có podcast nào khớp với từ khóa tìm kiếm."}
             </p>
-            {requests.length === 0 && (
+            {podcasts.length === 0 && (
               <button
                 className="mypod-btn mypod-btn--primary"
                 onClick={handleOpenCreate}
@@ -366,13 +271,12 @@ export default function MyPodcastsPage() {
           </div>
         ) : (
           <div className="mypod-list">
-            {filtered.map((request) => (
+            {filtered.map((podcast) => (
               <MyPodcastCard
-                key={request.id}
-                request={request}
-                matchedPodcast={findMatchedPodcast(request)}
-                onView={() => void openDetail(request)}
-                onCreateEpisode={(podcast) => setCreateEpisodeFor(podcast)}
+                key={podcast.id}
+                podcast={podcast}
+                onView={() => void openDetail(podcast)}
+                onCreateEpisode={(p) => setCreateEpisodeFor(p)}
               />
             ))}
           </div>
@@ -380,9 +284,9 @@ export default function MyPodcastsPage() {
       </div>
 
       {/* Detail modal */}
-      {detailRequest && (
+      {detailPodcast && (
         <MyPodcastDetailModal
-          request={detailRequest}
+          podcast={detailPodcast}
           loading={detailLoading}
           onClose={closeDetail}
         />
@@ -418,100 +322,66 @@ export default function MyPodcastsPage() {
    ──────────────────────────────────────────── */
 
 function MyPodcastCard({
-  request,
-  matchedPodcast,
+  podcast,
   onView,
   onCreateEpisode,
 }: {
-  request: PodcastRequestResult;
-  matchedPodcast: PodcastItem | null;
+  podcast: PodcastItem;
   onView: () => void;
   onCreateEpisode: (podcast: PodcastItem) => void;
 }) {
-  const status = normalizeStatus(request.status);
-  const price = getRequestPrice(request);
-  const canCreateEpisode = Boolean(matchedPodcast);
-
-  const statusNode = (() => {
-    switch (status) {
-      case "approved":
-        return (
-          <span className="mypod-badge mypod-badge--good">
-            <CheckCircle2 size={12} />
-            Đã duyệt
-          </span>
-        );
-      case "rejected":
-        return (
-          <span className="mypod-badge mypod-badge--danger">
-            <XCircle size={12} />
-            Đã từ chối
-          </span>
-        );
-      default:
-        return (
-          <span className="mypod-badge mypod-badge--warn">
-            <Clock size={12} />
-            Chờ duyệt
-          </span>
-        );
-    }
-  })();
+  const episodeCount = podcast.episodeCount ?? podcast.allEpisodes?.length ?? 0;
 
   return (
     <div className="mypod-card" onClick={onView}>
-      <div className="pod-request-cover">
-        {request.banner ? (
-          <img src={request.banner} alt={request.title} />
+      <div className="mypod-card-cover">
+        {podcast.banner ? (
+          <img src={podcast.banner} alt={podcast.title} />
         ) : (
           <div className="mypod-card-cover-placeholder">
             <Mic2 size={28} />
           </div>
         )}
-        {request.isPaid && price > 0 && (
+        {podcast.isPaid && (podcast.price ?? 0) > 0 && (
           <span className="mypod-card-price">
-            {price.toLocaleString("vi-VN")}₫
+            {(podcast.price ?? 0).toLocaleString("vi-VN")}₫
           </span>
         )}
       </div>
 
       <div className="mypod-card-body">
         <div className="mypod-card-top">
-          <h3 className="mypod-card-title">{request.title}</h3>
-          {statusNode}
+          <h3 className="mypod-card-title">{podcast.title}</h3>
+          <span className="mypod-badge mypod-badge--good">
+            <CheckCircle2 size={12} />
+            Đã xuất bản
+          </span>
         </div>
 
         <p className="mypod-card-desc">
-          {typeof request.description === "string" && request.description.trim()
-            ? request.description
+          {typeof podcast.description === "string" && podcast.description.trim()
+            ? podcast.description
             : "Chưa có mô tả."}
         </p>
 
         <div className="mypod-card-meta">
-          <div className="mypod-card-meta-item">
-            <Tag size={13} />
-            <span>{getRequestType(request)}</span>
-          </div>
-          <div className="mypod-card-meta-item">
-            <RefreshCw size={13} />
-            <span>Gửi: {fmtDateTime(request.requestedAt)}</span>
-          </div>
-          {request.reviewedAt && (
+          {podcast.type && (
             <div className="mypod-card-meta-item">
-              <CheckCircle2 size={13} />
-              <span>Duyệt: {fmtDateTime(request.reviewedAt)}</span>
+              <Tag size={13} />
+              <span>{podcast.type}</span>
+            </div>
+          )}
+          <div className="mypod-card-meta-item">
+            <Music2 size={13} />
+            <span>{episodeCount} tập</span>
+          </div>
+          {podcast.createdAt && (
+            <div className="mypod-card-meta-item">
+              <Clock size={13} />
+              <span>Tạo: {fmtDateTime(podcast.createdAt)}</span>
             </div>
           )}
         </div>
-
-        {status === "rejected" && request.rejectReason && (
-          <div className="mypod-card-reject">
-            <AlertCircle size={14} />
-            <div>
-              <strong>Lý do từ chối:</strong> {request.rejectReason}
-            </div>
-          </div>
-        )}
 
         <div className="mypod-card-actions">
           <button
@@ -525,19 +395,17 @@ function MyPodcastCard({
             Xem chi tiết
           </button>
 
-          {canCreateEpisode && matchedPodcast && (
-            <button
-              className="mypod-card-episode"
-              onClick={(e) => {
-                e.stopPropagation();
-                onCreateEpisode(matchedPodcast);
-              }}
-              title="Tạo tập mới cho podcast này"
-            >
-              <PlusCircle size={14} />
-              Tạo tập mới
-            </button>
-          )}
+          <button
+            className="mypod-card-episode"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateEpisode(podcast);
+            }}
+            title="Tạo tập mới cho podcast này"
+          >
+            <PlusCircle size={14} />
+            Tạo tập mới
+          </button>
         </div>
       </div>
     </div>
@@ -549,42 +417,50 @@ function MyPodcastCard({
    ──────────────────────────────────────────── */
 
 function MyPodcastDetailModal({
-  request,
+  podcast,
   loading,
   onClose,
 }: {
-  request: PodcastRequestResult;
+  podcast: PodcastItem;
   loading: boolean;
   onClose: () => void;
 }) {
-  const status = normalizeStatus(request.status);
-  const price = getRequestPrice(request);
+  const episodes: PodcastEpisode[] = podcast.allEpisodes ?? [];
+  const [showEpisodes, setShowEpisodes] = useState(false);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const statusNode = (() => {
-    switch (status) {
-      case "approved":
-        return (
-          <span className="mypod-badge mypod-badge--good">
-            <CheckCircle2 size={12} />
-            Đã duyệt
-          </span>
-        );
-      case "rejected":
-        return (
-          <span className="mypod-badge mypod-badge--danger">
-            <XCircle size={12} />
-            Đã từ chối
-          </span>
-        );
-      default:
-        return (
-          <span className="mypod-badge mypod-badge--warn">
-            <Clock size={12} />
-            Chờ duyệt
-          </span>
-        );
+  const handlePlayPause = (ep: PodcastEpisode) => {
+    if (!ep.audioUrl) return;
+
+    // Same episode → toggle play/pause
+    if (playingId === ep.id) {
+      if (audioRef.current?.paused) {
+        void audioRef.current.play();
+      } else {
+        audioRef.current?.pause();
+        setPlayingId(null);
+      }
+      return;
     }
-  })();
+
+    // Different episode → swap source
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    const audio = new Audio(ep.audioUrl);
+    audioRef.current = audio;
+    audio.onended = () => setPlayingId(null);
+    void audio.play();
+    setPlayingId(ep.id ?? null);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+    };
+  }, []);
 
   return (
     <div className="mypod-modal-overlay" onClick={onClose}>
@@ -607,64 +483,125 @@ function MyPodcastDetailModal({
             </div>
           )}
 
-          {request.banner && (
+          {podcast.banner && (
             <div className="mypod-modal-banner">
-              <img src={request.banner} alt={request.title} />
+              <img src={podcast.banner} alt={podcast.title} />
             </div>
           )}
 
           <div className="mypod-modal-badges">
-            {statusNode}
-            {request.isPaid ? (
+            <span className="mypod-badge mypod-badge--good">
+              <CheckCircle2 size={12} />
+              Đã xuất bản
+            </span>
+            {podcast.isPaid ? (
               <span className="mypod-badge mypod-badge--gold">
-                Paid • {price.toLocaleString("vi-VN")}₫
+                Có phí • {(podcast.price ?? 0).toLocaleString("vi-VN")}₫
               </span>
             ) : (
               <span className="mypod-badge">Miễn phí</span>
             )}
           </div>
 
-          <h2 className="mypod-modal-title">{request.title}</h2>
+          <h2 className="mypod-modal-title">{podcast.title}</h2>
           <p className="mypod-modal-desc">
-            {typeof request.description === "string" &&
-            request.description.trim()
-              ? request.description
+            {typeof podcast.description === "string" &&
+            podcast.description.trim()
+              ? podcast.description
               : "Chưa có mô tả."}
           </p>
 
           <div className="mypod-modal-grid">
-            <DetailField label="Loại" value={getRequestType(request)} />
+            <DetailField label="Thể loại" value={podcast.type ?? "—"} />
             <DetailField
               label="Giá"
               value={
-                request.isPaid
-                  ? `${price.toLocaleString("vi-VN")}₫`
+                podcast.isPaid
+                  ? `${(podcast.price ?? 0).toLocaleString("vi-VN")}₫`
                   : "Miễn phí"
               }
             />
             <DetailField
-              label="Gửi lúc"
-              value={fmtDateTime(request.requestedAt)}
+              label="Số tập"
+              value={String(
+                podcast.episodeCount ?? podcast.allEpisodes?.length ?? 0,
+              )}
             />
             <DetailField
-              label="Duyệt lúc"
-              value={request.reviewedAt ? fmtDateTime(request.reviewedAt) : "—"}
+              label="Ngày tạo"
+              value={fmtDateTime(podcast.createdAt)}
             />
           </div>
 
-          {status === "rejected" &&
-            typeof request.rejectReason === "string" &&
-            request.rejectReason.trim() && (
-              <div className="mypod-modal-reject">
-                <div className="mypod-modal-reject-head">
-                  <AlertCircle size={14} />
-                  Lý do từ chối
+          {/* Episode toggle button */}
+          <button
+            className={`mypod-episodes-toggle${showEpisodes ? " open" : ""}`}
+            onClick={() => setShowEpisodes((v) => !v)}
+          >
+            <ListMusic size={16} />
+            Danh sách tập ({episodes.length})
+            <ChevronDown size={16} className="mypod-episodes-toggle-chevron" />
+          </button>
+
+          {/* Episode panel */}
+          {showEpisodes && (
+            <div className="mypod-modal-episode-list">
+              {episodes.length === 0 ? (
+                <div className="mypod-modal-no-episodes">
+                  <FileAudio size={28} />
+                  <p>Chưa có tập nào. Hãy thêm tập đầu tiên!</p>
                 </div>
-                <div className="mypod-modal-reject-body">
-                  {request.rejectReason}
-                </div>
-              </div>
-            )}
+              ) : (
+                episodes.map((ep, idx) => {
+                  const isPlaying = playingId === ep.id;
+                  return (
+                    <div
+                      key={ep.id ?? idx}
+                      className={`mypod-modal-episode-item${isPlaying ? " playing" : ""}`}
+                    >
+                      <div className="mypod-modal-episode-num">
+                        {ep.episodeNumber ?? idx + 1}
+                      </div>
+
+                      <div className="mypod-modal-episode-info">
+                        <span className="mypod-modal-episode-title">
+                          {ep.title}
+                        </span>
+                        {ep.description && (
+                          <span className="mypod-modal-episode-desc">
+                            {ep.description}
+                          </span>
+                        )}
+                        <div className="mypod-modal-episode-meta">
+                          {ep.duration != null && ep.duration > 0 && (
+                            <span className="mypod-modal-episode-duration">
+                              <Clock size={11} />
+                              {formatDuration(ep.duration)}
+                            </span>
+                          )}
+                          {ep.publishDate && (
+                            <span className="mypod-modal-episode-date">
+                              {fmtDateTime(ep.publishDate)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {ep.audioUrl && (
+                        <button
+                          className={`mypod-episode-play-btn${isPlaying ? " playing" : ""}`}
+                          onClick={() => handlePlayPause(ep)}
+                          title={isPlaying ? "Tạm dừng" : "Phát audio"}
+                        >
+                          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mypod-modal-foot">
