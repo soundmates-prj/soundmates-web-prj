@@ -40,12 +40,14 @@ import MusicCatalogPage from "./pages/Admin/LiveOps/MusicCatalogPage";
 import PlaylistPage from "./pages/Admin/LiveOps/PlaylistPage";
 import PlaylistDetailPage from "./pages/Admin/LiveOps/PlaylistDetailPage";
 import PodcastPage from "./pages/Admin/LiveOps/PodcastPage";
+import { EpisodeRequestsPage } from "./pages/Admin/LiveOps/EpisodeRequestsPage";
 import PodcastEditor from "./pages/Admin/LiveOps/PodcastEditor";
 import { PodcastCreatorPage } from "./pages/PodcastCreator/PodcastCreatorPage";
 import ForumPage from "./pages/Forum/ForumPage";
 import SchedulePublicPage from "./pages/SchedulePublic/SchedulePublicPage";
 import TransactionsPage from "./pages/Admin/LiveOps/TransactionsPage";
 import PayoutScreen from "./pages/Admin/LiveOps/PayoutScreen";
+import MyPodcastsPage from "./pages/Podcast/MyPodcastsPage";
 
 // ── Host Page Imports ──
 import { HostDashboard } from "./pages/Host/Dashboard/HostDashboard";
@@ -83,148 +85,162 @@ function App() {
         <LiveSessionProvider>
           <ToastProvider />
           <Routes>
-          {/* ── Auth Routes (no layout) ── */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-otp" element={<VerifyOtp />} />
-          <Route path="/forget-password" element={<ForgetPassword />} />
+            {/* ── Auth Routes (no layout) ── */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-otp" element={<VerifyOtp />} />
+            <Route path="/forget-password" element={<ForgetPassword />} />
 
-          {/* ── Admin Routes ── */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="analytics" element={<AnalyticsScreen />} />
-            <Route path="music" element={<MusicCatalogPage />} />
+            {/* ── Admin Routes ── */}
             <Route
-              path="users"
+              path="/admin"
               element={
-                <ErrorBoundary>
-                  <UserManagementScreen />
-                </ErrorBoundary>
-              }
-            />
-            <Route
-              path="roles"
-              element={
-                <ErrorBoundary>
-                  <RoleManagementScreen />
-                </ErrorBoundary>
-              }
-            />
-            <Route path="stations" element={<StationPage />} />
-            <Route path="playlists" element={<PlaylistPage />} />
-            <Route
-              path="playlists/:playlistId"
-              element={<PlaylistDetailPage />}
-            />
-            <Route path="podcasts" element={<PodcastPage />} />
-            <Route path="podcasts/new" element={<PodcastEditor />} />
-            <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
-            <Route path="settings" element={<AdminSettingsPage />} />
-            <Route path="transactions" element={<TransactionsPage />} />
-            <Route path="payouts" element={<PayoutScreen />} />
-            <Route path="posts" element={<UserPostsManagementScreen />} />
-          </Route>
-
-          {/* ── Staff Routes ── */}
-          <Route
-            path="/staff"
-            element={
-              <ProtectedRoute requiredRole="STAFF">
-                <StaffLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="dashboard" element={<StaffDashboard />} />
-            <Route path="sessions" element={<StaffLiveSessionsScreen />} />
-            <Route
-              path="create-session"
-              element={<CreateLiveSessionScreen />}
-            />
-            <Route path="schedule" element={<ScheduleScreen />} />
-            <Route path="music-requests" element={<MusicRequestsScreen />} />
-            <Route
-              path="podcast-requests"
-              element={<PodcastRequestsScreen />}
-            />
-            <Route path="chat-moderation" element={<ChatModerationScreen />} />
-            <Route path="ai-scripts" element={<ScriptModerationScreen />} />
-            <Route path="script-editor" element={<LiveStreamScriptEditor />} />
-            <Route path="analytics" element={<StaffAnalyticsScreen />} />
-            <Route path="podcast-creator" element={<PodcastCreatorPage />} />
-            <Route path="music-catalog" element={<MusicCatalogScreen />} />
-            <Route path="playlists" element={<PlaylistsScreen />} />
-            <Route path="stations" element={<StationsScreen />} />
-            <Route path="settings" element={<StaffSettingsPage />} />
-          </Route>
-
-          {/* ── Host Routes ── */}
-          <Route
-            path="/host"
-            element={
-              <ProtectedRoute requiredRole="HOST">
-                <HostLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="dashboard" element={<HostDashboard />} />
-            <Route path="sessions" element={<HostLiveSessionPage />} />
-            <Route
-              path="sessions/:sessionId"
-              element={<HostLiveSessionDetailPage />}
-            />
-            <Route path="schedule" element={<HostScheduleView />} />
-            <Route path="analytics" element={<HostAnalyticsScreen />} />
-            <Route path="analytics/:sessionId" element={<HostSessionAnalyticsDetailScreen />} />
-            <Route path="settings" element={<HostSettingsPage />} />
-          </Route>
-
-          {/* ── Public Routes ── */}
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Home />} />
-            {/* Redirect /livestream → /live */}
-            <Route
-              path="/livestream"
-              element={<Navigate to="/live" replace />}
-            />
-            <Route path="/live" element={<LiveSessionsPage />} />
-            <Route
-              path="/live/:sessionId"
-              element={
-                <ErrorBoundary>
-                  <LiveRoomPageWithKey />
-                </ErrorBoundary>
-              }
-            />
-            <Route path="/subscription" element={<Subscription />} />
-            <Route path="/podcast" element={<PodcastScreen />} />
-            <Route path="/podcast/:id" element={<PodcastDetailScreen />} />
-            <Route path="/forum" element={<ForumPage />} />
-            <Route path="/schedule-public" element={<SchedulePublicPage />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/:userId" element={<Profile />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/payment/result" element={<PaymentResult />} />
-            <Route
-              path="/profile/transactions"
-              element={<TransactionHistory />}
-            />
-            <Route
-              path="/podcast-creator"
-              element={
-                <ProtectedRoute>
-                  <PodcastCreatorPage />
+                <ProtectedRoute requiredRole="ADMIN">
+                  <AdminLayout />
                 </ProtectedRoute>
               }
-            />
-          </Route>
-        </Routes>
+            >
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="analytics" element={<AnalyticsScreen />} />
+              <Route path="music" element={<MusicCatalogPage />} />
+              <Route
+                path="users"
+                element={
+                  <ErrorBoundary>
+                    <UserManagementScreen />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path="roles"
+                element={
+                  <ErrorBoundary>
+                    <RoleManagementScreen />
+                  </ErrorBoundary>
+                }
+              />
+              <Route path="stations" element={<StationPage />} />
+              <Route path="playlists" element={<PlaylistPage />} />
+              <Route
+                path="playlists/:playlistId"
+                element={<PlaylistDetailPage />}
+              />
+              <Route path="podcasts" element={<PodcastPage />} />
+              <Route path="podcasts/new" element={<PodcastEditor />} />
+              <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
+              <Route
+                path="episode-requests"
+                element={<EpisodeRequestsPage />}
+              />
+              <Route path="settings" element={<AdminSettingsPage />} />
+              <Route path="transactions" element={<TransactionsPage />} />
+              <Route path="payouts" element={<PayoutScreen />} />
+              <Route path="posts" element={<UserPostsManagementScreen />} />
+            </Route>
+
+            {/* ── Staff Routes ── */}
+            <Route
+              path="/staff"
+              element={
+                <ProtectedRoute requiredRole="STAFF">
+                  <StaffLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<StaffDashboard />} />
+              <Route path="sessions" element={<StaffLiveSessionsScreen />} />
+              <Route
+                path="create-session"
+                element={<CreateLiveSessionScreen />}
+              />
+              <Route path="schedule" element={<ScheduleScreen />} />
+              <Route path="music-requests" element={<MusicRequestsScreen />} />
+              <Route
+                path="podcast-requests"
+                element={<PodcastRequestsScreen />}
+              />
+              <Route
+                path="chat-moderation"
+                element={<ChatModerationScreen />}
+              />
+              <Route path="ai-scripts" element={<ScriptModerationScreen />} />
+              <Route
+                path="script-editor"
+                element={<LiveStreamScriptEditor />}
+              />
+              <Route path="analytics" element={<StaffAnalyticsScreen />} />
+              <Route path="podcast-creator" element={<PodcastCreatorPage />} />
+              <Route path="music-catalog" element={<MusicCatalogScreen />} />
+              <Route path="playlists" element={<PlaylistsScreen />} />
+              <Route path="stations" element={<StationsScreen />} />
+              <Route path="settings" element={<StaffSettingsPage />} />
+            </Route>
+
+            {/* ── Host Routes ── */}
+            <Route
+              path="/host"
+              element={
+                <ProtectedRoute requiredRole="HOST">
+                  <HostLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<HostDashboard />} />
+              <Route path="sessions" element={<HostLiveSessionPage />} />
+              <Route
+                path="sessions/:sessionId"
+                element={<HostLiveSessionDetailPage />}
+              />
+              <Route path="schedule" element={<HostScheduleView />} />
+              <Route path="analytics" element={<HostAnalyticsScreen />} />
+              <Route
+                path="analytics/:sessionId"
+                element={<HostSessionAnalyticsDetailScreen />}
+              />
+              <Route path="settings" element={<HostSettingsPage />} />
+            </Route>
+
+            {/* ── Public Routes ── */}
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Home />} />
+              {/* Redirect /livestream → /live */}
+              <Route
+                path="/livestream"
+                element={<Navigate to="/live" replace />}
+              />
+              <Route path="/live" element={<LiveSessionsPage />} />
+              <Route
+                path="/live/:sessionId"
+                element={
+                  <ErrorBoundary>
+                    <LiveRoomPageWithKey />
+                  </ErrorBoundary>
+                }
+              />
+              <Route path="/subscription" element={<Subscription />} />
+              <Route path="/podcast" element={<PodcastScreen />} />
+              <Route path="/podcast/:id" element={<PodcastDetailScreen />} />
+              <Route path="/podcast/my" element={<MyPodcastsPage />} />
+              <Route path="/forum" element={<ForumPage />} />
+              <Route path="/schedule-public" element={<SchedulePublicPage />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:userId" element={<Profile />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/payment/result" element={<PaymentResult />} />
+              <Route
+                path="/profile/transactions"
+                element={<TransactionHistory />}
+              />
+              <Route
+                path="/podcast-creator"
+                element={
+                  <ProtectedRoute>
+                    <PodcastCreatorPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+          </Routes>
         </LiveSessionProvider>
       </PlayerProvider>
     </ThemeProvider>

@@ -24,6 +24,16 @@ export interface CreatePodcastRequestPayload {
   isPaid: boolean;
 }
 
+// Body cho POST /api/v1/podcast-episode-requests
+export interface CreatePodcastEpisodeRequestPayload {
+  podcastId: string;
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  audioUrl: string;
+  duration: number;
+}
+
 class PodcastService {
   async generateFullPodcast(
     params: PodcastGenerateRequest,
@@ -85,7 +95,7 @@ class PodcastService {
       if (isGeminiDown) {
         throw new Error(
           "AI đang tải cao, không thể tạo script lúc này. " +
-            'Vui lòng thử lại sau hoặc chọn "Tự viết Script" để không cần AI.',
+          'Vui lòng thử lại sau hoặc chọn "Tự viết Script" để không cần AI.',
         );
       }
       throw new Error(
@@ -132,8 +142,8 @@ class PodcastService {
     } catch (error: any) {
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Lỗi khi tải danh sách script",
+        error.message ||
+        "Lỗi khi tải danh sách script",
       );
     }
   }
@@ -174,8 +184,8 @@ class PodcastService {
     } catch (error: any) {
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Cập nhật script thất bại",
+        error.message ||
+        "Cập nhật script thất bại",
       );
     }
   }
@@ -282,6 +292,33 @@ class PodcastService {
   }
 
   /**
+   * User gửi request tạo tập mới cho podcast đã publish.
+   * POST /api/v1/podcast-episode-requests
+   *
+   * Request ở trạng thái chờ admin duyệt. Khi duyệt xong, tập sẽ xuất hiện ở
+   * trang podcast tổng. Nếu bị từ chối sẽ kèm lý do.
+   */
+  async createPodcastEpisodeRequest(
+    payload: CreatePodcastEpisodeRequestPayload,
+  ): Promise<unknown> {
+    try {
+      const response = await api.post<ApiResponse<unknown>>(
+        "/podcast-episode-requests",
+        payload,
+      );
+      if (response.data.success === false) {
+        throw new Error(response.data.message || "Không thể tạo tập");
+      }
+      return response.data.data ?? null;
+    } catch (error: any) {
+      console.error("Error creating podcast episode request:", error);
+      throw new Error(
+        error.response?.data?.message || error.message || "Lỗi khi tạo tập",
+      );
+    }
+  }
+
+  /**
    * Lấy tất cả podcast đã xuất bản
    */
 
@@ -294,8 +331,8 @@ class PodcastService {
       console.error("Error fetching podcasts:", error);
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Không thể tải danh sách podcast",
+        error.message ||
+        "Không thể tải danh sách podcast",
       );
     }
   }
@@ -312,36 +349,8 @@ class PodcastService {
       console.error("Error fetching my podcasts:", error);
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Không thể tải danh sách podcast của bạn",
-      );
-    }
-  }
-
-  /**
-   * Tạo request thêm tập mới (Episode Request)
-   */
-  async createPodcastEpisodeRequest(payload: {
-    podcastId: string;
-    title: string;
-    description: string;
-    thumbnailUrl: string;
-    audioUrl: string;
-    duration: number;
-  }): Promise<unknown> {
-    try {
-      const response = await api.post<ApiResponse<unknown>>(
-        "/podcast-episode-requests",
-        payload,
-      );
-      if (response.data.success === false) {
-        throw new Error(response.data.message || "Không thể tạo yêu cầu tập mới");
-      }
-      return response.data.data ?? null;
-    } catch (error: any) {
-      console.error("Error creating episode request:", error);
-      throw new Error(
-        error.response?.data?.message || error.message || "Lỗi khi tạo yêu cầu tập mới",
+        error.message ||
+        "Không thể tải danh sách podcast của bạn",
       );
     }
   }
@@ -360,8 +369,8 @@ class PodcastService {
       console.error("Error fetching my episode requests:", error);
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Không thể tải danh sách yêu cầu tập",
+        error.message ||
+        "Không thể tải danh sách yêu cầu tập",
       );
     }
   }
@@ -379,8 +388,8 @@ class PodcastService {
       console.error("Error fetching podcast:", error);
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Không thể tải podcast",
+        error.message ||
+        "Không thể tải podcast",
       );
     }
   }
@@ -406,8 +415,8 @@ class PodcastService {
         console.error("Error fetching episodes:", error);
         throw new Error(
           error.response?.data?.message ||
-            error.message ||
-            "Không thể tải danh sách tập",
+          error.message ||
+          "Không thể tải danh sách tập",
         );
       }
     }
@@ -424,8 +433,8 @@ class PodcastService {
       console.error("Error fetching saved podcasts:", error);
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Không thể tải podcast đã lưu",
+        error.message ||
+        "Không thể tải podcast đã lưu",
       );
     }
   }
@@ -440,8 +449,8 @@ class PodcastService {
       console.error("Error fetching user saved podcasts:", error);
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Không thể tải podcast đã lưu của người dùng",
+        error.message ||
+        "Không thể tải podcast đã lưu của người dùng",
       );
     }
   }
@@ -453,8 +462,8 @@ class PodcastService {
       console.error("Error saving podcast:", error);
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Không thể lưu podcast",
+        error.message ||
+        "Không thể lưu podcast",
       );
     }
   }
@@ -466,8 +475,8 @@ class PodcastService {
       console.error("Error unsaving podcast:", error);
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Không thể bỏ lưu podcast",
+        error.message ||
+        "Không thể bỏ lưu podcast",
       );
     }
   }
@@ -503,8 +512,8 @@ class PodcastService {
     } catch (error: any) {
       throw new Error(
         error.response?.data?.message ||
-          error.message ||
-          "Không thể tạo link thanh toán",
+        error.message ||
+        "Không thể tạo link thanh toán",
       );
     }
   }

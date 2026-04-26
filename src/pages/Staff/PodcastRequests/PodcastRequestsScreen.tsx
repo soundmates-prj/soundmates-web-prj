@@ -261,9 +261,9 @@ export function PodcastRequestsScreen() {
               </button>
             </div>
             <div className="preview-modal-body">
-              {selectedRequest.bannerUrl && (
+              {selectedRequest.banner && (
                 <div style={{ marginBottom: 16, borderRadius: 8, overflow: 'hidden' }}>
-                  <img src={selectedRequest.bannerUrl} alt="Banner" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
+                  <img src={selectedRequest.banner} alt="Banner" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
                 </div>
               )}
               <div className="preview-info">
