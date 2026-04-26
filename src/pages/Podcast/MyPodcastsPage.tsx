@@ -460,9 +460,9 @@ function MyPodcastCard({
 
   return (
     <div className="mypod-card" onClick={onView}>
-      <div className="mypod-card-cover">
-        {request.bannerUrl ? (
-          <img src={request.bannerUrl} alt={request.title} />
+      <div className="pod-request-cover">
+        {request.banner ? (
+          <img src={request.banner} alt={request.title} />
         ) : (
           <div className="mypod-card-cover-placeholder">
             <Mic2 size={28} />
@@ -607,9 +607,9 @@ function MyPodcastDetailModal({
             </div>
           )}
 
-          {request.bannerUrl && (
+          {request.banner && (
             <div className="mypod-modal-banner">
-              <img src={request.bannerUrl} alt={request.title} />
+              <img src={request.banner} alt={request.title} />
             </div>
           )}
 
@@ -733,7 +733,9 @@ function CreatePodcastRequestModal({
 
     setUploadingBanner(true);
     try {
-      const url = await uploadImage(file);
+      const res = await uploadImage(file);
+      const url = res;
+      if (!url) throw new Error("Upload ảnh thất bại (không có URL)");
       setBannerUrl(url);
       setBannerFileName(file.name);
     } catch (err: any) {
@@ -776,7 +778,7 @@ function CreatePodcastRequestModal({
         title: title.trim(),
         episodeTitle: title.trim(),
         description: description.trim(),
-        bannerUrl,
+        banner: bannerUrl,
         price: isPaid ? price : 0,
         isPaid,
       };
@@ -1151,9 +1153,12 @@ function CreateEpisodeRequestModal({
 
     setUploadingThumb(true);
     try {
-      const url = await uploadImage(file);
-      setThumbnailUrl(url);
+      const res = await uploadImage(file);
+      const imgUrl = res;
+      if (!imgUrl) throw new Error("Upload ảnh thất bại (không có URL)");
+      setThumbnailUrl(imgUrl);
       setThumbnailName(file.name);
+      showToast.success("Đã upload ảnh thành công!");
     } catch (err: any) {
       showToast.error(err?.message || "Upload ảnh thất bại, vui lòng thử lại");
     } finally {
@@ -1180,8 +1185,8 @@ function CreateEpisodeRequestModal({
     try {
       // Detect duration trước (local, nhanh) — upload sau (network)
       const detectedDuration = await detectDuration(file);
-      const url = await uploadAudio(file);
-      setAudioUrl(url);
+      const res = await uploadAudio(file);
+      setAudioUrl(res.url);
       setAudioName(file.name);
       setDuration(detectedDuration);
     } catch (err: any) {
@@ -1223,7 +1228,7 @@ function CreateEpisodeRequestModal({
         duration,
       };
 
-      await liveSessionApiService.createPodcastEpisodeRequest(payload);
+      const result = await podcastService.createPodcastEpisodeRequest(payload);
       onCreated();
     } catch (err: any) {
       showToast.error(err.message || "Không thể tạo tập, vui lòng thử lại");

@@ -827,14 +827,27 @@ class LiveSessionApiService {
   }
 
   // GET /api/v1/podcast-episode-requests
-  async getPodcastEpisodeRequests(
-    podcastId?: string,
-  ): Promise<PodcastEpisodeRequestResult[]> {
+  async getPodcastEpisodeRequests(params?: {
+    podcastId?: string;
+    status?: string;
+    search?: string;
+  }): Promise<PodcastEpisodeRequestResult[]> {
     const res = await api.get<ApiResponse<PodcastEpisodeRequestResult[]>>(
       "/podcast-episode-requests",
-      { params: { podcastId } },
+      { params },
     );
     return res.data.data ?? [];
+  }
+
+  async reviewPodcastEpisodeRequest(
+    id: string,
+    data: { isApproved: boolean; rejectReason?: string },
+  ): Promise<PodcastEpisodeRequestResult> {
+    const res = await api.post<ApiResponse<PodcastEpisodeRequestResult>>(
+      `/podcast-episode-requests/${id}/review`,
+      data,
+    );
+    return res.data.data;
   }
 
   async createLiveSession(data: {

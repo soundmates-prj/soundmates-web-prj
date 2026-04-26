@@ -756,8 +756,8 @@ function PodcastRequestCard({
   return (
     <div className="ops-card pod-request-card">
       <div className="pod-request-cover">
-        {request.bannerUrl ? (
-          <img src={request.bannerUrl} alt={request.title} />
+        {request.banner ? (
+          <img src={request.banner} alt={request.title} />
         ) : (
           <div className="pod-request-cover-placeholder">
             <Mic2 size={28} />
@@ -919,13 +919,7 @@ function PodcastRow({
     });
   };
 
-  const authorText =
-    typeof podcast.author === "string"
-      ? podcast.author
-      : (podcast.author?.Name ??
-        podcast.author?.name ??
-        podcast.author?.username ??
-        "—");
+  const authorText = resolveAuthor(podcast.author as any) || "—";
 
   const statusBadge = () => {
     switch (podcast.status?.toLowerCase()) {

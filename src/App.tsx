@@ -40,13 +40,14 @@ import MusicCatalogPage from "./pages/Admin/LiveOps/MusicCatalogPage";
 import PlaylistPage from "./pages/Admin/LiveOps/PlaylistPage";
 import PlaylistDetailPage from "./pages/Admin/LiveOps/PlaylistDetailPage";
 import PodcastPage from "./pages/Admin/LiveOps/PodcastPage";
+import { EpisodeRequestsPage } from "./pages/Admin/LiveOps/EpisodeRequestsPage";
 import PodcastEditor from "./pages/Admin/LiveOps/PodcastEditor";
 import { PodcastCreatorPage } from "./pages/PodcastCreator/PodcastCreatorPage";
 import ForumPage from "./pages/Forum/ForumPage";
 import SchedulePublicPage from "./pages/SchedulePublic/SchedulePublicPage";
 import TransactionsPage from "./pages/Admin/LiveOps/TransactionsPage";
-import MyPodcastsPage from "./pages/podcast/MyPodcastsPage";
 import PayoutScreen from "./pages/Admin/LiveOps/PayoutScreen";
+import MyPodcastsPage from "./pages/Podcast/MyPodcastsPage";
 
 // ── Host Page Imports ──
 import { HostDashboard } from "./pages/Host/Dashboard/HostDashboard";
@@ -127,47 +128,10 @@ function App() {
               <Route path="podcasts" element={<PodcastPage />} />
               <Route path="podcasts/new" element={<PodcastEditor />} />
               <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
-              <Route path="transactions" element={<TransactionsPage />} />
-              <Route path="posts" element={<UserPostsManagementScreen />} />
-            </Route>
-            {/* ── Admin Routes ── */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requiredRole="ADMIN">
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="analytics" element={<AnalyticsScreen />} />
-              <Route path="music" element={<MusicCatalogPage />} />
               <Route
-                path="users"
-                element={
-                  <ErrorBoundary>
-                    <UserManagementScreen />
-                  </ErrorBoundary>
-                }
+                path="episode-requests"
+                element={<EpisodeRequestsPage />}
               />
-              <Route
-                path="roles"
-                element={
-                  <ErrorBoundary>
-                    <RoleManagementScreen />
-                  </ErrorBoundary>
-                }
-              />
-              <Route path="stations" element={<StationPage />} />
-              <Route path="playlists" element={<PlaylistPage />} />
-              <Route
-                path="playlists/:playlistId"
-                element={<PlaylistDetailPage />}
-              />
-              <Route path="podcasts" element={<PodcastPage />} />
-              <Route path="podcasts/new" element={<PodcastEditor />} />
-              <Route path="podcasts/:podcastId" element={<PodcastEditor />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="transactions" element={<TransactionsPage />} />
               <Route path="payouts" element={<PayoutScreen />} />
