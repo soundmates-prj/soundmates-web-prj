@@ -202,8 +202,8 @@ export function PodcastRequestsScreen() {
               )}
 
               {request.isPaid && (
-                <div className="podcast-category" style={{marginTop: '4px'}}>
-                  <span className="category-badge" style={{color: '#10b981', borderColor: '#10b981', background: 'rgba(16, 185, 129, 0.1)'}}>
+                <div className="podcast-category" style={{ marginTop: '4px' }}>
+                  <span className="category-badge" style={{ color: '#10b981', borderColor: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }}>
                     💰 {request.price?.toLocaleString()}đ
                   </span>
                 </div>
@@ -261,9 +261,9 @@ export function PodcastRequestsScreen() {
               </button>
             </div>
             <div className="preview-modal-body">
-              {selectedRequest.banner && (
+              {selectedRequest.bannerUrl && (
                 <div style={{ marginBottom: 16, borderRadius: 8, overflow: 'hidden' }}>
-                  <img src={selectedRequest.banner} alt="Banner" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
+                  <img src={selectedRequest.bannerUrl} alt="Banner" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
                 </div>
               )}
               <div className="preview-info">
