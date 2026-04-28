@@ -756,8 +756,8 @@ function PodcastRequestCard({
   return (
     <div className="ops-card pod-request-card">
       <div className="pod-request-cover">
-        {request.banner ? (
-          <img src={request.banner} alt={request.title} />
+        {request.bannerUrl ? (
+          <img src={request.bannerUrl} alt={request.title} />
         ) : (
           <div className="pod-request-cover-placeholder">
             <Mic2 size={28} />
@@ -771,7 +771,7 @@ function PodcastRequestCard({
             <h3 className="pod-request-title">{request.title}</h3>
             <p className="pod-request-desc">
               {typeof request.description === "string" &&
-              request.description.trim()
+                request.description.trim()
                 ? request.description
                 : "Chưa có mô tả cho podcast này."}
             </p>

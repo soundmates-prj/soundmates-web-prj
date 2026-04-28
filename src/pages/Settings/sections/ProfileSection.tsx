@@ -420,9 +420,9 @@ const ProfileSection: React.FC = () => {
                    const bankRes = await api.get("/users/bank-account");
                    if (bankRes.data?.data) {
                       const b = {
-                         bankId: bankRes.data.data.bankId || "",
-                         accountNumber: bankRes.data.data.accountNumber || "",
-                         accountName: bankRes.data.data.accountName || ""
+                         bankId: String(bankRes.data.data.bankId || ""),
+                         accountNumber: String(bankRes.data.data.accountNumber || ""),
+                         accountName: String(bankRes.data.data.accountName || "")
                       };
                       setBankForm(b);
                       setOriginalBankForm(b);
@@ -955,16 +955,16 @@ const ProfileSection: React.FC = () => {
                       <Landmark size={15} />
                       <select name="bankId" value={bankForm.bankId} onChange={handleBankChange}>
                         <option value="">Chọn ngân hàng</option>
-                        <option value="970415">VietinBank</option>
-                        <option value="970436">Vietcombank</option>
-                        <option value="970418">BIDV</option>
-                        <option value="970405">Agribank</option>
-                        <option value="970403">Sacombank</option>
-                        <option value="970407">Techcombank</option>
-                        <option value="970422">MBBank</option>
-                        <option value="970423">TPBank</option>
-                        <option value="970432">VPBank</option>
-                        <option value="970416">ACB</option>
+                        <option value="VietinBank">VietinBank</option>
+                        <option value="Vietcombank">Vietcombank</option>
+                        <option value="BIDV">BIDV</option>
+                        <option value="Agribank">Agribank</option>
+                        <option value="Sacombank">Sacombank</option>
+                        <option value="Techcombank">Techcombank</option>
+                        <option value="MBBank">MBBank</option>
+                        <option value="TPBank">TPBank</option>
+                        <option value="VPBank">VPBank</option>
+                        <option value="ACB">ACB</option>
                       </select>
                       <ChevronDown size={15} className="chevron" />
                     </div>

@@ -18,7 +18,7 @@ const TABS = [
   { key: "security" as const, label: "Bảo mật", icon: Shield },
   { key: "subscription" as const, label: "Gói dịch vụ", icon: Crown },
   { key: "posts" as const, label: "Bài viết", icon: FileText },
-  { key: "my-podcasts" as const, label: "Podcast của tôi", icon: Podcast },
+  // { key: "my-podcasts" as const, label: "Podcast của tôi", icon: Podcast },
   { key: "music" as const, label: "Nhạc yêu thích", icon: Music },
   { key: "voice" as const, label: "Voice Clone", icon: Mic },
 ];
