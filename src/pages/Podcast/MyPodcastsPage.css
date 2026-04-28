@@ -382,6 +382,7 @@
 }
 
 .mypod-card-view,
+.mypod-card-edit,
 .mypod-card-episode {
   display: inline-flex;
   align-items: center;
@@ -402,6 +403,16 @@
 
 .mypod-card-view:hover {
   background: rgba(59, 130, 246, 0.18);
+}
+
+.mypod-card-edit {
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.mypod-card-edit:hover {
+  background: rgba(139, 92, 246, 0.18);
 }
 
 .mypod-card-episode {
@@ -1954,6 +1965,37 @@ select.pds-form-input option:checked {
 /* ══════════════════════════════════════════════
    Notice + Actions + Buttons
    ══════════════════════════════════════════════ */
+
+.pds-price-split-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-top: -10px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: var(--text-primary, #1e293b);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.pds-split-icon {
+  color: #3b82f6;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+[data-theme="dark"] .pds-price-split-notice {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .pds-price-split-notice strong {
+  color: #60a5fa;
+}
 
 .pds-form-notice {
   display: flex;

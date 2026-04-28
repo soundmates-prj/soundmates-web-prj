@@ -22,6 +22,7 @@ import { type PodcastItem, type PodcastEpisode, resolveAuthor } from "../../type
 import { usePlayer } from "../../context/PlayerContext";
 import { useLiveSession } from "../../context/LiveSessionContext";
 import AuthPromptModal from "../../components/common/AuthPromptModal";
+import PodcastPurchaseModal from "../../components/common/PodcastPurchaseModal";
 import "./PodcastDetailScreen.css";
 
 const fmtDate = (d?: string) => {
@@ -55,6 +56,7 @@ export default function PodcastDetailScreen() {
   const [isSaved, setIsSaved] = useState(false);
   const [resolvingSave, setResolvingSave] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [resolvedDurations, setResolvedDurations] = useState<
@@ -112,13 +114,18 @@ export default function PodcastDetailScreen() {
   // Xác định quyền truy cập: isPaid = false, hoặc isPaid = true & isPurchased = true
   const hasAccess = !podcast?.isPaid || !!podcast?.isPurchased;
 
-  const onPurchase = async () => {
+  const onPurchaseClick = () => {
     if (!id || !podcast) return;
     const isLoggedIn = !!localStorage.getItem("accessToken");
     if (!isLoggedIn) {
       setShowAuthModal(true);
       return;
     }
+    setShowPurchaseModal(true);
+  };
+
+  const executePurchase = async () => {
+    if (!id || !podcast) return;
     setIsPurchasing(true);
     setPurchaseError(null);
     try {
@@ -129,6 +136,7 @@ export default function PodcastDetailScreen() {
       window.open(paymentUrl, "_blank");
     } catch (err: any) {
       setPurchaseError(err.message ?? "Không thể tạo link thanh toán.");
+      setShowPurchaseModal(false);
     } finally {
       setIsPurchasing(false);
     }
@@ -420,7 +428,7 @@ export default function PodcastDetailScreen() {
                       </span>
                       <button
                         className="pdd-buy-btn"
-                        onClick={onPurchase}
+                        onClick={onPurchaseClick}
                         disabled={isPurchasing}
                       >
                         {isPurchasing ? (
@@ -481,7 +489,7 @@ export default function PodcastDetailScreen() {
                 >
                   <button
                     className={`pdd-ep-play${active ? " active" : ""}`}
-                    onClick={() => isLocked ? onPurchase() : togglePlay(ep)}
+                    onClick={() => isLocked ? onPurchaseClick() : togglePlay(ep)}
                     disabled={!ep.audioUrl && !isLocked}
                     title={
                       isLocked
@@ -584,6 +592,17 @@ export default function PodcastDetailScreen() {
         title="Yêu cầu đăng nhập"
         message="Vui lòng đăng nhập hoặc đăng ký để phát Podcast nhé!"
       />
+
+      {showPurchaseModal && podcast && (
+        <PodcastPurchaseModal
+          podcast={{ ...podcast, price: podcast.price ?? 0 }}
+          isPurchasing={isPurchasing}
+          onConfirm={executePurchase}
+          onCancel={() => {
+            if (!isPurchasing) setShowPurchaseModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
