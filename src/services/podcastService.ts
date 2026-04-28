@@ -22,6 +22,7 @@ export interface CreatePodcastRequestPayload {
   bannerUrl: string;
   price: number;
   isPaid: boolean;
+  targetPodcastId?: string;
 }
 
 // Body cho POST /api/v1/podcast-episode-requests

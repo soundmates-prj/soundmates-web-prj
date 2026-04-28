@@ -1,7 +1,8 @@
 .transaction-history-page {
   min-height: 100vh;
   background-color: var(--user-theme-bg, var(--bg-primary, #f4f6f9));
-  background-image: var(--user-theme-bg-image, none), var(--user-theme-gradient, none);
+  background-image:
+    var(--user-theme-bg-image, none), var(--user-theme-gradient, none);
   background-size: var(--user-theme-bg-size, cover), cover;
   background-repeat: var(--user-theme-bg-repeat, no-repeat), no-repeat;
   background-position: center center;
@@ -51,7 +52,8 @@
 .stat-card {
   background: var(--user-theme-bg, var(--bg-secondary, #f9fafb));
   backdrop-filter: blur(10px);
-  border: 1px solid color-mix(in srgb, var(--user-theme-text, #1e293b) 14%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--user-theme-text, #1e293b) 14%, transparent);
   border-radius: 20px;
   padding: 20px 28px;
   display: flex;
@@ -177,7 +179,7 @@
 }
 
 .export-btn:hover {
-  background: color-mix(in srgb, var(--user-theme-bg, #f3f4f6) 85%, #ffffff 15%);
+  background: var(--bg-hover, #f3f4f6);
   border-color: #3b82f6;
   color: #3b82f6;
   transform: translateY(-1px);
@@ -185,7 +187,7 @@
 
 /* ── Table Section ── */
 .transaction-list-wrapper {
-  background: color-mix(in srgb, var(--user-theme-bg, var(--bg-primary, #ffffff)) 92%, #ffffff 8%);
+  background: var(--user-theme-bg, var(--bg-primary, #ffffff));
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-light, #e5e5e5);
   border-radius: 24px;
@@ -200,7 +202,7 @@
 .table-header {
   display: flex;
   padding: 20px 24px;
-  background: color-mix(in srgb, var(--user-theme-bg, var(--bg-secondary, #f9fafb)) 88%, #ffffff 12%);
+  background: var(--user-theme-bg, var(--bg-secondary, #f9fafb));
   border-bottom: 1px solid var(--border-light, #e5e5e5);
   font-weight: 600;
   font-size: 13px;
@@ -218,32 +220,62 @@
 }
 
 .table-row:hover {
-  background: color-mix(in srgb, var(--user-theme-bg, #f9fafb) 86%, #ffffff 14%);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .table-row:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .col {
   flex: 1;
 }
 
-.col-id { flex: 1.5; display: flex; flex-direction: column; gap: 4px; }
-.col-type { flex: 1.4; }
-.col-date { flex: 1.2; }
-.col-provider { flex: 1.2; }
-.col-amount { flex: 1; font-weight: 700; }
-.col-status { flex: 1; }
+.col-id {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.col-type {
+  flex: 1.4;
+}
+.col-date {
+  flex: 1.2;
+}
+.col-provider {
+  flex: 1.2;
+}
+.col-amount {
+  flex: 1;
+  font-weight: 700;
+}
+.col-status {
+  flex: 1;
+}
 
-.id-text { font-weight: 600; color: var(--user-theme-text, var(--text-primary, #1e293b)); }
-.method-tag { 
-  font-size: 11px; 
-  padding: 2px 8px; 
-  background: color-mix(in srgb, var(--user-theme-bg, var(--bg-secondary, #f3f4f6)) 90%, #ffffff 10%); 
-  border-radius: 4px; 
+.id-text {
+  font-weight: 600;
+  color: var(--user-theme-text, var(--text-primary, #1e293b));
+}
+.method-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--user-theme-bg, var(--bg-secondary, #f3f4f6));
+  border-radius: 4px;
   width: fit-content;
   color: var(--text-secondary, #64748b);
 }
 
-.date-main { color: var(--user-theme-text, var(--text-primary, #1e293b)); font-weight: 500; font-size: 14px; }
-.date-sub { color: var(--text-secondary, #64748b); font-size: 12px; }
+.date-main {
+  color: var(--user-theme-text, var(--text-primary, #1e293b));
+  font-weight: 500;
+  font-size: 14px;
+}
+.date-sub {
+  color: var(--text-secondary, #64748b);
+  font-size: 12px;
+}
 
 .provider-badge {
   display: flex;
@@ -264,9 +296,21 @@
   text-transform: capitalize;
 }
 
-.status-badge.success { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
-.status-badge.failed { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-.status-badge.pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+.status-badge.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.status-badge.failed {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.status-badge.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
 
 /* Type badge */
 .type-badge {
@@ -279,9 +323,21 @@
   font-weight: 600;
   border: 1px solid;
 }
-.type-badge.type-podcast { background: rgba(99, 102, 241, 0.1); color: #6366f1; border-color: rgba(99, 102, 241, 0.25); }
-.type-badge.type-subscription { background: rgba(245, 158, 11, 0.1); color: #d97706; border-color: rgba(245, 158, 11, 0.25); }
-.type-badge.type-other { background: rgba(107, 114, 128, 0.1); color: #6b7280; border-color: rgba(107, 114, 128, 0.2); }
+.type-badge.type-podcast {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.25);
+}
+.type-badge.type-subscription {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.type-badge.type-other {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+  border-color: rgba(107, 114, 128, 0.2);
+}
 
 .row-action-btn {
   background: transparent;
@@ -293,7 +349,10 @@
   transition: all 0.2s;
 }
 
-.row-action-btn:hover { background: #f3f4f6; color: var(--text-primary, #1e293b); }
+.row-action-btn:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+  color: var(--text-primary, #1e293b);
+}
 
 /* ── Pagination ── */
 .pagination-area {
@@ -321,18 +380,35 @@
   justify-content: center;
   border-radius: 10px;
   border: 1px solid var(--border-light, #e5e5e5);
-  background: color-mix(in srgb, var(--user-theme-bg, var(--bg-secondary, #f9fafb)) 88%, #ffffff 12%);
+  background: var(--user-theme-bg, var(--bg-secondary, #f9fafb));
   color: var(--user-theme-text, var(--text-primary, #1e293b));
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.page-btn:hover:not(:disabled) { background: #f3f4f6; border-color: #3b82f6; }
-.page-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
-.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.page-btn:hover:not(:disabled) {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+  border-color: #3b82f6;
+}
+.page-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+.page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .export-btn:hover,
+[data-theme="dark"] .row-action-btn:hover,
+[data-theme="dark"] .page-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
 
 /* ── States ── */
-.loading-state, .empty-state {
+.loading-state,
+.empty-state {
   padding: 80px 0;
   text-align: center;
   display: flex;
@@ -350,22 +426,54 @@
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
-.empty-state { color: var(--text-secondary, #737373); }
-.empty-state h3 { color: var(--user-theme-text, var(--text-primary, #1e293b)); margin-bottom: 4px; }
+.empty-state {
+  color: var(--text-secondary, #737373);
+}
+.empty-state h3 {
+  color: var(--user-theme-text, var(--text-primary, #1e293b));
+  margin-bottom: 4px;
+}
 
 /* Responsive */
 @media (max-width: 900px) {
-  .transaction-header-section { flex-direction: column; align-items: flex-start; }
-  .transaction-stats-grid { width: 100%; }
-  .stat-card { flex: 1; }
-  .table-header .col-date, .table-row .col-date { display: none; }
+  .transaction-header-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .transaction-stats-grid {
+    width: 100%;
+  }
+  .stat-card {
+    flex: 1;
+  }
+  .table-header .col-date,
+  .table-row .col-date {
+    display: none;
+  }
 }
 
 @media (max-width: 600px) {
-  .transaction-table-controls { flex-direction: column; align-items: stretch; }
-  .stat-card { min-width: auto; }
-  .table-header .col-id, .table-row .col-id { flex: 2; }
-  .table-header .col-provider, .table-header .col-amount, .table-row .col-provider, .table-row .col-amount { display: none; }
+  .transaction-table-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stat-card {
+    min-width: auto;
+  }
+  .table-header .col-id,
+  .table-row .col-id {
+    flex: 2;
+  }
+  .table-header .col-provider,
+  .table-header .col-amount,
+  .table-row .col-provider,
+  .table-row .col-amount {
+    display: none;
+  }
 }
