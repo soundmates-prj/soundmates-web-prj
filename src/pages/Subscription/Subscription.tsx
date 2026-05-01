@@ -271,7 +271,7 @@ function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): Featu
   if (tier === "elite") {
     return [
       ...base,
-      { text: `${plan.requestLimit} lượt yêu cầu nhạc` },
+      { text: `${plan.requestLimit} lượt yêu cầu nhạc`, bold: 'mỗi ngày' },
       { text: "mỗi ngày", bold: `${plan.podcastRequestLimit} lượt tạo Podcast` },
       { text: "Theme giao diện cơ bản" },
     ];
@@ -280,7 +280,7 @@ function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): Featu
   return [
     ...base,
     { text: "Mọi đặc quyền từ gói Miễn Phí" },
-    { text: `${plan.requestLimit} lượt yêu cầu nhạc`, bold: " mỗi ngày - ưu tiên hàng đợi" },
+    { text: `${plan.requestLimit} lượt yêu cầu nhạc`, bold: " mỗi ngày" },
     { text: `${plan.podcastRequestLimit} lượt tạo Podcast`, bold: " mỗi ngày" },
     { text: "Tự tạo giọng nói AI", bold: `${plan.voiceModelLimit} giọng` },
     { text: "AI đọc văn bản", bold: `${plan.ttsMinuteLimit} phút/tháng` },
@@ -542,14 +542,7 @@ export default function Subscription() {
                   Yêu thích nhất
                 </div>
               )}
-              {isCurrent && (
-                <div className="current-badge">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="12" height="12">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  Đang dùng
-                </div>
-              )}
+
 
               {/* Header */}
               <div className="plan-header">
@@ -571,15 +564,20 @@ export default function Subscription() {
               </div>
 
               {/* Button */}
-              {!isCurrent && plan.price > 0 && plan.price > (plans.find(p => p.id === currentPlanId)?.price || 0) && (
+              {(!isCurrent ? plan.price > (plans.find(p => p.id === currentPlanId)?.price || 0) : true) && plan.price > 0 && (
                 <motion.button
                   className="plan-button"
-                  onClick={() => openModal(plan)}
-                  disabled={isProcessing}
-                  whileHover={!isProcessing ? { scale: 1.05 } : {}}
-                  whileTap={!isProcessing ? { scale: 0.95 } : {}}
+                  onClick={() => isCurrent ? undefined : openModal(plan)}
+                  disabled={isCurrent || isProcessing}
+                  style={isCurrent ? { opacity: 0.7, cursor: "not-allowed", background: "#10b981", color: "#fff", border: "none" } : {}}
+                  whileHover={!isCurrent && !isProcessing ? { scale: 1.05 } : {}}
+                  whileTap={!isCurrent && !isProcessing ? { scale: 0.95 } : {}}
                 >
-                  {isProcessing ? "Đang xử lý..." : ((plans.find(p => p.id === currentPlanId)?.price || 0) > 0 ? "Nâng cấp" : "Chọn Gói Này")}
+                  {isCurrent 
+                    ? "Đang sở hữu" 
+                    : isProcessing 
+                      ? "Đang xử lý..." 
+                      : ((plans.find(p => p.id === currentPlanId)?.price || 0) > 0 ? "Nâng cấp" : "Chọn Gói Này")}
                 </motion.button>
               )}
 
@@ -595,7 +593,6 @@ export default function Subscription() {
                 </ul>
               </div>
 
-              {/* Footer */}
               {plan.price > 0 && (
                 <p className="included-features">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="13" height="13">
@@ -603,7 +600,6 @@ export default function Subscription() {
                   Bao gồm tất cả tính năng từ gói Miễn Phí
                 </p>
               )}
-              {isCurrent && <div className="current-plan-badge">Gói bạn đang đồng hành cùng chúng mình</div>}
             </motion.div>
           );
         })}

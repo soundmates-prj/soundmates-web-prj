@@ -32,6 +32,7 @@ import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
 import { showError } from "../../components/common/toastUtils";
 import { showToast } from "../../utils/toast";
 import { uploadAudio, uploadImage } from "../../utils/cloudinaryUpload";
+import api from "../../services/axios";
 import "./MyPodcastsPage.css";
 
 /* ────────────────────────────────────────────
@@ -142,12 +143,27 @@ export default function MyPodcastsPage() {
     }
   };
 
-  const handleOpenCreate = () => {
+  const handleOpenCreate = async () => {
     if (!localStorage.getItem("accessToken")) {
       showToast.warning("Vui lòng đăng nhập để tạo podcast");
       navigate("/login");
       return;
     }
+
+    try {
+      const bankRes = await api.get("/users/bank-account");
+      const bankData = bankRes.data?.data;
+      if (!bankData || !bankData.bankId || !bankData.accountNumber || !bankData.accountName) {
+        showToast.warning("Bạn cần cập nhật Tài khoản ngân hàng trong mục Hồ sơ để nhận doanh thu Podcast.");
+        navigate("/settings/profile");
+        return;
+      }
+    } catch (error) {
+      showToast.warning("Bạn cần cập nhật Tài khoản ngân hàng trong mục Hồ sơ để nhận doanh thu Podcast.");
+      navigate("/settings/profile");
+      return;
+    }
+
     setCreateOpen(true);
   };
 
@@ -432,7 +448,7 @@ function MyPodcastCard({
             Xem chi tiết
           </button>
 
-          <button
+          {/* <button
             className="mypod-card-edit"
             onClick={(e) => {
               e.stopPropagation();
@@ -442,7 +458,7 @@ function MyPodcastCard({
           >
             <Edit size={14} />
             Chỉnh sửa
-          </button>
+          </button> */}
 
           <button
             className="mypod-card-episode"
@@ -555,7 +571,7 @@ function MyPodcastDetailModal({
           <h2 className="mypod-modal-title">{podcast.title}</h2>
           <p className="mypod-modal-desc">
             {typeof podcast.description === "string" &&
-            podcast.description.trim()
+              podcast.description.trim()
               ? podcast.description
               : "Chưa có mô tả."}
           </p>
@@ -839,9 +855,8 @@ function CreatePodcastRequestModal({
               </div>
             ) : (
               <label
-                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${
-                  uploadingBanner ? " uploading" : ""
-                }`}
+                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${uploadingBanner ? " uploading" : ""
+                  }`}
               >
                 <input
                   ref={bannerInputRef}
@@ -1302,9 +1317,8 @@ function CreateEpisodeRequestModal({
               </div>
             ) : (
               <label
-                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${
-                  uploadingAudio ? " uploading" : ""
-                }`}
+                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${uploadingAudio ? " uploading" : ""
+                  }`}
               >
                 <input
                   ref={audioInputRef}
@@ -1409,9 +1423,8 @@ function CreateEpisodeRequestModal({
               </div>
             ) : (
               <label
-                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${
-                  uploadingThumb ? " uploading" : ""
-                }`}
+                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${uploadingThumb ? " uploading" : ""
+                  }`}
               >
                 <input
                   ref={thumbInputRef}
@@ -1707,9 +1720,8 @@ function EditPodcastModal({
               </div>
             ) : (
               <label
-                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${
-                  uploadingBanner ? " uploading" : ""
-                }`}
+                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${uploadingBanner ? " uploading" : ""
+                  }`}
               >
                 <input
                   ref={bannerInputRef}

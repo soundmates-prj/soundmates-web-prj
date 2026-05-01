@@ -135,10 +135,15 @@
     font-weight: 600;
     color: #64748b;
     text-transform: uppercase;
+    background: var(--bg-card, #fff);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 [data-theme="dark"] .mc-table th {
     color: rgba(255, 255, 255, 0.6);
+    background: var(--bg-card, #1e1e1e);
 }
 
 .mc-table td {

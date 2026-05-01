@@ -89,10 +89,15 @@
     text-align: left;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    background: var(--bg-card, #fff);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 [data-theme="dark"] .lm-table th {
     color: #cbd5e1;
+    background: var(--bg-card, #1e1e1e);
 }
 
 .lm-table th.center {
