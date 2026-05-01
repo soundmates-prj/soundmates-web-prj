@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, Clock, Calendar, Music, MessageSquare } from 'lucide-react';
 import liveSessionApiService, {
-  type LiveSessionResult,
-  type ListenerStatsResult,
+  type LiveSessionStatisticsResult,
   type SongRequestResult,
   type LiveSessionChatResult
 } from '../../../services/liveSessionApiService';
@@ -15,8 +14,7 @@ export function HostSessionAnalyticsDetailScreen() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
 
-  const [session, setSession] = useState<LiveSessionResult | null>(null);
-  const [listenerStats, setListenerStats] = useState<ListenerStatsResult | null>(null);
+  const [sessionStats, setSessionStats] = useState<LiveSessionStatisticsResult | null>(null);
   const [songRequests, setSongRequests] = useState<SongRequestResult[]>([]);
   const [chats, setChats] = useState<LiveSessionChatResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,19 +25,16 @@ export function HostSessionAnalyticsDetailScreen() {
       try {
         setLoading(true);
         const [
-          sessionData,
-          listenerData,
+          statisticsData,
           requestsData,
           chatsData
         ] = await Promise.all([
-          liveSessionApiService.getLiveSession(sessionId),
-          liveSessionApiService.getListenerStats(sessionId),
+          liveSessionApiService.getSessionStatistics(sessionId),
           liveSessionApiService.getSongRequests(sessionId),
           liveSessionApiService.getSessionChats(sessionId)
         ]);
 
-        setSession(sessionData);
-        setListenerStats(listenerData);
+        setSessionStats(statisticsData);
         setSongRequests(requestsData);
         setChats(chatsData);
       } catch (error) {
@@ -56,7 +51,7 @@ export function HostSessionAnalyticsDetailScreen() {
     return <div className="host-an-page">Đang tải chi tiết phân tích...</div>;
   }
 
-  if (!session) {
+  if (!sessionStats) {
     return (
       <div className="host-an-page">
         <div style={{ marginBottom: '20px' }}>
@@ -69,9 +64,7 @@ export function HostSessionAnalyticsDetailScreen() {
     );
   }
 
-  const durationSpan = session.endedAt && session.startedAt 
-    ? (new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60000 
-    : 0;
+  const durationMinutes = Math.round((sessionStats.totalDurationSeconds || 0) / 60);
 
   return (
     <div className="host-an-page">
@@ -85,9 +78,9 @@ export function HostSessionAnalyticsDetailScreen() {
           >
             <ArrowLeft size={16} /> Quay lại phân tích
           </button>
-          <h1>Phân tích chi tiết: {session.sessionName}</h1>
+          <h1>Phân tích chi tiết: {sessionStats.sessionName}</h1>
           <p>
-            Trạng thái: <span style={{ fontWeight: 'bold', color: session.status === 'Ended' ? '#64748b' : '#10b981' }}>{session.status}</span>
+            Trạng thái: <span style={{ fontWeight: 'bold', color: sessionStats.status === 'Ended' ? '#64748b' : '#10b981' }}>{sessionStats.status}</span>
           </p>
         </div>
       </div>
@@ -99,9 +92,9 @@ export function HostSessionAnalyticsDetailScreen() {
           <div className="host-an-content">
             <span className="host-an-label">Thời gian phát sóng</span>
             <span className="host-an-value" style={{ fontSize: '16px', marginTop: '4px' }}>
-              {session.startedAt ? format(new Date(session.startedAt), 'HH:mm dd/MM', { locale: vi }) : '--'}
+              {sessionStats.startedAt ? format(new Date(sessionStats.startedAt), 'HH:mm dd/MM', { locale: vi }) : '--'}
               {' - '}
-              {session.endedAt ? format(new Date(session.endedAt), 'HH:mm dd/MM', { locale: vi }) : '--'}
+              {sessionStats.endedAt ? format(new Date(sessionStats.endedAt), 'HH:mm dd/MM', { locale: vi }) : '--'}
             </span>
           </div>
         </div>
@@ -110,7 +103,7 @@ export function HostSessionAnalyticsDetailScreen() {
           <div className="host-an-icon"><Clock size={20} /></div>
           <div className="host-an-content">
             <span className="host-an-label">Tổng thời lượng</span>
-            <span className="host-an-value">{Math.round(durationSpan)} phút</span>
+            <span className="host-an-value">{durationMinutes} phút</span>
           </div>
         </div>
 
@@ -118,7 +111,7 @@ export function HostSessionAnalyticsDetailScreen() {
           <div className="host-an-icon"><Users size={20} /></div>
           <div className="host-an-content">
             <span className="host-an-label">Lượt xem đỉnh (Peak)</span>
-            <span className="host-an-value">{listenerStats?.peakListeners || 0}</span>
+            <span className="host-an-value">{sessionStats.peakConcurrentListeners || 0}</span>
           </div>
         </div>
 
@@ -126,7 +119,7 @@ export function HostSessionAnalyticsDetailScreen() {
           <div className="host-an-icon"><Users size={20} /></div>
           <div className="host-an-content">
             <span className="host-an-label">Tổng lượt xem (Unique)</span>
-            <span className="host-an-value">{listenerStats?.totalListeners || 0}</span>
+            <span className="host-an-value">{sessionStats.uniqueListeners || 0}</span>
           </div>
         </div>
       </div>
@@ -139,11 +132,11 @@ export function HostSessionAnalyticsDetailScreen() {
           </h3>
           <div className="host-an-table-wrapper" style={{ maxHeight: '400px', overflowY: 'auto' }}>
             <table className="host-an-table">
-              <thead style={{ position: 'sticky', top: 0, background: 'var(--layer-1)', zIndex: 1 }}>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr>
-                  <th>Thời gian</th>
-                  <th>Bài hát</th>
-                  <th>Người yêu cầu</th>
+                  <th style={{ background: 'var(--bg-card, #fff)' }}>Thời gian</th>
+                  <th style={{ background: 'var(--bg-card, #fff)' }}>Bài hát</th>
+                  <th style={{ background: 'var(--bg-card, #fff)' }}>Người yêu cầu</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,11 +170,11 @@ export function HostSessionAnalyticsDetailScreen() {
           </h3>
           <div className="host-an-table-wrapper" style={{ maxHeight: '400px', overflowY: 'auto' }}>
             <table className="host-an-table">
-              <thead style={{ position: 'sticky', top: 0, background: 'var(--layer-1)', zIndex: 1 }}>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr>
-                  <th>Thời gian</th>
-                  <th>Người gửi</th>
-                  <th>Nội dung</th>
+                  <th style={{ background: 'var(--bg-card, #fff)' }}>Thời gian</th>
+                  <th style={{ background: 'var(--bg-card, #fff)' }}>Người gửi</th>
+                  <th style={{ background: 'var(--bg-card, #fff)' }}>Nội dung</th>
                 </tr>
               </thead>
               <tbody>

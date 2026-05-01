@@ -298,10 +298,15 @@
   font-size: 13px;
   border-bottom: 1px solid var(--neutral-200);
   white-space: nowrap;
+  background: var(--bg-card, #fff);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 [data-theme="dark"] .host-an-table th {
   border-bottom-color: rgba(255, 255, 255, 0.1);
+  background: var(--bg-card, #1e1e1e);
 }
 
 .host-an-table td {

@@ -271,7 +271,7 @@ function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): Featu
   if (tier === "elite") {
     return [
       ...base,
-      { text: `${plan.requestLimit} lượt yêu cầu nhạc` },
+      { text: `${plan.requestLimit} lượt yêu cầu nhạc`, bold: 'mỗi ngày' },
       { text: "mỗi ngày", bold: `${plan.podcastRequestLimit} lượt tạo Podcast` },
       { text: "Theme giao diện cơ bản" },
     ];
@@ -280,7 +280,7 @@ function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): Featu
   return [
     ...base,
     { text: "Mọi đặc quyền từ gói Miễn Phí" },
-    { text: `${plan.requestLimit} lượt yêu cầu nhạc`, bold: " mỗi ngày - ưu tiên hàng đợi" },
+    { text: `${plan.requestLimit} lượt yêu cầu nhạc`, bold: " mỗi ngày" },
     { text: `${plan.podcastRequestLimit} lượt tạo Podcast`, bold: " mỗi ngày" },
     { text: "Tự tạo giọng nói AI", bold: `${plan.voiceModelLimit} giọng` },
     { text: "AI đọc văn bản", bold: `${plan.ttsMinuteLimit} phút/tháng` },

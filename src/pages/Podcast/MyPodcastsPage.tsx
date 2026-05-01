@@ -432,7 +432,7 @@ function MyPodcastCard({
             Xem chi tiết
           </button>
 
-          <button
+          {/* <button
             className="mypod-card-edit"
             onClick={(e) => {
               e.stopPropagation();
@@ -442,7 +442,7 @@ function MyPodcastCard({
           >
             <Edit size={14} />
             Chỉnh sửa
-          </button>
+          </button> */}
 
           <button
             className="mypod-card-episode"
@@ -555,7 +555,7 @@ function MyPodcastDetailModal({
           <h2 className="mypod-modal-title">{podcast.title}</h2>
           <p className="mypod-modal-desc">
             {typeof podcast.description === "string" &&
-            podcast.description.trim()
+              podcast.description.trim()
               ? podcast.description
               : "Chưa có mô tả."}
           </p>
@@ -839,9 +839,8 @@ function CreatePodcastRequestModal({
               </div>
             ) : (
               <label
-                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${
-                  uploadingBanner ? " uploading" : ""
-                }`}
+                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${uploadingBanner ? " uploading" : ""
+                  }`}
               >
                 <input
                   ref={bannerInputRef}
@@ -1302,9 +1301,8 @@ function CreateEpisodeRequestModal({
               </div>
             ) : (
               <label
-                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${
-                  uploadingAudio ? " uploading" : ""
-                }`}
+                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${uploadingAudio ? " uploading" : ""
+                  }`}
               >
                 <input
                   ref={audioInputRef}
@@ -1409,9 +1407,8 @@ function CreateEpisodeRequestModal({
               </div>
             ) : (
               <label
-                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${
-                  uploadingThumb ? " uploading" : ""
-                }`}
+                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${uploadingThumb ? " uploading" : ""
+                  }`}
               >
                 <input
                   ref={thumbInputRef}
@@ -1707,9 +1704,8 @@ function EditPodcastModal({
               </div>
             ) : (
               <label
-                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${
-                  uploadingBanner ? " uploading" : ""
-                }`}
+                className={`pds-form-banner pds-form-banner--empty pds-form-banner--clickable${uploadingBanner ? " uploading" : ""
+                  }`}
               >
                 <input
                   ref={bannerInputRef}

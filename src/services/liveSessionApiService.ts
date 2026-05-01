@@ -104,6 +104,44 @@ export interface EndedSessionAnalysisResult {
   musicRequestsCount: number;
 }
 
+export interface LiveSessionStatisticsResult {
+  liveSessionId: string;
+  sessionName: string;
+  description: string | null;
+  stationId: string;
+  stationName: string;
+  hostUserId: string;
+  hostName: string;
+  status: string;
+  startDate: string | null;
+  startTime: string | null;
+  endDate: string | null;
+  endTime: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  totalDurationSeconds: number;
+  uniqueListeners: number;
+  peakConcurrentListeners: number;
+  totalMessages: number;
+  songsPlayed: {
+    id: string;
+    songTitle: string;
+    songArtist: string;
+    playedAt: string;
+    endedAt: string;
+    isRequest: boolean;
+  }[];
+  totalSongRequests: number;
+  topRequestedSongs: {
+    mediaFileId: string;
+    songTitle: string;
+    songArtist: string;
+    requestCount: number;
+  }[];
+  acceptedRequests: number;
+  rejectedRequests: number;
+}
+
 export interface HostDashboardOverviewResult {
   totalSessions: number;
   totalListeners: number;
@@ -894,6 +932,13 @@ class LiveSessionApiService {
   async getListenerStats(id: string): Promise<ListenerStatsResult> {
     const res = await api.get<ApiResponse<ListenerStatsResult>>(
       `/livesession/${id}/listeners`,
+    );
+    return res.data.data;
+  }
+
+  async getSessionStatistics(id: string): Promise<LiveSessionStatisticsResult> {
+    const res = await api.get<ApiResponse<LiveSessionStatisticsResult>>(
+      `/livesession/${id}/statistics`,
     );
     return res.data.data;
   }
