@@ -16,6 +16,7 @@ import {
   Trash2,
   Lightbulb,
   Lock,
+  CheckCircle,
 } from "lucide-react";
 import podcastService from "../../services/podcastService";
 import { resolveAuthor, type PodcastItem } from "../../types/podcast";
@@ -349,15 +350,29 @@ function FeaturedCard({ podcast, onClick, isSaved, onToggleSave }: CardProps) {
         <div className="pds-featured-overlay" />
 
         {typeof podcast.price === "number" && podcast.price > 0 && (
-          <span className="pds-featured-price">
-            {podcast.isPaid && !podcast.isPurchased && (
-              <Lock size={12} style={{ marginRight: 4 }} />
-            )}
-            <span className="pds-featured-price-amount">
-              {formatVnd(podcast.price)}
+          podcast.isPurchased ? (
+            <span
+              className="pds-featured-price"
+              style={{
+                background: "rgba(16, 185, 129, 0.15)",
+                color: "#10b981",
+                border: "1px solid rgba(16, 185, 129, 0.3)",
+              }}
+            >
+              <CheckCircle size={12} style={{ marginRight: 4 }} />
+              <span style={{ fontWeight: 600, fontSize: 12 }}>Đã sở hữu</span>
             </span>
-            <span className="pds-featured-price-currency">₫</span>
-          </span>
+          ) : (
+            <span className="pds-featured-price">
+              {podcast.isPaid && (
+                <Lock size={12} style={{ marginRight: 4 }} />
+              )}
+              <span className="pds-featured-price-amount">
+                {formatVnd(podcast.price)}
+              </span>
+              <span className="pds-featured-price-currency">₫</span>
+            </span>
+          )
         )}
       </div>
 
@@ -445,12 +460,26 @@ function PodcastCard({
         <EqBars count={5} className="pds-card-eq" />
 
         {typeof podcast.price === "number" && podcast.price > 0 && (
-          <span className="pds-card-price">
-            {podcast.isPaid && !podcast.isPurchased && (
-              <Lock size={10} style={{ marginRight: 3 }} />
-            )}
-            {formatVnd(podcast.price)}₫
-          </span>
+          podcast.isPurchased ? (
+            <span
+              className="pds-card-price"
+              style={{
+                background: "rgba(16, 185, 129, 0.15)",
+                color: "#10b981",
+                border: "1px solid rgba(16, 185, 129, 0.3)",
+              }}
+            >
+              <CheckCircle size={10} style={{ marginRight: 3 }} />
+              <span style={{ fontWeight: 600, fontSize: 11 }}>Đã sở hữu</span>
+            </span>
+          ) : (
+            <span className="pds-card-price">
+              {podcast.isPaid && (
+                <Lock size={10} style={{ marginRight: 3 }} />
+              )}
+              {formatVnd(podcast.price)}₫
+            </span>
+          )
         )}
       </div>
 

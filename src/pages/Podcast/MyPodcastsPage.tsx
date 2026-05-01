@@ -32,6 +32,7 @@ import type { PodcastItem, PodcastEpisode } from "../../types/podcast";
 import { showError } from "../../components/common/toastUtils";
 import { showToast } from "../../utils/toast";
 import { uploadAudio, uploadImage } from "../../utils/cloudinaryUpload";
+import api from "../../services/axios";
 import "./MyPodcastsPage.css";
 
 /* ────────────────────────────────────────────
@@ -142,12 +143,27 @@ export default function MyPodcastsPage() {
     }
   };
 
-  const handleOpenCreate = () => {
+  const handleOpenCreate = async () => {
     if (!localStorage.getItem("accessToken")) {
       showToast.warning("Vui lòng đăng nhập để tạo podcast");
       navigate("/login");
       return;
     }
+
+    try {
+      const bankRes = await api.get("/users/bank-account");
+      const bankData = bankRes.data?.data;
+      if (!bankData || !bankData.bankId || !bankData.accountNumber || !bankData.accountName) {
+        showToast.warning("Bạn cần cập nhật Tài khoản ngân hàng trong mục Hồ sơ để nhận doanh thu Podcast.");
+        navigate("/settings/profile");
+        return;
+      }
+    } catch (error) {
+      showToast.warning("Bạn cần cập nhật Tài khoản ngân hàng trong mục Hồ sơ để nhận doanh thu Podcast.");
+      navigate("/settings/profile");
+      return;
+    }
+
     setCreateOpen(true);
   };
 
