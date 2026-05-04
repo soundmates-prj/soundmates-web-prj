@@ -71,7 +71,6 @@ import { UserPostsManagementScreen } from "./pages/Admin/Posts/UserPostsManageme
 import { RoleManagementScreen } from "./pages/Admin/Roles/RoleManagementScreen";
 import PodcastScreen from "./pages/Podcast/PodcastScreen";
 import PodcastDetailScreen from "./pages/Podcast/PodcastDetailScreen";
-import MyPodcastsPage from "./pages/Podcast/MyPodcastsPage";
 
 // ── LiveRoomPageWithKey: force remount when sessionId changes ──
 function LiveRoomPageWithKey() {
@@ -170,6 +169,7 @@ function App() {
                 element={<LiveStreamScriptEditor />}
               />
               <Route path="analytics" element={<StaffAnalyticsScreen />} />
+              <Route path="analytics/:sessionId" element={<HostSessionAnalyticsDetailScreen />} />
               <Route path="podcast-creator" element={<PodcastCreatorPage />} />
               <Route path="music-catalog" element={<MusicCatalogScreen />} />
               <Route path="playlists" element={<PlaylistsScreen />} />

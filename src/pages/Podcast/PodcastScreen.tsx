@@ -11,6 +11,10 @@ import {
   ChevronRight,
   X,
   Bookmark,
+  Plus,
+  Upload,
+  Trash2,
+  Lightbulb,
   Lock,
   CheckCircle,
 } from "lucide-react";
@@ -345,7 +349,6 @@ function FeaturedCard({ podcast, onClick, isSaved, onToggleSave }: CardProps) {
         )}
         <div className="pds-featured-overlay" />
 
-<<<<<<< Updated upstream
         {typeof podcast.price === "number" && podcast.price > 0 && (
           podcast.isPurchased ? (
             <span
@@ -364,29 +367,13 @@ function FeaturedCard({ podcast, onClick, isSaved, onToggleSave }: CardProps) {
               {podcast.isPaid && (
                 <Lock size={12} style={{ marginRight: 4 }} />
               )}
-=======
-        {typeof podcast.price === "number" &&
-          podcast.price > 0 &&
-          (podcast.isPurchased ? (
-            <span className="pds-featured-owned">
-              <CheckCircle size={12} style={{ marginRight: 4 }} />
-              Đã sở hữu
-            </span>
-          ) : (
-            <span className="pds-featured-price">
-              {podcast.isPaid && <Lock size={12} style={{ marginRight: 4 }} />}
->>>>>>> Stashed changes
               <span className="pds-featured-price-amount">
                 {formatVnd(podcast.price)}
               </span>
               <span className="pds-featured-price-currency">₫</span>
             </span>
-<<<<<<< Updated upstream
           )
         )}
-=======
-          ))}
->>>>>>> Stashed changes
       </div>
 
       <div className="pds-featured-body">
@@ -472,7 +459,6 @@ function PodcastCard({
 
         <EqBars count={5} className="pds-card-eq" />
 
-<<<<<<< Updated upstream
         {typeof podcast.price === "number" && podcast.price > 0 && (
           podcast.isPurchased ? (
             <span
@@ -495,21 +481,6 @@ function PodcastCard({
             </span>
           )
         )}
-=======
-        {typeof podcast.price === "number" &&
-          podcast.price > 0 &&
-          (podcast.isPurchased ? (
-            <span className="pds-card-owned">
-              <CheckCircle size={10} style={{ marginRight: 3 }} />
-              Đã sở hữu
-            </span>
-          ) : (
-            <span className="pds-card-price">
-              {podcast.isPaid && <Lock size={10} style={{ marginRight: 3 }} />}
-              {formatVnd(podcast.price)}₫
-            </span>
-          ))}
->>>>>>> Stashed changes
       </div>
 
       <div className="pds-card-body">

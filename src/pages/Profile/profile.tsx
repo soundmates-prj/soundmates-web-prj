@@ -256,10 +256,7 @@ export default function Profile() {
                   Chỉnh sửa
                 </Link>
               ) : (
-                <button className="pf-edit-btn">
-                  <Plus size={14} />
-                  Theo dõi
-                </button>
+                <></>
               )}
             </div>
           </div>
