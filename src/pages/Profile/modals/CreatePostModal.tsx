@@ -15,6 +15,7 @@ import { Avatar } from "../../../components/common";
 import ImageUploader from "./ImageUploader";
 import AudioUploader from "./AudioUploader";
 import "./CreatePostModal.css";
+import "./CreatePostModal-dark.css";
 import "./ImageUploader.css";
 import type { User } from "../../../types/user";
 import type { Post } from "../../../types/post";

@@ -10,6 +10,7 @@ import ShareCard, {
   type ShareCardTemplate,
 } from "./ShareCard";
 import "./ShareMusicModal.css";
+import "./ShareMusicModal-dark.css";
 
 interface ShareMusicModalProps {
   open: boolean;

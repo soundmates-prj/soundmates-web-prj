@@ -7,13 +7,25 @@ import {
   Eye,
   RefreshCw,
   Music,
-} from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import './HostAnalyticsScreen.css';
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { useNavigate } from 'react-router-dom';
-import liveSessionApiService, { type HostAnalyticsOverviewResult } from '../../../services/liveSessionApiService';
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from "recharts";
+import "./HostAnalyticsScreen.css";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
+import liveSessionApiService, {
+  type HostAnalyticsOverviewResult,
+} from "../../../services/liveSessionApiService";
 
 interface MetricCardProps {
   title: string;
@@ -39,7 +51,9 @@ function MetricCard({
         <span className="host-an-label">{title}</span>
         <span className="host-an-value">{value}</span>
         {change && (
-          <div className={`host-an-change ${isPositive ? 'positive' : 'negative'}`}>
+          <div
+            className={`host-an-change ${isPositive ? "positive" : "negative"}`}
+          >
             <TrendingUp size={12} />
             <span>{change}</span>
           </div>
@@ -87,7 +101,10 @@ export function HostAnalyticsScreen() {
           <h1>Phân tích phiên phát sóng</h1>
           <p>Theo dõi hiệu suất và tương tác của các phiên phát sóng của bạn</p>
         </div>
-        <button className="host-an-btn host-an-btn--outline" onClick={fetchAnalytics}>
+        <button
+          className="host-an-btn host-an-btn--outline"
+          onClick={fetchAnalytics}
+        >
           <RefreshCw size={15} />
           Làm mới
         </button>
@@ -106,7 +123,7 @@ export function HostAnalyticsScreen() {
           icon={<Radio size={20} />}
         />
         <MetricCard
-          title="Lượt xem đỉnh"
+          title="Lượt xem cao nhất"
           value={data.peakListeners.toLocaleString()}
           icon={<Eye size={20} />}
         />
@@ -120,15 +137,31 @@ export function HostAnalyticsScreen() {
       {/* Charts Row */}
       <div className="host-an-charts-row">
         <div className="host-an-chart-card">
-          <h3 className="host-an-chart-title">Người nghe & Yêu cầu nhạc theo ngày</h3>
+          <h3 className="host-an-chart-title">
+            Người nghe & Yêu cầu nhạc theo ngày
+          </h3>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={data.chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-              <XAxis dataKey="date" stroke="#64748b" tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+              <XAxis
+                dataKey="date"
+                stroke="#64748b"
+                tickFormatter={(val) => val.split("-").slice(1).join("/")}
+              />
               <YAxis stroke="#64748b" />
               <Tooltip />
-              <Bar dataKey="listenersCount" fill="#1a9fd4" radius={[8, 8, 0, 0]} name="Người nghe" />
-              <Bar dataKey="requestsCount" fill="#a855f7" radius={[8, 8, 0, 0]} name="Yêu cầu nhạc" />
+              <Bar
+                dataKey="listenersCount"
+                fill="#1a9fd4"
+                radius={[8, 8, 0, 0]}
+                name="Người nghe"
+              />
+              <Bar
+                dataKey="requestsCount"
+                fill="#a855f7"
+                radius={[8, 8, 0, 0]}
+                name="Yêu cầu nhạc"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -138,7 +171,11 @@ export function HostAnalyticsScreen() {
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={data.chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-              <XAxis dataKey="date" stroke="#64748b" tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+              <XAxis
+                dataKey="date"
+                stroke="#64748b"
+                tickFormatter={(val) => val.split("-").slice(1).join("/")}
+              />
               <YAxis stroke="#64748b" />
               <Tooltip />
               <Line
@@ -146,7 +183,7 @@ export function HostAnalyticsScreen() {
                 dataKey="chatCount"
                 stroke="#1a9fd4"
                 strokeWidth={3}
-                dot={{ r: 4, fill: '#1a9fd4' }}
+                dot={{ r: 4, fill: "#1a9fd4" }}
                 name="Tin nhắn chat"
               />
             </LineChart>
@@ -167,7 +204,9 @@ export function HostAnalyticsScreen() {
               <div key={req.rank} className="host-an-top-item">
                 <span className="host-an-rank">#{req.rank}</span>
                 <Music size={16} className="host-an-top-icon" />
-                <span className="host-an-top-title">{req.title} {req.artist ? `- ${req.artist}` : ''}</span>
+                <span className="host-an-top-title">
+                  {req.title} {req.artist ? `- ${req.artist}` : ""}
+                </span>
                 <span className="host-an-top-count">{req.count} lượt</span>
               </div>
             ))
@@ -177,7 +216,9 @@ export function HostAnalyticsScreen() {
 
       {/* Ended Sessions Table */}
       <div className="host-an-table-section">
-        <h3 className="host-an-table-title">Phân tích phiên phát sóng đã kết thúc</h3>
+        <h3 className="host-an-table-title">
+          Phân tích phiên phát sóng đã kết thúc
+        </h3>
         <div className="host-an-table-wrapper">
           <table className="host-an-table">
             <thead>
@@ -187,29 +228,46 @@ export function HostAnalyticsScreen() {
                 <th>Thời lượng</th>
                 <th>Người nghe</th>
                 <th>Yêu cầu nhạc</th>
-                <th style={{ textAlign: 'right' }}>Thao tác</th>
+                <th style={{ textAlign: "right" }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {data.endedSessionsAnalysis.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="no-data-msg" style={{ textAlign: 'center', padding: '2rem' }}>
-                    Chưa có phiên phát sóng nào kết thúc trong khoảng thời gian này.
+                  <td
+                    colSpan={6}
+                    className="no-data-msg"
+                    style={{ textAlign: "center", padding: "2rem" }}
+                  >
+                    Chưa có phiên phát sóng nào kết thúc trong khoảng thời gian
+                    này.
                   </td>
                 </tr>
               ) : (
                 data.endedSessionsAnalysis.map((session) => (
                   <tr key={session.sessionId}>
-                    <td className="font-medium text-white">{session.sessionName}</td>
-                    <td>{session.endedAt ? format(new Date(session.endedAt), 'HH:mm dd/MM/yyyy', { locale: vi }) : 'N/A'}</td>
+                    <td className="font-medium text-white">
+                      {session.sessionName}
+                    </td>
+                    <td>
+                      {session.endedAt
+                        ? format(
+                            new Date(session.endedAt),
+                            "HH:mm dd/MM/yyyy",
+                            { locale: vi },
+                          )
+                        : "N/A"}
+                    </td>
                     <td>{Math.round(session.totalDurationMinutes)} phút</td>
                     <td>{session.totalListeners}</td>
                     <td>{session.musicRequestsCount}</td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: "right" }}>
                       <button
                         className="host-an-btn host-an-btn--outline"
-                        style={{ padding: '4px 12px', fontSize: '0.85rem' }}
-                        onClick={() => navigate(`/host/analytics/${session.sessionId}`)}
+                        style={{ padding: "4px 12px", fontSize: "0.85rem" }}
+                        onClick={() =>
+                          navigate(`/host/analytics/${session.sessionId}`)
+                        }
                       >
                         Chi tiết
                       </button>
