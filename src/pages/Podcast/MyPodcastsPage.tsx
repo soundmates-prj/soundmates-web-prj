@@ -127,9 +127,6 @@ export default function MyPodcastsPage() {
   const [createEpisodeFor, setCreateEpisodeFor] = useState<PodcastItem | null>(
     null,
   );
-  const [editPodcastFor, setEditPodcastFor] = useState<PodcastItem | null>(
-    null,
-  );
 
   const loadPodcasts = async () => {
     setLoading(true);
@@ -296,7 +293,6 @@ export default function MyPodcastsPage() {
                 key={podcast.id}
                 podcast={podcast}
                 onView={() => void openDetail(podcast)}
-                onEdit={(p) => setEditPodcastFor(p)}
                 onCreateEpisode={(p) => setCreateEpisodeFor(p)}
               />
             ))}
@@ -318,36 +314,6 @@ export default function MyPodcastsPage() {
         <CreatePodcastRequestModal
           onClose={() => setCreateOpen(false)}
           onCreated={handleCreated}
-        />
-      )}
-
-      {/* Edit podcast modal */}
-      {editPodcastFor && (
-        <EditPodcastModal
-          podcast={editPodcastFor}
-          onClose={() => setEditPodcastFor(null)}
-          onEdited={() => {
-            setEditPodcastFor(null);
-            showToast.success(
-              "Đã gửi yêu cầu cập nhật hoặc cập nhật thành công.",
-            );
-            handleCreated(); // reload list
-          }}
-        />
-      )}
-
-      {/* Edit podcast modal */}
-      {editPodcastFor && (
-        <EditPodcastModal
-          podcast={editPodcastFor}
-          onClose={() => setEditPodcastFor(null)}
-          onEdited={() => {
-            setEditPodcastFor(null);
-            showToast.success(
-              "Đã gửi yêu cầu cập nhật hoặc cập nhật thành công.",
-            );
-            handleCreated(); // reload list
-          }}
         />
       )}
 
@@ -375,12 +341,10 @@ export default function MyPodcastsPage() {
 function MyPodcastCard({
   podcast,
   onView,
-  onEdit,
   onCreateEpisode,
 }: {
   podcast: PodcastItem;
   onView: () => void;
-  onEdit: (podcast: PodcastItem) => void;
   onCreateEpisode: (podcast: PodcastItem) => void;
 }) {
   const episodeCount = podcast.episodeCount ?? podcast.allEpisodes?.length ?? 0;
@@ -447,18 +411,6 @@ function MyPodcastCard({
             <Eye size={14} />
             Xem chi tiết
           </button>
-
-          {/* <button
-            className="mypod-card-edit"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(podcast);
-            }}
-            title="Cập nhật thông tin podcast"
-          >
-            <Edit size={14} />
-            Chỉnh sửa
-          </button> */}
 
           <button
             className="mypod-card-episode"
