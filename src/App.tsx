@@ -169,6 +169,7 @@ function App() {
                 element={<LiveStreamScriptEditor />}
               />
               <Route path="analytics" element={<StaffAnalyticsScreen />} />
+              <Route path="analytics/:sessionId" element={<HostSessionAnalyticsDetailScreen />} />
               <Route path="podcast-creator" element={<PodcastCreatorPage />} />
               <Route path="music-catalog" element={<MusicCatalogScreen />} />
               <Route path="playlists" element={<PlaylistsScreen />} />
