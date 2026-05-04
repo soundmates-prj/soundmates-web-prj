@@ -2,125 +2,181 @@
    CreatePostModal-dark.css  ·  Dark Theme Support
 ================================================================ */
 
-[data-theme='dark'] .cp-modal {
+[data-theme="dark"] .cp-modal {
   background: var(--bg-secondary);
 }
 
-[data-theme='dark'] .cp-title {
+[data-theme="dark"] .cp-title {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .cp-close {
+[data-theme="dark"] .cp-close {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .cp-close:hover {
+[data-theme="dark"] .cp-close:hover {
   background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
 }
 
-[data-theme='dark'] .cp-divider {
+[data-theme="dark"] .cp-divider {
   background: #333333;
 }
 
-[data-theme='dark'] .cp-user-name {
+[data-theme="dark"] .cp-user-name {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .cp-privacy-btn {
+[data-theme="dark"] .cp-privacy-btn {
   border-color: #333333;
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .cp-privacy-btn:hover {
+[data-theme="dark"] .cp-privacy-btn:hover {
   border-color: #55c5f1;
   background: rgba(85, 197, 241, 0.1);
   color: #55c5f1;
 }
 
-[data-theme='dark'] .cp-privacy-btn.active {
+[data-theme="dark"] .cp-privacy-btn.active {
   border-color: #55c5f1;
   background: rgba(85, 197, 241, 0.15);
   color: #55c5f1;
 }
 
-[data-theme='dark'] .cp-input,
-[data-theme='dark'] .cp-textarea {
+[data-theme="dark"] .cp-input,
+[data-theme="dark"] .cp-textarea {
   border-color: #333333;
   background: rgba(255, 255, 255, 0.03);
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .cp-input:focus,
-[data-theme='dark'] .cp-textarea:focus {
+[data-theme="dark"] .cp-input:focus,
+[data-theme="dark"] .cp-textarea:focus {
   border-color: #55c5f1;
   background: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme='dark'] .cp-input::placeholder,
-[data-theme='dark'] .cp-textarea::placeholder {
+[data-theme="dark"] .cp-input::placeholder,
+[data-theme="dark"] .cp-textarea::placeholder {
   color: var(--text-muted);
 }
 
-[data-theme='dark'] .cp-moods-label {
+[data-theme="dark"] .cp-moods-label {
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .cp-mood-chip {
+[data-theme="dark"] .cp-mood-chip {
   border-color: #333333;
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .cp-mood-chip:hover {
+[data-theme="dark"] .cp-mood-chip:hover {
   border-color: #55c5f1;
   background: rgba(85, 197, 241, 0.1);
   color: #55c5f1;
 }
 
-[data-theme='dark'] .cp-mood-chip.active {
+[data-theme="dark"] .cp-mood-chip.active {
   border-color: #55c5f1;
   background: linear-gradient(135deg, #55c5f1, #2db1e0);
   color: #fff;
 }
 
-[data-theme='dark'] .cp-toggle-url {
+[data-theme="dark"] .cp-toggle-url {
   border-color: #444444;
   color: var(--text-muted);
 }
 
-[data-theme='dark'] .cp-toggle-url:hover {
+[data-theme="dark"] .cp-toggle-url:hover {
   border-color: #55c5f1;
   background: rgba(85, 197, 241, 0.1);
   color: #55c5f1;
 }
 
-[data-theme='dark'] .cp-url-icon {
+[data-theme="dark"] .cp-url-icon {
   color: var(--text-muted);
 }
 
-[data-theme='dark'] .cp-preview-img {
+[data-theme="dark"] .cp-preview-img {
   border-color: #333333;
 }
 
-[data-theme='dark'] .cp-error {
+[data-theme="dark"] .cp-error {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.3);
   color: #ef4444;
 }
 
-[data-theme='dark'] .cp-chars {
+[data-theme="dark"] .cp-chars {
   color: var(--text-muted);
 }
 
-[data-theme='dark'] .cp-cancel-btn {
+[data-theme="dark"] .cp-cancel-btn {
   background: rgba(255, 255, 255, 0.05);
   border-color: #333333;
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .cp-cancel-btn:hover {
+[data-theme="dark"] .cp-cancel-btn:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+/* Uploader dark styles */
+[data-theme="dark"] .img-uploader-zone,
+[data-theme="dark"] .audio-uploader-zone {
+  border-color: #333333;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="dark"] .img-uploader-zone:hover,
+[data-theme="dark"] .audio-uploader-zone:hover,
+[data-theme="dark"] .img-uploader-zone.dragging,
+[data-theme="dark"] .audio-uploader-zone.dragging {
+  border-color: #55c5f1;
+  background: rgba(85, 197, 241, 0.06);
+  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.06);
+}
+
+[data-theme="dark"] .img-uploader-icon,
+[data-theme="dark"] .audio-uploader-zone-icon {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .img-uploader-hint,
+[data-theme="dark"] .audio-uploader-hint,
+[data-theme="dark"] .img-uploader-sub,
+[data-theme="dark"] .audio-uploader-sub {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .img-uploader-preview {
+  border-color: #333333;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="dark"] .img-uploader-change,
+[data-theme="dark"] .audio-uploader-change-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .img-uploader-remove,
+[data-theme="dark"] .audio-uploader-remove-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .audio-uploader-info .audio-uploader-name {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .audio-uploader-preview {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.04);
 }
