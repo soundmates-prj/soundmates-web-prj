@@ -345,26 +345,6 @@ function FeaturedCard({ podcast, onClick, isSaved, onToggleSave }: CardProps) {
         )}
         <div className="pds-featured-overlay" />
 
-<<<<<<< Updated upstream
-        {typeof podcast.price === "number" && podcast.price > 0 && (
-          podcast.isPurchased ? (
-            <span
-              className="pds-featured-price"
-              style={{
-                background: "rgba(16, 185, 129, 0.15)",
-                color: "#10b981",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
-              }}
-            >
-              <CheckCircle size={12} style={{ marginRight: 4 }} />
-              <span style={{ fontWeight: 600, fontSize: 12 }}>Đã sở hữu</span>
-            </span>
-          ) : (
-            <span className="pds-featured-price">
-              {podcast.isPaid && (
-                <Lock size={12} style={{ marginRight: 4 }} />
-              )}
-=======
         {typeof podcast.price === "number" &&
           podcast.price > 0 &&
           (podcast.isPurchased ? (
@@ -375,18 +355,12 @@ function FeaturedCard({ podcast, onClick, isSaved, onToggleSave }: CardProps) {
           ) : (
             <span className="pds-featured-price">
               {podcast.isPaid && <Lock size={12} style={{ marginRight: 4 }} />}
->>>>>>> Stashed changes
               <span className="pds-featured-price-amount">
                 {formatVnd(podcast.price)}
               </span>
               <span className="pds-featured-price-currency">₫</span>
             </span>
-<<<<<<< Updated upstream
-          )
-        )}
-=======
           ))}
->>>>>>> Stashed changes
       </div>
 
       <div className="pds-featured-body">
@@ -472,30 +446,6 @@ function PodcastCard({
 
         <EqBars count={5} className="pds-card-eq" />
 
-<<<<<<< Updated upstream
-        {typeof podcast.price === "number" && podcast.price > 0 && (
-          podcast.isPurchased ? (
-            <span
-              className="pds-card-price"
-              style={{
-                background: "rgba(16, 185, 129, 0.15)",
-                color: "#10b981",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
-              }}
-            >
-              <CheckCircle size={10} style={{ marginRight: 3 }} />
-              <span style={{ fontWeight: 600, fontSize: 11 }}>Đã sở hữu</span>
-            </span>
-          ) : (
-            <span className="pds-card-price">
-              {podcast.isPaid && (
-                <Lock size={10} style={{ marginRight: 3 }} />
-              )}
-              {formatVnd(podcast.price)}₫
-            </span>
-          )
-        )}
-=======
         {typeof podcast.price === "number" &&
           podcast.price > 0 &&
           (podcast.isPurchased ? (
@@ -509,7 +459,6 @@ function PodcastCard({
               {formatVnd(podcast.price)}₫
             </span>
           ))}
->>>>>>> Stashed changes
       </div>
 
       <div className="pds-card-body">

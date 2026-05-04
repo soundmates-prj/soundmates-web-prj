@@ -5,6 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import appStoreImg from '../../assets/AppStore.png';
 import chPlayImg from '../../assets/CHPlay.png';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import './Footer.css';
 
 const Footer: React.FC = () => {
@@ -49,17 +50,17 @@ const Footer: React.FC = () => {
             <div className="footer-links-col">
               <h4 className="footer-section-title">Về chúng tôi</h4>
               <ul className="footer-links">
-                <li><a href="/">Trang chủ</a></li>
-                <li><a href="#about-us">Giới thiệu</a></li>
-                <li><a href="#">Chính sách</a></li>
+                <li><Link to="/">Trang chủ</Link></li>
+                <li><Link to="/about">Giới thiệu</Link></li>
+                <li><Link to="/privacy">Chính sách</Link></li>
               </ul>
             </div>
 
             <div className="footer-links-col">
               <h4 className="footer-section-title">Liên hệ</h4>
               <ul className="footer-links">
-                <li><a href="#">FAQ</a></li>
-                <li><a href="#">Gửi thư</a></li>
+                <li><Link to="/faq">FAQ</Link></li>
+                <li><Link to="/gui-thu">Gửi thư</Link></li>
                 <li><a href="#">Quảng cáo</a></li>
               </ul>
             </div>

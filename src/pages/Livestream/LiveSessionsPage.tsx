@@ -1,10 +1,52 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Radio, Users, Clock, Disc3, RefreshCw, Headphones } from "lucide-react";
+import {
+  Radio, Users, Clock, Disc3, RefreshCw, Headphones,
+  Music2, Mic2, Waves, Zap, Star, Flame,
+} from "lucide-react";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
 import type { LiveSessionResult } from "../../services/liveSessionApiService";
 import { getLiveListenersCount } from "../../utils/listenerUtils";
 import "./LiveSessionsPage.css";
+
+// ── Fallback thumbnail themes (cycling by index) ──────────────────────────────
+const LIVE_THEMES = [
+  {
+    gradient: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+    Icon: Disc3,
+    pattern: "radial-gradient(circle at 80% 20%, rgba(255,255,255,.12) 0%, transparent 50%)",
+  },
+  {
+    gradient: "linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)",
+    Icon: Mic2,
+    pattern: "radial-gradient(circle at 20% 80%, rgba(255,255,255,.14) 0%, transparent 50%)",
+  },
+  {
+    gradient: "linear-gradient(135deg, #10b981 0%, #0ea5e9 100%)",
+    Icon: Waves,
+    pattern: "radial-gradient(circle at 70% 70%, rgba(255,255,255,.10) 0%, transparent 55%)",
+  },
+  {
+    gradient: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
+    Icon: Flame,
+    pattern: "radial-gradient(circle at 30% 30%, rgba(255,255,255,.13) 0%, transparent 50%)",
+  },
+  {
+    gradient: "linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%)",
+    Icon: Star,
+    pattern: "radial-gradient(circle at 60% 10%, rgba(255,255,255,.15) 0%, transparent 50%)",
+  },
+  {
+    gradient: "linear-gradient(135deg, #06b6d4 0%, #10b981 100%)",
+    Icon: Music2,
+    pattern: "radial-gradient(circle at 10% 60%, rgba(255,255,255,.12) 0%, transparent 50%)",
+  },
+  {
+    gradient: "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)",
+    Icon: Zap,
+    pattern: "radial-gradient(circle at 80% 80%, rgba(255,255,255,.10) 0%, transparent 55%)",
+  },
+];
 
 export function LiveSessionsPage() {
   const navigate = useNavigate();
@@ -75,21 +117,39 @@ export function LiveSessionsPage() {
               key={session.id}
               onClick={() => handleJoin(session.id)}
             >
-              <div className="lsp-card-thumb">
-                {session.thumbnailUrl ? (
-                  <img src={session.thumbnailUrl} alt={session.sessionName} />
-                ) : (
-                  <Disc3 size={48} className="lsp-thumb-icon" />
-                )}
-                <span className="lsp-live-badge">LIVE</span>
-                <span className="lsp-listeners-badge">
-                  <Users size={12} />
-                  {getLiveListenersCount(session, session.nowPlaying)}
-                </span>
-                {session.genre && (
-                  <span className="lsp-genre">{session.genre}</span>
-                )}
-              </div>
+              {(() => {
+                const theme = LIVE_THEMES[sessions.indexOf(session) % LIVE_THEMES.length];
+                const ThemeIcon = theme.Icon;
+                return (
+                  <div
+                    className="lsp-card-thumb"
+                    style={!session.thumbnailUrl ? {
+                      background: theme.gradient,
+                    } : undefined}
+                  >
+                    {session.thumbnailUrl ? (
+                      <img src={session.thumbnailUrl} alt={session.sessionName} />
+                    ) : (
+                      <>
+                        {/* subtle radial highlight */}
+                        <div className="lsp-thumb-pattern" style={{ background: theme.pattern }} />
+                        {/* decorative rings */}
+                        <div className="lsp-thumb-ring lsp-thumb-ring--1" />
+                        <div className="lsp-thumb-ring lsp-thumb-ring--2" />
+                        <ThemeIcon size={44} className="lsp-thumb-icon" />
+                      </>
+                    )}
+                    <span className="lsp-live-badge">LIVE</span>
+                    <span className="lsp-listeners-badge">
+                      <Users size={12} />
+                      {getLiveListenersCount(session, session.nowPlaying)}
+                    </span>
+                    {session.genre && (
+                      <span className="lsp-genre">{session.genre}</span>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="lsp-card-body">
                 <h3 className="lsp-card-name">{session.sessionName}</h3>

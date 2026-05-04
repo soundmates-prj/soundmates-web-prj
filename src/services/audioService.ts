@@ -178,11 +178,19 @@ class AudioService {
         throw new Error(response.data.message || 'Không thể tải danh sách giọng đọc');
       }
 
-      return response.data.data.voices.map(v => ({
-        ...v,
-        // Prefer voiceId (from VieNeu TTS) over id
-        id: v.voiceId || v.id
-      }));
+      return response.data.data.voices.map(v => {
+        let displayName = v.displayName;
+        if (displayName) {
+          displayName = displayName.replace('VieNeu Fast (Q4)', 'SoundMates Fast (Q4)')
+                                 .replace('VieNeu High Quality (Q8)', 'SoundMates High Quality (Q8)');
+        }
+        return {
+          ...v,
+          displayName,
+          // Prefer voiceId (from VieNeu TTS) over id
+          id: v.voiceId || v.id
+        };
+      });
     } catch (error: any) {
       console.error('Error fetching voices:', error);
       throw new Error(

@@ -250,16 +250,11 @@ export default function Profile() {
 
             {/* Stats + edit */}
             <div className="pf-right">
-              {isOwnProfile ? (
+              {isOwnProfile && (
                 <Link to="/settings" className="pf-edit-btn">
                   <SquarePen size={14} />
                   Chỉnh sửa
                 </Link>
-              ) : (
-                <button className="pf-edit-btn">
-                  <Plus size={14} />
-                  Theo dõi
-                </button>
               )}
             </div>
           </div>

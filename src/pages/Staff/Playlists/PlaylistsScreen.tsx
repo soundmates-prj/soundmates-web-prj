@@ -415,7 +415,7 @@ export function PlaylistsScreen() {
       showError(
         "Lỗi",
         err?.response?.data?.message ||
-          "Không thể thêm system media vào danh sách phát",
+        "Không thể thêm system media vào danh sách phát",
       );
     } finally {
       setMusicActionLoading(false);
@@ -455,7 +455,7 @@ export function PlaylistsScreen() {
             Danh sách phát
           </h1>
           <p className="staff-page-subtitle">
-            Quản lý danh sách phát cho từng trạm
+            Quản lý danh sách phát cho từng Station
           </p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -809,7 +809,7 @@ export function PlaylistsScreen() {
                 className={`pl-media-tab ${musicTab === "station" ? "active" : ""}`}
                 onClick={() => setMusicTab("station")}
               >
-                Nhạc trạm ({stationMusic.length})
+                Nhạc Station ({stationMusic.length})
               </button>
               <button
                 className={`pl-media-tab ${musicTab === "system" ? "active" : ""}`}
@@ -836,113 +836,116 @@ export function PlaylistsScreen() {
 
               {musicTab === "station"
                 ? stationMusic.map((m) => {
-                    const isAdded = tracks.some((t) => t.mediaFileId === m.id);
-                    return (
-                      <div className="pl-track-row" key={m.id}>
-                        <Music
-                          size={16}
-                          style={{ color: "#7C5CFC", flexShrink: 0 }}
-                        />
-                        <div className="pl-track-info">
-                          <span className="pl-track-title">{m.title}</span>
-                          <span className="pl-track-artist">
-                            {m.artist} {m.album ? `· ${m.album}` : ""}
-                          </span>
-                        </div>
-                        <span className="pl-track-dur">
-                          {formatDuration(m.duration)}
+                  const isAdded = tracks.some((t) => t.mediaFileId === m.id);
+                  return (
+                    <div className="pl-track-row" key={m.id}>
+                      <Music
+                        size={16}
+                        style={{ color: "#7C5CFC", flexShrink: 0 }}
+                      />
+                      <div className="pl-track-info">
+                        <span className="pl-track-title">{m.title}</span>
+                        <span className="pl-track-artist">
+                          {m.artist} {m.album ? `· ${m.album}` : ""}
                         </span>
-                        <button
-                          className={`staff-btn ${isAdded ? "staff-btn--outline" : "staff-btn--primary"}`}
-                          style={{ padding: "5px 14px", fontSize: 12 }}
-                          onClick={() => !isAdded && handleAddTrack(m.id)}
-                          disabled={isAdded}
-                        >
-                          {isAdded ? "Đã thêm" : "Thêm"}
-                        </button>
                       </div>
-                    );
-                  })
-                : systemMusic.map((m) => {
-                    const isAddedToPlaylist = tracks.some(
-                      (t) => t.mediaFileId === m.id,
-                    );
-                    const alreadyInStation = stationMusic.some(
-                      (sm) => sm.id === m.id,
-                    );
-                    const checked = selectedSystemMediaIds.includes(m.id);
-
-                    return (
-                      <div
-                        className={`pl-track-row ${alreadyInStation ? "in-station" : ""}`}
-                        key={m.id}
-                        style={
-                          alreadyInStation
-                            ? { background: "rgba(0,0,0,0.02)", opacity: 0.8 }
-                            : {}
-                        }
+                      <span className="pl-track-dur">
+                        {formatDuration(m.duration)}
+                      </span>
+                      <button
+                        className={`staff-btn ${isAdded ? "staff-btn--outline" : "staff-btn--primary"}`}
+                        style={{ padding: "5px 14px", fontSize: 12 }}
+                        onClick={() => !isAdded && handleAddTrack(m.id)}
+                        disabled={isAdded}
                       >
-                        <input
-                          type="checkbox"
-                          className="pl-track-check"
-                          checked={checked}
-                          onChange={() => toggleSystemMediaSelection(m.id)}
-                          disabled={isAddedToPlaylist}
-                        />
-                        <Music
-                          size={16}
-                          style={{ color: "#7C5CFC", flexShrink: 0 }}
-                        />
-                        <div className="pl-track-info">
-                          <span className="pl-track-title">{m.title}</span>
-                          <span className="pl-track-artist">
-                            {m.artist} {m.album ? `· ${m.album}` : ""}
-                          </span>
-                        </div>
-                        <span
-                          className={`pl-source-badge ${
-                            isAddedToPlaylist
-                              ? "added"
-                              : alreadyInStation
-                                ? "station"
-                                : "system"
-                          }`}
-                        >
-                          {isAddedToPlaylist
-                            ? "Trong danh sách phát"
-                            : alreadyInStation
-                              ? "Đã có trong trạm"
-                              : "Từ hệ thống"}
+                        {isAdded ? "Đã thêm" : "Thêm"}
+                      </button>
+                    </div>
+                  );
+                })
+                : systemMusic.map((m) => {
+                  const isAddedToPlaylist = tracks.some(
+                    (t) => t.mediaFileId === m.id,
+                  );
+                  const alreadyInStation = stationMusic.some(
+                    (sm) => sm.id === m.id,
+                  );
+                  const checked = selectedSystemMediaIds.includes(m.id);
+
+                  return (
+                    <div
+                      className={`pl-track-row ${alreadyInStation ? "in-station" : ""}`}
+                      key={m.id}
+                      style={
+                        alreadyInStation
+                          ? { background: "rgba(0,0,0,0.02)", opacity: 0.8 }
+                          : {}
+                      }
+                    >
+                      <input
+                        type="checkbox"
+                        className="pl-track-check"
+                        checked={checked}
+                        onChange={() => toggleSystemMediaSelection(m.id)}
+                        disabled={isAddedToPlaylist}
+                      />
+                      <Music
+                        size={16}
+                        style={{ color: "#7C5CFC", flexShrink: 0 }}
+                      />
+                      <div className="pl-track-info">
+                        <span className="pl-track-title">{m.title}</span>
+                        <span className="pl-track-artist">
+                          {m.artist} {m.album ? `· ${m.album}` : ""}
                         </span>
                       </div>
-                    );
-                  })}
+                      <span
+                        className={`pl-source-badge ${isAddedToPlaylist
+                          ? "added"
+                          : alreadyInStation
+                            ? "station"
+                            : "system"
+                          }`}
+                      >
+                        {isAddedToPlaylist
+                          ? "Trong danh sách phát"
+                          : alreadyInStation
+                            ? "Đã có trong Station"
+                            : "Từ hệ thống"}
+                      </span>
+                    </div>
+                  );
+                })}
             </div>
-            <div className="staff-modal-footer">
-              {musicTab === "system" && (
-                <>
-                  <button
-                    className="staff-btn staff-btn--outline"
-                    onClick={handleImportSystemMediaBatch}
-                    disabled={
-                      selectedSystemMediaIds.length === 0 || musicActionLoading
-                    }
-                  >
-                    {musicActionLoading ? "Đang xử lý..." : "Nhập vào trạm"}
-                  </button>
-                  <button
-                    className="staff-btn staff-btn--primary"
-                    onClick={handleAddSelectedSystemToPlaylist}
-                    disabled={
-                      selectedSystemMediaIds.length === 0 || musicActionLoading
-                    }
-                  >
-                    {musicActionLoading
-                      ? "Đang xử lý..."
-                      : "Thêm vào danh sách phát"}
-                  </button>
-                </>
-              )}
+            <div className="staff-modal-footer" style={{ justifyContent: "space-between" }}>
+              {/* Left: system action buttons — only shown on system tab */}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {musicTab === "system" && (
+                  <>
+                    <button
+                      className="staff-btn staff-btn--outline"
+                      onClick={handleImportSystemMediaBatch}
+                      disabled={
+                        selectedSystemMediaIds.length === 0 || musicActionLoading
+                      }
+                    >
+                      {musicActionLoading ? "Đang xử lý..." : "Import vào Station"}
+                    </button>
+                    <button
+                      className="staff-btn staff-btn--primary"
+                      onClick={handleAddSelectedSystemToPlaylist}
+                      disabled={
+                        selectedSystemMediaIds.length === 0 || musicActionLoading
+                      }
+                    >
+                      {musicActionLoading
+                        ? "Đang xử lý..."
+                        : "Thêm vào danh sách phát"}
+                    </button>
+                  </>
+                )}
+              </div>
+              {/* Right: close button — always visible */}
               <button
                 className="staff-btn staff-btn--outline"
                 onClick={() => setShowAddTracksModal(false)}

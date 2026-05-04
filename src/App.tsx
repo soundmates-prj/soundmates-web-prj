@@ -71,7 +71,10 @@ import { UserPostsManagementScreen } from "./pages/Admin/Posts/UserPostsManageme
 import { RoleManagementScreen } from "./pages/Admin/Roles/RoleManagementScreen";
 import PodcastScreen from "./pages/Podcast/PodcastScreen";
 import PodcastDetailScreen from "./pages/Podcast/PodcastDetailScreen";
-import MyPodcastsPage from "./pages/Podcast/MyPodcastsPage";
+import GuiThuPage from "./pages/GuiThu/GuiThuPage";
+import AboutPage from "./pages/Info/AboutPage";
+import PrivacyPage from "./pages/Info/PrivacyPage";
+import FAQPage from "./pages/Info/FAQPage";
 
 // ── LiveRoomPageWithKey: force remount when sessionId changes ──
 function LiveRoomPageWithKey() {
@@ -222,6 +225,7 @@ function App() {
               <Route path="/podcast" element={<PodcastScreen />} />
               <Route path="/podcast/:id" element={<PodcastDetailScreen />} />
               <Route path="/podcast/my" element={<MyPodcastsPage />} />
+              <Route path="/gui-thu" element={<GuiThuPage />} />
               <Route path="/forum" element={<ForumPage />} />
               <Route path="/schedule-public" element={<SchedulePublicPage />} />
               <Route path="/profile" element={<Profile />} />
@@ -240,6 +244,9 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/faq" element={<FAQPage />} />
             </Route>
           </Routes>
         </LiveSessionProvider>
