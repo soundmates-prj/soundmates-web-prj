@@ -46,7 +46,15 @@ class VoiceService {
         throw new Error(response.data.message || 'Không thể tải danh sách giọng đọc');
       }
 
-      const voices = response.data.data?.voices || [];
+      let voices = response.data.data?.voices || [];
+      voices = voices.map(v => {
+        let displayName = v.displayName;
+        if (displayName) {
+          displayName = displayName.replace('VieNeu Fast (Q4)', 'SoundMates Fast (Q4)')
+                                 .replace('VieNeu High Quality (Q8)', 'SoundMates High Quality (Q8)');
+        }
+        return { ...v, displayName };
+      });
       
       // Update cache
       this.voicesCache = voices;

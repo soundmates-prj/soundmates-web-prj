@@ -64,6 +64,7 @@ export function ScriptGenerateForm() {
     const loadVoices = async () => {
       try {
         const v = await audioService.getVoices();
+        
         setVoices(v);
         if (v.length > 0) {
           setSelectedVoice(v[0].voiceCode || v[0].id || '');
@@ -210,6 +211,7 @@ export function ScriptGenerateForm() {
       showError('Vui lòng tạo script và chọn giọng đọc trước');
       return;
     }
+
     setIsGeneratingAudio(true);
     setGeneratedAudio(null);
     try {
@@ -220,6 +222,7 @@ export function ScriptGenerateForm() {
         bgmUrl: bgmUrl || undefined
       });
       setGeneratedAudio(audio);
+      
       showSuccess('Tạo audio thành công! Đã lưu vào thư viện.');
     } catch (error: any) {
       console.error('Error generating audio:', error);
