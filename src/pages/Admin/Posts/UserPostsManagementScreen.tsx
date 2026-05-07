@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Icon from "../../../components/common/Icon";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
 import postService from "../../../services/postService";
+import type { PostReport, ReportedPost } from "../../../services/postService";
 import commentService from "../../../services/commentService";
 import type { Post } from "../../../types/post";
 import type { Comment } from "../../../types/comment";
 import { getMoodLabel } from "../../../types/forum";
 import "./UserPostsManagementScreen.css";
+import { Check, Eye, Trash2 } from "lucide-react";
 
 // ── Status helpers ─────────────────────────────────────────
 const STATUS_LABELS: Record<string, string> = {
@@ -29,6 +31,8 @@ const STATUS_FILTERS = [
   { value: "Draft", label: "Bản nháp" },
   { value: "Archived", label: "Đã lưu trữ" },
 ] as const;
+
+type PostsTab = "all" | "reported";
 
 type ModerationLevel = "safe" | "review" | "high";
 
@@ -69,23 +73,26 @@ const COMPACT_PROFANITY_RULES: Array<{
   token: string;
   severity: "high" | "review";
 }> = [
-    { label: "con cac", token: "concac", severity: "high" },
-    { label: "du ma", token: "duma", severity: "high" },
-    { label: "du ma", token: "dume", severity: "high" },
-    { label: "dit me", token: "ditme", severity: "high" },
-    { label: "dit con me", token: "ditconme", severity: "high" },
-    { label: "ccmm", token: "ccmm", severity: "high" },
-    { label: "clmm", token: "clmm", severity: "high" },
-    { label: "vcl", token: "vcl", severity: "review" },
-    { label: "vcl", token: "vkl", severity: "review" },
-    { label: "vcl", token: "vcc", severity: "review" },
-  ];
+  { label: "con cac", token: "concac", severity: "high" },
+  { label: "du ma", token: "duma", severity: "high" },
+  { label: "du ma", token: "dume", severity: "high" },
+  { label: "dit me", token: "ditme", severity: "high" },
+  { label: "dit con me", token: "ditconme", severity: "high" },
+  { label: "ccmm", token: "ccmm", severity: "high" },
+  { label: "clmm", token: "clmm", severity: "high" },
+  { label: "vcl", token: "vcl", severity: "review" },
+  { label: "vcl", token: "vkl", severity: "review" },
+  { label: "vcl", token: "vcc", severity: "review" },
+];
 
 const HIGH_RISK_PATTERNS: ModerationPatternRule[] = [
   { label: "lua dao", pattern: /\blua\s*dao\b/ },
   { label: "danh bac", pattern: /\bdanh\s*bac\b|\bcasino\b/ },
   { label: "ma tuy", pattern: /\bma\s*tuy\b/ },
-  { label: "noi dung nguoi lon", pattern: /\bsex\b|\bnude\b|\bxxx\b|\b18\+?\b/ },
+  {
+    label: "noi dung nguoi lon",
+    pattern: /\bsex\b|\bnude\b|\bxxx\b|\b18\+?\b/,
+  },
 ];
 
 const REVIEW_PATTERNS: ModerationPatternRule[] = [
@@ -209,7 +216,10 @@ const assessPostModeration = (post: Post): ModerationAssessment => {
   }
 
   const phoneCount = countRegexMatches(rawText, /\b\d{9,11}\b/g);
-  if (phoneCount > 0 && (normalizedText.includes("zalo") || normalizedText.includes("telegram"))) {
+  if (
+    phoneCount > 0 &&
+    (normalizedText.includes("zalo") || normalizedText.includes("telegram"))
+  ) {
     score += 16;
     reasons.push("Có số liên hệ kèm kênh liên lạc ngoài nền tảng.");
   }
@@ -264,17 +274,12 @@ const assessPostModeration = (post: Post): ModerationAssessment => {
   };
 };
 
-const MODERATION_LABEL: Record<ModerationLevel, string> = {
-  safe: "An toàn",
-  review: "Cần rà soát",
-  high: "Nguy cơ cao",
-};
-
 export function UserPostsManagementScreen() {
   // ── State ────────────────────────────────────────────────
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<PostsTab>("all");
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -291,27 +296,30 @@ export function UserPostsManagementScreen() {
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentsError, setCommentsError] = useState<string | null>(null);
   const [commentsTotal, setCommentsTotal] = useState(0);
+  const [reportPost, setReportPost] = useState<ReportedPost | null>(null);
+  const [reportItems, setReportItems] = useState<PostReport[]>([]);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+
+  // Custom confirm dialog
+  const [confirmDialog, setConfirmDialog] = useState<{
+    message: string;
+    variant?: "danger" | "warning" | "default";
+    onConfirm: () => void;
+  } | null>(null);
+
+  const showConfirm = (
+    message: string,
+    onConfirm: () => void,
+    variant: "danger" | "warning" | "default" = "default",
+  ) => setConfirmDialog({ message, onConfirm, variant });
 
   const moderationByPost = useMemo(() => {
-    const entries = posts.map((post) => [post.id, assessPostModeration(post)] as const);
+    const entries = posts.map(
+      (post) => [post.id, assessPostModeration(post)] as const,
+    );
     return Object.fromEntries(entries) as Record<string, ModerationAssessment>;
   }, [posts]);
-
-  const moderationStats = useMemo(() => {
-    return posts.reduce(
-      (acc, post) => {
-        const level = moderationByPost[post.id]?.level ?? "safe";
-        acc[level] += 1;
-        return acc;
-      },
-      { safe: 0, review: 0, high: 0 } as Record<ModerationLevel, number>,
-    );
-  }, [moderationByPost, posts]);
-
-  const selectedAssessment = useMemo(
-    () => (selectedPost ? assessPostModeration(selectedPost) : null),
-    [selectedPost],
-  );
 
   const closeDetailModal = useCallback(() => {
     setSelectedPost(null);
@@ -338,87 +346,169 @@ export function UserPostsManagementScreen() {
     }
   }, []);
 
+  const closeReportModal = useCallback(() => {
+    setReportPost(null);
+    setReportItems([]);
+    setReportLoading(false);
+    setReportError(null);
+  }, []);
+
+  const loadPostReports = useCallback(async (post: ReportedPost) => {
+    setReportPost(post);
+    setReportLoading(true);
+    setReportError(null);
+
+    try {
+      const reports = await postService.getPostReports(post.id);
+      setReportItems(reports);
+    } catch (err: unknown) {
+      const axiosError = err as {
+        response?: { data?: { message?: string } };
+      };
+      const message =
+        axiosError.response?.data?.message ?? "Không thể tải nội dung báo cáo.";
+      setReportItems([]);
+      setReportError(message);
+      showError("Lỗi tải báo cáo", message);
+    } finally {
+      setReportLoading(false);
+    }
+  }, []);
+
+  const filterPosts = useCallback(
+    (items: Post[]) => {
+      const q = searchQuery.trim().toLowerCase();
+      return items.filter((item) => {
+        const matchSearch =
+          !q ||
+          item.title?.toLowerCase().includes(q) ||
+          item.userFullName?.toLowerCase().includes(q) ||
+          item.userId.toLowerCase().includes(q);
+        const matchStatus = !statusFilter || item.status === statusFilter;
+        return matchSearch && matchStatus;
+      });
+    },
+    [searchQuery, statusFilter],
+  );
+
   // ── Fetch ────────────────────────────────────────────────
   const fetchPosts = useCallback(
     async (pageNum = 1) => {
       setLoading(true);
       try {
-        const res = await postService.getAllPosts({
-          page: pageNum,
-          pageSize: 20,
-          search: searchQuery.trim() || undefined,
-          status: statusFilter || undefined,
-        });
-        setPosts(res.items);
-        setTotalPages(res.meta.totalPages);
-        setTotalCount(res.meta.totalCount);
-        setPage(pageNum);
-      } catch (err: any) {
-        showError(
-          "Lỗi tải dữ liệu",
-          err?.response?.data?.message ?? "Không thể tải danh sách bài viết",
-        );
+        if (activeTab === "reported") {
+          const reportedItems = await postService.getReportedPosts();
+          const filteredItems = filterPosts(reportedItems);
+          const pageSize = 20;
+          const total = filteredItems.length;
+          const totalPageCount = Math.max(1, Math.ceil(total / pageSize));
+          const safePage = Math.min(Math.max(1, pageNum), totalPageCount);
+          const start = (safePage - 1) * pageSize;
+          const pagedItems = filteredItems.slice(start, start + pageSize);
+
+          setPosts(pagedItems);
+          setTotalPages(totalPageCount);
+          setTotalCount(total);
+          setPage(safePage);
+        } else {
+          const res = await postService.getAllPosts({
+            page: pageNum,
+            pageSize: 20,
+            search: searchQuery.trim() || undefined,
+            status: statusFilter || undefined,
+          });
+          setPosts(res.items);
+          setTotalPages(res.meta.totalPages);
+          setTotalCount(res.meta.totalCount);
+          setPage(pageNum);
+        }
+      } catch (err: unknown) {
+        const axiosError = err as {
+          response?: { data?: { message?: string } };
+        };
+        const message =
+          axiosError.response?.data?.message ??
+          "Không thể tải danh sách bài viết";
+        showError("Lỗi tải dữ liệu", message);
         setPosts([]);
       } finally {
         setLoading(false);
       }
     },
-    [searchQuery, statusFilter],
+    [activeTab, filterPosts, searchQuery, statusFilter],
   );
 
   // Reload on filter change
   useEffect(() => {
     const timer = setTimeout(() => fetchPosts(1), searchQuery ? 350 : 0);
     return () => clearTimeout(timer);
-  }, [fetchPosts]);
+  }, [fetchPosts, searchQuery]);
 
   // ── Actions ─────────────────────────────────────────────
-  const handleHide = async (postId: string) => {
-    if (!window.confirm("Ẩn bài viết này khỏi người dùng?")) return;
-    setActionLoading(postId);
-    try {
-      await postService.archivePost(postId);
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, status: "Archived" } : p)),
-      );
-      showSuccess("Đã ẩn", "Bài viết đã được ẩn khỏi người dùng");
-    } catch {
-      showError("Lỗi", "Không thể ẩn bài viết");
-    } finally {
-      setActionLoading(null);
-    }
+  const handleHide = (postId: string) => {
+    showConfirm(
+      "Ẩn bài viết này khỏi người dùng?",
+      async () => {
+        setActionLoading(postId);
+        try {
+          await postService.archivePost(postId);
+          setPosts((prev) =>
+            prev.map((p) =>
+              p.id === postId ? { ...p, status: "Archived" } : p,
+            ),
+          );
+          showSuccess("Đã ẩn", "Bài viết đã được ẩn khỏi người dùng");
+        } catch {
+          showError("Lỗi", "Không thể ẩn bài viết");
+        } finally {
+          setActionLoading(null);
+        }
+      },
+      "warning",
+    );
   };
 
-  const handleUnhide = async (postId: string) => {
-    if (!window.confirm("Khôi phục bài viết này?")) return;
-    setActionLoading(postId);
-    try {
-      await postService.publishPost(postId);
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, status: "Published" } : p)),
-      );
-      showSuccess("Đã khôi phục", "Bài viết đã được khôi phục");
-    } catch {
-      showError("Lỗi", "Không thể khôi phục bài viết");
-    } finally {
-      setActionLoading(null);
-    }
+  const handleUnhide = (postId: string) => {
+    showConfirm(
+      "Khôi phục bài viết này?",
+      async () => {
+        setActionLoading(postId);
+        try {
+          await postService.publishPost(postId);
+          setPosts((prev) =>
+            prev.map((p) =>
+              p.id === postId ? { ...p, status: "Published" } : p,
+            ),
+          );
+          showSuccess("Đã khôi phục", "Bài viết đã được khôi phục");
+        } catch {
+          showError("Lỗi", "Không thể khôi phục bài viết");
+        } finally {
+          setActionLoading(null);
+        }
+      },
+      "default",
+    );
   };
 
-  const handleDelete = async (postId: string) => {
-    if (!window.confirm("Xoá bài viết này? Hành động không thể hoàn tác."))
-      return;
-    setActionLoading(postId);
-    try {
-      await postService.deletePost(postId);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-      setTotalCount((prev) => prev - 1);
-      showSuccess("Đã xoá", "Bài viết đã được xoá");
-    } catch {
-      showError("Lỗi", "Không thể xoá bài viết");
-    } finally {
-      setActionLoading(null);
-    }
+  const handleDelete = (postId: string) => {
+    showConfirm(
+      "Xoá bài viết này? Hành động không thể hoàn tác.",
+      async () => {
+        setActionLoading(postId);
+        try {
+          await postService.deletePost(postId);
+          setPosts((prev) => prev.filter((p) => p.id !== postId));
+          setTotalCount((prev) => prev - 1);
+          showSuccess("Đã xoá", "Bài viết đã được xoá");
+        } catch {
+          showError("Lỗi", "Không thể xoá bài viết");
+        } finally {
+          setActionLoading(null);
+        }
+      },
+      "danger",
+    );
   };
 
   const handlePublish = async (postId: string) => {
@@ -503,6 +593,26 @@ export function UserPostsManagementScreen() {
           <p className="posts-mgmt-subtitle">
             Quản lý và kiểm duyệt nội dung theo mức độ rủi ro cộng đồng
           </p>
+          <div className="posts-mgmt-tabs">
+            <button
+              className={`posts-tab-btn ${activeTab === "all" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("all");
+                setPage(1);
+              }}
+            >
+              Tất cả bài viết
+            </button>
+            <button
+              className={`posts-tab-btn ${activeTab === "reported" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("reported");
+                setPage(1);
+              }}
+            >
+              Bài đã báo cáo
+            </button>
+          </div>
         </div>
         <div className="posts-mgmt-header-actions">
           <button
@@ -511,7 +621,11 @@ export function UserPostsManagementScreen() {
             disabled={loading}
             title="Làm mới"
           >
-            <Icon name="refresh" size={16} className={loading ? "posts-spin" : ""} />
+            <Icon
+              name="refresh"
+              size={16}
+              className={loading ? "posts-spin" : ""}
+            />
             Làm mới
           </button>
         </div>
@@ -559,31 +673,6 @@ export function UserPostsManagementScreen() {
             ))}
           </select>
         </div>
-
-        <div className="posts-moderation-overview">
-          <div className="posts-mod-card safe">
-            <span className="posts-mod-card-label">An toàn</span>
-            <strong>{moderationStats.safe}</strong>
-            <small>Bài viết ít rủi ro</small>
-          </div>
-          <div className="posts-mod-card review">
-            <span className="posts-mod-card-label">Cần rà soát</span>
-            <strong>{moderationStats.review}</strong>
-            <small>Nên kiểm tra thủ công</small>
-          </div>
-          <div className="posts-mod-card high">
-            <span className="posts-mod-card-label">Nguy cơ cao</span>
-            <strong>{moderationStats.high}</strong>
-            <small>Ưu tiên xử lý trước</small>
-          </div>
-        </div>
-
-        <div className="posts-moderation-guide">
-          <Icon name="shield" size={15} />
-          <span>
-            Điểm rủi ro được tính từ ngôn từ thô tục/vi phạm, dấu hiệu spam liên kết - liên hệ ngoài nền tảng và bất thường nội dung.
-          </span>
-        </div>
       </div>
 
       {/* ── Table ── */}
@@ -608,15 +697,15 @@ export function UserPostsManagementScreen() {
                 <th>Tiêu đề</th>
                 <th>Tác giả</th>
                 <th>Ngày tạo</th>
+                {activeTab === "reported" && <th>Số báo cáo</th>}
                 <th>Trạng thái</th>
-                <th>Lượt xem</th>
-                <th>Đánh giá</th>
                 <th>Hành động</th>
               </tr>
             </thead>
             <tbody>
               {posts.map((post) => {
-                const assessment = moderationByPost[post.id] ?? assessPostModeration(post);
+                const assessment =
+                  moderationByPost[post.id] ?? assessPostModeration(post);
                 const rowClassName = [
                   actionLoading === post.id ? "posts-row-loading" : "",
                   assessment.level === "high" ? "post-row-high-risk" : "",
@@ -629,7 +718,11 @@ export function UserPostsManagementScreen() {
                     {/* Title */}
                     <td>
                       <div className="post-title-cell">
-                        <Icon name="file-text" size={14} className="post-icon" />
+                        <Icon
+                          name="file-text"
+                          size={14}
+                          className="post-icon"
+                        />
                         <div className="post-title-wrap">
                           <span className="post-title" title={post.title}>
                             {post.title || <em>(Không có tiêu đề)</em>}
@@ -651,6 +744,14 @@ export function UserPostsManagementScreen() {
                     {/* Date */}
                     <td className="post-date">{fmt(post.createdAt)}</td>
 
+                    {activeTab === "reported" && (
+                      <td>
+                        <span className="post-flag-count">
+                          {(post as ReportedPost).reportCount ?? 0}
+                        </span>
+                      </td>
+                    )}
+
                     {/* Status */}
                     <td>
                       <span
@@ -658,25 +759,6 @@ export function UserPostsManagementScreen() {
                       >
                         {getStatusLabel(post.status)}
                       </span>
-                    </td>
-
-                    {/* Engagement */}
-                    <td>
-                      <span className="post-view-count">{post.viewCount ?? 0}</span>
-                    </td>
-
-                    <td>
-                      <div className="post-moderation-cell">
-                        <span className={`post-moderation-badge ${assessment.level}`}>
-                          {MODERATION_LABEL[assessment.level]}
-                        </span>
-                        <span
-                          className="post-moderation-reason"
-                          title={assessment.reasons.join(" • ")}
-                        >
-                          {assessment.reasons[0]}
-                        </span>
-                      </div>
                     </td>
 
                     {/* Actions */}
@@ -713,15 +795,15 @@ export function UserPostsManagementScreen() {
 
                         {(post.status === "Archived" ||
                           post.status === "Draft") && (
-                            <button
-                              className="post-action-btn post-action-btn--publish"
-                              onClick={() => handlePublish(post.id)}
-                              title="Xuất bản"
-                              disabled={!!actionLoading}
-                            >
-                              <Icon name="globe" size={14} />
-                            </button>
-                          )}
+                          <button
+                            className="post-action-btn post-action-btn--publish"
+                            onClick={() => handlePublish(post.id)}
+                            title="Xuất bản"
+                            disabled={!!actionLoading}
+                          >
+                            <Icon name="globe" size={14} />
+                          </button>
+                        )}
 
                         {post.status === "Archived" && (
                           <button
@@ -734,6 +816,20 @@ export function UserPostsManagementScreen() {
                           </button>
                         )}
 
+                        {activeTab === "reported" &&
+                          (post as ReportedPost).reportCount > 0 && (
+                            <button
+                              className="post-action-btn post-action-btn--report"
+                              onClick={() =>
+                                loadPostReports(post as ReportedPost)
+                              }
+                              title="Xem nội dung báo cáo"
+                              disabled={reportLoading}
+                            >
+                              <Icon name="message" size={14} />
+                            </button>
+                          )}
+
                         <button
                           className="post-action-btn post-action-btn--delete"
                           onClick={() => handleDelete(post.id)}
@@ -741,7 +837,11 @@ export function UserPostsManagementScreen() {
                           disabled={!!actionLoading}
                         >
                           {actionLoading === post.id ? (
-                            <Icon name="refresh" size={14} className="posts-spin" />
+                            <Icon
+                              name="refresh"
+                              size={14}
+                              className="posts-spin"
+                            />
                           ) : (
                             <Icon name="trash" size={14} />
                           )}
@@ -749,7 +849,7 @@ export function UserPostsManagementScreen() {
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
@@ -813,10 +913,7 @@ export function UserPostsManagementScreen() {
 
       {/* ── Detail Modal ── */}
       {selectedPost && (
-        <div
-          className="posts-modal-overlay"
-          onClick={closeDetailModal}
-        >
+        <div className="posts-modal-overlay" onClick={closeDetailModal}>
           <div className="posts-modal" onClick={(e) => e.stopPropagation()}>
             <div className="posts-modal-header">
               <h3>{selectedPost.title || "(Không có tiêu đề)"}</h3>
@@ -868,41 +965,6 @@ export function UserPostsManagementScreen() {
                 <strong>{selectedPost.viewCount ?? 0}</strong>
               </div>
 
-              {selectedAssessment && (
-                <>
-                  <div className="posts-detail-row">
-                    <span>Chỉ số rủi ro:</span>
-                    <strong>
-                      {MODERATION_LABEL[selectedAssessment.level]} ({selectedAssessment.score} điểm)
-                    </strong>
-                  </div>
-
-                  <div className="posts-detail-row">
-                    <span>Phân tích nhanh:</span>
-                    <strong>
-                      {selectedAssessment.textLength} ký tự nội dung • {selectedAssessment.linkCount} liên kết
-                    </strong>
-                  </div>
-
-                  <div className={`posts-moderation-panel ${selectedAssessment.level}`}>
-                    <div className="posts-moderation-panel-head">
-                      {selectedAssessment.level === "safe" ? (
-                        <Icon name="shield" size={15} />
-                      ) : (
-                        <Icon name="warning" size={15} />
-                      )}
-                      <strong>Gợi ý kiểm duyệt</strong>
-                    </div>
-                    <p>{selectedAssessment.recommendation}</p>
-                    <ul className="posts-moderation-list">
-                      {selectedAssessment.reasons.map((reason) => (
-                        <li key={reason}>{reason}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
-              )}
-
               {selectedPost.postType === "share-music" &&
                 selectedPost.shareMusic && (
                   <div className="posts-detail-row">
@@ -933,20 +995,29 @@ export function UserPostsManagementScreen() {
               {selectedPost.audioUrl?.trim() && (
                 <div className="posts-media-preview">
                   <span>Âm thanh:</span>
-                  <audio className="posts-media-audio" controls preload="none" src={selectedPost.audioUrl} />
+                  <audio
+                    className="posts-media-audio"
+                    controls
+                    preload="none"
+                    src={selectedPost.audioUrl}
+                  />
                 </div>
               )}
 
               <div className="posts-comments-preview">
                 <div className="posts-comments-header">
                   <span>Bình luận</span>
-                  <strong>{commentsTotal || selectedPost.commentCount || 0}</strong>
+                  <strong>
+                    {commentsTotal || selectedPost.commentCount || 0}
+                  </strong>
                 </div>
 
                 {commentsLoading ? (
                   <p className="posts-comments-state">Đang tải bình luận...</p>
                 ) : commentsError ? (
-                  <p className="posts-comments-state posts-comments-state--error">{commentsError}</p>
+                  <p className="posts-comments-state posts-comments-state--error">
+                    {commentsError}
+                  </p>
                 ) : commentsPreview.length === 0 ? (
                   <p className="posts-comments-state">Chưa có bình luận nào.</p>
                 ) : (
@@ -996,17 +1067,17 @@ export function UserPostsManagementScreen() {
 
               {(selectedPost.status === "Archived" ||
                 selectedPost.status === "Draft") && (
-                  <button
-                    className="post-action-btn post-action-btn--publish"
-                    onClick={() => {
-                      handlePublish(selectedPost.id);
-                      closeDetailModal();
-                    }}
-                  >
-                    <Icon name="globe" size={14} />
-                    Xuất bản
-                  </button>
-                )}
+                <button
+                  className="post-action-btn post-action-btn--publish"
+                  onClick={() => {
+                    handlePublish(selectedPost.id);
+                    closeDetailModal();
+                  }}
+                >
+                  <Icon name="globe" size={14} />
+                  Xuất bản
+                </button>
+              )}
 
               <button
                 className="post-action-btn post-action-btn--delete"
@@ -1017,6 +1088,115 @@ export function UserPostsManagementScreen() {
               >
                 <Icon name="trash" size={14} />
                 Xoá bài viết
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reportPost && (
+        <div className="posts-modal-overlay" onClick={closeReportModal}>
+          <div
+            className="posts-modal posts-report-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="posts-modal-header">
+              <h3>Nội dung báo cáo</h3>
+              <button onClick={closeReportModal}>×</button>
+            </div>
+            <div className="posts-modal-body">
+              <div className="posts-report-summary">
+                <div className="posts-detail-row">
+                  <span>Bài viết:</span>
+                  <strong>{reportPost.title || "(Không có tiêu đề)"}</strong>
+                </div>
+                <div className="posts-detail-row">
+                  <span>Số báo cáo:</span>
+                  <strong>
+                    <span className="posts-report-count-badge">
+                      {reportPost.reportCount}
+                    </span>
+                  </strong>
+                </div>
+              </div>
+
+              {reportLoading ? (
+                <p className="posts-comments-state">Đang tải báo cáo...</p>
+              ) : reportError ? (
+                <p className="posts-comments-state posts-comments-state--error">
+                  {reportError}
+                </p>
+              ) : reportItems.length === 0 ? (
+                <p className="posts-comments-state">
+                  Chưa có nội dung báo cáo.
+                </p>
+              ) : (
+                <>
+                  <p className="posts-reports-section-label">
+                    Chi tiết báo cáo ({reportItems.length})
+                  </p>
+                  <ul className="posts-reports-list">
+                    {reportItems.map((report) => (
+                      <li key={report.id} className="posts-report-item">
+                        <div className="posts-report-head">
+                          <strong>
+                            {report.reporterUserName || "Ẩn danh"}
+                          </strong>
+                          <span>{fmtDt(report.createdAt)}</span>
+                        </div>
+                        <div className="posts-report-meta">
+                          <span>Nguyên nhân:</span>
+                          <strong>{report.reason}</strong>
+                        </div>
+                        <p>{report.description || "(Không có mô tả)"}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+            <div className="posts-modal-footer">
+              <button className="post-action-btn" onClick={closeReportModal}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmDialog && (
+        <div
+          className="posts-modal-overlay posts-confirm-overlay"
+          onClick={() => setConfirmDialog(null)}
+        >
+          <div
+            className={`posts-confirm-dialog posts-confirm-dialog--${confirmDialog.variant ?? "default"}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="posts-confirm-icon">
+              {confirmDialog.variant === "danger" ? (
+                <Trash2 />
+              ) : confirmDialog.variant === "warning" ? (
+                <Eye />
+              ) : (
+                <Check />
+              )}
+            </div>
+            <p className="posts-confirm-message">{confirmDialog.message}</p>
+            <div className="posts-confirm-actions">
+              <button
+                className="posts-confirm-btn posts-confirm-btn--cancel"
+                onClick={() => setConfirmDialog(null)}
+              >
+                Huỷ
+              </button>
+              <button
+                className={`posts-confirm-btn posts-confirm-btn--ok posts-confirm-btn--${confirmDialog.variant ?? "default"}`}
+                onClick={() => {
+                  confirmDialog.onConfirm();
+                  setConfirmDialog(null);
+                }}
+              >
+                Xác nhận
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   MessageCircle,
   Share2,
+  Flag,
   Search,
   TrendingUp,
   Flame,
@@ -12,6 +13,7 @@ import {
   User,
   Music2,
   Mic,
+  X,
 } from "lucide-react";
 import api from "../../services/axios";
 import ShareCard from "../../components/blog/ShareCard";
@@ -32,6 +34,7 @@ import ReactionButton, {
   ReactionSummary,
 } from "../../components/blog/ReactionButton";
 import AuthPromptModal from "../../components/common/AuthPromptModal";
+import { showSuccess } from "../../components/common/toastUtils";
 import "./ForumPage.css";
 
 const PAGE_SIZE = 10;
@@ -48,8 +51,24 @@ function PostCard({
 }) {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
+  const [reportReason, setReportReason] = useState("Nội dung phản cảm");
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportError, setReportError] = useState("");
   
   const isLoggedIn = !!localStorage.getItem("accessToken");
+  const currentUserId = (() => {
+    try {
+      const raw = localStorage.getItem("userInfo");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { userId?: string; id?: string };
+      return parsed.userId ?? parsed.id ?? null;
+    } catch {
+      return null;
+    }
+  })();
+  const isOwnPost = Boolean(currentUserId && currentUserId === post.userId);
 
   const shareData =
     post.postType === "share-music" ? parseShareMusic(post.contentText) : null;
@@ -82,6 +101,57 @@ function PostCard({
     createdAt: post.createdAt,
     authorName: displayName,
     authorAvatar: post.userAvatarUrl,
+  };
+
+  const handleOpenReportModal = () => {
+    if (!isLoggedIn) {
+      onRequireAuth();
+      return;
+    }
+    // if (isOwnPost) {
+    //   setReportError("Bạn không thể tự báo cáo bài viết của chính mình.");
+    //   return;
+    // }
+    setReportReason("Nội dung phản cảm");
+    setReportDescription("");
+    setReportError("");
+    setShowReportModal(true);
+  };
+
+  const handleCloseReportModal = () => {
+    if (isReporting) return;
+    setShowReportModal(false);
+    setReportError("");
+  };
+
+  const handleSubmitReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isReporting) return;
+    const reason = reportReason.trim();
+    if (!reason) {
+      setReportError("Vui lòng chọn lý do báo cáo.");
+      return;
+    }
+    const description = reportDescription.trim();
+    if (!description) {
+      setReportError("Vui lòng nhập mô tả báo cáo.");
+      return;
+    }
+
+    try {
+      setIsReporting(true);
+      setReportError("");
+      await api.post(`/posts/${post.id}/reports`, { reason, description });
+      showSuccess("Gửi báo cáo thành công");
+      setShowReportModal(false);
+      setReportReason("Nội dung phản cảm");
+      setReportDescription("");
+    } catch (error) {
+      console.error("Report post failed:", error);
+      setReportError("Bạn không thể báo cáo bài viết của chính mình.");
+    } finally {
+      setIsReporting(false);
+    }
   };
 
   return (
@@ -167,6 +237,19 @@ function PostCard({
           }}>
             <MessageCircle size={15} /> Bình luận
           </button>
+          <button
+            className="fp-action-btn"
+            onClick={handleOpenReportModal}
+            disabled={isReporting || isOwnPost}
+            title={
+              isOwnPost
+                ? "Bạn không thể tự báo cáo bài viết của mình"
+                : "Báo cáo bài viết"
+            }
+          >
+            <Flag size={15} />{" "}
+            {isOwnPost ? "Không thể báo cáo" : isReporting ? "Đang gửi..." : "Báo cáo"}
+          </button>
           {/* <button className="fp-action-btn">
             <Share2 size={15} /> Chia sẻ
           </button> */}
@@ -176,6 +259,81 @@ function PostCard({
       {/* Comment modal */}
       {showModal && (
         <CommentModal post={modalPost} onClose={() => setShowModal(false)} />
+      )}
+
+      {showReportModal && (
+        <div
+          className="fp-report-modal-overlay"
+          onClick={handleCloseReportModal}
+        >
+          <div
+            className="fp-report-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="fp-report-modal-header">
+              <h3>Báo cáo bài viết</h3>
+              <button
+                type="button"
+                className="fp-report-close-btn"
+                onClick={handleCloseReportModal}
+                disabled={isReporting}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="fp-report-modal-subtitle">
+              Cho chúng tôi biết lý do để đội ngũ kiểm duyệt xử lý nhanh hơn.
+            </p>
+            <form className="fp-report-form" onSubmit={handleSubmitReport}>
+              <div className="fp-report-form-group">
+                <label htmlFor={`report-reason-${post.id}`}>Lý do</label>
+                <select
+                  id={`report-reason-${post.id}`}
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  disabled={isReporting}
+                >
+                  <option value="Spam / quảng cáo">Spam / quảng cáo</option>
+                  <option value="Nội dung phản cảm">Nội dung phản cảm</option>
+                  <option value="Quấy rối hoặc bắt nạt">Quấy rối hoặc bắt nạt</option>
+                  <option value="Thông tin sai lệch">Thông tin sai lệch</option>
+                  <option value="Vi phạm bản quyền">Vi phạm bản quyền</option>
+                  <option value="Lý do khác">Lý do khác</option>
+                </select>
+              </div>
+              <div className="fp-report-form-group">
+                <label htmlFor={`report-description-${post.id}`}>Mô tả</label>
+                <textarea
+                  id={`report-description-${post.id}`}
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="Mô tả chi tiết nội dung bạn muốn báo cáo..."
+                  rows={4}
+                  maxLength={500}
+                  disabled={isReporting}
+                />
+              </div>
+              {reportError && <p className="fp-report-message fp-report-message--error">{reportError}</p>}
+              <div className="fp-report-actions">
+                <button
+                  type="button"
+                  className="fp-report-btn fp-report-btn--ghost"
+                  onClick={handleCloseReportModal}
+                  disabled={isReporting}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="fp-report-btn fp-report-btn--primary"
+                  disabled={isReporting}
+                >
+                  {isReporting ? "Đang gửi..." : "Gửi báo cáo"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </>
   );
