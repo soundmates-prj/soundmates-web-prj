@@ -221,7 +221,9 @@ export function HostDashboard() {
                       </div>
                     </td>
                     <td>{formatDate(session.endedAt)}</td>
-                    <td>{session.totalDurationMinutes.toFixed(1)}</td>
+                    <td>
+                      {Math.floor(session.totalDurationMinutes / 60)}h{Math.floor(session.totalDurationMinutes % 60).toString().padStart(2, "0")}m
+                    </td>
                     <td>{session.totalListeners}</td>
                     <td>{session.musicRequestsCount}</td>
                   </tr>

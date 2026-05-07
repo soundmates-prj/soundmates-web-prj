@@ -103,7 +103,9 @@ export function HostSessionAnalyticsDetailScreen() {
           <div className="host-an-icon"><Clock size={20} /></div>
           <div className="host-an-content">
             <span className="host-an-label">Tổng thời lượng</span>
-            <span className="host-an-value">{durationMinutes} phút</span>
+            <span className="host-an-value">
+              {Math.floor(durationMinutes / 60)}h{Math.floor(durationMinutes % 60).toString().padStart(2, "0")}m
+            </span>
           </div>
         </div>
 
