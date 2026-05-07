@@ -71,8 +71,50 @@
 }
 
 .lsp-thumb-icon {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.75);
+    z-index: 2;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
+}
+
+/* Radial highlight overlay */
+.lsp-thumb-pattern {
+    position: absolute;
+    inset: 0;
     z-index: 1;
+    pointer-events: none;
+}
+
+/* Decorative concentric rings */
+.lsp-thumb-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.lsp-thumb-ring--1 {
+    width: 90px;
+    height: 90px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: lsp-ring-pulse 3s ease-in-out infinite;
+}
+
+.lsp-thumb-ring--2 {
+    width: 130px;
+    height: 130px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-color: rgba(255, 255, 255, 0.08);
+    animation: lsp-ring-pulse 3s ease-in-out infinite 0.5s;
+}
+
+@keyframes lsp-ring-pulse {
+    0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+    50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.06); }
 }
 
 .lsp-live-badge {

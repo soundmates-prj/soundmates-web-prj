@@ -133,7 +133,7 @@ export default function BlogPostCard({
                       void handleDelete();
                     }}
                   >
-                    <Trash2 size={14} /> Xoa bài
+                    <Trash2 size={14} /> Xoá bài
                   </button>
                 </div>
               )}

@@ -639,6 +639,176 @@
   color: #dc2626;
 }
 
+/* Report modal */
+.fp-report-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.fp-report-modal {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border-light);
+  background: var(--bg-card);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  padding: 18px;
+}
+
+.fp-report-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.fp-report-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.fp-report-close-btn {
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary, #f8fafc);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fp-report-close-btn:hover:not(:disabled) {
+  border-color: #55c5f1;
+  color: #55c5f1;
+}
+
+.fp-report-modal-subtitle {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.fp-report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fp-report-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fp-report-form-group label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.fp-report-form-group input,
+.fp-report-form-group select,
+.fp-report-form-group textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--border-light);
+  background: var(--bg-secondary, #f8fafc);
+  color: var(--text-primary);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  outline: none;
+  transition: all 0.15s;
+}
+
+.fp-report-form-group textarea {
+  resize: vertical;
+  min-height: 92px;
+}
+
+.fp-report-form-group input:focus,
+.fp-report-form-group select:focus,
+.fp-report-form-group textarea:focus {
+  border-color: #55c5f1;
+  box-shadow: 0 0 0 3px rgba(85, 197, 241, 0.12);
+  background: var(--bg-card);
+}
+
+.fp-report-message {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 9px;
+  padding: 8px 10px;
+}
+
+.fp-report-message--error {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.fp-report-message--success {
+  color: #16a34a;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.fp-report-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.fp-report-btn {
+  border: none;
+  border-radius: 9px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fp-report-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fp-report-btn--ghost {
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.fp-report-btn--ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-secondary, #f8fafc);
+}
+
+.fp-report-btn--primary {
+  background: linear-gradient(135deg, #55c5f1, #1aa8d8);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(85, 197, 241, 0.3);
+}
+
+.fp-report-btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
 /* ── Skeleton ── */
 .fp-skeletons { display: flex; flex-direction: column; gap: 14px; }
 

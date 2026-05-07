@@ -32,7 +32,15 @@ class VoiceCloneService {
     const res = await api.get<{ success: boolean; data: { voices: ClonedVoice[] } }>(
       '/voices',
     );
-    return res.data.data?.voices ?? [];
+    const voices = res.data.data?.voices ?? [];
+    return voices.map(v => {
+      let displayName = v.displayName;
+      if (displayName) {
+        displayName = displayName.replace('VieNeu Fast (Q4)', 'SoundMates Fast (Q4)')
+                               .replace('VieNeu High Quality (Q8)', 'SoundMates High Quality (Q8)');
+      }
+      return { ...v, displayName };
+    });
   }
 
   /**

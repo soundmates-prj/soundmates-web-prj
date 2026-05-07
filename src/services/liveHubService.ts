@@ -529,7 +529,11 @@ class LiveHubService {
       }
     };
     conn.on("ListenersUpdated", handler);
-    return () => conn.off("ListenersUpdated", handler);
+    conn.on("listenersupdated", handler);
+    return () => {
+      conn.off("ListenersUpdated", handler);
+      conn.off("listenersupdated", handler);
+    };
   }
 
   onSongChanged(callback: (song: SongChangedEvent) => void): () => void {

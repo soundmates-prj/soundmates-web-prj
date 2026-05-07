@@ -1,5 +1,5 @@
-import api from './axios';
-import type { Post } from '../types/post';
+import api from "./axios";
+import type { Post } from "../types/post";
 
 // ============================================================
 // API Response shapes
@@ -68,15 +68,36 @@ interface PostStatsApiResponse {
   totalPages: number;
 }
 
+interface ReportedPostApiItem {
+  postDto: Post;
+  reportCount: number;
+  createdAt: string;
+}
+
+export interface PostReport {
+  id: string;
+  blogPostId: string;
+  reporterUserId: string;
+  reporterUserName: string;
+  reason: string;
+  description: string;
+  createdAt: string;
+}
+
+export interface ReportedPost extends Post {
+  reportCount: number;
+  latestReportAt: string;
+}
+
 // ============================================================
 // Post Service
 // ============================================================
 class PostService {
   // ── Admin: Get ALL posts (all statuses) ──────────────────
   getAllPosts = async (
-    params: GetPostsParams = {}
+    params: GetPostsParams = {},
   ): Promise<{ items: Post[]; meta: PaginationMeta }> => {
-    const res = await api.get<ApiResponse<PostsApiResponse>>('/posts', {
+    const res = await api.get<ApiResponse<PostsApiResponse>>("/posts", {
       params: {
         page: params.page ?? 1,
         pageSize: params.pageSize ?? 20,
@@ -102,17 +123,20 @@ class PostService {
 
   // ── Admin: Get posts stats (reaction/comment counts) ──────
   getPostsStats = async (
-    params: GetPostsParams = {}
+    params: GetPostsParams = {},
   ): Promise<{ items: PostStatsResponse[]; meta: PaginationMeta }> => {
-    const res = await api.get<ApiResponse<PostStatsApiResponse>>('/posts/stats', {
-      params: {
-        page: params.page ?? 1,
-        pageSize: params.pageSize ?? 20,
-        status: params.status,
-        search: params.search,
-        authorName: params.authorName,
+    const res = await api.get<ApiResponse<PostStatsApiResponse>>(
+      "/posts/stats",
+      {
+        params: {
+          page: params.page ?? 1,
+          pageSize: params.pageSize ?? 20,
+          status: params.status,
+          search: params.search,
+          authorName: params.authorName,
+        },
       },
-    });
+    );
     const d = res.data.data;
     return {
       items: d.items,
@@ -152,20 +176,25 @@ class PostService {
   };
 
   // ── Public: Get published posts ──────────────────────────
-  getPublishedPosts = async (params: {
-    page?: number;
-    pageSize?: number;
-    moodTag?: string;
-    search?: string;
-  } = {}): Promise<{ items: Post[]; meta: PaginationMeta }> => {
-    const res = await api.get<ApiResponse<PostsApiResponse>>('/posts/published', {
-      params: {
-        page: params.page ?? 1,
-        pageSize: params.pageSize ?? 20,
-        moodTag: params.moodTag,
-        search: params.search,
+  getPublishedPosts = async (
+    params: {
+      page?: number;
+      pageSize?: number;
+      moodTag?: string;
+      search?: string;
+    } = {},
+  ): Promise<{ items: Post[]; meta: PaginationMeta }> => {
+    const res = await api.get<ApiResponse<PostsApiResponse>>(
+      "/posts/published",
+      {
+        params: {
+          page: params.page ?? 1,
+          pageSize: params.pageSize ?? 20,
+          moodTag: params.moodTag,
+          search: params.search,
+        },
       },
-    });
+    );
     const d = res.data.data;
     return {
       items: d.items,
@@ -179,18 +208,23 @@ class PostService {
   };
 
   // ── Public: Get trending posts (7-day window) ────────────
-  getTrendingPosts = async (params: {
-    page?: number;
-    pageSize?: number;
-    moodTag?: string;
-  } = {}): Promise<{ items: Post[]; meta: PaginationMeta }> => {
-    const res = await api.get<ApiResponse<PostsApiResponse>>('/posts/trending', {
-      params: {
-        page: params.page ?? 1,
-        pageSize: params.pageSize ?? 20,
-        moodTag: params.moodTag,
+  getTrendingPosts = async (
+    params: {
+      page?: number;
+      pageSize?: number;
+      moodTag?: string;
+    } = {},
+  ): Promise<{ items: Post[]; meta: PaginationMeta }> => {
+    const res = await api.get<ApiResponse<PostsApiResponse>>(
+      "/posts/trending",
+      {
+        params: {
+          page: params.page ?? 1,
+          pageSize: params.pageSize ?? 20,
+          moodTag: params.moodTag,
+        },
       },
-    });
+    );
     const d = res.data.data;
     return {
       items: d.items,
@@ -204,12 +238,14 @@ class PostService {
   };
 
   // ── Public: Get popular posts (all-time) ─────────────────
-  getPopularPosts = async (params: {
-    page?: number;
-    pageSize?: number;
-    moodTag?: string;
-  } = {}): Promise<{ items: Post[]; meta: PaginationMeta }> => {
-    const res = await api.get<ApiResponse<PostsApiResponse>>('/posts/popular', {
+  getPopularPosts = async (
+    params: {
+      page?: number;
+      pageSize?: number;
+      moodTag?: string;
+    } = {},
+  ): Promise<{ items: Post[]; meta: PaginationMeta }> => {
+    const res = await api.get<ApiResponse<PostsApiResponse>>("/posts/popular", {
       params: {
         page: params.page ?? 1,
         pageSize: params.pageSize ?? 20,
@@ -230,12 +266,40 @@ class PostService {
 
   // ── Single post stats ────────────────────────────────────
   getPostStats = async (
-    postId: string
-  ): Promise<{ reactionCount: number; commentCount: number; viewCount: number }> => {
+    postId: string,
+  ): Promise<{
+    reactionCount: number;
+    commentCount: number;
+    viewCount: number;
+  }> => {
     const res = await api.get<
-      ApiResponse<{ reactionCount: number; commentCount: number; viewCount: number }>
+      ApiResponse<{
+        reactionCount: number;
+        commentCount: number;
+        viewCount: number;
+      }>
     >(`/posts/${postId}/stats`);
     return res.data.data;
+  };
+
+  // ── Admin: Get reported posts ───────────────────────────
+  getReportedPosts = async (): Promise<ReportedPost[]> => {
+    const res =
+      await api.get<ApiResponse<ReportedPostApiItem[]>>("/posts/reported");
+    const items = res.data.data ?? [];
+    return items.map((item) => ({
+      ...item.postDto,
+      reportCount: item.reportCount ?? 0,
+      latestReportAt: item.createdAt,
+    }));
+  };
+
+  // ── Admin: Get reports for a single post ───────────────────
+  getPostReports = async (postId: string): Promise<PostReport[]> => {
+    const res = await api.get<ApiResponse<PostReport[]>>(
+      `/posts/${postId}/reports`,
+    );
+    return res.data.data ?? [];
   };
 }
 

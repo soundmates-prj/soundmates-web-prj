@@ -212,7 +212,6 @@ export default function MyPodcastsPage() {
         <div className="mypod-header">
           <div>
             <h1 className="mypod-title">
-              <Mic2 size={28} />
               Podcast của tôi
             </h1>
             <p className="mypod-subtitle">

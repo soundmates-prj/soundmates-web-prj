@@ -63,7 +63,7 @@ export function MusicCatalogScreen() {
   const [editAlbum, setEditAlbum] = useState("");
   const [editLyrics, setEditLyrics] = useState("");
   const [updatingMetadata, setUpdatingMetadata] = useState(false);
-  
+
   // Bulk upload state
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
@@ -89,7 +89,7 @@ export function MusicCatalogScreen() {
         setLoadingStations(false);
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── Load station music whenever the selected station changes ── */
@@ -394,7 +394,7 @@ export function MusicCatalogScreen() {
     try {
       // Staff upload to System Media — no stationId
       const result = await liveSessionApiService.bulkUploadMusic(undefined, uploadFiles);
-      
+
       setUploadProgress((prev) => {
         const done: Record<string, number> = {};
         for (const f of uploadFiles) done[f.name] = 100;
@@ -520,11 +520,10 @@ export function MusicCatalogScreen() {
         <div className="mc-header">
           <div style={{ display: "flex", gap: 12 }}>
             <button
-              className={`staff-btn ${
-                activeTab === "station"
+              className={`staff-btn ${activeTab === "station"
                   ? "staff-btn--primary"
                   : "staff-btn--outline"
-              }`}
+                }`}
               style={{ padding: "6px 14px", fontSize: 13 }}
               onClick={() => setActiveTab("station")}
             >
@@ -532,11 +531,10 @@ export function MusicCatalogScreen() {
               Station Media ({displayStationMusic.length})
             </button>
             <button
-              className={`staff-btn ${
-                activeTab === "system"
+              className={`staff-btn ${activeTab === "system"
                   ? "staff-btn--primary"
                   : "staff-btn--outline"
-              }`}
+                }`}
               style={{ padding: "6px 14px", fontSize: 13 }}
               onClick={() => setActiveTab("system")}
             >
@@ -702,7 +700,7 @@ export function MusicCatalogScreen() {
               }}
             >
               <Music size={14} />
-              <strong>System Media</strong> — nhạc do Admin upload lên SoundMates.
+              <strong>System Media</strong> — nhạc được Admin/Staff upload lên SoundMates.
               Chọn bài và nhấn{" "}
               <strong style={{ color: "#1a9fd4" }}>Import vào Station</strong>
             </div>
@@ -730,8 +728,8 @@ export function MusicCatalogScreen() {
                           alreadyInStation
                             ? { opacity: 0.8, background: "rgba(0,0,0,0.02)" }
                             : checked
-                            ? { background: "rgba(124, 58, 237, 0.07)" }
-                            : {}
+                              ? { background: "rgba(124, 58, 237, 0.07)" }
+                              : {}
                         }
                       >
                         <td>

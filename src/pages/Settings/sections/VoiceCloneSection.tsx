@@ -24,6 +24,7 @@ import {
 import { voiceCloneService, type ClonedVoice, type SubscriptionPlan } from "../../../services/voiceCloneService";
 import { showToast } from "../../../utils/toast";
 import podcastService from "../../../services/podcastService";
+import audioService from "../../../services/audioService";
 import api from "../../../services/axios";
 import "./VoiceCloneSection.css";
 
@@ -328,20 +329,28 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [voicesData, planData] = await Promise.all([
+      const [voicesData, planData, audiosData] = await Promise.all([
         voiceCloneService.getMyVoices(),
         voiceCloneService.getMySubscriptionPlan(),
+        podcastService.getMyAudios(),
       ]);
       setVoices(voicesData);
       setPlan(planData);
+      setMyAudios(audiosData);
     } catch {
-      showToast.error("Không thể tải dữ liệu giọng đọc");
+      showToast.error("Không thể tải dữ liệu");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { void fetchData(); }, [fetchData]);
+
+  // Calculate TTS Limits
+  const totalAudioDurationSeconds = myAudios.reduce((acc, audio) => acc + (audio.durationSeconds || audio.duration || 0), 0);
+  const usedTtsMinutes = Math.ceil(totalAudioDurationSeconds / 60);
+  const totalTtsMinutes = plan?.ttsMinuteLimit || 0;
+  const remainingTtsMinutes = Math.max(0, totalTtsMinutes - usedTtsMinutes);
 
   useEffect(() => {
     return () => { if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl); };
@@ -580,11 +589,22 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
 
   const handleGenerateAudio = async () => {
     if (!viewScript || !pickedVoiceId) return;
+
+    if (usedTtsMinutes >= totalTtsMinutes) {
+      showToast.error("Bạn đã sử dụng hết số phút TTS của gói cước trong tháng này. Vui lòng nâng cấp gói hoặc chờ chu kỳ sau.");
+      return;
+    }
+
     const id = viewScript.scriptId ?? viewScript.id;
     setGeneratingAudio(true);
     const tid = showToast.loading("Đang tạo audio...");
     try {
       const result = await podcastService.generateAudioFromScript({ scriptId: id, voiceCode: pickedVoiceId });
+      
+      // Update myAudios so the limit progresses automatically
+      const newAudioData = await audioService.getAudioById(result.audioId);
+      setMyAudios(prev => [newAudioData, ...prev]);
+
       setAudioResultUrl(result.audioUrl);
       setAudioResultId(result.audioId);
       showToast.dismiss(tid);
@@ -628,11 +648,49 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
       ) : (
         <>
 
+          {/* ── Usage Limits section ── */}
+          <div className="vc-section">
+            <div className="vc-section__head">
+              <h2 className="vc-section__title"><Info size={16} /> Thông tin gói cước</h2>
+            </div>
+            <div className="vc-limits-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+              
+              <div className="vc-limit-card" style={{ background: 'var(--color-bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: 500, color: 'var(--color-text)' }}>Giọng Clone</span>
+                  <span style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>{myVoices.length} / {plan?.voiceModelLimit ?? 0}</span>
+                </div>
+                <div style={{ width: '100%', height: '6px', background: 'var(--color-bg)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min(100, (myVoices.length / (plan?.voiceModelLimit || 1)) * 100)}%`, height: '100%', background: 'var(--color-primary)' }} />
+                </div>
+              </div>
+
+              <div className="vc-limit-card" style={{ background: 'var(--color-bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: 500, color: 'var(--color-text)' }}>Thời lượng TTS (Phút)</span>
+                  <span style={{ color: remainingTtsMinutes > 0 ? 'var(--color-primary)' : 'var(--color-danger)', fontWeight: 'bold' }}>
+                    {usedTtsMinutes} / {totalTtsMinutes}
+                  </span>
+                </div>
+                <div style={{ width: '100%', height: '6px', background: 'var(--color-bg)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ 
+                    width: `${Math.min(100, (usedTtsMinutes / (totalTtsMinutes || 1)) * 100)}%`, 
+                    height: '100%', 
+                    background: usedTtsMinutes >= totalTtsMinutes ? 'var(--color-danger)' : 'var(--color-primary)' 
+                  }} />
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', marginTop: '0.5rem' }}>
+                  Còn lại: {remainingTtsMinutes} phút
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           {/* ── Voice section ── */}
           <div className="vc-section">
             <div className="vc-section__head">
               <h2 className="vc-section__title"><Mic size={16} /> Giọng đọc của tôi</h2>
-              <span className="vc-section__badge">{myVoices.length} / {plan?.voiceModelLimit ?? 0}</span>
             </div>
 
             <div className="vc-tip">
