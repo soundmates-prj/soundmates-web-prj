@@ -258,7 +258,10 @@ export function HostAnalyticsScreen() {
                           )
                         : "N/A"}
                     </td>
-                    <td>{Math.round(session.totalDurationMinutes)} phút</td>
+                    <td>
+                      {Math.floor(session.totalDurationMinutes / 60).toString().padStart(2, "0")}:
+                      {Math.floor(session.totalDurationMinutes % 60).toString().padStart(2, "0")}
+                    </td>
                     <td>{session.totalListeners}</td>
                     <td>{session.musicRequestsCount}</td>
                     <td style={{ textAlign: "right" }}>

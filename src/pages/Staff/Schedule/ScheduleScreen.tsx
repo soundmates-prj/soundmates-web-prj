@@ -439,13 +439,15 @@ export function ScheduleScreen() {
                             </span>
                           </div>
                           <div className="sc-item-actions">
-                            <button
-                              className="sc-action-btn sc-action-btn--edit"
-                              onClick={() => openEdit(sch)}
-                              title="Chỉnh sửa"
-                            >
-                              <Pencil size={13} />
-                            </button>
+                            {status !== "ended" && (
+                              <button
+                                className="sc-action-btn sc-action-btn--edit"
+                                onClick={() => openEdit(sch)}
+                                title="Chỉnh sửa"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                            )}
                             <button
                               className="sc-action-btn sc-action-btn--delete"
                               onClick={() => handleDelete(sch.id)}

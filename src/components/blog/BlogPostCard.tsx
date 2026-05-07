@@ -173,9 +173,6 @@ export default function BlogPostCard({
           <button className="post-btn" onClick={() => setShowComments(true)}>
             <MessageCircle size={14} /> Bình luận
           </button>
-          <button className="post-btn">
-            <Share2 size={14} /> Chia sẻ
-          </button>
         </div>
       </div>
 
