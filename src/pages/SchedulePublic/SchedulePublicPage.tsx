@@ -22,6 +22,7 @@ export default function SchedulePublicPage() {
   const [schedules, setSchedules] = useState<SessionScheduleResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   /* ── Fetch tất cả lịch từ GET /api/v1/schedule ── */
   useEffect(() => {
@@ -89,7 +90,12 @@ export default function SchedulePublicPage() {
   };
 
   /* Nhóm theo startDate (DateOnly string) */
-  const grouped = schedules.reduce<Record<string, SessionScheduleResult[]>>(
+  const schedulesToDisplay = schedules.filter(sch => {
+    const selectedDateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+    return sch.startDate === selectedDateStr;
+  });
+
+  const grouped = schedulesToDisplay.reduce<Record<string, SessionScheduleResult[]>>(
     (acc, s) => {
       if (!acc[s.startDate]) acc[s.startDate] = [];
       acc[s.startDate].push(s);
@@ -208,11 +214,18 @@ export default function SchedulePublicPage() {
                     day === new Date().getDate() &&
                     currentMonth.getMonth() === new Date().getMonth() &&
                     currentMonth.getFullYear() === new Date().getFullYear();
+                  
+                  const isSelected = 
+                    day === selectedDate.getDate() &&
+                    currentMonth.getMonth() === selectedDate.getMonth() &&
+                    currentMonth.getFullYear() === selectedDate.getFullYear();
+
                   const hasSchedule = scheduleDays.has(day);
                   return (
                     <div
                       key={day}
-                      className={`sp-cal-day ${isToday ? "today" : ""} ${hasSchedule ? "has-event" : ""}`}
+                      className={`sp-cal-day ${isToday ? "today" : ""} ${isSelected ? "selected" : ""} ${hasSchedule ? "has-event" : ""}`}
+                      onClick={() => setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day))}
                     >
                       {day}
                       {hasSchedule && <span className="sp-cal-dot" />}
@@ -256,7 +269,7 @@ export default function SchedulePublicPage() {
         <main className="sp-main">
           <div className="sp-toolbar">
             <span className="sp-toolbar-info">
-              {loading ? "Đang tải..." : `${schedules.length} lịch phát sóng`}
+              {loading ? "Đang tải..." : `${schedulesToDisplay.length} lịch phát sóng ngày ${selectedDate.toLocaleDateString('vi-VN')}`}
             </span>
             <button
               className="sp-refresh-btn"

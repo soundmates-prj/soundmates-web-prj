@@ -14,8 +14,8 @@
 }
 
 .confirm-modal {
-  background: var(--layer-1, #1e1e2d);
-  border: 1px solid var(--border-color, #333);
+  background: var(--bg-card, #1e1e2d);
+  border: 1px solid var(--border-medium, #333);
   border-radius: 12px;
   width: 90%;
   max-width: 400px;
@@ -51,12 +51,12 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-1, #f8fafc);
+  color: var(--text-primary, #f8fafc);
 }
 
 .confirm-modal-body {
   font-size: 0.95rem;
-  color: var(--text-2, #cbd5e1);
+  color: var(--text-secondary, #cbd5e1);
   line-height: 1.5;
   margin-bottom: 24px;
 }
@@ -82,13 +82,13 @@
 
 .confirm-modal-btn-cancel {
   background: transparent;
-  color: var(--text-2, #cbd5e1);
-  border: 1px solid var(--border-color, #333);
+  color: var(--text-secondary, #cbd5e1);
+  border: 1px solid var(--border-medium, #333);
 }
 
 .confirm-modal-btn-cancel:hover {
-  background: var(--layer-2, #2a2a3c);
-  color: var(--text-1, #f8fafc);
+  background: var(--bg-secondary, #2a2a3c);
+  color: var(--text-primary, #f8fafc);
 }
 
 .confirm-modal-btn-confirm {
