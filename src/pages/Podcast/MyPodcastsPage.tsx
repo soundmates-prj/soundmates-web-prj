@@ -119,8 +119,9 @@ export default function MyPodcastsPage() {
   const navigate = useNavigate();
 
   const [publishedPodcasts, setPublishedPodcasts] = useState<PodcastItem[]>([]);
-  const [requestPodcasts, setRequestPodcasts] = useState<PodcastItem[]>([]);
-  const [activeTab, setActiveTab] = useState<"published" | "requests">("published");
+  const [pendingRequests, setPendingRequests] = useState<PodcastItem[]>([]);
+  const [rejectedRequests, setRejectedRequests] = useState<PodcastItem[]>([]);
+  const [activeTab, setActiveTab] = useState<"published" | "pending" | "rejected">("published");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [detailPodcast, setDetailPodcast] = useState<PodcastItem | null>(null);
@@ -138,12 +139,16 @@ export default function MyPodcastsPage() {
         podcastService.getMyPodcasts()
       ]);
 
-      const filteredRequests = requests.filter(p => {
-        const s = normalizeStatus(p.status);
-        return s === "Pending" || s === "Rejected" || s === "pending" || s === "rejected";
+      const pending = requests.filter(p => normalizeStatus(p.status) === "pending");
+      const rejected = requests.filter(p => normalizeStatus(p.status) === "rejected");
+
+      pending.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
       });
 
-      filteredRequests.sort((a, b) => {
+      rejected.sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return dateB - dateA;
@@ -156,7 +161,8 @@ export default function MyPodcastsPage() {
         return dateB - dateA;
       });
 
-      setRequestPodcasts(filteredRequests);
+      setPendingRequests(pending);
+      setRejectedRequests(rejected);
       setPublishedPodcasts(uniquePublished);
     } catch {
       showError("Không thể tải danh sách podcast của bạn");
@@ -201,7 +207,7 @@ export default function MyPodcastsPage() {
     void loadPodcasts();
   }, []);
 
-  const currentList = activeTab === "published" ? publishedPodcasts : requestPodcasts;
+  const currentList = activeTab === "published" ? publishedPodcasts : activeTab === "pending" ? pendingRequests : rejectedRequests;
 
   const filtered = useMemo(() => {
     const kw = search.trim().toLowerCase();
@@ -220,7 +226,7 @@ export default function MyPodcastsPage() {
     try {
       const s = normalizeStatus(podcast.status);
       let fresh;
-      if (s === "Pending" || s === "Rejected") {
+      if (s === "pending" || s === "rejected") {
         fresh = await podcastService.getPodcastRequestById(podcast.id);
       } else {
         fresh = await podcastService.getPodcastById(podcast.id);
@@ -284,11 +290,18 @@ export default function MyPodcastsPage() {
             <span className="mypod-tab-count">{publishedPodcasts.length}</span>
           </button>
           <button
-            className={`mypod-tab ${activeTab === "requests" ? "mypod-tab--active" : ""}`}
-            onClick={() => setActiveTab("requests")}
+            className={`mypod-tab ${activeTab === "pending" ? "mypod-tab--active" : ""}`}
+            onClick={() => setActiveTab("pending")}
           >
             Yêu cầu chờ duyệt
-            <span className="mypod-tab-count">{requestPodcasts.length}</span>
+            <span className="mypod-tab-count">{pendingRequests.length}</span>
+          </button>
+          <button
+            className={`mypod-tab ${activeTab === "rejected" ? "mypod-tab--active" : ""}`}
+            onClick={() => setActiveTab("rejected")}
+          >
+            Từ chối
+            <span className="mypod-tab-count">{rejectedRequests.length}</span>
           </button>
         </div>
 
@@ -325,7 +338,9 @@ export default function MyPodcastsPage() {
               {currentList.length === 0
                 ? activeTab === "published"
                   ? "Bạn chưa có podcast nào được xuất bản. Hãy tạo podcast đầu tiên của bạn!"
-                  : "Bạn không có yêu cầu tạo podcast nào đang chờ duyệt."
+                  : activeTab === "pending"
+                    ? "Bạn không có yêu cầu tạo podcast nào đang chờ duyệt."
+                    : "Không có podcast nào bị từ chối."
                 : "Không có podcast nào khớp với từ khóa tìm kiếm."}
             </p>
             {currentList.length === 0 && activeTab === "published" && (
@@ -478,17 +493,19 @@ function MyPodcastCard({
             Xem chi tiết
           </button>
 
-          <button
-            className="mypod-card-episode"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCreateEpisode(podcast);
-            }}
-            title="Tạo tập mới cho podcast này"
-          >
-            <PlusCircle size={14} />
-            Tạo tập mới
-          </button>
+          {normalizeStatus(podcast.status) !== "pending" && normalizeStatus(podcast.status) !== "rejected" && (
+            <button
+              className="mypod-card-episode"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCreateEpisode(podcast);
+              }}
+              title="Tạo tập mới cho podcast này"
+            >
+              <PlusCircle size={14} />
+              Tạo tập mới
+            </button>
+          )}
         </div>
       </div>
     </div>

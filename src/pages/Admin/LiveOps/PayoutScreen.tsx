@@ -37,7 +37,32 @@ export default function PayoutScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [payoutPercentage, setPayoutPercentage] = useState<number>(80);
+  const [isSavingPercent, setIsSavingPercent] = useState(false);
   const isMountedRef = useRef(true);
+
+  const fetchPayoutPercent = useCallback(async () => {
+    try {
+      const res = await api.get("/settings/PAYOUT_PERCENTAGE");
+      if (res.data?.data?.value && isMountedRef.current) {
+        setPayoutPercentage(Number(res.data.data.value));
+      }
+    } catch {
+      // ignore if setting not found
+    }
+  }, []);
+
+  const savePayoutPercent = async () => {
+    if (payoutPercentage <= 0 || payoutPercentage > 100) return;
+    setIsSavingPercent(true);
+    try {
+      await api.patch("/settings/PAYOUT_PERCENTAGE", { value: payoutPercentage.toString() });
+    } catch (err: any) {
+      console.error("Failed to save payout percentage", err);
+    } finally {
+      if (isMountedRef.current) setIsSavingPercent(false);
+    }
+  };
 
   const fetchPayouts = useCallback(async () => {
     setLoading(true);
@@ -63,10 +88,11 @@ export default function PayoutScreen() {
   useEffect(() => {
     isMountedRef.current = true;
     void fetchPayouts();
+    void fetchPayoutPercent();
     return () => {
       isMountedRef.current = false;
     };
-  }, [fetchPayouts]);
+  }, [fetchPayouts, fetchPayoutPercent]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("vi-VN", {
@@ -128,7 +154,33 @@ export default function PayoutScreen() {
           <h1>Quản lý Payout</h1>
           <p>Danh sách các khoản thanh toán đến tác giả podcast</p>
         </div>
-        <div className="lm-header-actions">
+        <div className="lm-header-actions" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--neutral-50)", padding: "4px 8px", borderRadius: 8, border: "1px solid var(--neutral-200)" }}>
+            <span style={{ fontSize: 13, color: "var(--neutral-600)", fontWeight: 500 }}>Tỷ lệ tác giả nhận (%):</span>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={payoutPercentage}
+              onChange={(e) => setPayoutPercentage(Number(e.target.value))}
+              onBlur={savePayoutPercent}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur();
+                }
+              }}
+              disabled={isSavingPercent}
+              style={{
+                width: 60,
+                padding: "4px 8px",
+                border: "1px solid var(--neutral-300)",
+                borderRadius: 6,
+                fontSize: 14,
+                textAlign: "center",
+                opacity: isSavingPercent ? 0.7 : 1
+              }}
+            />
+          </div>
           <button className="lm-btn lm-btn--outline" onClick={fetchPayouts}>
             <RefreshCw size={15} />
             Làm mới

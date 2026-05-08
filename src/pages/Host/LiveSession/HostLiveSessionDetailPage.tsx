@@ -397,13 +397,17 @@ export default function HostLiveSessionDetailPage() {
   const handleApprove = useCallback(
     async (songRequestId: string) => {
       try {
-        await liveSessionApiService.reviewSongRequest(songRequestId, {
+        const result = await liveSessionApiService.reviewSongRequest(songRequestId, {
           action: "approve",
         });
-        showSuccess("Đã duyệt yêu cầu");
+        if (result.status?.toUpperCase() === "REJECTED") {
+          showError("Không thể duyệt", result.rejectReason || "Bị từ chối bởi trạm phát");
+        } else {
+          showSuccess("Đã duyệt yêu cầu");
+        }
         await loadData();
-      } catch {
-        showError("Duyệt thất bại");
+      } catch (error: any) {
+        showError("Duyệt thất bại", error?.response?.data?.message || "Lỗi không xác định");
       }
     },
     [loadData],

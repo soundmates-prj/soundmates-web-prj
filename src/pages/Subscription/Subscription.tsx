@@ -264,7 +264,6 @@ function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): Featu
   if (tier === "free") {
     return [
       ...base,
-      { text: `${plan.requestLimit} lượt yêu cầu bài hát`, bold: " mỗi ngày" },
       { text: "Chưa hỗ trợ Podcast & AI Clone" },
     ];
   }
@@ -573,10 +572,10 @@ export default function Subscription() {
                   whileHover={!isCurrent && !isProcessing ? { scale: 1.05 } : {}}
                   whileTap={!isCurrent && !isProcessing ? { scale: 0.95 } : {}}
                 >
-                  {isCurrent 
-                    ? "Đang sở hữu" 
-                    : isProcessing 
-                      ? "Đang xử lý..." 
+                  {isCurrent
+                    ? "Đang sở hữu"
+                    : isProcessing
+                      ? "Đang xử lý..."
                       : ((plans.find(p => p.id === currentPlanId)?.price || 0) > 0 ? "Nâng cấp" : "Chọn Gói Này")}
                 </motion.button>
               )}

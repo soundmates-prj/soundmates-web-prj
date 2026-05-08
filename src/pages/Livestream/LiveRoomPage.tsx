@@ -92,7 +92,11 @@ const LIVE_STREAM_LATENCY_COMPENSATION_MS = 3000;
 function parseLyrics(lrc: string | null | undefined): LyricLine[] {
   if (!lrc) return [];
   const result: LyricLine[] = [];
-  for (const rawLine of lrc.split("\n")) {
+  
+  // Normalize literal \n or \r\n to actual newlines in case it's double escaped
+  const normalizedLrc = lrc.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+  
+  for (const rawLine of normalizedLrc.split("\n")) {
     const line = rawLine.trim();
     if (!line) continue;
     const matches = Array.from(line.matchAll(/\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/g));
