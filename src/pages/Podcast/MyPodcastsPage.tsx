@@ -183,12 +183,12 @@ export default function MyPodcastsPage() {
       const bankData = bankRes.data?.data;
       if (!bankData || !bankData.bankId || !bankData.accountNumber || !bankData.accountName) {
         showToast.warning("Bạn cần cập nhật Tài khoản ngân hàng trong mục Hồ sơ để nhận doanh thu Podcast.");
-        navigate("/settings/profile");
+        navigate("/settings");
         return;
       }
     } catch (error) {
       showToast.warning("Bạn cần cập nhật Tài khoản ngân hàng trong mục Hồ sơ để nhận doanh thu Podcast.");
-      navigate("/settings/profile");
+      navigate("/settings");
       return;
     }
 

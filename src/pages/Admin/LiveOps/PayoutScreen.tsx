@@ -34,6 +34,10 @@ interface PendingPayoutDto {
   errorMessage?: string;
   scheduledAt: string;
   createdAt: string;
+  authorFullName?: string;
+  authorUsername?: string;
+  authorAvatarUrl?: string;
+  systemAmount: number;
 }
 
 export default function PayoutScreen() {
@@ -413,34 +417,47 @@ export default function PayoutScreen() {
                       {/* Target User */}
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div
-                            style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: "50%",
-                              background: "linear-gradient(135deg, #1a9fd4, #55c5f1)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              color: "#fff",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <User size={16} />
-                          </div>
+                          {p.authorAvatarUrl ? (
+                            <img
+                              src={p.authorAvatarUrl}
+                              alt={p.authorFullName || "Avatar"}
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                                flexShrink: 0,
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: "50%",
+                                background: "linear-gradient(135deg, #1a9fd4, #55c5f1)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#fff",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <User size={16} />
+                            </div>
+                          )}
                           <div>
                             <div
                               style={{
-                                fontFamily: "monospace",
-                                fontSize: 11,
-                                color: "#1a9fd4",
+                                fontSize: 13,
+                                color: "#0f172a",
                                 fontWeight: 600,
                               }}
                             >
-                              #{p.targetUserId.split("-")[0]}
+                              {p.authorFullName || "User"}
                             </div>
-                            <div style={{ fontSize: 10, color: "#94a3b8" }}>
-                              Payment #{p.paymentId.split("-")[0]}
+                            <div style={{ fontSize: 11, color: "#64748b" }}>
+                              {p.authorUsername || `#${p.targetUserId.split("-")[0]}`}
                             </div>
                           </div>
                         </div>
@@ -488,11 +505,19 @@ export default function PayoutScreen() {
 
                       {/* Amount */}
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <CreditCard size={14} style={{ color: "#059669" }} />
-                          <span style={{ fontWeight: 700, color: "#059669", fontSize: 14 }}>
-                            {formatCurrency(p.amount)}
-                          </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <CreditCard size={14} style={{ color: "#059669" }} />
+                            <span style={{ fontWeight: 700, color: "#059669", fontSize: 14 }} title="Tác giả nhận">
+                              {formatCurrency(p.amount)}
+                            </span>
+                          </div>
+                          {p.systemAmount !== undefined && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#64748b" }}>
+                              <span title="Hệ thống nhận">Hệ thống:</span>
+                              <span style={{ fontWeight: 600 }}>{formatCurrency(p.systemAmount)}</span>
+                            </div>
+                          )}
                         </div>
                       </td>
 
