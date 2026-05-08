@@ -798,7 +798,7 @@ function CreatePodcastRequestModal({
         title: title.trim(),
         episodeTitle: title.trim(),
         description: description.trim(),
-        banner: bannerUrl,
+        bannerUrl: bannerUrl,
         price: isPaid ? price : 0,
         isPaid,
       };
