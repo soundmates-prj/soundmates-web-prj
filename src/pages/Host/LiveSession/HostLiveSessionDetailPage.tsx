@@ -263,6 +263,27 @@ export default function HostLiveSessionDetailPage() {
       setChats((prev) => [...prev, mapped]);
     });
 
+    const offListenersUpdated = liveHubService.onListenersUpdated((sid, count) => {
+      if (sid === sessionId) {
+        setNowPlaying((prev) => prev ? { ...prev, totalListeners: count } : prev);
+        setSession((prev) => prev ? { ...prev, listenersCount: count, totalListeners: count } : prev);
+      }
+    });
+
+    const offUserJoined = liveHubService.onUserJoined((sid, uid, count) => {
+      if (sid === sessionId) {
+        setNowPlaying((prev) => prev ? { ...prev, totalListeners: count } : prev);
+        setSession((prev) => prev ? { ...prev, listenersCount: count, totalListeners: count } : prev);
+      }
+    });
+
+    const offUserLeft = liveHubService.onUserLeft((sid, uid, count) => {
+      if (sid === sessionId) {
+        setNowPlaying((prev) => prev ? { ...prev, totalListeners: count } : prev);
+        setSession((prev) => prev ? { ...prev, listenersCount: count, totalListeners: count } : prev);
+      }
+    });
+
     void (async () => {
       try {
         await liveHubService.start();
@@ -282,6 +303,9 @@ export default function HostLiveSessionDetailPage() {
       offChatHistory();
       offChatDeleted();
       offReceiveChat();
+      offListenersUpdated();
+      offUserJoined();
+      offUserLeft();
       void liveHubService.leaveSession(sessionId, currentUserId);
     };
   }, [sessionId]);

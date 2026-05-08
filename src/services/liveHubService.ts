@@ -465,13 +465,21 @@ class LiveHubService {
   onSessionStarted(callback: (session: LiveSessionEvent) => void): () => void {
     const conn = this.getConnection();
     conn.on("SessionStarted", callback);
-    return () => conn.off("SessionStarted", callback);
+    conn.on("sessionstarted", callback);
+    return () => {
+      conn.off("SessionStarted", callback);
+      conn.off("sessionstarted", callback);
+    };
   }
 
   onSessionEnded(callback: (session: LiveSessionEvent) => void): () => void {
     const conn = this.getConnection();
     conn.on("SessionEnded", callback);
-    return () => conn.off("SessionEnded", callback);
+    conn.on("sessionended", callback);
+    return () => {
+      conn.off("SessionEnded", callback);
+      conn.off("sessionended", callback);
+    };
   }
 
   onUserJoined(
@@ -485,7 +493,11 @@ class LiveHubService {
       }
     };
     conn.on("UserJoined", handler);
-    return () => conn.off("UserJoined", handler);
+    conn.on("userjoined", handler);
+    return () => {
+      conn.off("UserJoined", handler);
+      conn.off("userjoined", handler);
+    };
   }
 
   onUserLeft(
@@ -499,7 +511,11 @@ class LiveHubService {
       }
     };
     conn.on("UserLeft", handler);
-    return () => conn.off("UserLeft", handler);
+    conn.on("userleft", handler);
+    return () => {
+      conn.off("UserLeft", handler);
+      conn.off("userleft", handler);
+    };
   }
 
   onReceiveChat(callback: (chat: ChatMessage) => void): () => void {

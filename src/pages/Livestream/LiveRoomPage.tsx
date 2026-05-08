@@ -644,7 +644,7 @@ export function LiveRoomPage() {
           </span>
           <span className="lr-listeners-count">
             <Users size={13} />
-            {nowPlaying?.totalListeners} đang nghe
+            {listeners} đang nghe
           </span>
         </div>
       </div>
