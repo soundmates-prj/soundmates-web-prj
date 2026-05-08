@@ -30,6 +30,8 @@ import {
   MoreVertical,
   Mic2,
   MicOff,
+  Bell,
+  BellOff
 } from "lucide-react";
 import { showToast } from "../../utils/toast";
 import { liveSessionApiService } from "../../services/liveSessionApiService";
@@ -37,8 +39,13 @@ import type { SongRequestResult } from "../../services/liveSessionApiService";
 import { useLiveSession } from "../../context/LiveSessionContext";
 import { usePlayer } from "../../context/PlayerContext";
 import { liveHubService } from "../../services/liveHubService";
+import notificationHubService, {
+  type RealtimeNotification,
+  type BroadcastNotification,
+} from "../../services/notificationHubService";
 import AuthPromptModal from "../../components/common/AuthPromptModal";
 import UpgradeModal from "../../components/common/UpgradeModal";
+import NotificationButton from "../../components/layout/NotificationButton";
 import "./LiveRoomPage.css";
 
 // ─── Types (local UI only) ────────────────────────────────────────────────────
@@ -65,6 +72,13 @@ interface SystemMusicItem {
   album: string | null;
   artUrl?: string | null;
   artworkUrl?: string | null;
+}
+
+interface RoomNotification {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -187,6 +201,9 @@ export function LiveRoomPage() {
   const [activeDotMenu, setActiveDotMenu] = useState<string | null>(null);
   const [activeChatTab, setActiveChatTab] = useState<"chat" | "history" | "lyrics">("chat");
   const [showAuthPopup, setShowAuthPopup] = useState(false);
+  
+  // ── Notifications State (Toast Only) ──────────────────────────────────────
+  const [activeToast, setActiveToast] = useState<RoomNotification | null>(null);
   const [authPopupMode, setAuthPopupMode] = useState<AuthPopupMode>("guestLimit");
   const [manualSyncBaseMs, setManualSyncBaseMs] = useState<number | null>(null);
   const [manualSyncClockMs, setManualSyncClockMs] = useState<number | null>(null);
@@ -429,6 +446,50 @@ export function LiveRoomPage() {
     return () => window.removeEventListener("guestLimitReached", handleGuestLimit);
   }, []);
 
+  // ── Global Notifications (NotificationHub) ────────────────────────────────
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    let cleanupPersonal: (() => void) | null = null;
+    let cleanupBroadcast: (() => void) | null = null;
+    let toastTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const showToastNotif = (title: string, message: string) => {
+      const msgStr = typeof message === "string" ? message : JSON.stringify(message);
+      const newNotif: RoomNotification = {
+        id: Math.random().toString(36).substring(2, 9),
+        title,
+        message: msgStr,
+        time: new Date().toISOString()
+      };
+      
+      // Show toast
+      setActiveToast(newNotif);
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        setActiveToast(null);
+      }, 5000);
+    };
+
+    notificationHubService.start(token).then(() => {
+      cleanupPersonal = notificationHubService.onReceiveNotification((n: RealtimeNotification) => {
+        showToastNotif(n.title || "Thông báo mới", n.message);
+      });
+      cleanupBroadcast = notificationHubService.onReceiveBroadcastNotification((n: BroadcastNotification) => {
+        showToastNotif(n.title || "Hệ thống", n.message);
+      });
+    }).catch(err => {
+      console.warn("[LiveRoomPage] NotificationHub start failed:", err);
+    });
+
+    return () => {
+      cleanupPersonal?.();
+      cleanupBroadcast?.();
+      if (toastTimeout) clearTimeout(toastTimeout);
+    };
+  }, []);
+
   // ── Song request ──────────────────────────────────────────────────────────
   const loadRequestableSongs = useCallback(async () => {
     if (!session?.stationId) return;
@@ -573,6 +634,7 @@ export function LiveRoomPage() {
           </div>
         </div>
         <div className="lr-topbar-right">
+          <NotificationButton />
           <span className="lr-live-indicator">
             {session?.status?.toLowerCase() === "live" ? "LIVE" : "OFFLINE"}
           </span>
@@ -668,6 +730,24 @@ export function LiveRoomPage() {
                   )}
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* Active Toast Overlay */}
+          <div className={`lr-notification-toast ${activeToast ? "show" : ""}`}>
+            {activeToast && (
+              <>
+                <div className="lr-toast-icon">
+                  <Bell size={20} />
+                </div>
+                <div className="lr-toast-content">
+                  <h4>{activeToast.title}</h4>
+                  <p>{activeToast.message}</p>
+                </div>
+                <button className="lr-toast-close" onClick={() => setActiveToast(null)}>
+                  <X size={16} />
+                </button>
+              </>
             )}
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Mic, Search, CheckCircle, XCircle, Clock, User, Play, RefreshCw, X, FileAudio } from 'lucide-react';
+import { Mic, Search, CheckCircle, XCircle, Clock, User, Play, RefreshCw, X, FileAudio, ShieldAlert, ShieldCheck, Shield, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { liveSessionApiService, type PodcastEpisodeRequestResult, type PodcastResult } from '../../../services/liveSessionApiService';
+import { liveSessionApiService, type PodcastEpisodeRequestResult, type PodcastResult, type ModerationCheckResult } from '../../../services/liveSessionApiService';
 import { showSuccess, showError } from '../../../components/common/toastUtils';
 import '../LiveOps/LiveOps.css';
 
@@ -14,6 +14,8 @@ export function EpisodeRequestsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<PodcastEpisodeRequestResult | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [moderationResult, setModerationResult] = useState<ModerationCheckResult | null>(null);
+  const [isCheckingToxicity, setIsCheckingToxicity] = useState(false);
 
   // Optional: Cache for podcast info
   const [podcastsCache, setPodcastsCache] = useState<Record<string, PodcastResult>>({});
@@ -49,6 +51,7 @@ export function EpisodeRequestsPage() {
 
   const openDetail = (request: PodcastEpisodeRequestResult) => {
     setSelectedRequest(request);
+    setModerationResult(null);
     if (request.podcastId) {
       loadPodcastInfo(request.podcastId);
     }
@@ -84,6 +87,37 @@ export function EpisodeRequestsPage() {
       showError('Lỗi', err?.response?.data?.message || 'Không thể từ chối yêu cầu');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleQuickReject = async (id: string, reason: string) => {
+    setActionLoading(id);
+    try {
+      const updated = await liveSessionApiService.reviewPodcastEpisodeRequest(id, {
+        isApproved: false,
+        rejectReason: reason,
+      });
+      setRequests(prev => prev.map(r => r.id === id ? updated : r));
+      if (selectedRequest?.id === id) setSelectedRequest(updated);
+      showSuccess('Thành công', 'Yêu cầu tập mới đã bị từ chối');
+    } catch (err: any) {
+      showError('Lỗi', err?.response?.data?.message || 'Không thể từ chối yêu cầu');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCheckToxicity = async () => {
+    if (!selectedRequest) return;
+    setIsCheckingToxicity(true);
+    setModerationResult(null);
+    try {
+      const result = await liveSessionApiService.checkPodcastEpisodeToxicity(selectedRequest.id);
+      setModerationResult(result);
+    } catch (err: any) {
+      showError('Lỗi kiểm duyệt', err?.response?.data?.message || 'Không thể kiểm duyệt bằng AI');
+    } finally {
+      setIsCheckingToxicity(false);
     }
   };
 
@@ -329,6 +363,98 @@ export function EpisodeRequestsPage() {
                   </div>
                 )}
               </div>
+
+              {selectedRequest.status === 'Pending' && selectedRequest.audioUrl && (
+                <div style={{ marginTop: 24, padding: 16, backgroundColor: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: moderationResult ? 16 : 0 }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Shield size={16} /> Kiểm duyệt nội dung tự động (AI)
+                      </h4>
+                      <p style={{ margin: '4px 0 0 0', fontSize: 12, color: '#64748b' }}>
+                        Phân tích âm thanh và phát hiện các từ ngữ vi phạm, thô tục.
+                      </p>
+                    </div>
+                    <button 
+                      className="ops-btn ops-btn--primary" 
+                      onClick={handleCheckToxicity}
+                      disabled={isCheckingToxicity}
+                      style={{ height: 32, padding: '0 12px', fontSize: 12 }}
+                    >
+                      {isCheckingToxicity ? <><Loader2 size={14} className="pe-spin"/> Đang xử lý...</> : <><ShieldAlert size={14}/> Kiểm duyệt ngay</>}
+                    </button>
+                  </div>
+
+                  {moderationResult && (
+                    <div style={{ 
+                      marginTop: 16, 
+                      padding: 12, 
+                      borderRadius: 6, 
+                      backgroundColor: moderationResult.action === 'REJECT' ? '#fef2f2' : moderationResult.action === 'PENDING_REVIEW' ? '#fffbeb' : '#f0fdf4',
+                      border: `1px solid ${moderationResult.action === 'REJECT' ? '#fecaca' : moderationResult.action === 'PENDING_REVIEW' ? '#fef3c7' : '#bbf7d0'}` 
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: moderationResult.action === 'REJECT' ? '#b91c1c' : moderationResult.action === 'PENDING_REVIEW' ? '#d97706' : '#15803d' }}>
+                        {moderationResult.action === 'SAFE' ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
+                        <strong style={{ fontSize: 14 }}>
+                          {moderationResult.action === 'REJECT' ? 'Phát hiện nội dung vi phạm nghiêm trọng' : 
+                           moderationResult.action === 'PENDING_REVIEW' ? 'Cần xem xét kỹ nội dung' : 
+                           'Nội dung an toàn'}
+                        </strong>
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+                        <div style={{ padding: 8, backgroundColor: '#fff', borderRadius: 4, border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase' }}>Toxicity</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: moderationResult.toxicityScore >= 0.5 ? '#ef4444' : '#334155' }}>
+                            {Math.round(moderationResult.toxicityScore * 100)}%
+                          </div>
+                        </div>
+                        <div style={{ padding: 8, backgroundColor: '#fff', borderRadius: 4, border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase' }}>Profanity</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: moderationResult.profanityScore >= 0.5 ? '#ef4444' : '#334155' }}>
+                            {Math.round(moderationResult.profanityScore * 100)}%
+                          </div>
+                        </div>
+                        <div style={{ padding: 8, backgroundColor: '#fff', borderRadius: 4, border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase' }}>Insult</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: moderationResult.insultScore >= 0.5 ? '#ef4444' : '#334155' }}>
+                            {Math.round(moderationResult.insultScore * 100)}%
+                          </div>
+                        </div>
+                      </div>
+
+                      {moderationResult.triggeredWords && moderationResult.triggeredWords.length > 0 && (
+                        <div style={{ fontSize: 13, marginBottom: 12 }}>
+                          <strong>Từ ngữ vi phạm: </strong>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                            {moderationResult.triggeredWords.map((w, i) => (
+                              <span key={i} style={{ padding: '2px 6px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: 4, fontWeight: 500 }}>{w}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ fontSize: 13, maxHeight: 150, overflowY: 'auto', backgroundColor: 'rgba(255,255,255,0.6)', padding: 8, borderRadius: 4, border: '1px solid rgba(0,0,0,0.05)' }}>
+                        <strong>Bản dịch (Transcript):</strong>
+                        <p style={{ margin: '4px 0 0 0', whiteSpace: 'pre-wrap', color: '#475569' }}>
+                          {moderationResult.transcript}
+                        </p>
+                      </div>
+
+                      {moderationResult.action === 'REJECT' && (
+                        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                           <button className="pe-confirm-delete" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => {
+                             setSelectedRequest(null);
+                             handleQuickReject(selectedRequest.id, "Vi phạm tiêu chuẩn cộng đồng (Phát hiện bởi AI)");
+                           }}>
+                             <XCircle size={14} /> Từ chối tự động
+                           </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="ops-modal-foot">
