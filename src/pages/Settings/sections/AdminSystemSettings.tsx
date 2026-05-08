@@ -31,6 +31,7 @@ import {
   type AzuraCastHealthResult,
 } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
+import { useConfirm } from "../../../context/ConfirmContext";
 import "./AdminSystemSettings.css";
 
 type Tab = "ai" | "streaming";
@@ -45,6 +46,7 @@ function AIModelSection() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [apiKeyError, setApiKeyError] = useState("");
+  const { confirm } = useConfirm();
 
   const loadConfig = useCallback(async () => {
     setLoadingConfig(true);
@@ -81,7 +83,8 @@ function AIModelSection() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Bạn có chắc muốn xóa cấu hình AI? Các tính năng AI sẽ ngừng hoạt động.")) return;
+    const confirmed = await confirm("Bạn có chắc muốn xóa cấu hình AI? Các tính năng AI sẽ ngừng hoạt động.");
+    if (!confirmed) return;
     setDeleting(true);
     try {
       await deleteGeminiConfig();
@@ -201,6 +204,7 @@ function StreamingServiceSection() {
   const [isActive, setIsActive] = useState(true);
   const [baseUrlError, setBaseUrlError] = useState("");
   const [apiKeyError, setApiKeyError] = useState("");
+  const { confirm } = useConfirm();
 
   const loadConfig = useCallback(async () => {
     setLoadingConfig(true);
@@ -272,7 +276,8 @@ function StreamingServiceSection() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Bạn có chắc muốn xóa cấu hình? Hệ thống sẽ không thể kết nối streaming.")) return;
+    const confirmed = await confirm("Bạn có chắc muốn xóa cấu hình? Hệ thống sẽ không thể kết nối streaming.");
+    if (!confirmed) return;
     setDeleting(true);
     try {
       await deleteAzuraCastConfig();

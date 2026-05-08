@@ -22,6 +22,7 @@ import type { Comment } from "../../types/comment";
 import ShareCard from "./ShareCard";
 import type { ShareCardData } from "./ShareCard";
 import { getMoodLabel } from "../../types/forum";
+import { useConfirm } from "../../context/ConfirmContext";
 import "./CommentModal.css";
 
 /* ── Reaction config ── */
@@ -429,6 +430,7 @@ export default function CommentModal({
   post: CommentModalPost;
   onClose: () => void;
 }) {
+  const { confirm } = useConfirm();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -539,7 +541,8 @@ export default function CommentModal({
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Xoá bình luận này?")) return;
+    const confirmed = await confirm("Xoá bình luận này?");
+    if (!confirmed) return;
     try {
       await commentService.deleteComment(id);
       setComments((prev) => removeInTree(prev, id));

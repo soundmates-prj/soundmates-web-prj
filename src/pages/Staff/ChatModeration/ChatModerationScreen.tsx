@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, AlertTriangle, Trash2, Search, RefreshCw, Clock, User } from 'lucide-react';
 import { liveHubService, type ChatMessage } from '../../../services/liveHubService';
 import { showSuccess, showError } from '../../../components/common/toastUtils';
+import { useConfirm } from '../../../context/ConfirmContext';
 import './ChatModerationScreen.css';
 
 interface FlaggedMessage {
@@ -16,6 +17,7 @@ interface FlaggedMessage {
 }
 
 export function ChatModerationScreen() {
+  const { confirm } = useConfirm();
   const [messages, setMessages] = useState<FlaggedMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,8 +60,8 @@ export function ChatModerationScreen() {
   };
 
   const handleBan = async (msg: FlaggedMessage) => {
-    const confirm = window.confirm(`Ban user "${msg.username}"? Hành động này không thể hoàn tác.`);
-    if (!confirm) return;
+    const confirmed = await confirm(`Ban user "${msg.username}"? Hành động này không thể hoàn tác.`);
+    if (!confirmed) return;
     setActionLoading(msg.id);
     // TODO: call banUser API
     await new Promise(r => setTimeout(r, 500));

@@ -5,6 +5,7 @@ import audioService from '../../services/audioService';
 import podcastService from '../../services/podcastService';
 import type { Script, GenerateScriptRequest, ScriptAudio } from '../../types/podcast';
 import { showSuccess, showError } from '../../components/common/toastUtils';
+import { useConfirm } from '../../context/ConfirmContext';
 import api from '../../services/axios';
 import './ScriptGenerateForm.css';
 
@@ -12,6 +13,7 @@ type CreateMode = 'ai' | 'manual';
 type TabId = 'create' | 'scripts' | 'audios';
 
 export function ScriptGenerateForm() {
+  const { confirm } = useConfirm();
   const [activeTab, setActiveTab] = useState<TabId>('create');
 
   // Mode: AI generation or manual writing
@@ -98,7 +100,8 @@ export function ScriptGenerateForm() {
   };
 
   const handleDeleteScript = async (scriptId: string) => {
-    if (!window.confirm('Xóa script này? Hành động này không thể hoàn tác.')) return;
+    const confirmed = await confirm('Xóa script này? Hành động này không thể hoàn tác.');
+    if (!confirmed) return;
     setDeletingScriptId(scriptId);
     try {
       await podcastService.deleteScript(scriptId);
@@ -142,7 +145,8 @@ export function ScriptGenerateForm() {
   };
 
   const handleDeleteAudio = async (audioId: string) => {
-    if (!window.confirm('Xóa audio này khỏi thư viện?')) return;
+    const confirmed = await confirm('Xóa audio này khỏi thư viện?');
+    if (!confirmed) return;
     setDeletingAudioId(audioId);
     try {
       await podcastService.deleteAudio(audioId);

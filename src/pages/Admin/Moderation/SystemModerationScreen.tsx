@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Flag, Search, AlertTriangle, CheckCircle, XCircle, Clock, Eye, Ban } from 'lucide-react';
 import { showSuccess } from '../../../components/common/toastUtils';
+import { useConfirm } from '../../../context/ConfirmContext';
 import './SystemModerationScreen.css';
 
 interface Report {
@@ -39,6 +40,7 @@ const typeLabels: Record<Report['type'], string> = {
 };
 
 export function SystemModerationScreen() {
+  const { confirm } = useConfirm();
   const [reports, setReports] = useState<Report[]>(mockReports);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
@@ -75,7 +77,8 @@ export function SystemModerationScreen() {
   };
 
   const handleSuspend = async (report: Report) => {
-    if (!window.confirm(`Tạm ngưng tài khoản "${report.reportedUser}" trong 7 ngày?`)) return;
+    const confirmed = await confirm(`Tạm ngưng tài khoản "${report.reportedUser}" trong 7 ngày?`);
+    if (!confirmed) return;
     setActionLoading(report.id);
     await new Promise(r => setTimeout(r, 500));
     setReports(prev => prev.filter(r => r.id !== report.id));
@@ -84,7 +87,8 @@ export function SystemModerationScreen() {
   };
 
   const handleBan = async (report: Report) => {
-    if (!window.confirm(`BAN VĨNH VIỄN "${report.reportedUser}"? Hành động này không thể hoàn tác.`)) return;
+    const confirmed = await confirm(`BAN VĨNH VIỄN "${report.reportedUser}"? Hành động này không thể hoàn tác.`);
+    if (!confirmed) return;
     setActionLoading(report.id);
     await new Promise(r => setTimeout(r, 500));
     setReports(prev => prev.filter(r => r.id !== report.id));

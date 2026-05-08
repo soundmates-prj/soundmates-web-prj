@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { PlayerProvider } from "./context/PlayerContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { LiveSessionProvider } from "./context/LiveSessionContext";
+import { ConfirmProvider } from "./context/ConfirmContext";
 import Home from "./pages/Home/Home";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
@@ -87,8 +88,9 @@ function App() {
     <ThemeProvider>
       <PlayerProvider>
         <LiveSessionProvider>
-          <ToastProvider />
-          <Routes>
+          <ConfirmProvider>
+            <ToastProvider />
+            <Routes>
             {/* ── Auth Routes (no layout) ── */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -250,6 +252,7 @@ function App() {
               <Route path="/faq" element={<FAQPage />} />
             </Route>
           </Routes>
+          </ConfirmProvider>
         </LiveSessionProvider>
       </PlayerProvider>
     </ThemeProvider>

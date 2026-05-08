@@ -20,6 +20,7 @@ import type {
   LiveSessionResult,
 } from "../../../services/liveSessionApiService";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
+import { useConfirm } from "../../../context/ConfirmContext";
 import "./ScheduleScreen.css";
 
 // DaysOfWeek flags enum — must match backend LiveSessionService.Domain.Enums.DaysOfWeek
@@ -41,6 +42,7 @@ export function ScheduleScreen() {
   const [schedules, setSchedules] = useState<SessionScheduleResult[]>([]);
   const [sessions, setSessions] = useState<LiveSessionResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const { confirm } = useConfirm();
 
   // ── Create modal ──
   const [showModal, setShowModal] = useState(false);
@@ -197,7 +199,7 @@ export function ScheduleScreen() {
 
   /* ── DELETE ── */
   const handleDelete = async (id: string) => {
-    const confirmed = window.confirm("Bạn có chắc muốn xoá lịch này không?");
+    const confirmed = await confirm("Bạn có chắc muốn xoá lịch này không?");
     if (!confirmed) return;
 
     setDeletingId(id);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Settings2, Radio, Bot, Bell, RefreshCw, CheckCircle, AlertCircle, Plus, X, Trash2 } from 'lucide-react';
 import { showSuccess, showError } from '../../../components/common/toastUtils';
+import { useConfirm } from '../../../context/ConfirmContext';
 import './SystemConfigScreen.css';
 
 type Tab = 'streaming' | 'ai' | 'announcements';
@@ -18,6 +19,7 @@ const mockAnnouncements: Announcement[] = [
 ];
 
 export function SystemConfigScreen() {
+  const { confirm } = useConfirm();
   const [activeTab, setActiveTab] = useState<Tab>('streaming');
   const [saving, setSaving] = useState(false);
 
@@ -78,7 +80,8 @@ export function SystemConfigScreen() {
   };
 
   const handleDeleteAnnouncement = async (id: string) => {
-    if (!window.confirm("Xoá thông báo này?")) return;
+    const confirmed = await confirm("Xoá thông báo này?");
+    if (!confirmed) return;
     setAnnouncements(prev => prev.filter(a => a.id !== id));
     showSuccess("Đã xoá", "Thông báo đã được xoá");
   };

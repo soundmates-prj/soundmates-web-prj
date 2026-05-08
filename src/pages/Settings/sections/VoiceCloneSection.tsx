@@ -23,6 +23,7 @@ import {
 
 import { voiceCloneService, type ClonedVoice, type SubscriptionPlan } from "../../../services/voiceCloneService";
 import { showToast } from "../../../utils/toast";
+import { useConfirm } from "../../../context/ConfirmContext";
 import podcastService from "../../../services/podcastService";
 import audioService from "../../../services/audioService";
 import api from "../../../services/axios";
@@ -265,6 +266,7 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
   const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const { confirm } = useConfirm();
 
   // Upload form
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -550,7 +552,8 @@ export default function VoiceCloneSection({ onUpgradeClick }: VoiceCloneSectionP
   };
 
   const handleDeleteAudio = async (audioId: string) => {
-    if (!window.confirm('Xóa audio này khỏi thư viện?')) return;
+    const confirmed = await confirm('Xóa audio này khỏi thư viện?');
+    if (!confirmed) return;
     setDeletingAudioId(audioId);
     try {
       await podcastService.deleteAudio(audioId);

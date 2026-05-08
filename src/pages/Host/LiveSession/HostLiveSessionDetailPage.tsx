@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Pause, Play, RefreshCw, Send, Square, Trash2, Music, X, Mic2, MicOff, SkipForward } from "lucide-react";
+import { ArrowLeft, Play, RefreshCw, Send, Square, Trash2, Music, X, Mic2, MicOff, SkipForward } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   liveSessionApiService,
@@ -8,15 +8,15 @@ import {
   type SessionScheduleResult,
   type SongRequestResult,
   type StationNowPlayingResult,
-  type LiveSessionQueueResult,
   type NowPlayingTrackResult,
 } from "../../../services/liveSessionApiService";
-import { showError, showSuccess } from "../../../components/common/toastUtils";
+import { showError } from "../../../components/common/toastUtils";
+import { useConfirm } from "../../../context/ConfirmContext";
 import { LOCALE_VIETNAMESE } from "../../Admin/LiveOps/liveSessionConstants";
 import { getLiveListenersCount } from "../../../utils/listenerUtils";
 import { liveHubService } from "../../../services/liveHubService";
-import NotificationButton from "../../../components/layout/NotificationButton";
 import "./HostLiveSession.css";
+import showToast from "../../../utils/toast";
 
 interface DisplayChat {
   id: string;
@@ -82,6 +82,7 @@ const getCurrentUserAvatar = () => {
 
 export default function HostLiveSessionDetailPage() {
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const { sessionId = "" } = useParams();
   const isMountedRef = useRef(true);
   const [session, setSession] = useState<LiveSessionResult | null>(null);
@@ -190,12 +191,12 @@ export default function HostLiveSessionDetailPage() {
     const interval = setInterval(() => {
       if (sessionId) {
         liveSessionApiService.getNowPlaying(sessionId)
-          .then((data) => {
+          .then((data: any) => {
             if (isMountedRef.current) setNowPlaying(data);
           })
           .catch(() => { });
         liveSessionApiService.getQueue(sessionId)
-          .then((data) => {
+          .then((data: any) => {
             if (isMountedRef.current) setQueue(data ? data.queue : []);
           })
           .catch(() => { });
@@ -265,22 +266,22 @@ export default function HostLiveSessionDetailPage() {
 
     const offListenersUpdated = liveHubService.onListenersUpdated((sid, count) => {
       if (sid === sessionId) {
-        setNowPlaying((prev) => prev ? { ...prev, totalListeners: count } : prev);
-        setSession((prev) => prev ? { ...prev, listenersCount: count, totalListeners: count } : prev);
+        setNowPlaying((prev: any) => prev ? { ...prev, totalListeners: count } : prev);
+        setSession((prev: any) => prev ? { ...prev, listenersCount: count, totalListeners: count } : prev);
       }
     });
 
     const offUserJoined = liveHubService.onUserJoined((sid, uid, count) => {
       if (sid === sessionId) {
-        setNowPlaying((prev) => prev ? { ...prev, totalListeners: count } : prev);
-        setSession((prev) => prev ? { ...prev, listenersCount: count, totalListeners: count } : prev);
+        setNowPlaying((prev: any) => prev ? { ...prev, totalListeners: count } : prev);
+        setSession((prev: any) => prev ? { ...prev, listenersCount: count, totalListeners: count } : prev);
       }
     });
 
     const offUserLeft = liveHubService.onUserLeft((sid, uid, count) => {
       if (sid === sessionId) {
-        setNowPlaying((prev) => prev ? { ...prev, totalListeners: count } : prev);
-        setSession((prev) => prev ? { ...prev, listenersCount: count, totalListeners: count } : prev);
+        setNowPlaying((prev: any) => prev ? { ...prev, totalListeners: count } : prev);
+        setSession((prev: any) => prev ? { ...prev, listenersCount: count, totalListeners: count } : prev);
       }
     });
 
@@ -395,12 +396,10 @@ export default function HostLiveSessionDetailPage() {
 
       try {
         await sessionActions[type](sessionId);
-        showSuccess(`Đã ${type} session`);
+        showToast.success(`Đã ${type} session`);
         await loadData();
       } catch (error: any) {
-        const msg =
-          error?.response?.data?.message || `Không thể ${type} session`;
-        showError("Thao tác thất bại", msg);
+        showToast.error(error?.response?.data?.message || "Thao tác thất bại");
       }
     },
     [loadData, sessionActions, sessionId],
@@ -425,13 +424,13 @@ export default function HostLiveSessionDetailPage() {
           action: "approve",
         });
         if (result.status?.toUpperCase() === "REJECTED") {
-          showError("Không thể duyệt", result.rejectReason || "Bị từ chối bởi trạm phát");
+          showToast.error(result.rejectReason || "Bị từ chối bởi trạm phát");
         } else {
-          showSuccess("Đã duyệt yêu cầu");
+          showToast.success("Đã duyệt yêu cầu");
         }
         await loadData();
       } catch (error: any) {
-        showError("Duyệt thất bại", error?.response?.data?.message || "Lỗi không xác định");
+        showToast.error(error?.response?.data?.message || "Duyệt thất bại");
       }
     },
     [loadData],
@@ -440,7 +439,7 @@ export default function HostLiveSessionDetailPage() {
   const handleReject = useCallback(async () => {
     if (!rejectingRequestId) return;
     if (!rejectReason.trim()) {
-      showError("Vui lòng nhập lý do từ chối");
+      showToast.error("Vui lòng nhập lý do từ chối");
       return;
     }
     try {
@@ -448,11 +447,11 @@ export default function HostLiveSessionDetailPage() {
         action: "reject",
         rejectReason: rejectReason.trim(),
       });
-      showSuccess("Đã từ chối yêu cầu");
+      showToast.success("Đã từ chối yêu cầu");
       closeRejectModal();
       await loadData();
     } catch {
-      showError("Từ chối thất bại");
+      showToast.error("Từ chối thất bại");
     }
   }, [rejectingRequestId, rejectReason, closeRejectModal, loadData]);
 
@@ -476,12 +475,13 @@ export default function HostLiveSessionDetailPage() {
 
   const handleRestartSession = async () => {
     if (!sessionId) return;
-    if (!window.confirm("Kết nối của tất cả người nghe sẽ bị ngắt trong khoảng 10 giây. Bạn có chắc chắn muốn khởi động lại trạm phát sóng?")) return;
+    const confirmed = await confirm("Kết nối của tất cả người nghe sẽ bị ngắt trong khoảng 10 giây. Bạn có chắc chắn muốn khởi động lại trạm phát sóng?");
+    if (!confirmed) return;
     try {
       await liveSessionApiService.restartLiveSession(sessionId);
-      showSuccess("Đã yêu cầu Restart Broadcasting");
+      showToast.success("Đã yêu cầu Restart Broadcasting");
     } catch {
-      showError("Restart thất bại");
+      showToast.error("Restart thất bại");
     }
   };
 
@@ -489,9 +489,9 @@ export default function HostLiveSessionDetailPage() {
     if (!sessionId) return;
     try {
       await liveSessionApiService.reloadLiveSession(sessionId);
-      showSuccess("Đã yêu cầu Reload Config");
+      showToast.success("Đã yêu cầu Reload Config");
     } catch {
-      showError("Reload thất bại");
+      showToast.error("Reload thất bại");
     }
   };
 
@@ -517,13 +517,14 @@ export default function HostLiveSessionDetailPage() {
       );
       setChatInput("");
     } catch {
-      showError("Lỗi", "Không thể gửi đoạn trò chuyện");
+      showToast.error("Không thể gửi đoạn trò chuyện");
     }
   };
 
   const handleDeleteChat = async (chatId: string) => {
     if (!sessionId) return;
-    if (!window.confirm("Bạn muốn xóa đoạn trò chuyện này?")) return;
+    const confirmed = await confirm("Bạn muốn xóa đoạn trò chuyện này?");
+    if (!confirmed) return;
     const userId = getCurrentUserId();
     console.log("[HostLiveSessionDetail] Attempting to DeleteChat:", {
       sessionId,
@@ -534,10 +535,10 @@ export default function HostLiveSessionDetailPage() {
       await liveHubService.deleteChat(sessionId, chatId, userId, "Host");
       const deletedName =
         chats.find((c) => c.id === chatId)?.userName || "Ẩn danh";
-      showSuccess(`Đã yêu cầu xóa đoạn trò chuyện của ${deletedName}`);
+      showToast.success(`Đã yêu cầu xóa đoạn trò chuyện của ${deletedName}`);
     } catch (err) {
       console.error("[HostLiveSessionDetail] DeleteChat error:", err);
-      showError("Lỗi", "Không thể xóa đoạn trò chuyện. Vui lòng xem Console.");
+      showToast.error("Không thể xóa đoạn trò chuyện. Vui lòng thử lại sau.");
     }
   };
 
@@ -556,7 +557,7 @@ export default function HostLiveSessionDetailPage() {
       try {
         await liveHubService.stopMicrophone(sessionId);
       } catch { /* ignore disconnect errors */ }
-      showSuccess("Đã tắt mic");
+      showToast.success("Đã tắt mic");
     } else {
       // ── Bật mic ──
       setMicError(null);
@@ -574,14 +575,14 @@ export default function HostLiveSessionDetailPage() {
         isMicActiveRef.current = true;         // Cập nhật ref NGAY LẬP TỨC trước setState
         await liveHubService.startMicrophone(sessionId, "");
         setIsMicActive(true);
-        showSuccess("Mic đang bật — Listeners có thể nghe bạn");
+        showToast.success("Mic đang bật — Listeners có thể nghe bạn");
       } catch (err: any) {
         isMicActiveRef.current = false;        // rollback nếu lỗi
         const msg = err?.name === "NotAllowedError"
           ? "Trình duyệt chưa cấp quyền micro. Vui lòng cho phép trong cài đặt."
           : `Không thể bật mic: ${err?.message ?? err}`;
         setMicError(msg);
-        showError("Lỗi tắt/mở mic", msg);
+        showToast.error(msg);
       }
     }
   }, [isMicActive, sessionId]);
@@ -825,15 +826,15 @@ export default function HostLiveSessionDetailPage() {
                       className="host-live-btn-skip"
                       title="Chuyển sang bài tiếp theo (Bỏ qua bài này)"
                       onClick={async () => {
-                        const confirmSkip = window.confirm("Bạn có chắc chắn muốn bỏ qua (Skip) bài hát này không?");
+                        const confirmSkip = await confirm("Bạn có chắc chắn muốn bỏ qua (Skip) bài hát này không?");
                         if (!confirmSkip) return;
 
                         try {
                           await liveSessionApiService.skipTrack(sessionId);
-                          showSuccess("Yêu cầu skip bài đã được gửi. Đang đợi hệ thống xử lý...");
+                          showToast.success("Yêu cầu skip bài đã được gửi. Đang đợi hệ thống xử lý...");
                         } catch (err) {
                           console.error("Lỗi khi skip bài", err);
-                          showError("Không thể qua bài lúc này. Vui lòng thử lại sau.");
+                          showToast.error("Không thể qua bài lúc này. Vui lòng thử lại sau.");
                         }
                       }}
                     >
@@ -917,8 +918,8 @@ export default function HostLiveSessionDetailPage() {
                 <div key={item.id} className="host-live-track-item host-live-request-item" onClick={() => openViewRequestModal(item)}>
                   <div style={{ flex: 1, cursor: "pointer", minWidth: 0 }}>
                     <div className="host-live-track-title" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>{item.songTitle}</div>
-                    <div className="host-live-track-subtitle" style={{ 
-                      fontStyle: item.message ? "normal" : "italic", 
+                    <div className="host-live-track-subtitle" style={{
+                      fontStyle: item.message ? "normal" : "italic",
                       color: item.message ? "inherit" : "var(--neutral-400)",
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
@@ -1116,11 +1117,11 @@ export default function HostLiveSessionDetailPage() {
               </div>
               <div>
                 <div style={{ fontSize: 12, color: "var(--neutral-500)", marginBottom: 6, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>Thư từ người gửi</div>
-                <div style={{ 
-                  background: "var(--layer-2)", 
-                  padding: "16px 20px", 
-                  borderRadius: 12, 
-                  fontSize: 15, 
+                <div style={{
+                  background: "var(--layer-2)",
+                  padding: "16px 20px",
+                  borderRadius: 12,
+                  fontSize: 15,
                   lineHeight: 1.6,
                   fontStyle: viewingRequest.message ? "normal" : "italic",
                   color: viewingRequest.message ? "var(--text-1)" : "var(--neutral-400)",
