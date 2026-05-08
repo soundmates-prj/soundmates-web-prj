@@ -741,6 +741,21 @@ function CreatePodcastRequestModal({
   const [podcastType, setPodcastType] = useState("");
   const [isPaid, setIsPaid] = useState(false);
   const [price, setPrice] = useState(0);
+  const [payoutPercentage, setPayoutPercentage] = useState(80);
+
+  useEffect(() => {
+    let isMounted = true;
+    api.get("/settings/PAYOUT_PERCENTAGE")
+      .then((res) => {
+        if (isMounted && res.data?.data?.value) {
+          setPayoutPercentage(Number(res.data.data.value));
+        }
+      })
+      .catch(() => {
+        // ignore errors
+      });
+    return () => { isMounted = false; };
+  }, []);
 
   const [bannerUrl, setBannerUrl] = useState("");
   const [bannerFileName, setBannerFileName] = useState("");
@@ -1050,8 +1065,8 @@ function CreatePodcastRequestModal({
                 <AlertCircle size={14} className="pds-split-icon" />
                 <span>
                   <strong>Lưu ý:</strong> Khi có người mua, bạn sẽ nhận được{" "}
-                  <strong>80%</strong> doanh thu, hệ thống sẽ giữ lại{" "}
-                  <strong>20%</strong> phí nền tảng.
+                  <strong>{payoutPercentage}%</strong> doanh thu, hệ thống sẽ giữ lại{" "}
+                  <strong>{100 - payoutPercentage}%</strong> phí nền tảng.
                 </span>
               </div>
             </>
