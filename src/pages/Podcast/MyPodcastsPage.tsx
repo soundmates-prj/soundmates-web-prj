@@ -368,10 +368,24 @@ function MyPodcastCard({
       <div className="mypod-card-body">
         <div className="mypod-card-top">
           <h3 className="mypod-card-title">{podcast.title}</h3>
-          <span className="mypod-badge mypod-badge--good">
-            <CheckCircle2 size={12} />
-            Đã xuất bản
-          </span>
+          {podcast.status === "Approved" && (
+            <span className="mypod-badge mypod-badge--good">
+              <CheckCircle2 size={12} />
+              Đã xuất bản
+            </span>
+          )}
+          {podcast.status === "Pending" && (
+            <span className="mypod-badge mypod-badge--pending">
+              <CheckCircle2 size={12} />
+              Đang chờ duyệt
+            </span>
+          )}
+          {podcast.status === "Rejected" && (
+            <span className="mypod-badge mypod-badge--reject">
+              <XCircle size={12} />
+              Đã từ chối
+            </span>
+          )}
         </div>
 
         <p className="mypod-card-desc">
