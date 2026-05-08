@@ -184,6 +184,15 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
+.sp-cal-day.has-event {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+[data-theme='dark'] .sp-cal-day.has-event {
+  color: #f1f5f9;
+}
+
 .sp-cal-day.today {
   background: rgba(85, 197, 241, 0.1);
   color: var(--primary-500);
@@ -197,26 +206,17 @@
 
 .sp-cal-day.selected {
   background: var(--primary-500);
-  color: #fff;
+  color: #fff !important;
   font-weight: 800;
 }
 
 [data-theme='dark'] .sp-cal-day.selected {
   background: #0ea5e9;
-  color: #fff;
+  color: #fff !important;
 }
 
 .sp-cal-day.selected .sp-cal-dot {
   background: #fff;
-}
-
-.sp-cal-day.has-event {
-  color: var(--text-primary);
-  font-weight: 700;
-}
-
-[data-theme='dark'] .sp-cal-day.has-event {
-  color: #f1f5f9;
 }
 
 .sp-cal-dot {

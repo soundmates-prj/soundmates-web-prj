@@ -237,19 +237,17 @@ function PostCard({
           }}>
             <MessageCircle size={15} /> Bình luận
           </button>
-          <button
-            className="fp-action-btn"
-            onClick={handleOpenReportModal}
-            disabled={isReporting || isOwnPost}
-            title={
-              isOwnPost
-                ? "Bạn không thể tự báo cáo bài viết của mình"
-                : "Báo cáo bài viết"
-            }
-          >
-            <Flag size={15} />{" "}
-            {isOwnPost ? "Không thể báo cáo" : isReporting ? "Đang gửi..." : "Báo cáo"}
-          </button>
+          {!isOwnPost && (
+            <button
+              className="fp-action-btn"
+              onClick={handleOpenReportModal}
+              disabled={isReporting}
+              title="Báo cáo bài viết"
+            >
+              <Flag size={15} />{" "}
+              {isReporting ? "Đang gửi..." : "Báo cáo"}
+            </button>
+          )}
           {/* <button className="fp-action-btn">
             <Share2 size={15} /> Chia sẻ
           </button> */}
