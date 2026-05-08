@@ -12,7 +12,12 @@ import {
   User,
   Building2,
   CreditCard,
+  Percent,
+  Check,
+  Edit2,
+  Loader2,
 } from "lucide-react";
+import showToast from "../../../utils/toast";
 import api from "../../../services/axios";
 import "../../../pages/Admin/SharedDashboard.css";
 import "./TransactionsPage.css";
@@ -37,7 +42,42 @@ export default function PayoutScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [payoutPercentage, setPayoutPercentage] = useState<number>(80);
+  const [editingPercent, setEditingPercent] = useState<boolean>(false);
+  const [tempPercent, setTempPercent] = useState<number>(80);
+  const [isSavingPercent, setIsSavingPercent] = useState(false);
   const isMountedRef = useRef(true);
+
+  const fetchPayoutPercent = useCallback(async () => {
+    try {
+      const res = await api.get("/settings/PAYOUT_PERCENTAGE");
+      if (res.data?.data?.value && isMountedRef.current) {
+        setPayoutPercentage(Number(res.data.data.value));
+        setTempPercent(Number(res.data.data.value));
+      }
+    } catch {
+      // ignore if setting not found
+    }
+  }, []);
+
+  const savePayoutPercent = async () => {
+    if (tempPercent <= 0 || tempPercent > 100) {
+      showToast.error("Tỷ lệ phần trăm phải từ 1 đến 100");
+      return;
+    }
+    setIsSavingPercent(true);
+    try {
+      await api.patch("/settings/PAYOUT_PERCENTAGE", { value: tempPercent.toString() });
+      setPayoutPercentage(tempPercent);
+      setEditingPercent(false);
+      showToast.success("Cập nhật tỷ lệ thành công");
+    } catch (err: any) {
+      console.error("Failed to save payout percentage", err);
+      showToast.error("Không thể cập nhật tỷ lệ");
+    } finally {
+      if (isMountedRef.current) setIsSavingPercent(false);
+    }
+  };
 
   const fetchPayouts = useCallback(async () => {
     setLoading(true);
@@ -63,10 +103,11 @@ export default function PayoutScreen() {
   useEffect(() => {
     isMountedRef.current = true;
     void fetchPayouts();
+    void fetchPayoutPercent();
     return () => {
       isMountedRef.current = false;
     };
-  }, [fetchPayouts]);
+  }, [fetchPayouts, fetchPayoutPercent]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("vi-VN", {
@@ -128,7 +169,64 @@ export default function PayoutScreen() {
           <h1>Quản lý Payout</h1>
           <p>Danh sách các khoản thanh toán đến tác giả podcast</p>
         </div>
-        <div className="lm-header-actions">
+        <div className="lm-header-actions" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--neutral-50)", padding: "6px 12px", borderRadius: 10, border: "1px solid var(--neutral-200)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--neutral-700)" }}>
+              <Percent size={16} />
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Tỷ lệ tác giả nhận:</span>
+            </div>
+            
+            {editingPercent ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={tempPercent}
+                  onChange={(e) => setTempPercent(Number(e.target.value))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !isSavingPercent) {
+                      savePayoutPercent();
+                    } else if (e.key === "Escape") {
+                      setTempPercent(payoutPercentage);
+                      setEditingPercent(false);
+                    }
+                  }}
+                  disabled={isSavingPercent}
+                  autoFocus
+                  style={{
+                    width: 50,
+                    padding: "4px 8px",
+                    border: "1px solid var(--primary-main)",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    textAlign: "center",
+                    outline: "none",
+                    fontWeight: 600,
+                  }}
+                />
+                <span style={{ fontSize: 13, color: "var(--neutral-500)", fontWeight: 500 }}>%</span>
+                <button 
+                  onClick={savePayoutPercent} 
+                  disabled={isSavingPercent}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 6, background: "var(--primary-main)", color: "#fff", border: "none", cursor: isSavingPercent ? "not-allowed" : "pointer", marginLeft: 4 }}
+                >
+                  {isSavingPercent ? <Loader2 size={14} className="lm-spin" /> : <Check size={14} />}
+                </button>
+              </div>
+            ) : (
+              <div 
+                style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "2px 6px", borderRadius: 6, transition: "background 0.2s" }}
+                className="hover-bg-neutral-100"
+                onClick={() => { setTempPercent(payoutPercentage); setEditingPercent(true); }}
+              >
+                <span style={{ fontSize: 15, fontWeight: 700, color: "var(--primary-main)" }}>
+                  {payoutPercentage}%
+                </span>
+                <Edit2 size={12} style={{ color: "var(--neutral-400)" }} />
+              </div>
+            )}
+          </div>
           <button className="lm-btn lm-btn--outline" onClick={fetchPayouts}>
             <RefreshCw size={15} />
             Làm mới

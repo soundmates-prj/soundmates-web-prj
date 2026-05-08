@@ -173,7 +173,7 @@ export default function PodcastPage() {
   const loadPodcasts = async () => {
     setLoadingPodcasts(true);
     try {
-      const data = await liveSessionApiService.getMyPodcasts();
+      const data = await liveSessionApiService.getPodcasts();
       setPodcasts(data);
     } catch {
       showError("Lỗi", "Không thể tải danh sách podcast");
@@ -496,7 +496,7 @@ export default function PodcastPage() {
               type="button"
             >
               <Mic2 size={15} />
-              Podcast của admin
+              Tất cả podcast
               <span className="pod-tab-count">{podcasts.length}</span>
             </button>
 

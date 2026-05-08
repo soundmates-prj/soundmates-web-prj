@@ -11,7 +11,7 @@ type SearchTab = "track" | "artist" | "album" | "playlist" | "user" | "blog" | "
 interface SpotifyTrack { id: string; name: string; artists: { name: string }[]; album: { name: string; images: { url: string }[]; external_urls?: { spotify?: string } }; external_urls?: { spotify?: string } }
 interface SpotifyArtist { id: string; name: string; images: { url: string }[]; followers?: { total: number }; genres?: string[]; external_urls?: { spotify?: string } }
 interface SpotifyAlbum { id: string; name: string; artists: { name: string }[]; images: { url: string }[]; release_date?: string; total_tracks?: number; external_urls?: { spotify?: string } }
-interface SearchUser { id: string; username: string; email: string; firstName?: string; lastName?: string; roleName?: string; profileImageUrl?: string; }
+interface SearchUser { id: string; username: string; email: string; firstName?: string; lastName?: string; roleName?: string; avatarUrl?: string; }
 interface SearchBlog { id: string; title: string; contentText?: string; authorName?: string; thumbnailUrl?: string; createdAt?: string; status?: string; }
 interface SearchSchedule { id: string; title?: string; status?: string; startDate?: string; liveSession?: { sessionName?: string; thumbnailUrl?: string; }; }
 
@@ -124,7 +124,7 @@ function UserRow({ u, onNavigate }: { u: SearchUser; onNavigate: (path: string) 
   const name = [u.lastName, u.firstName].filter(Boolean).join(" ") || u.username || u.email;
   return (
     <div className="sb-row" onClick={() => { onNavigate(`/profile/${u.id}`); onCloseRef.current?.(); }}>
-      <ResultThumb src={u.profileImageUrl} alt={name} fallback={Users} rounded />
+      <ResultThumb src={u.avatarUrl} alt={name} fallback={Users} rounded />
       <div className="sb-row-info">
         <span className="sb-row-title">{name}</span>
         <span className="sb-row-sub">@{u.username}</span>

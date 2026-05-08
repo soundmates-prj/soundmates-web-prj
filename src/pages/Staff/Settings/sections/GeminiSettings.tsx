@@ -15,6 +15,7 @@ import {
   type GeminiConfigResponse,
 } from "../../../../services/geminiConfigService";
 import { showError, showSuccess } from "../../../../components/common/toastUtils";
+import { useConfirm } from "../../../../context/ConfirmContext";
 import "../../../Settings/sections/AdminSystemSettings.css";
 
 export default function GeminiSettings() {
@@ -23,6 +24,7 @@ export default function GeminiSettings() {
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { confirm } = useConfirm();
 
   // Form state
   const [apiKeyInput, setApiKeyInput] = useState("");
@@ -92,7 +94,7 @@ export default function GeminiSettings() {
 
   // ── Delete ────────────────────────────────────────────────────
   const handleDelete = async () => {
-    const confirmed = window.confirm(
+    const confirmed = await confirm(
       "Bạn có chắc muốn xóa cấu hình Gemini? AI features sẽ không hoạt động cho đến khi cấu hình lại."
     );
     if (!confirmed) return;

@@ -23,9 +23,11 @@ import {
   type AzuraCastConfigResponse,
 } from "../../../services/azuracastConfigService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
+import { useConfirm } from "../../../context/ConfirmContext";
 import "./LiveOps.css";
 
 export default function StreamingServicePage() {
+  const { confirm } = useConfirm();
   // ── State ─────────────────────────────────────────────────────
   const [config, setConfig] = useState<AzuraCastConfigResponse | null>(null);
   const [health, setHealth] = useState<AzuraCastHealthResult | null>(null);
@@ -132,7 +134,7 @@ export default function StreamingServicePage() {
 
   // ── Delete ────────────────────────────────────────────────────
   const handleDelete = async () => {
-    const confirmed = window.confirm(
+    const confirmed = await confirm(
       "Bạn có chắc muốn xóa cấu hình? Hệ thống sẽ không thể kết nối streaming cho đến khi cấu hình lại."
     );
     if (!confirmed) return;

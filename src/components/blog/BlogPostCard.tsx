@@ -14,6 +14,7 @@ import ShareCard from "./ShareCard";
 import CommentModal from "./CommentModal";
 import type { CommentModalPost } from "./CommentModal";
 import ReactionButton, { ReactionSummary } from "./ReactionButton";
+import { useConfirm } from "../../context/ConfirmContext";
 import "./BlogPostCard.css";
 
 interface BlogPostCardProps {
@@ -35,6 +36,7 @@ export default function BlogPostCard({
   onDelete,
   isOwnProfile = true,
 }: BlogPostCardProps) {
+  const { confirm } = useConfirm();
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -51,7 +53,8 @@ export default function BlogPostCard({
   }, [menuOpen]);
 
   const handleDelete = async () => {
-    if (!window.confirm("Xoá bài đăng này?")) return;
+    const confirmed = await confirm("Xoá bài đăng này?");
+    if (!confirmed) return;
     setDeleting(true);
     try {
       await api.delete(`posts/${post.id}`);
@@ -172,9 +175,6 @@ export default function BlogPostCard({
           />
           <button className="post-btn" onClick={() => setShowComments(true)}>
             <MessageCircle size={14} /> Bình luận
-          </button>
-          <button className="post-btn">
-            <Share2 size={14} /> Chia sẻ
           </button>
         </div>
       </div>

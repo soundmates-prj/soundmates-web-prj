@@ -20,6 +20,7 @@ import type {
   BulkUploadMusicResult,
 } from "../../../services/liveSessionApiService";
 import { showError, showSuccess } from "../../../components/common/toastUtils";
+import { useConfirm } from "../../../context/ConfirmContext";
 import {
   ALLOWED_AUDIO_EXTENSIONS,
   ALLOWED_AUDIO_MIME_TYPES,
@@ -29,6 +30,7 @@ import {
 import "./MusicCatalogScreen.css";
 
 export function MusicCatalogScreen() {
+  const { confirm } = useConfirm();
   const [stations, setStations] = useState<StationResult[]>([]);
   const [selectedStationId, setSelectedStationId] = useState<string>("");
   const [loadingStations, setLoadingStations] = useState(false);
@@ -217,13 +219,10 @@ export function MusicCatalogScreen() {
   /* ── Delete a music item ── */
   const handleDeleteMusic = useCallback(
     async (musicId: string) => {
-      if (
-        !window.confirm(
-          "Bạn có chắc chắn muốn xóa bài hát này không? Hành động này không thể hoàn tác.",
-        )
-      ) {
-        return;
-      }
+      const confirmed = await confirm(
+        "Bạn có chắc chắn muốn xóa bài hát này không? Hành động này không thể hoàn tác.",
+      );
+      if (!confirmed) return;
       setDeletingId(musicId);
       try {
         await liveSessionApiService.deleteMusic(musicId);

@@ -18,6 +18,7 @@ import type {
   MusicResult,
 } from "../../../services/liveSessionApiService";
 import { showSuccess, showError } from "../../../components/common/toastUtils";
+import { useConfirm } from "../../../context/ConfirmContext";
 import "../StaffShared.css";
 import "./PlaylistsScreen.css";
 
@@ -31,6 +32,7 @@ const sortPlaylists = (playlists: PlaylistResult[]) => {
 };
 
 export function PlaylistsScreen() {
+  const { confirm } = useConfirm();
   const [stations, setStations] = useState<StationResult[]>([]);
   const [selectedStation, setSelectedStation] = useState<StationResult | null>(
     null,
@@ -215,13 +217,10 @@ export function PlaylistsScreen() {
   const handleDeletePlaylist = async () => {
     if (!selectedPlaylist || !selectedStation) return;
 
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xoá danh sách phát "${selectedPlaylist.playlistName}"?`,
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm(
+      `Bạn có chắc chắn muốn xoá danh sách phát "${selectedPlaylist.playlistName}"?`
+    );
+    if (!confirmed) return;
 
     try {
       await liveSessionApiService.deletePlaylist(selectedPlaylist.id);

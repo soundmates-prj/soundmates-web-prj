@@ -1,0 +1,119 @@
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  animation: confirmFadeIn 0.2s ease-out;
+}
+
+.confirm-modal {
+  background: var(--bg-card, #1e1e2d);
+  border: 1px solid var(--border-medium, #333);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  animation: confirmSlideUp 0.2s ease-out;
+}
+
+.confirm-modal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.confirm-modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.confirm-modal-icon.info {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.confirm-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary, #f8fafc);
+}
+
+.confirm-modal-body {
+  font-size: 0.95rem;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.confirm-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.confirm-modal-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-modal-btn-cancel {
+  background: transparent;
+  color: var(--text-secondary, #cbd5e1);
+  border: 1px solid var(--border-medium, #333);
+}
+
+.confirm-modal-btn-cancel:hover {
+  background: var(--bg-secondary, #2a2a3c);
+  color: var(--text-primary, #f8fafc);
+}
+
+.confirm-modal-btn-confirm {
+  background: #ef4444;
+  color: white;
+}
+
+.confirm-modal-btn-confirm:hover {
+  background: #dc2626;
+}
+
+.confirm-modal-btn-confirm.info {
+  background: #3b82f6;
+}
+
+.confirm-modal-btn-confirm.info:hover {
+  background: #2563eb;
+}
+
+@keyframes confirmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes confirmSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

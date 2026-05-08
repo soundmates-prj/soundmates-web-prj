@@ -190,7 +190,11 @@ export function PodcastRequestsScreen() {
 
               <div className="podcast-meta">
                 <div className="meta-item">
-                  <User size={14} />
+                  {request.authorInfo?.avatar ? (
+                    <img src={request.authorInfo.avatar} alt="Author avatar" style={{ width: 14, height: 14, borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <User size={14} />
+                  )}
                   <span>{request.authorInfo?.name || request.requestedByUsername || request.requestedByUserId}</span>
                 </div>
               </div>
