@@ -46,6 +46,14 @@ export default function PayoutScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterDateFrom, filterDateTo]);
   const [payoutPercentage, setPayoutPercentage] = useState<number>(80);
   const [editingPercent, setEditingPercent] = useState<boolean>(false);
   const [tempPercent, setTempPercent] = useState<number>(80);
@@ -149,19 +157,41 @@ export default function PayoutScreen() {
       (p.accountName ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (p.accountNumber ?? "").includes(searchTerm) ||
       (p.bankId ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.paymentId.toLowerCase().includes(searchTerm.toLowerCase());
+      p.paymentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.authorFullName ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.authorUsername ?? "").toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchStatus =
       filterStatus === "all" || p.status.toLowerCase() === filterStatus.toLowerCase();
-    return matchSearch && matchStatus;
+
+    const payoutDate = new Date(p.createdAt);
+    const fromDate = filterDateFrom ? new Date(filterDateFrom) : null;
+    const toDate = filterDateTo ? new Date(filterDateTo) : null;
+
+    if (fromDate) fromDate.setHours(0, 0, 0, 0);
+    if (toDate) toDate.setHours(23, 59, 59, 999);
+
+    const matchDateFrom = fromDate ? payoutDate >= fromDate : true;
+    const matchDateTo = toDate ? payoutDate <= toDate : true;
+
+    return matchSearch && matchStatus && matchDateFrom && matchDateTo;
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredPayouts.length / pageSize);
+  const paginatedPayouts = filteredPayouts.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   // Stats
-  const totalAmount = payouts.reduce((s, p) => s + p.amount, 0);
-  const pendingCount = payouts.filter((p) => p.status.toLowerCase() === "pending").length;
-  const failedCount = payouts.filter((p) =>
+  const totalAmount = filteredPayouts.reduce((s, p) => s + p.amount, 0);
+  const totalSystemAmount = filteredPayouts.reduce((s, p) => s + (p.systemAmount || 0), 0);
+  const pendingCount = filteredPayouts.filter((p) => p.status.toLowerCase() === "pending").length;
+  const failedCount = filteredPayouts.filter((p) =>
     ["failed", "failed_no_bank"].includes(p.status.toLowerCase())
   ).length;
-  const paidCount = payouts.filter((p) =>
+  const paidCount = filteredPayouts.filter((p) =>
     ["paid", "success", "completed"].includes(p.status.toLowerCase())
   ).length;
 
@@ -249,7 +279,21 @@ export default function PayoutScreen() {
             <span className="lm-stat-value">{formatCurrency(totalAmount)}</span>
             <div className="lm-stat-change">
               <TrendingUp size={12} />
-              {payouts.length} khoản
+              {filteredPayouts.length} khoản
+            </div>
+          </div>
+        </div>
+
+        <div className="lm-stat-card">
+          <div className="lm-stat-icon" style={{ color: "#3b82f6", background: "rgba(59,130,246,0.15)" }}>
+            <Building2 size={22} />
+          </div>
+          <div className="lm-stat-content">
+            <span className="lm-stat-label">Tổng hệ thống nhận</span>
+            <span className="lm-stat-value">{formatCurrency(totalSystemAmount)}</span>
+            <div className="lm-stat-change positive">
+              <TrendingUp size={12} />
+              Doanh thu
             </div>
           </div>
         </div>
@@ -358,6 +402,40 @@ export default function PayoutScreen() {
             <option value="failed">Thất bại</option>
             <option value="failed_no_bank">Thiếu tài khoản ngân hàng</option>
           </select>
+
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }}>
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              style={{
+                padding: "10px 12px",
+                border: "1px solid var(--neutral-200)",
+                borderRadius: 10,
+                fontSize: 14,
+                outline: "none",
+                background: "var(--neutral-50)",
+                color: "var(--neutral-700)",
+              }}
+              title="Từ ngày"
+            />
+            <span style={{ color: "var(--neutral-500)" }}>-</span>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              style={{
+                padding: "10px 12px",
+                border: "1px solid var(--neutral-200)",
+                borderRadius: 10,
+                fontSize: 14,
+                outline: "none",
+                background: "var(--neutral-50)",
+                color: "var(--neutral-700)",
+              }}
+              title="Đến ngày"
+            />
+          </div>
         </div>
       </div>
 
@@ -393,6 +471,7 @@ export default function PayoutScreen() {
             <p>Không tìm thấy payout nào</p>
           </div>
         ) : (
+          <>
           <div className="tx-table-wrap">
             <table className="tx-table">
               <thead>
@@ -407,7 +486,7 @@ export default function PayoutScreen() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPayouts.map((p) => {
+                {paginatedPayouts.map((p) => {
                   const statusCfg = getStatusConfig(p.status);
                   const created = formatDate(p.createdAt);
                   const scheduled = formatDate(p.scheduledAt);
@@ -568,6 +647,36 @@ export default function PayoutScreen() {
               </tbody>
             </table>
           </div>
+          
+          {totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderTop: "1px solid var(--neutral-200)" }}>
+              <div style={{ fontSize: 13, color: "var(--neutral-500)" }}>
+                Hiển thị {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredPayouts.length)} trong số {filteredPayouts.length} kết quả
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="lm-btn lm-btn--outline"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  style={{ padding: "6px 12px", fontSize: 13 }}
+                >
+                  Trang trước
+                </button>
+                <span style={{ display: "flex", alignItems: "center", fontSize: 13, fontWeight: 500, padding: "0 8px" }}>
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  className="lm-btn lm-btn--outline"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  style={{ padding: "6px 12px", fontSize: 13 }}
+                >
+                  Trang sau
+                </button>
+              </div>
+            </div>
+          )}
+        </>
         )}
       </div>
     </div>
