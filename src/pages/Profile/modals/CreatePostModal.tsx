@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
-import { X, Plus, Smile, Globe, Users, Lock } from "lucide-react";
+import { X, Plus, Smile, Globe, Lock } from "lucide-react";
 import { MOOD_OPTIONS } from "../../../types/forum";
 
 const PRIVACY_OPTIONS = [
   { value: "public", label: "Công khai", icon: Globe },
-  { value: "friends", label: "Bạn bè", icon: Users },
   { value: "private", label: "Chỉ mình tôi", icon: Lock },
 ] as const;
 
-type PrivacyScope = "public" | "friends" | "private";
+type PrivacyScope = "public" | "private";
 
 import api from "../../../services/axios";
 import { Avatar } from "../../../components/common";
