@@ -343,7 +343,7 @@ class PodcastService {
    */
   async getMyPodcasts(status?: string): Promise<PodcastItem[]> {
     try {
-      const url = status ? `/podcast/my?status=${status}` : "/podcast/my";
+      const url = status ? `/podcast-requests/my?status=${status}` : "/podcast-requests/my";
       const response = await api.get<ApiResponse<PodcastItem[]>>(url);
       return response.data.data ?? [];
     } catch (error: any) {
