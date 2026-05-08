@@ -502,6 +502,15 @@ export interface PodcastEpisodeRequestResult {
   requestedAt: string;
 }
 
+export interface ModerationCheckResult {
+  toxicityScore: number;
+  insultScore: number;
+  profanityScore: number;
+  action: string;
+  triggeredWords: string[];
+  transcript: string;
+}
+
 export interface PagedResult<T> {
   items: T[];
   totalCount: number;
@@ -884,6 +893,13 @@ class LiveSessionApiService {
     const res = await api.post<ApiResponse<PodcastEpisodeRequestResult>>(
       `/podcast-episode-requests/${id}/review`,
       data,
+    );
+    return res.data.data;
+  }
+
+  async checkPodcastEpisodeToxicity(id: string): Promise<ModerationCheckResult> {
+    const res = await api.post<ApiResponse<ModerationCheckResult>>(
+      `/podcast-episode-requests/${id}/check-toxicity`
     );
     return res.data.data;
   }
