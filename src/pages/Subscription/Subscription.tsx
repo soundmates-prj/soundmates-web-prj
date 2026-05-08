@@ -271,7 +271,7 @@ function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): Featu
     return [
       ...base,
       { text: `${plan.requestLimit} lượt yêu cầu nhạc`, bold: 'mỗi ngày' },
-      { text: "mỗi ngày", bold: `${plan.podcastRequestLimit} lượt tạo Podcast` },
+      { text: "Đăng bán tối đa", bold: "2 Podcast" },
       { text: "Theme giao diện cơ bản" },
     ];
   }
@@ -280,10 +280,10 @@ function getFeatures(plan: Plan, tier: ReturnType<typeof detectPlanTier>): Featu
     ...base,
     { text: "Mọi đặc quyền từ gói Miễn Phí" },
     { text: `${plan.requestLimit} lượt yêu cầu nhạc`, bold: " mỗi ngày" },
-    { text: `${plan.podcastRequestLimit} lượt tạo Podcast`, bold: " mỗi ngày" },
+    { text: "Tạo tối đa", bold: "5 Podcast mỗi ngày" },
+    { text: "Mở khóa tính năng", bold: "đăng bán Podcast" },
     { text: "Tự tạo giọng nói AI", bold: `${plan.voiceModelLimit} giọng` },
     { text: "AI đọc văn bản", bold: `${plan.ttsMinuteLimit} phút/tháng` },
-    { text: "Mở khóa tính năng", bold: "đăng bán Podcast" },
     { text: "Cập nhật mọi Theme mới nhất & 'đặc biệt' nhất" },
   ];
 }
@@ -555,9 +555,9 @@ export default function Subscription() {
                   {plan.planName.toLowerCase().includes("free") || plan.price === 0
                     ? "Khởi đầu hoàn hảo. Trải nghiệm âm nhạc cơ bản miễn phí."
                     : plan.planName.toLowerCase().includes("premium")
-                      ? "Nâng tầm trải nghiệm với đặc quyền AI tạo giọng đọc."
+                      ? "Đẳng cấp thượng lưu. Tự do sáng tạo với toàn bộ tính năng cao cấp nhất."
                       : plan.planName.toLowerCase().includes("elite")
-                        ? "Đẳng cấp thượng lưu. Tự do sáng tạo với toàn bộ tính năng cao cấp nhất."
+                        ? "Nâng tầm trải nghiệm. Mở khóa tính năng đăng bán Podcast."
                         : plan.description}
                 </p>
               </div>
