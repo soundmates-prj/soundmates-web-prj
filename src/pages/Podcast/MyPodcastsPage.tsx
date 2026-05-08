@@ -131,8 +131,26 @@ export default function MyPodcastsPage() {
   const loadPodcasts = async () => {
     setLoading(true);
     try {
-      const data = await podcastService.getMyPodcasts();
-      setPodcasts(data);
+      const [requests, myPodcasts] = await Promise.all([
+        podcastService.getMyPodcastsRequest(),
+        podcastService.getMyPodcasts()
+      ]);
+
+      const filteredRequests = requests.filter(p => {
+        const s = normalizeStatus(p.status);
+        return s === "Pending" || s === "Rejected";
+      });
+
+      const combined = [...filteredRequests, ...myPodcasts];
+      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+
+      unique.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      setPodcasts(unique);
     } catch {
       showError("Không thể tải danh sách podcast của bạn");
     } finally {
@@ -191,7 +209,13 @@ export default function MyPodcastsPage() {
     setDetailPodcast(podcast);
     setDetailLoading(true);
     try {
-      const fresh = await podcastService.getPodcastById(podcast.id);
+      const s = normalizeStatus(podcast.status);
+      let fresh;
+      if (s === "Pending" || s === "Rejected") {
+        fresh = await podcastService.getPodcastRequestById(podcast.id);
+      } else {
+        fresh = await podcastService.getPodcastById(podcast.id);
+      }
       setDetailPodcast(fresh);
     } catch {
       showError("Không thể tải chi tiết");

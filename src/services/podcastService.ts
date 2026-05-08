@@ -343,6 +343,24 @@ class PodcastService {
    */
   async getMyPodcasts(status?: string): Promise<PodcastItem[]> {
     try {
+      const url = status ? `/podcast/my?status=${status}` : "/podcast/my";
+      const response = await api.get<ApiResponse<PodcastItem[]>>(url);
+      return response.data.data ?? [];
+    } catch (error: any) {
+      console.error("Error fetching my podcasts:", error);
+      throw new Error(
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể tải danh sách podcast của bạn",
+      );
+    }
+  }
+
+  /**
+   * Lấy các podcast do user tạo (My Podcasts)
+   */
+  async getMyPodcastsRequest(status?: string): Promise<PodcastItem[]> {
+    try {
       const url = status ? `/podcast-requests/my?status=${status}` : "/podcast-requests/my";
       const response = await api.get<ApiResponse<PodcastItem[]>>(url);
       return response.data.data ?? [];
@@ -372,6 +390,25 @@ class PodcastService {
         error.response?.data?.message ||
         error.message ||
         "Không thể tải danh sách yêu cầu tập",
+      );
+    }
+  }
+
+  async getPodcastRequestById(id: string): Promise<PodcastItem> {
+    try {
+      const response = await api.get<ApiResponse<PodcastItem>>(
+        `/podcast-requests/${id}`,
+      );
+      if (!response.data.data) {
+        throw new Error("Không tìm thấy podcast request");
+      }
+      return response.data.data;
+    } catch (error: any) {
+      console.error("Error fetching podcast request:", error);
+      throw new Error(
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể tải podcast request",
       );
     }
   }
