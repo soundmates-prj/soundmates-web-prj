@@ -118,7 +118,9 @@ const normalizeStatus = (status?: string | null) =>
 export default function MyPodcastsPage() {
   const navigate = useNavigate();
 
-  const [podcasts, setPodcasts] = useState<PodcastItem[]>([]);
+  const [publishedPodcasts, setPublishedPodcasts] = useState<PodcastItem[]>([]);
+  const [requestPodcasts, setRequestPodcasts] = useState<PodcastItem[]>([]);
+  const [activeTab, setActiveTab] = useState<"published" | "requests">("published");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [detailPodcast, setDetailPodcast] = useState<PodcastItem | null>(null);
@@ -138,19 +140,24 @@ export default function MyPodcastsPage() {
 
       const filteredRequests = requests.filter(p => {
         const s = normalizeStatus(p.status);
-        return s === "Pending" || s === "Rejected";
+        return s === "Pending" || s === "Rejected" || s === "pending" || s === "rejected";
       });
 
-      const combined = [...filteredRequests, ...myPodcasts];
-      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
-
-      unique.sort((a, b) => {
+      filteredRequests.sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return dateB - dateA;
       });
 
-      setPodcasts(unique);
+      const uniquePublished = Array.from(new Map(myPodcasts.map(item => [item.id, item])).values());
+      uniquePublished.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      setRequestPodcasts(filteredRequests);
+      setPublishedPodcasts(uniquePublished);
     } catch {
       showError("Không thể tải danh sách podcast của bạn");
     } finally {
@@ -194,16 +201,18 @@ export default function MyPodcastsPage() {
     void loadPodcasts();
   }, []);
 
+  const currentList = activeTab === "published" ? publishedPodcasts : requestPodcasts;
+
   const filtered = useMemo(() => {
     const kw = search.trim().toLowerCase();
-    if (!kw) return podcasts;
-    return podcasts.filter(
+    if (!kw) return currentList;
+    return currentList.filter(
       (p) =>
         p.title?.toLowerCase().includes(kw) ||
         p.description?.toLowerCase().includes(kw) ||
         p.type?.toLowerCase().includes(kw),
     );
-  }, [podcasts, search]);
+  }, [currentList, search]);
 
   const openDetail = async (podcast: PodcastItem) => {
     setDetailPodcast(podcast);
@@ -265,6 +274,24 @@ export default function MyPodcastsPage() {
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="mypod-tabs">
+          <button
+            className={`mypod-tab ${activeTab === "published" ? "mypod-tab--active" : ""}`}
+            onClick={() => setActiveTab("published")}
+          >
+            Podcast của tôi
+            <span className="mypod-tab-count">{publishedPodcasts.length}</span>
+          </button>
+          <button
+            className={`mypod-tab ${activeTab === "requests" ? "mypod-tab--active" : ""}`}
+            onClick={() => setActiveTab("requests")}
+          >
+            Yêu cầu chờ duyệt
+            <span className="mypod-tab-count">{requestPodcasts.length}</span>
+          </button>
+        </div>
+
         {/* Search */}
         <div className="mypod-search-wrap">
           <Search size={16} className="mypod-search-icon" />
@@ -295,11 +322,13 @@ export default function MyPodcastsPage() {
             <Mic2 size={48} />
             <h3>Chưa có podcast nào</h3>
             <p>
-              {podcasts.length === 0
-                ? "Bạn chưa có podcast nào được xuất bản. Hãy tạo podcast đầu tiên của bạn!"
+              {currentList.length === 0
+                ? activeTab === "published"
+                  ? "Bạn chưa có podcast nào được xuất bản. Hãy tạo podcast đầu tiên của bạn!"
+                  : "Bạn không có yêu cầu tạo podcast nào đang chờ duyệt."
                 : "Không có podcast nào khớp với từ khóa tìm kiếm."}
             </p>
-            {podcasts.length === 0 && (
+            {currentList.length === 0 && activeTab === "published" && (
               <button
                 className="mypod-btn mypod-btn--primary"
                 onClick={handleOpenCreate}
