@@ -56,6 +56,17 @@ const TransactionHistory: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
+  const [hasServicePackage, setHasServicePackage] = useState(false);
+
+  useEffect(() => {
+    api.get("/me/subscriptions/full")
+      .then(res => {
+        if (res.data?.data?.planName) {
+           setHasServicePackage(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -156,25 +167,27 @@ const TransactionHistory: React.FC = () => {
             >
               <CreditCard size={16} /> Giao dịch mua
             </button>
-            <button 
-              className={`tab-btn ${activeTab === "revenues" ? "active" : ""}`}
-              onClick={() => setActiveTab("revenues")}
-              style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
-                border: "none",
-                background: activeTab === "revenues" ? "var(--primary-color, #4f46e5)" : "#e5e7eb",
-                color: activeTab === "revenues" ? "white" : "#374151",
-                cursor: "pointer",
-                fontWeight: "500",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                transition: "all 0.2s"
-              }}
-            >
-              <TrendingUp size={16} /> Doanh thu bán
-            </button>
+            {hasServicePackage && (
+              <button 
+                className={`tab-btn ${activeTab === "revenues" ? "active" : ""}`}
+                onClick={() => setActiveTab("revenues")}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: activeTab === "revenues" ? "var(--primary-color, #4f46e5)" : "#e5e7eb",
+                  color: activeTab === "revenues" ? "white" : "#374151",
+                  cursor: "pointer",
+                  fontWeight: "500",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.2s"
+                }}
+              >
+                <TrendingUp size={16} /> Doanh thu bán
+              </button>
+            )}
           </div>
 
           <div className="transaction-stats-grid">

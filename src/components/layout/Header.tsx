@@ -46,6 +46,7 @@ const Header: React.FC = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [hasServicePackage, setHasServicePackage] = useState(false);
   const lastScrollY = useRef(0);
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,14 +93,36 @@ const Header: React.FC = () => {
             .catch(() => {
               // API failed — keep using localStorage data
             });
+            
+          // Priority 3: Fetch subscription status
+          api
+            .get("/me/subscriptions/full")
+            .then((res) => {
+              if (res.data?.data) {
+                const planName = res.data.data.planName?.toLowerCase() || "";
+                if (planName) {
+                  setHasServicePackage(true);
+                } else {
+                  setHasServicePackage(false);
+                }
+              } else {
+                setHasServicePackage(false);
+              }
+            })
+            .catch(() => {
+              setHasServicePackage(false);
+            });
         } else {
           setUserInfo(null);
+          setHasServicePackage(false);
         }
       } catch {
         setUserInfo(null);
+        setHasServicePackage(false);
       }
     } else {
       setUserInfo(null);
+      setHasServicePackage(false);
     }
   };
 
@@ -317,24 +340,26 @@ const Header: React.FC = () => {
                       <span>Duyệt toàn bộ kho podcast</span>
                     </div>
                   </a>
-                  <a
-                    className="nav-live-item"
-                    href="/podcast/my"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowPodcastDropdown(false);
-                      setActiveTab("/podcast/my");
-                      navigate("/podcast/my");
-                    }}
-                  >
-                    <span className="nav-live-icon">
-                      <Mic2 size={16} />
-                    </span>
-                    <div>
-                      <p>Podcast của tôi</p>
-                      <span>Các podcast bạn đã gửi lên</span>
-                    </div>
-                  </a>
+                  {hasServicePackage && (
+                    <a
+                      className="nav-live-item"
+                      href="/podcast/my"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowPodcastDropdown(false);
+                        setActiveTab("/podcast/my");
+                        navigate("/podcast/my");
+                      }}
+                    >
+                      <span className="nav-live-icon">
+                        <Mic2 size={16} />
+                      </span>
+                      <div>
+                        <p>Podcast của tôi</p>
+                        <span>Các podcast bạn đã gửi lên</span>
+                      </div>
+                    </a>
+                  )}
                 </div>
               )}
             </div>
@@ -511,14 +536,16 @@ const Header: React.FC = () => {
               <Podcast size={18} />
               Podcast
             </Link>
-            <Link
-              to="/podcast/my"
-              onClick={() => setShowMobileMenu(false)}
-              className={activeTab === "/podcast/my" ? "active" : ""}
-            >
-              <Mic2 size={18} />
-              Podcast của tôi
-            </Link>
+            {hasServicePackage && (
+              <Link
+                to="/podcast/my"
+                onClick={() => setShowMobileMenu(false)}
+                className={activeTab === "/podcast/my" ? "active" : ""}
+              >
+                <Mic2 size={18} />
+                Podcast của tôi
+              </Link>
+            )}
             <Link
               to="/forum"
               onClick={() => setShowMobileMenu(false)}
